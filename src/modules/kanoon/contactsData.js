@@ -1,0 +1,197 @@
+import { ENTITY_TYPES, PERSON_TYPES } from './config';
+
+const officialSample = {
+  registrationNumber: '۴۵۶۷۸۹',
+  establishmentDate: '۱۳۷۵/۰۳/۱۵',
+  economicCode: '۴۱۱۱۲۲۳۳۴۴',
+  companyType: 'سهامی خاص',
+  registrationRegion: 'تهران',
+  latestGazette: '۱۴۰۳/۱۰/۲۰',
+  latestCapital: '۵۰۰٬۰۰۰٬۰۰۰٬۰۰۰ ریال',
+  phone: '02188776655',
+  website: 'www.example.ir',
+  address: 'تهران، خیابان ولیعصر، پلاک ۱۲۳',
+  postalCode: '۱۴۳۵۶۷۸۹۰',
+};
+
+const legalPersonsSample = {
+  ceo: 'محمد احمدی',
+  signatory: 'زهرا کریمی',
+};
+
+function daysAgo(days) {
+  return new Date(Date.now() - days * 86_400_000).toISOString();
+}
+
+function withMeta(contact, { createdDays, activityDays, analytics, isActive = true }) {
+  return {
+    isActive,
+    createdAt: daysAgo(createdDays),
+    lastActivityAt: activityDays != null ? daysAgo(activityDays) : null,
+    analytics,
+    ...contact,
+  };
+}
+
+const rawContacts = [
+  {
+    id: 1,
+    entityType: ENTITY_TYPES.CUSTOMER,
+    personType: PERSON_TYPES.LEGAL,
+    companyName: 'فولاد پارس',
+    nationalId: '10101234567',
+    province: 'خوزستان',
+    activityDomain: 'صنایع فولادی',
+    behavioralStatus: 'ambassador',
+    assignee: { name: 'علی رضایی', role: 'شوالیه' },
+    fullAddress: 'اهواز، کیانپارس، خیابان صنعت، پلاک ۱۲',
+    officialSpecs: { ...officialSample },
+    legalPersons: { ...legalPersonsSample },
+    relatedPersons: [
+      { name: 'علی رضایی', mobile: '09121112233', role: 'مدیر', notes: 'مسئول خرید' },
+      { name: 'سارا موسوی', mobile: '09354445566', role: 'کارشناس', notes: 'پیگیری سفارش' },
+    ],
+    interactions: [
+      { id: 'POY-1404-015', date: '۱۴۰۴/۰۱/۱۵', type: 'فروش', summary: 'تأیید سفارش میلگرد ۱۴' },
+      { id: 'POY-1404-010', date: '۱۴۰۴/۰۱/۱۰', type: 'جلسه حضوری', summary: 'بررسی قرارداد سالانه' },
+    ],
+    relatedOrders: [
+      { id: 'JR050112001', title: 'میلگرد ۱۴', stage: 'مظنه', amount: '۴٬۸۵۰٬۰۰۰٬۰۰۰', registeredAt: '۱۴۰۴/۰۱/۱۲' },
+      { id: 'JR050109004', title: 'ورق ۸mm', stage: 'پیش‌کش', amount: '۱٬۲۰۰٬۰۰۰٬۰۰۰', registeredAt: '۱۴۰۴/۰۱/۰۹' },
+    ],
+  },
+  {
+    id: 2,
+    entityType: ENTITY_TYPES.CUSTOMER,
+    personType: PERSON_TYPES.LEGAL,
+    companyName: 'صنایع فلزی کرمان',
+    nationalId: '10202345678',
+    province: 'کرمان',
+    activityDomain: 'سازه فلزی',
+    behavioralStatus: 'hesitant',
+    assignee: { name: 'حسین کریمی', role: 'شوالیه' },
+    officialSpecs: {},
+    legalPersons: {},
+    relatedPersons: [
+      { name: 'محمد رضایی', mobile: '09133445566', role: 'کارشناس', notes: 'مسئول درخواست‌ها' },
+    ],
+    interactions: [{ id: 'POY-1404-012', date: '۱۴۰۴/۰۱/۱۲', type: 'پیگیری', summary: 'استعلام قیمت تیرآهن' }],
+    relatedOrders: [],
+  },
+  {
+    id: 3,
+    entityType: ENTITY_TYPES.CUSTOMER,
+    personType: PERSON_TYPES.NATURAL,
+    personName: 'علی رضایی',
+    mobile: '09121234567',
+    province: 'تهران',
+    activityDomain: 'بازرگانی آهن و فولاد',
+    behavioralStatus: 'active',
+    assignee: { name: 'مریم احمدی', role: 'شوالیه' },
+    relatedPersons: [],
+    interactions: [{ id: 'POY-1404-014', date: '۱۴۰۴/۰۱/۱۴', type: 'پیگیری', summary: 'ارسال لیست قیمت' }],
+    relatedOrders: [
+      { id: 'JR050109004', title: 'ورق ۶mm', stage: 'پیش‌کش', amount: '۱٬۲۰۰٬۰۰۰٬۰۰۰', registeredAt: '۱۴۰۴/۰۱/۰۸' },
+    ],
+  },
+  {
+    id: 4,
+    entityType: ENTITY_TYPES.CUSTOMER,
+    personType: PERSON_TYPES.NATURAL,
+    personName: 'مریم احمدی',
+    mobile: '09351234567',
+    province: 'اصفهان',
+    activityDomain: 'ساختمان‌سازی',
+    behavioralStatus: 'silent',
+    assignee: { name: 'رضا نوری', role: 'شوالیه' },
+    relatedPersons: [],
+    interactions: [],
+    relatedOrders: [],
+  },
+  {
+    id: 5,
+    entityType: ENTITY_TYPES.SUPPLIER,
+    personType: PERSON_TYPES.LEGAL,
+    companyName: 'ذوب آهن اصفهان',
+    ownerName: 'حسین کریمی',
+    nationalId: '10303456789',
+    productGroups: [
+      { group: 'میلگرد', subgroup: 'میلگرد آجدار' },
+      { group: 'ورق', subgroup: 'ورق سیاه' },
+    ],
+    supplierType: 'تولیدکننده',
+    behavioralStatus: 'active',
+    assignee: { name: 'فاطمه رحیمی', role: 'کاشف' },
+    fullAddress: 'اصفهان، شهرک صنعتی محمودآباد',
+    officialSpecs: { ...officialSample, registrationRegion: 'اصفهان' },
+    legalPersons: { ceo: 'حسین کریمی', signatory: 'فاطمه رحیمی' },
+    relatedPersons: [
+      { name: 'رضا نوری', mobile: '09131234567', role: 'کارشناس', notes: 'هماهنگی تحویل' },
+    ],
+    interactions: [{ id: 'POY-1404-013', date: '۱۴۰۴/۰۱/۱۳', type: 'پیگیری', summary: 'هماهنگی تحویل بار' }],
+    relatedOrders: [],
+  },
+  {
+    id: 6,
+    entityType: ENTITY_TYPES.SUPPLIER,
+    personType: PERSON_TYPES.LEGAL,
+    companyName: 'فولاد مبارکه',
+    ownerName: 'رضا نوری',
+    nationalId: '10404567890',
+    productGroups: [
+      { group: 'ورق', subgroup: 'ورق گالوانیزه' },
+      { group: 'ورق', subgroup: 'ورق روغنی (سرد)' },
+    ],
+    supplierType: 'تولیدکننده',
+    behavioralStatus: 'ambassador',
+    assignee: { name: 'امیر صادقی', role: 'کاشف' },
+    officialSpecs: {},
+    legalPersons: {},
+    relatedPersons: [],
+    interactions: [],
+    relatedOrders: [],
+  },
+  {
+    id: 7,
+    entityType: ENTITY_TYPES.SUPPLIER,
+    personType: PERSON_TYPES.NATURAL,
+    personName: 'سارا موسوی',
+    mobile: '09151234567',
+    productGroups: [{ group: 'لوله', subgroup: 'لوله مانیسمان' }],
+    supplierType: 'واسطه‌گر',
+    behavioralStatus: 'trial',
+    assignee: { name: 'سارا موسوی', role: 'کاشف' },
+    relatedPersons: [],
+    interactions: [{ id: 'POY-1404-008', date: '۱۴۰۴/۰۱/۰۸', type: 'جلسه حضوری', summary: 'معرفی محصولات جدید' }],
+    relatedOrders: [],
+  },
+  {
+    id: 8,
+    entityType: ENTITY_TYPES.CUSTOMER,
+    personType: PERSON_TYPES.LEGAL,
+    companyName: 'بازرگانی آذر',
+    nationalId: '10505678901',
+    province: 'آذربایجان شرقی',
+    activityDomain: 'بازرگانی آهن و فولاد',
+    behavioralStatus: 'stagnant',
+    assignee: { name: 'سارا موسوی', role: 'شوالیه' },
+    officialSpecs: {},
+    legalPersons: {},
+    relatedPersons: [],
+    interactions: [{ id: 'POY-1403-1020', date: '۱۴۰۳/۱۰/۲۰', type: 'پیگیری', summary: 'آخرین پیگیری' }],
+    relatedOrders: [],
+  },
+];
+
+const metaById = {
+  1: { createdDays: 420, activityDays: 3, analytics: { interactionValue: '۲.۵ میلیارد تومان', openOrders: 2 } },
+  2: { createdDays: 180, activityDays: 12, analytics: { interactionValue: '۸۵۰ میلیون تومان', openOrders: 0 } },
+  3: { createdDays: 90, activityDays: 5, analytics: { interactionValue: '۱.۲ میلیارد تومان', openOrders: 1 } },
+  4: { createdDays: 240, activityDays: 75, analytics: { interactionValue: '۳۲۰ میلیون تومان', openOrders: 0 }, isActive: false },
+  5: { createdDays: 730, activityDays: 7, analytics: { supplyVolume: '۴.۸ میلیارد تومان', openInquiries: 3 } },
+  6: { createdDays: 1100, activityDays: 45, analytics: { supplyVolume: '۹.۲ میلیارد تومان', openInquiries: 1 } },
+  7: { createdDays: 60, activityDays: 14, analytics: { supplyVolume: '۶۵۰ میلیون تومان', openInquiries: 2 } },
+  8: { createdDays: 300, activityDays: 120, analytics: { interactionValue: '۱۵۰ میلیون تومان', openOrders: 0 } },
+};
+
+export const initialContacts = rawContacts.map((c) => withMeta(c, metaById[c.id]));

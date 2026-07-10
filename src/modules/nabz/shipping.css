@@ -1,0 +1,189 @@
+.shipping-preview-page {
+  min-height: 100vh;
+  padding: 1rem;
+  background: #e5e7eb;
+  direction: rtl;
+}
+
+.shipping-preview-page--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.shipping-preview-page__toolbar {
+  max-width: 210mm;
+  margin: 0 auto 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.shipping-doc {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 12mm 14mm;
+  background: #fff;
+  color: #111827;
+  font-size: 11pt;
+  line-height: 1.55;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.shipping-doc__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #991b1b;
+  margin-bottom: 1rem;
+}
+
+.shipping-doc__brand {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.shipping-doc__logo {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.shipping-doc__company {
+  margin: 0;
+  font-size: 1rem;
+  color: #991b1b;
+}
+
+.shipping-doc__tagline {
+  margin: 0.15rem 0 0;
+  font-size: 0.68rem;
+  color: #4b5563;
+}
+
+.shipping-doc__meta {
+  text-align: left;
+  font-size: 0.78rem;
+}
+
+.shipping-doc__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.shipping-doc__meta p {
+  margin: 0.1rem 0;
+}
+
+.shipping-doc__meta span {
+  color: #6b7280;
+}
+
+.shipping-doc__section {
+  margin-bottom: 1rem;
+}
+
+.shipping-doc__section-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  color: #991b1b;
+}
+
+.shipping-doc__recipient-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 1rem;
+  font-size: 0.78rem;
+}
+
+.shipping-doc__recipient-grid span {
+  color: #6b7280;
+}
+
+.shipping-doc__recipient-address {
+  grid-column: 1 / -1;
+}
+
+.shipping-doc__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.shipping-doc__table th,
+.shipping-doc__table td {
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.4rem;
+  text-align: right;
+  vertical-align: top;
+}
+
+.shipping-doc__table th {
+  background: #f3f4f6;
+  font-weight: 700;
+}
+
+.shipping-doc__signatures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 0.75rem;
+}
+
+.shipping-doc__signature {
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.shipping-doc__signature-line {
+  margin-top: 2.5rem;
+  border-top: 1px solid #9ca3af;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .shipping-preview-page {
+    padding: 0;
+    background: #fff;
+  }
+
+  .shipping-doc {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media (max-width: 640px) {
+  .shipping-doc__header {
+    flex-direction: column;
+  }
+
+  .shipping-doc__recipient-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shipping-doc__signatures {
+    grid-template-columns: 1fr;
+  }
+}

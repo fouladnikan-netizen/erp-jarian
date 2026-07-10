@@ -1,0 +1,695 @@
+import { useEffect, useMemo, useState } from 'react';
+import ResizableColGroup from '../../../../../components/table/ResizableColGroup';
+import ResizableTh from '../../../../../components/table/ResizableTh';
+import { useResizableColumns } from '../../../../../hooks/useResizableColumns';
+import { GATEWAY_PHASES } from '../../../gatewayConfig';
+import {
+  isGatewayLivePhase,
+  isGatewayPhaseReadOnly,
+} from '../../../gatewayService';
+import {
+  calculateQuotingPreview,
+  getEmptyQuickInquiryDraft,
+  getOrderQuoting,
+  getTargetInquiry,
+  validateQuickInquiryDraft,
+} from '../../../inquiryService';
+import { MARGIN_MODES } from '../../../quotingConfig';
+import { canViewSupplierIdentity, DEFAULT_SALE_TYPE } from '../../../constants';
+import { getSupplierName, listSuppliers } from '../../../suppliers';
+import { SUPPLY_CHANNEL_TYPES } from '../../../inquiryConfig';
+import { formatAmountRial } from '../../../orderCode';
+import { formatPriceLine } from '../../quickInquiryParts';
+import MoneyInput from '../../MoneyInput';
+
+const SUPPLY_TYPE_DOT_CLASS = {
+  رسمی: 'is-official',
+  غیررسمی: 'is-unofficial',
+  مغایرت: 'is-discrepancy',
+};
+
+function PencilIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function buildColumns(viewPhase, saleColumnLabel) {
+  if (viewPhase === GATEWAY_PHASES.PISHKESH) {
+    return [
+      { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 280 },
+      { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 90 },
+      { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 90 },
+      { key: 'sale', label: saleColumnLabel, group: 'sale', defaultWidth: 160 },
+      { key: 'total', label: 'قیمت کل', group: 'sale', defaultWidth: 160 },
+    ];
+  }
+
+  if (viewPhase === GATEWAY_PHASES.MOZENE) {
+    return [
+      { key: 'row', label: 'ردیف', group: 'base', defaultWidth: 56, resizable: false },
+      { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 240 },
+      { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 80 },
+      { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 80 },
+      { key: 'buy', label: 'قیمت خرید', group: 'supply', defaultWidth: 140 },
+      { key: 'margin', label: 'حاشیه سود', group: 'sale', defaultWidth: 220 },
+      { key: 'sale', label: saleColumnLabel, group: 'sale', defaultWidth: 150 },
+    ];
+  }
+
+  if (viewPhase === GATEWAY_PHASES.KAVOSH) {
+    return [
+      { key: 'row', label: 'ردیف', group: 'base', defaultWidth: 56, resizable: false },
+      { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 240 },
+      { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 80 },
+      { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 80 },
+      { key: 'supplier', label: 'تامین‌کننده', group: 'supply', defaultWidth: 180 },
+      { key: 'buy', label: 'قیمت خرید', group: 'supply', defaultWidth: 140 },
+    ];
+  }
+
+  return [
+    { key: 'row', label: 'ردیف', group: 'base', defaultWidth: 56, resizable: false },
+    { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 320 },
+    { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 100 },
+    { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 100 },
+  ];
+}
+
+function MarginInputGroup({ value, unit, saved, onValueChange, onUnitChange, onSave }) {
+  return (
+    <div className="gateway-margin-cell">
+      <div className="gateway-input-group">
+        {unit === 'rial' ? (
+          <MoneyInput
+            className="gateway-input-group__field"
+            value={value ?? ''}
+            onChange={onValueChange}
+            placeholder="مقدار"
+            aria-label="مقدار حاشیه سود"
+          />
+        ) : (
+          <input
+            type="number"
+            min="0"
+            className="gateway-input-group__field"
+            value={value ?? ''}
+            onChange={(e) => onValueChange(e.target.value)}
+            placeholder="مقدار"
+            aria-label="مقدار حاشیه سود"
+          />
+        )}
+        <select
+          className="gateway-input-group__unit"
+          value={unit}
+          onChange={(e) => onUnitChange(e.target.value)}
+          aria-label="واحد حاشیه سود"
+        >
+          <option value="percent">٪</option>
+          <option value="rial">ریال</option>
+        </select>
+      </div>
+      <button
+        type="button"
+        className={`gateway-margin-save${saved ? ' is-saved' : ''}`}
+        onClick={onSave}
+        title="ثبت حاشیه سود"
+        aria-label="ثبت حاشیه سود"
+      >
+        <CheckIcon size={13} />
+      </button>
+    </div>
+  );
+}
+
+function InquiryDraftRow({ onSave, onCancel, showSupplier }) {
+  const [draft, setDraft] = useState(getEmptyQuickInquiryDraft());
+  const suppliers = listSuppliers();
+
+  const handleSave = () => {
+    const validation = validateQuickInquiryDraft(draft);
+    if (!validation.valid) return;
+    onSave(draft);
+  };
+
+  return (
+    <div className="gateway-inquiry-draft">
+      <select
+        className="gateway-inquiry-draft__input"
+        value={draft.supplyType}
+        onChange={(e) => setDraft((prev) => ({ ...prev, supplyType: e.target.value }))}
+        aria-label="نوع تامین"
+      >
+        {SUPPLY_CHANNEL_TYPES.map((type) => (
+          <option key={type} value={type}>{type}</option>
+        ))}
+      </select>
+      <select
+        className="gateway-inquiry-draft__input"
+        value={draft.supplierId}
+        onChange={(e) => setDraft((prev) => ({ ...prev, supplierId: Number(e.target.value) || '' }))}
+        aria-label={showSupplier ? 'تامین‌کننده' : 'مرجع تامین'}
+      >
+        <option value="">{showSupplier ? 'تامین‌کننده...' : 'مرجع تامین...'}</option>
+        {suppliers.map((supplier, index) => (
+          <option key={supplier.id} value={supplier.id}>
+            {showSupplier ? (supplier.companyName || supplier.personName) : `تامین‌کننده ${index + 1}`}
+          </option>
+        ))}
+      </select>
+      <MoneyInput
+        className="gateway-inquiry-draft__input gateway-inquiry-draft__input--price"
+        value={draft.unitPrice}
+        onChange={(unitPrice) => setDraft((prev) => ({ ...prev, unitPrice }))}
+        placeholder="قیمت خرید"
+        aria-label="قیمت خرید"
+      />
+      <button type="button" className="btn btn--primary btn--sm" onClick={handleSave}>ثبت</button>
+      <button type="button" className="btn btn--ghost btn--sm" onClick={onCancel}>انصراف</button>
+    </div>
+  );
+}
+
+function CheckIcon({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function getInquirySupplierLabel(inquiry, inquiryIndex, showSupplier) {
+  if (showSupplier) return getSupplierName(inquiry.supplierId);
+  return `تامین‌کننده ${(inquiryIndex + 1).toLocaleString('fa-IR')}`;
+}
+
+function InquiryGridRow({
+  inquiry,
+  inquiryIndex,
+  isTarget,
+  canManage,
+  showSupplier,
+  onSelect,
+  onDelete,
+}) {
+  const supplierLabel = getInquirySupplierLabel(inquiry, inquiryIndex, showSupplier);
+
+  return (
+    <div className={`gateway-inquiry-grid${isTarget ? ' is-selected' : ''}`}>
+      <div className="gateway-inquiry-grid__supplier">
+        {isTarget && (
+          <span className="gateway-inquiry-grid__tick" aria-hidden="true">
+            <CheckIcon size={12} />
+          </span>
+        )}
+        <span className="gateway-inquiry-grid__name">{supplierLabel}</span>
+        <span className={`gateway-inquiry-grid__type gateway-inquiry-grid__type--${SUPPLY_TYPE_DOT_CLASS[inquiry.supplyType] || 'is-official'}`}>
+          {inquiry.supplyType}
+        </span>
+      </div>
+      <div className="gateway-inquiry-grid__price">
+        <strong>{formatAmountRial(inquiry.unitPrice)}</strong>
+        <span className="gateway-inquiry-grid__currency">ریال</span>
+      </div>
+      <div className="gateway-inquiry-grid__actions">
+        {canManage && (
+          isTarget ? (
+            <span className="gateway-inquiry-grid__winner">
+              <CheckIcon size={11} />
+              برگزیده
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="gateway-inquiry-grid__btn"
+              onClick={() => onSelect?.(inquiry.id)}
+            >
+              انتخاب
+            </button>
+          )
+        )}
+        {canManage && (
+          <button
+            type="button"
+            className="gateway-icon-btn gateway-icon-btn--danger gateway-icon-btn--sm"
+            onClick={() => onDelete?.(inquiry.id)}
+            aria-label="حذف استعلام"
+            title="حذف استعلام"
+          >
+            <TrashIcon />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChevronIcon({ expanded }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`gateway-expand-icon${expanded ? ' is-expanded' : ''}`}
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function RowHoverActions({ children, onClick }) {
+  return (
+    <div className="gateway-row-float-actions" onClick={onClick} role="presentation">
+      {children}
+    </div>
+  );
+}
+
+function LockedText({ children }) {
+  return <span className="gateway-table__locked">{children}</span>;
+}
+
+export default function GatewayMorphTable({
+  order,
+  viewPhase,
+  orderPhase,
+  onAddInquiry,
+  onSetTargetInquiry,
+  onDeleteInquiry,
+  onSaveMargin,
+  onEditItem,
+  onDeleteItem,
+}) {
+  const [draftItemIndex, setDraftItemIndex] = useState(null);
+  const [expandedIndex, setExpandedIndex] = useState(null);
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
+  const [editDraft, setEditDraft] = useState({ name: '', qty: '', unit: '', description: '' });
+
+  const items = order.items || [];
+  const quoting = getOrderQuoting(order);
+  const preview = useMemo(() => calculateQuotingPreview(order), [order]);
+  const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
+  const saleColumnLabel = saleType === 'رسمی' ? 'قیمت قبل از مالیات' : 'قیمت فروش';
+  const showSupplier = canViewSupplierIdentity();
+  const live = isGatewayLivePhase(orderPhase, viewPhase);
+  const isReadOnly = isGatewayPhaseReadOnly(orderPhase, viewPhase);
+
+  const columns = useMemo(
+    () => buildColumns(viewPhase, saleColumnLabel),
+    [viewPhase, saleColumnLabel],
+  );
+  const { widths, startResize } = useResizableColumns(`gateway-${viewPhase}`, columns);
+  const totalCols = columns.length;
+
+  const marginUnit = quoting.marginMode === MARGIN_MODES.ORDER_FIXED_PERCENT
+    || quoting.marginMode === MARGIN_MODES.LINE_FIXED_PERCENT
+    ? 'percent'
+    : 'rial';
+
+  useEffect(() => {
+    setExpandedIndex(null);
+    setDraftItemIndex(null);
+    setEditingItemIndex(null);
+  }, [viewPhase]);
+
+  const toggleExpand = (itemIndex) => {
+    setExpandedIndex((prev) => (prev === itemIndex ? null : itemIndex));
+  };
+
+  const openInquiryDraft = (itemIndex) => {
+    setExpandedIndex(itemIndex);
+    setDraftItemIndex(itemIndex);
+  };
+
+  const startEdit = (itemIndex) => {
+    const item = items[itemIndex];
+    setEditingItemIndex(itemIndex);
+    setEditDraft({
+      name: item.name || '',
+      qty: item.qty ?? '',
+      unit: item.unit || '',
+      description: item.description || '',
+    });
+  };
+
+  const saveEdit = (itemIndex) => {
+    onEditItem?.(itemIndex, {
+      name: editDraft.name.trim(),
+      qty: Number(editDraft.qty) || 0,
+      unit: editDraft.unit.trim(),
+      description: editDraft.description.trim(),
+    });
+    setEditingItemIndex(null);
+  };
+
+  const handleSaveMargin = (itemIndex, marginValue, marginType) => {
+    onSaveMargin?.(itemIndex, marginValue, marginType);
+  };
+
+  const isMarginSaved = (itemIndex) => {
+    const raw = quoting.lineMargins?.[itemIndex];
+    if (raw === '' || raw == null) return false;
+    const num = Number(raw);
+    return Number.isFinite(num);
+  };
+
+  const renderHeader = () => (
+    <tr>
+      {columns.map((col) => (
+        <ResizableTh
+          key={col.key}
+          columnKey={col.key}
+          resizable={col.resizable !== false}
+          onResizeStart={startResize}
+          className={`gateway-th gateway-th--${col.group}`}
+        >
+          {col.label}
+        </ResizableTh>
+      ))}
+    </tr>
+  );
+
+  const renderElamRow = (item, itemIndex) => {
+    const isEditing = editingItemIndex === itemIndex && live;
+
+    if (isEditing) {
+      return (
+        <tr key={itemIndex} className="gateway-table__row gateway-table__row--editing">
+          <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
+          <td className="gateway-table__text">
+            <input
+              className="gateway-table__inline-input"
+              value={editDraft.name}
+              onChange={(e) => setEditDraft((prev) => ({ ...prev, name: e.target.value }))}
+              aria-label="شرح کالا"
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              min="0"
+              className="gateway-table__inline-input gateway-table__inline-input--narrow"
+              value={editDraft.qty}
+              onChange={(e) => setEditDraft((prev) => ({ ...prev, qty: e.target.value }))}
+              aria-label="مقدار"
+            />
+          </td>
+          <td className="gateway-table__cell-actions-host">
+            <input
+              className="gateway-table__inline-input gateway-table__inline-input--narrow"
+              value={editDraft.unit}
+              onChange={(e) => setEditDraft((prev) => ({ ...prev, unit: e.target.value }))}
+              aria-label="واحد"
+            />
+            <RowHoverActions>
+              <button type="button" className="gateway-icon-btn gateway-icon-btn--save" onClick={() => saveEdit(itemIndex)} aria-label="ذخیره">✓</button>
+              <button type="button" className="gateway-icon-btn" onClick={() => setEditingItemIndex(null)} aria-label="انصراف">×</button>
+            </RowHoverActions>
+          </td>
+        </tr>
+      );
+    }
+
+    return (
+      <tr key={itemIndex} className="gateway-table__row gateway-table__row--hoverable">
+        <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
+        <td className="gateway-table__text">{item.name || '—'}</td>
+        <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
+        <td className="gateway-table__cell-actions-host">
+          {item.unit || '—'}
+          {live && (
+            <RowHoverActions>
+              <button
+                type="button"
+                className="gateway-icon-btn"
+                onClick={() => startEdit(itemIndex)}
+                aria-label="ویرایش کالا"
+                title="ویرایش کالا"
+              >
+                <PencilIcon />
+              </button>
+              <button
+                type="button"
+                className="gateway-icon-btn gateway-icon-btn--danger"
+                onClick={() => onDeleteItem?.(itemIndex)}
+                aria-label="حذف کالا"
+                title="حذف کالا"
+              >
+                <TrashIcon />
+              </button>
+            </RowHoverActions>
+          )}
+        </td>
+      </tr>
+    );
+  };
+
+  const renderKavoshRows = (item, itemIndex) => {
+    const target = getTargetInquiry(item);
+    const inquiries = item.inquiries || [];
+    const canManage = live || viewPhase === GATEWAY_PHASES.KAVOSH;
+    const isDraftOpen = draftItemIndex === itemIndex;
+    const isExpanded = expandedIndex === itemIndex;
+    const targetIndex = target
+      ? inquiries.findIndex((inq) => inq.id === target.id)
+      : -1;
+
+    return (
+      <>
+        <tr
+          key={`main-${itemIndex}`}
+          className={`gateway-table__row gateway-table__row--master gateway-table__row--expandable${target ? ' has-target' : ''}${isExpanded ? ' is-expanded' : ''}`}
+          onClick={() => toggleExpand(itemIndex)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              toggleExpand(itemIndex);
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-expanded={isExpanded}
+        >
+          <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
+          <td className="gateway-table__text">
+            <span className="gateway-table__expand-cell">
+              <ChevronIcon expanded={isExpanded} />
+              <LockedText>{item.name || '—'}</LockedText>
+            </span>
+          </td>
+          <td><LockedText>{item.qty?.toLocaleString('fa-IR') ?? '—'}</LockedText></td>
+          <td><LockedText>{item.unit || '—'}</LockedText></td>
+          <td className="gateway-table__text gateway-td--supply">
+            {target ? (
+              <span className="gateway-master-target__supplier">
+                <span className="gateway-master-target__tick" aria-hidden="true">
+                  <CheckIcon size={11} />
+                </span>
+                {getInquirySupplierLabel(target, targetIndex, showSupplier)}
+              </span>
+            ) : (
+              <span className="gateway-table__muted">—</span>
+            )}
+          </td>
+          <td className="gateway-table__num gateway-td--supply gateway-table__cell-actions-host">
+            {target ? (
+              <strong className="gateway-master-target__price">
+                {formatAmountRial(target.unitPrice)}
+              </strong>
+            ) : (
+              <span className="gateway-table__muted">—</span>
+            )}
+            {canManage && (
+              <RowHoverActions onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className="gateway-icon-btn gateway-icon-btn--add"
+                  onClick={() => openInquiryDraft(itemIndex)}
+                  aria-label="ثبت استعلام جدید"
+                  title="ثبت استعلام جدید"
+                >
+                  <PlusIcon />
+                </button>
+              </RowHoverActions>
+            )}
+          </td>
+        </tr>
+        {isExpanded && (
+          <tr key={`sub-${itemIndex}`} className="gateway-table__subrow">
+            <td colSpan={totalCols}>
+              <div className="gateway-subrow__inner" onClick={(e) => e.stopPropagation()}>
+                {inquiries.length === 0 && !isDraftOpen && (
+                  <span className="gateway-subrow__empty">استعلامی برای این کالا ثبت نشده است.</span>
+                )}
+                {inquiries.length > 0 && (
+                  <div className="gateway-inquiry-sheet">
+                    <div className="gateway-inquiry-grid gateway-inquiry-grid--head" aria-hidden="true">
+                      <span className="gateway-inquiry-grid__supplier">تامین‌کننده</span>
+                      <span className="gateway-inquiry-grid__price">قیمت اعلامی</span>
+                      <span className="gateway-inquiry-grid__actions">عملیات</span>
+                    </div>
+                    {inquiries.map((inq, inquiryIndex) => (
+                      <InquiryGridRow
+                        key={inq.id}
+                        inquiry={inq}
+                        inquiryIndex={inquiryIndex}
+                        isTarget={target?.id === inq.id}
+                        canManage={canManage}
+                        showSupplier={showSupplier}
+                        onSelect={(inquiryId) => onSetTargetInquiry?.(itemIndex, inquiryId)}
+                        onDelete={(inquiryId) => onDeleteInquiry?.(itemIndex, inquiryId)}
+                      />
+                    ))}
+                  </div>
+                )}
+                {isDraftOpen && canManage && (
+                  <InquiryDraftRow
+                    showSupplier={showSupplier}
+                    onSave={(draft) => {
+                      onAddInquiry?.(itemIndex, draft);
+                      setDraftItemIndex(null);
+                    }}
+                    onCancel={() => setDraftItemIndex(null)}
+                  />
+                )}
+                {canManage && !isDraftOpen && (
+                  <div className="gateway-subrow__footer">
+                    <button
+                      type="button"
+                      className="gateway-add-inquiry-btn"
+                      onClick={() => setDraftItemIndex(itemIndex)}
+                    >
+                      <PlusIcon />
+                      + افزودن استعلام
+                    </button>
+                  </div>
+                )}
+              </div>
+            </td>
+          </tr>
+        )}
+      </>
+    );
+  };
+
+  const renderMozeneRow = (item, itemIndex) => {
+    const linePreview = preview.lines[itemIndex] || {};
+    const target = getTargetInquiry(item);
+
+    return (
+      <tr key={itemIndex} className="gateway-table__row">
+        <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
+        <td className="gateway-table__text"><LockedText>{item.name || '—'}</LockedText></td>
+        <td><LockedText>{item.qty?.toLocaleString('fa-IR') ?? '—'}</LockedText></td>
+        <td><LockedText>{item.unit || '—'}</LockedText></td>
+        <td className="gateway-table__num gateway-td--supply">
+          {target ? formatAmountRial(target.unitPrice) : '—'}
+        </td>
+        <td className="gateway-td--sale">
+          {live ? (
+            <MarginInputGroup
+              value={linePreview.marginInputValue}
+              unit={marginUnit}
+              saved={isMarginSaved(itemIndex)}
+              onValueChange={(nextValue) => handleSaveMargin(itemIndex, nextValue, marginUnit)}
+              onUnitChange={(nextUnit) => handleSaveMargin(
+                itemIndex,
+                linePreview.marginInputValue ?? '',
+                nextUnit,
+              )}
+              onSave={() => handleSaveMargin(
+                itemIndex,
+                linePreview.marginInputValue ?? '',
+                marginUnit,
+              )}
+            />
+          ) : (
+            <span className="gateway-table__margin-badge">
+              {linePreview.marginInputValue
+                ? `${linePreview.marginInputValue}${marginUnit === 'percent' ? '٪' : ' ریال'}`
+                : '—'}
+            </span>
+          )}
+        </td>
+        <td className="gateway-table__num gateway-td--sale">
+          {linePreview.hasTarget && linePreview.saleUnitPrice > 0
+            ? formatPriceLine(linePreview.saleUnitPrice)
+            : '—'}
+        </td>
+      </tr>
+    );
+  };
+
+  const renderPishkeshRow = (item, itemIndex) => {
+    const linePreview = preview.lines[itemIndex] || {};
+    const description = item.description
+      ? `${item.name} — ${item.description}`
+      : (item.name || '—');
+
+    return (
+      <tr key={itemIndex} className="gateway-table__row">
+        <td className="gateway-table__text">{description}</td>
+        <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
+        <td>{item.unit || '—'}</td>
+        <td className="gateway-table__num gateway-td--sale">
+          {linePreview.hasTarget ? formatAmountRial(linePreview.saleUnitPrice) : '—'}
+        </td>
+        <td className="gateway-table__num gateway-td--sale">
+          {linePreview.hasTarget ? formatAmountRial(linePreview.lineTotal) : '—'}
+        </td>
+      </tr>
+    );
+  };
+
+  const renderBody = () => {
+    if (items.length === 0) {
+      return (
+        <tr>
+          <td colSpan={totalCols} className="gateway-table__empty">اقلامی ثبت نشده است.</td>
+        </tr>
+      );
+    }
+
+    return items.map((item, itemIndex) => {
+      if (viewPhase === GATEWAY_PHASES.KAVOSH) return renderKavoshRows(item, itemIndex);
+      if (viewPhase === GATEWAY_PHASES.MOZENE) return renderMozeneRow(item, itemIndex);
+      return renderPishkeshRow(item, itemIndex);
+    });
+  };
+
+  return (
+    <div className={`gateway-morph${isReadOnly ? ' gateway-morph--readonly' : ''}`}>
+      <div className="gateway-table-wrap">
+        <table className="gateway-table">
+          <ResizableColGroup columns={columns} widths={widths} />
+          <thead>{renderHeader()}</thead>
+          <tbody>{renderBody()}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

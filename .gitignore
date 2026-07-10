@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+.cache/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE / editor
+.idea/
+.vscode/
+*.sublime-*
+
+# Local tooling downloads
+.tools/
+
+# Heavy local asset packs (web fonts live in public/assets/fonts/)
+Assets/Meem-Font-www.fontha.com_/
+
+# Design references & large binaries not needed in repo
+Assets/Invoice/
+Docs/
+screenshots/
+
+# Duplicate raw assets (canonical copies are in src/assets/)
+Assets/nikan2.jpg
+Assets/nikan4.png
+
+# Logs
+*.log
+npm-debug.log*
