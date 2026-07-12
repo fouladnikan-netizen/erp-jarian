@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import ResizableColGroup from '../../../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../../../components/table/ResizableTh';
 import { useResizableColumns } from '../../../../../hooks/useResizableColumns';
@@ -12,7 +12,10 @@ import {
   getQcInspectionForRow,
   getQcRowKey,
   getQcStatusMeta,
+  isOrderQcComplete,
 } from '../../../qcInspectionConfig';
+import { OPERATIONAL_PHASES } from '../../../phase2Config';
+import { advanceOperationalPhase, getOrderOperationalPhase } from '../../../phase2Service';
 import { printShippingVoucher } from '../../../shippingPrint';
 import QcDocumentModal from './QcDocumentModal';
 import ShippingModal from './ShippingModal';
@@ -29,6 +32,8 @@ const TAJHIZ_COLUMNS = [
   { key: 'warehouseVoucher', label: 'حواله انبار', defaultWidth: 120 },
   { key: 'warehouseAddress', label: 'آدرس انبار', defaultWidth: 180 },
 ];
+
+const QC_SOFT_GATE_MESSAGE = '⚠️ بازرسی کیفی تکمیل نشده است. عملیات بارگیری هم‌زمان آغاز شد.';
 
 function QcStatusCell({ record, onOpen }) {
   if (!record?.itemStatus) {
@@ -56,17 +61,27 @@ export default function TajhizStagePanel({
   order,
   operationalViewPhase,
   onUpdateOrder,
+  onOperationalPhaseChange,
   compact = false,
 }) {
   const live = isTajhizStageLive(order, operationalViewPhase);
   const rows = useMemo(() => getFulfilledPurchaseRows(order), [order]);
   const expertNotes = useMemo(() => getTajhizExpertNotes(order), [order]);
+  const isQcComplete = useMemo(() => isOrderQcComplete(order, rows), [order, rows]);
   const [qcOpen, setQcOpen] = useState(false);
   const [qcMode, setQcMode] = useState('inspect');
   const [qcFocusRowKey, setQcFocusRowKey] = useState(null);
   const [qcInitialRecord, setQcInitialRecord] = useState(null);
   const [shippingOpen, setShippingOpen] = useState(false);
+  const [toast, setToast] = useState('');
+  const toastTimerRef = useRef(null);
   const { widths, startResize } = useResizableColumns('nabz-tajhiz-purchases-v2', TAJHIZ_COLUMNS);
+
+  const showToast = (message) => {
+    setToast(message);
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setToast(''), 3200);
+  };
 
   const openInspectDrawer = () => {
     setQcMode('inspect');
@@ -100,6 +115,21 @@ export default function TajhizStagePanel({
     onUpdateOrder?.(() => result.order);
     setShippingOpen(false);
     printShippingVoucher(result.order, carrierId);
+  };
+
+  /** Soft gate: always advances to رهسپار; warns if QC incomplete, then continues. */
+  const handleAdvanceToRahsepar = () => {
+    if (!isQcComplete) {
+      showToast(QC_SOFT_GATE_MESSAGE);
+    }
+
+    const result = advanceOperationalPhase(order, OPERATIONAL_PHASES.RAHESPAR);
+    if (!result.accepted) {
+      window.alert(result.reason || 'امکان انتقال به رهسپار وجود ندارد.');
+      return;
+    }
+    onUpdateOrder?.(() => result.order);
+    onOperationalPhaseChange?.(getOrderOperationalPhase(result.order));
   };
 
   return (
@@ -193,6 +223,22 @@ export default function TajhizStagePanel({
           حواله باربری
         </button>
       </footer>
+
+      <div className="tajhiz-stage__transition">
+        <button
+          type="button"
+          className="tajhiz-stage__advance-btn"
+          onClick={handleAdvanceToRahsepar}
+        >
+          صدور مجوز بارگیری (انتقال به رهسپار)
+        </button>
+      </div>
+
+      {toast && (
+        <div className="tajhiz-stage__toast" role="status">
+          {toast}
+        </div>
+      )}
 
       {!live && (
         <p className="tajhiz-stage__readonly-hint">

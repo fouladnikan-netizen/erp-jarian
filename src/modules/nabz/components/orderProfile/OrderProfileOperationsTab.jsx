@@ -24,6 +24,7 @@ import { OPERATIONAL_PHASES } from '../../phase2Config';
 import ParvaneStagePanel from './operations/ParvaneStagePanel';
 import TadarokStagePanel from './operations/TadarokStagePanel';
 import TajhizStagePanel from './operations/TajhizStagePanel';
+import RahseparStagePanel from './operations/RahseparStagePanel';
 
 function FlatField({ label, children }) {
   return (
@@ -118,6 +119,17 @@ export default function OrderProfileOperationsTab({
       <TajhizStagePanel
         order={order}
         operationalViewPhase={activePhase}
+        onUpdateOrder={onUpdateOrder}
+        onOperationalPhaseChange={onOperationalPhaseChange}
+        compact={false}
+      />
+    );
+  }
+
+  if (activePhase === OPERATIONAL_PHASES.RAHESPAR) {
+    return (
+      <RahseparStagePanel
+        order={order}
         onUpdateOrder={onUpdateOrder}
         compact={false}
       />

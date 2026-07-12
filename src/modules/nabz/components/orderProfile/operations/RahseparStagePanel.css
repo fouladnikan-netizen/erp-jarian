@@ -1,0 +1,270 @@
+/* رهسپار — بارگیری و حواله خروج (Pure CSS, RTL) */
+
+.rahsepar-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  direction: rtl;
+  background: #FFFFFF;
+}
+
+.rahsepar-stage__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rahsepar-stage__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #000000;
+}
+
+.rahsepar-stage__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.rahsepar-stage__qc-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  background: #F5F6F8;
+  border: 1px solid #E2E5EA;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.rahsepar-stage__qc-toggle input {
+  accent-color: var(--color-brand-red);
+}
+
+.rahsepar-stage__card {
+  padding: 1rem;
+  background: #F5F6F8;
+  border: 1px solid #E2E5EA;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.rahsepar-stage__card-title,
+.rahsepar-stage__section-title {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.rahsepar-stage__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.rahsepar-stage__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rahsepar-stage__label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.rahsepar-stage__input,
+.rahsepar-stage__cell-input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #E2E5EA;
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font: inherit;
+  box-shadow: none;
+}
+
+.rahsepar-stage__input:focus,
+.rahsepar-stage__cell-input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.rahsepar-stage__table-section {
+  background: #FFFFFF;
+}
+
+.rahsepar-stage__table-wrap {
+  overflow: auto;
+  border: 1px solid #E2E5EA;
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+}
+
+.rahsepar-stage__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.rahsepar-stage__table th,
+.rahsepar-stage__table td {
+  padding: 0.65rem 0.7rem;
+  border-bottom: 1px solid #E2E5EA;
+  text-align: right;
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
+
+.rahsepar-stage__table th {
+  background: #F5F6F8;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.rahsepar-stage__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rahsepar-stage__th-hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.rahsepar-stage__cell-input {
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+}
+
+.rahsepar-stage__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.rahsepar-stage__qc-warning {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  background: #FFF7E6;
+  border: 1px solid #E2E5EA;
+  border-radius: var(--radius-sm);
+  color: #D98A00;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  box-shadow: none;
+}
+
+.rahsepar-stage__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Glossy CTA — only allowed gloss */
+.rahsepar-stage__print-btn {
+  padding: 0.7rem 1.15rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(145deg, #ff4d4d 0%, #dc2626 50%, #991b1b 100%);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.15);
+  transition: filter 0.3s ease;
+}
+
+.rahsepar-stage__print-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.rahsepar-stage__print-btn:disabled {
+  background: #CBD2DA;
+  color: #FFFFFF;
+  box-shadow: none;
+  cursor: not-allowed;
+  filter: none;
+  opacity: 1;
+}
+
+.rahsepar-stage__upload {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.rahsepar-stage__upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.95rem;
+  border: 1px solid #E2E5EA;
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.rahsepar-stage__upload-btn:hover {
+  background: #F5F6F8;
+}
+
+.rahsepar-stage__file {
+  display: none;
+}
+
+.rahsepar-stage__upload-name {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.rahsepar-stage--compact .rahsepar-stage__title {
+  font-size: 1rem;
+}
+
+.rahsepar-stage--compact .rahsepar-stage__table th,
+.rahsepar-stage--compact .rahsepar-stage__table td {
+  padding: 0.45rem 0.55rem;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 768px) {
+  .rahsepar-stage__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rahsepar-stage__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .rahsepar-stage__print-btn,
+  .rahsepar-stage__upload-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

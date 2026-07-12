@@ -58,3 +58,19 @@ export function buildQcItemFromPurchaseRow(row) {
     supplierName: row.supplierName || '—',
   };
 }
+
+/**
+ * Soft/hard gate helper: every fulfilled purchase row has a non-rejected QC record.
+ */
+export function isOrderQcComplete(order, purchaseRows = null) {
+  const rows = purchaseRows || [];
+  if (!rows.length) {
+    const inspections = Object.values(getOrderQcInspections(order));
+    return inspections.length > 0
+      && inspections.every((item) => item?.itemStatus && item.itemStatus !== 'rejected');
+  }
+  return rows.every((row) => {
+    const qc = getQcInspectionForRow(order, row);
+    return Boolean(qc?.itemStatus) && qc.itemStatus !== 'rejected';
+  });
+}
