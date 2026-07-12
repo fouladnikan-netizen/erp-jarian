@@ -8,21 +8,49 @@ import {
   isTajhizStageLive,
   issueShippingVoucher,
 } from '../../../tajhizStageService';
+import {
+  getQcInspectionForRow,
+  getQcRowKey,
+  getQcStatusMeta,
+} from '../../../qcInspectionConfig';
 import { printShippingVoucher } from '../../../shippingPrint';
 import QcDocumentModal from './QcDocumentModal';
 import ShippingModal from './ShippingModal';
 
 const TAJHIZ_COLUMNS = [
   { key: 'row', label: 'ردیف', defaultWidth: 56, resizable: false },
-  { key: 'name', label: 'شرح کالا', defaultWidth: 150 },
-  { key: 'description', label: 'توضیحات کالا', defaultWidth: 180 },
+  { key: 'name', label: 'شرح کالا', defaultWidth: 140 },
+  { key: 'description', label: 'توضیحات کالا', defaultWidth: 160 },
+  { key: 'qcStatus', label: 'وضعیت کیفی', defaultWidth: 120 },
   { key: 'qty', label: 'مقدار', defaultWidth: 72 },
   { key: 'unit', label: 'واحد', defaultWidth: 64 },
   { key: 'supplyType', label: 'نوع تامین', defaultWidth: 90 },
   { key: 'supplier', label: 'نام تامین‌کننده', defaultWidth: 140 },
   { key: 'warehouseVoucher', label: 'حواله انبار', defaultWidth: 120 },
-  { key: 'warehouseAddress', label: 'آدرس انبار', defaultWidth: 200 },
+  { key: 'warehouseAddress', label: 'آدرس انبار', defaultWidth: 180 },
 ];
+
+function QcStatusCell({ record, onOpen }) {
+  if (!record?.itemStatus) {
+    return <span className="qc-status qc-status--pending">در انتظار بازرسی</span>;
+  }
+
+  const meta = getQcStatusMeta(record.itemStatus);
+  if (!meta) {
+    return <span className="qc-status qc-status--pending">در انتظار بازرسی</span>;
+  }
+
+  return (
+    <button
+      type="button"
+      className={`qc-status-badge qc-status-badge--${meta.tone}`}
+      onClick={onOpen}
+      title="مشاهده جزئیات کنترل کیفیت"
+    >
+      {meta.label}
+    </button>
+  );
+}
 
 export default function TajhizStagePanel({
   order,
@@ -34,8 +62,34 @@ export default function TajhizStagePanel({
   const rows = useMemo(() => getFulfilledPurchaseRows(order), [order]);
   const expertNotes = useMemo(() => getTajhizExpertNotes(order), [order]);
   const [qcOpen, setQcOpen] = useState(false);
+  const [qcMode, setQcMode] = useState('inspect');
+  const [qcFocusRowKey, setQcFocusRowKey] = useState(null);
+  const [qcInitialRecord, setQcInitialRecord] = useState(null);
   const [shippingOpen, setShippingOpen] = useState(false);
-  const { widths, startResize } = useResizableColumns('nabz-tajhiz-purchases', TAJHIZ_COLUMNS);
+  const { widths, startResize } = useResizableColumns('nabz-tajhiz-purchases-v2', TAJHIZ_COLUMNS);
+
+  const openInspectDrawer = () => {
+    setQcMode('inspect');
+    setQcFocusRowKey(null);
+    setQcInitialRecord(null);
+    setQcOpen(true);
+  };
+
+  const openReadonlyDrawer = (row) => {
+    const record = getQcInspectionForRow(order, row);
+    if (!record) return;
+    setQcMode('readonly');
+    setQcFocusRowKey(getQcRowKey(row));
+    setQcInitialRecord(record);
+    setQcOpen(true);
+  };
+
+  const closeQcDrawer = () => {
+    setQcOpen(false);
+    setQcMode('inspect');
+    setQcFocusRowKey(null);
+    setQcInitialRecord(null);
+  };
 
   const handleGenerateShipping = (carrierId) => {
     const result = issueShippingVoucher(order, carrierId);
@@ -75,6 +129,7 @@ export default function TajhizStagePanel({
                   columnKey={col.key}
                   resizable={col.resizable !== false}
                   onResizeStart={startResize}
+                  style={{ width: widths[col.key] }}
                 >
                   {col.label}
                 </ResizableTh>
@@ -89,19 +144,28 @@ export default function TajhizStagePanel({
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
-                <tr key={row.rowNumber}>
-                  <td>{row.rowNumber.toLocaleString('fa-IR')}</td>
-                  <td>{row.name}</td>
-                  <td>{row.description}</td>
-                  <td>{row.qty.toLocaleString('fa-IR')}</td>
-                  <td>{row.unit}</td>
-                  <td>{row.supplyType}</td>
-                  <td>{row.supplierName}</td>
-                  <td>{row.warehouseVoucherCode}</td>
-                  <td>{row.warehouseAddress}</td>
-                </tr>
-              ))
+              rows.map((row) => {
+                const qcRecord = getQcInspectionForRow(order, row);
+                return (
+                  <tr key={getQcRowKey(row)}>
+                    <td>{row.rowNumber.toLocaleString('fa-IR')}</td>
+                    <td>{row.name}</td>
+                    <td>{row.description}</td>
+                    <td>
+                      <QcStatusCell
+                        record={qcRecord}
+                        onOpen={() => openReadonlyDrawer(row)}
+                      />
+                    </td>
+                    <td>{row.qty.toLocaleString('fa-IR')}</td>
+                    <td>{row.unit}</td>
+                    <td>{row.supplyType}</td>
+                    <td>{row.supplierName}</td>
+                    <td>{row.warehouseVoucherCode}</td>
+                    <td>{row.warehouseAddress}</td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -116,7 +180,7 @@ export default function TajhizStagePanel({
         <button
           type="button"
           className="btn btn--outline"
-          onClick={() => setQcOpen(true)}
+          onClick={openInspectDrawer}
         >
           فرم کنترل کیفیت
         </button>
@@ -136,7 +200,15 @@ export default function TajhizStagePanel({
         </p>
       )}
 
-      <QcDocumentModal open={qcOpen} order={order} onClose={() => setQcOpen(false)} />
+      <QcDocumentModal
+        open={qcOpen}
+        order={order}
+        onClose={closeQcDrawer}
+        onUpdateOrder={onUpdateOrder}
+        mode={qcMode}
+        focusRowKey={qcFocusRowKey}
+        initialRecord={qcInitialRecord}
+      />
       <ShippingModal
         open={shippingOpen}
         order={order}

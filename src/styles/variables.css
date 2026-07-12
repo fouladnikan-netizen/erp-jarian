@@ -2,6 +2,9 @@
   --color-brand-red: #D32F2F;
   --color-brand-red-hover: #B71C1C;
   --color-brand-red-active: #9A1515;
+  --color-brand-red-glossy: #E53935;
+  --color-white-glossy: #FFFFFF;
+  --color-silver-glossy: #B8BFCA;
   --color-accent: #0ad1ba;
   --color-accent-dark: #0D9488;
   --color-accent-muted: rgba(10, 209, 186, 0.12);
@@ -34,7 +37,9 @@
   --status-silent: #475569;
 
   --font-primary: 'Jaryan', 'Vazirmatn', Tahoma, sans-serif;
+  --font-numeric: 'Yekan Bakh', Tahoma, sans-serif;
   --font-secondary: 'Vazirmatn', Tahoma, sans-serif;
+  --font-body: var(--font-primary), var(--font-numeric), Tahoma, sans-serif;
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -64,7 +69,7 @@ html {
 }
 
 body {
-  font-family: var(--font-primary);
+  font-family: var(--font-body);
   background: var(--bg-body);
   color: var(--text-primary);
   line-height: 1.6;
@@ -85,10 +90,19 @@ button {
 
 input,
 select {
-  font-family: var(--font-secondary);
+  font-family: var(--font-body);
 }
 
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+.font-meem {
+  font-family: var(--font-primary), Tahoma, sans-serif;
+}
+
+.font-yekan {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
 }

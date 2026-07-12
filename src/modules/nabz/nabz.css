@@ -6563,6 +6563,51 @@
   cursor: not-allowed;
 }
 
+/* QC status in Tajhiz table */
+.qc-status {
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.qc-status--pending {
+  color: #6B7280;
+}
+
+.qc-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.qc-status-badge--ok {
+  background: #EAF5EA;
+  color: #2E8B57;
+}
+
+.qc-status-badge--warn {
+  background: #FFF7E6;
+  color: #D98A00;
+}
+
+.qc-status-badge--danger {
+  background: #FCEAEA;
+  color: #C0392B;
+}
+
+.qc-status-badge:hover {
+  filter: brightness(0.97);
+}
+
 .tajhiz-stage__readonly-hint {
   margin: 0;
   padding: 0.65rem 0.75rem;
@@ -6577,27 +6622,6 @@
 .tajhiz-stage--compact .tajhiz-stage__table td {
   padding: 0.4rem 0.5rem;
   font-size: 0.76rem;
-}
-
-.qc-doc__checklist {
-  margin-top: 0.35rem;
-  padding: 0.75rem 0.85rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: var(--radius-sm);
-}
-
-.qc-doc__checklist h3 {
-  margin: 0 0 0.45rem;
-  font-size: 0.85rem;
-}
-
-.qc-doc__checklist ul {
-  margin: 0;
-  padding-right: 1.1rem;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
 }
 
 /* ——— Phase 2 operations profile ——— */

@@ -17,13 +17,30 @@
 }
 
 .btn--primary {
-  background: linear-gradient(145deg, #ff4d4d 0%, var(--action-primary) 50%, #991b1b 100%);
-  color: var(--color-white);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-brand-red-glossy) 88%, white) 0%,
+    var(--color-brand-red-glossy) 48%,
+    color-mix(in srgb, var(--color-brand-red-glossy) 82%, black) 100%
+  );
+  color: var(--color-white-glossy);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.14);
 }
 
 .btn--primary:hover {
-  background: linear-gradient(145deg, #ff6666 0%, var(--color-brand-red-hover) 50%, #7f1515 100%);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-brand-red-glossy) 92%, white) 0%,
+    var(--color-brand-red-hover) 50%,
+    color-mix(in srgb, var(--color-brand-red-active) 90%, black) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+    0 2px 4px rgba(0, 0, 0, 0.16);
 }
 
 .btn--accent {
@@ -366,10 +383,12 @@
   overflow: visible;
 }
 
-.resizable-th__handle {
+.resizable-th__handle,
+.resizer-handle {
   position: absolute;
   top: 0;
   bottom: 0;
+  /* RTL: inline-end = left edge — drag left widens column */
   inset-inline-end: 0;
   width: 6px;
   margin-inline-end: -3px;
@@ -379,6 +398,8 @@
 }
 
 .resizable-th__handle:hover,
-.resizable-th__handle:active {
+.resizable-th__handle:active,
+.resizer-handle:hover,
+.resizer-handle:active {
   background: rgba(13, 148, 136, 0.22);
 }

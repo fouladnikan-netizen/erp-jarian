@@ -35,9 +35,10 @@
   unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
 }
 
+/* فونت یکان‌بخ — منحصراً اعداد (فارسی و انگلیسی) */
 @font-face {
-  font-family: 'Jaryan';
-  src: url('/assets/fonts/meem/MeemFaNum-Regular.woff2') format('woff2');
+  font-family: 'Yekan Bakh';
+  src: url('/assets/fonts/yekan-bakh/YekanBakh-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -45,12 +46,61 @@
 }
 
 @font-face {
-  font-family: 'Jaryan';
-  src: url('/assets/fonts/meem/MeemFaNum-Bold.woff2') format('woff2');
+  font-family: 'Yekan Bakh';
+  src: url('/assets/fonts/yekan-bakh/YekanBakh-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0030-0039, U+06F0-06F9;
+}
+
+@font-face {
+  font-family: 'Yekan Bakh';
+  src: url('/assets/fonts/yekan-bakh/YekanBakh-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0030-0039, U+06F0-06F9;
+}
+
+@font-face {
+  font-family: 'Yekan Bakh';
+  src: url('/assets/fonts/yekan-bakh/YekanBakh-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
   unicode-range: U+0030-0039, U+06F0-06F9;
+}
+
+/* AppFont — dual typography via unicode-range (QC / forms) */
+@font-face {
+  font-family: 'AppFont';
+  src: url('/assets/fonts/yekan-bakh/YekanBakh-Regular.woff2') format('woff2'),
+       local('YekanBakh');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+06F0-06F9, U+0030-0039;
+}
+
+@font-face {
+  font-family: 'AppFont';
+  src: url('/assets/fonts/meem/MeemFaNum-Regular.woff2') format('woff2'),
+       local('Meem');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06EF, U+0750-077F, U+FB50-FDFF;
+}
+
+@font-face {
+  font-family: 'AppFont';
+  src: url('/assets/fonts/meem/MeemFaNum-Bold.woff2') format('woff2'),
+       local('Meem');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06EF, U+0750-077F, U+FB50-FDFF;
 }
 
 /* فونت کمکی — برای برچسب‌ها و placeholder */
