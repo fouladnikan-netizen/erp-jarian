@@ -470,6 +470,7 @@ export default function QuickInquiryModal({
               order={order}
               compact
               onUpdateOrder={updateModalOrder}
+              onOperationalPhaseChange={pipeline.handleOperationalPhaseChange}
             />
           ) : (
             <>

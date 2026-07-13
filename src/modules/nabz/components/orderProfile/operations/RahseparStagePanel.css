@@ -1,4 +1,4 @@
-/* رهسپار — بارگیری و حواله خروج (Pure CSS, RTL) */
+/* رهسپار — بارگیری جزئی / چندمرحله‌ای (Pure CSS, RTL) */
 
 .rahsepar-stage {
   display: flex;
@@ -6,6 +6,7 @@
   gap: 1rem;
   direction: rtl;
   background: #FFFFFF;
+  font-family: var(--font-primary), Tahoma, sans-serif;
 }
 
 .rahsepar-stage__head {
@@ -63,6 +64,25 @@
   color: var(--text-primary);
 }
 
+.rahsepar-stage__table-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.55rem;
+}
+
+.rahsepar-stage__table-head .rahsepar-stage__section-title {
+  margin: 0;
+}
+
+.rahsepar-stage__selection-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
 .rahsepar-stage__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -79,6 +99,7 @@
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-secondary);
+  font-family: var(--font-primary), Tahoma, sans-serif;
 }
 
 .rahsepar-stage__input,
@@ -89,14 +110,37 @@
   border-radius: var(--radius-sm);
   background: #FFFFFF;
   color: var(--text-primary);
-  font: inherit;
+  font-family: var(--font-primary), Tahoma, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
   box-shadow: none;
+}
+
+.rahsepar-stage .font-yekan,
+.rahsepar-stage__input.font-yekan,
+.rahsepar-stage__cell-input.font-yekan,
+.rahsepar-stage__table .font-yekan {
+  font-family: 'Yekan Bakh', var(--font-numeric), Tahoma, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.rahsepar-stage .font-meem,
+.rahsepar-stage__input.font-meem {
+  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
 }
 
 .rahsepar-stage__input:focus,
 .rahsepar-stage__cell-input:focus {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
+}
+
+.rahsepar-stage__cell-input:disabled {
+  background: #F5F6F8;
+  color: #9CA3AF;
+  border-color: #E2E5EA;
+  cursor: not-allowed;
 }
 
 .rahsepar-stage__table-section {
@@ -133,6 +177,27 @@
 
 .rahsepar-stage__table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.rahsepar-stage__row.is-deselected td {
+  background: #FAFBFC;
+}
+
+.rahsepar-stage__col--select {
+  width: 2.75rem;
+  text-align: center;
+}
+
+.rahsepar-stage__checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-brand-red);
+  cursor: pointer;
+}
+
+.rahsepar-stage__readonly-num {
+  display: inline-block;
+  min-width: 3rem;
 }
 
 .rahsepar-stage__th-hint {
@@ -176,34 +241,36 @@
   flex-wrap: wrap;
 }
 
-/* Glossy CTA — only allowed gloss */
+/* Flat print CTA — gloss reserved for Saranjam transition only */
 .rahsepar-stage__print-btn {
   padding: 0.7rem 1.15rem;
-  border: none;
+  border: 1px solid #E2E5EA;
   border-radius: var(--radius-sm);
-  background: linear-gradient(145deg, #ff4d4d 0%, #dc2626 50%, #991b1b 100%);
-  color: #ffffff;
-  font: inherit;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-family: var(--font-primary), Tahoma, sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 1px 2px rgba(0, 0, 0, 0.15);
-  transition: filter 0.3s ease;
+  box-shadow: none;
+  transition: background 0.2s ease;
 }
 
 .rahsepar-stage__print-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
+  background: #F5F6F8;
 }
 
 .rahsepar-stage__print-btn:disabled {
-  background: #CBD2DA;
-  color: #FFFFFF;
+  background: #F5F6F8;
+  color: #9CA3AF;
+  border-color: #E2E5EA;
   box-shadow: none;
   cursor: not-allowed;
-  filter: none;
   opacity: 1;
+}
+
+.rahsepar-stage__cell-input--notes {
+  font-family: 'AppFont', 'Jaryan', 'Yekan Bakh', Tahoma, sans-serif;
 }
 
 .rahsepar-stage__upload {
@@ -222,7 +289,7 @@
   border-radius: var(--radius-sm);
   background: #FFFFFF;
   color: var(--text-primary);
-  font: inherit;
+  font-family: var(--font-primary), Tahoma, sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -233,6 +300,12 @@
   background: #F5F6F8;
 }
 
+.rahsepar-stage__upload-btn.is-uploaded {
+  border-color: #86EFAC;
+  background: #F0FDF4;
+  color: #166534;
+}
+
 .rahsepar-stage__file {
   display: none;
 }
@@ -240,6 +313,55 @@
 .rahsepar-stage__upload-name {
   font-size: 0.75rem;
   color: var(--text-secondary);
+}
+
+.rahsepar-stage__transition {
+  display: flex;
+  justify-content: stretch;
+  padding-top: 0.15rem;
+}
+
+/* Glossy CTA — ONLY allowed gloss (Saranjam gate) */
+.rahsepar-stage__advance-btn {
+  width: 100%;
+  padding: 0.85rem 1.15rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(145deg, #ff4d4d 0%, #dc2626 50%, #991b1b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.15);
+  color: #ffffff;
+  font-family: var(--font-primary), Tahoma, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.3s ease;
+}
+
+.rahsepar-stage__advance-btn:hover {
+  filter: brightness(1.1);
+}
+
+.rahsepar-stage__toast {
+  padding: 0.7rem 0.85rem;
+  background: #1F2937;
+  color: #FFFFFF;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.rahsepar-stage__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .rahsepar-stage--compact .rahsepar-stage__title {
@@ -263,8 +385,33 @@
   }
 
   .rahsepar-stage__print-btn,
-  .rahsepar-stage__upload-btn {
+  .rahsepar-stage__upload-btn,
+  .rahsepar-stage__advance-btn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ——— Print: only PrintableSooratBar; hide interactive chrome ——— */
+@media print {
+  body.rahsepar-printing * {
+    visibility: hidden;
+  }
+
+  body.rahsepar-printing .printable-sooratbar,
+  body.rahsepar-printing .printable-sooratbar * {
+    visibility: visible !important;
+  }
+
+  body.rahsepar-printing .rahsepar-stage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    background: #FFFFFF !important;
+    gap: 0;
+  }
+
+  body.rahsepar-printing .rahsepar-stage > :not(.printable-sooratbar) {
+    display: none !important;
   }
 }

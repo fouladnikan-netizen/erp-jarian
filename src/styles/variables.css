@@ -99,10 +99,10 @@ select {
 }
 
 .font-meem {
-  font-family: var(--font-primary), Tahoma, sans-serif;
+  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
 }
 
 .font-yekan {
-  font-family: var(--font-numeric);
+  font-family: 'Yekan Bakh', var(--font-numeric), Tahoma, sans-serif !important;
   font-variant-numeric: tabular-nums;
 }

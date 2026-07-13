@@ -131,6 +131,7 @@ export default function OrderProfileOperationsTab({
       <RahseparStagePanel
         order={order}
         onUpdateOrder={onUpdateOrder}
+        onOperationalPhaseChange={onOperationalPhaseChange}
         compact={false}
       />
     );
