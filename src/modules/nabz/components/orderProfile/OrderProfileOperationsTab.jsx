@@ -25,6 +25,7 @@ import ParvaneStagePanel from './operations/ParvaneStagePanel';
 import TadarokStagePanel from './operations/TadarokStagePanel';
 import TajhizStagePanel from './operations/TajhizStagePanel';
 import RahseparStagePanel from './operations/RahseparStagePanel';
+import SaranjamStagePanel from './operations/SaranjamStagePanel';
 
 function FlatField({ label, children }) {
   return (
@@ -132,6 +133,16 @@ export default function OrderProfileOperationsTab({
         order={order}
         onUpdateOrder={onUpdateOrder}
         onOperationalPhaseChange={onOperationalPhaseChange}
+        compact={false}
+      />
+    );
+  }
+
+  if (activePhase === OPERATIONAL_PHASES.SARANJAM) {
+    return (
+      <SaranjamStagePanel
+        order={order}
+        onUpdateOrder={onUpdateOrder}
         compact={false}
       />
     );

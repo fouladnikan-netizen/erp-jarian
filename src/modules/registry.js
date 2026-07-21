@@ -4,11 +4,11 @@
 
 export const mainModules = [
   {
-    id: 'kanoon',
-    path: '/',
-    name: 'کانون',
-    subtitle: 'مخاطبین',
-    description: 'نقطه اتصال و چرخش تمام اشخاص، شرکت‌ها، مشتریان و تأمین‌کنندگان',
+    id: 'nabz',
+    path: '/nabz',
+    name: 'نبض',
+    subtitle: 'سفارشات',
+    description: 'قلب تپنده عملیات؛ مدیریت جریان ده‌مرحله‌ای سفارش از اعلام تا سرانجام',
   },
   {
     id: 'ofogh',
@@ -18,11 +18,11 @@ export const mainModules = [
     description: 'مدیریت خط لوله فروش، فرصت‌های تجاری و پیش‌بینی درآمد',
   },
   {
-    id: 'nabz',
-    path: '/nabz',
-    name: 'نبض',
-    subtitle: 'سفارشات',
-    description: 'قلب تپنده عملیات؛ مدیریت جریان ده‌مرحله‌ای سفارش از اعلام تا سرانجام',
+    id: 'kanoon',
+    path: '/',
+    name: 'کانون',
+    subtitle: 'مخاطبین',
+    description: 'نقطه اتصال و چرخش تمام اشخاص، شرکت‌ها، مشتریان و تأمین‌کنندگان',
   },
   {
     id: 'vitrin',

@@ -5,7 +5,7 @@
   flex-direction: column;
   gap: 1rem;
   direction: rtl;
-  background: #FFFFFF;
+  background: var(--bg-surface);
   font-family: var(--font-primary), Tahoma, sans-serif;
 }
 
@@ -35,8 +35,8 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.45rem 0.7rem;
-  background: #F5F6F8;
-  border: 1px solid #E2E5EA;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
   color: var(--text-secondary);
@@ -50,8 +50,8 @@
 
 .rahsepar-stage__card {
   padding: 1rem;
-  background: #F5F6F8;
-  border: 1px solid #E2E5EA;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   box-shadow: none;
 }
@@ -106,9 +106,9 @@
 .rahsepar-stage__cell-input {
   width: 100%;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #E2E5EA;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  background: #FFFFFF;
+  background: var(--bg-surface);
   color: var(--text-primary);
   font-family: var(--font-primary), Tahoma, sans-serif;
   font-size: 0.875rem;
@@ -137,21 +137,21 @@
 }
 
 .rahsepar-stage__cell-input:disabled {
-  background: #F5F6F8;
+  background: var(--bg-muted);
   color: #9CA3AF;
-  border-color: #E2E5EA;
+  border-color: var(--border-default);
   cursor: not-allowed;
 }
 
 .rahsepar-stage__table-section {
-  background: #FFFFFF;
+  background: var(--bg-surface);
 }
 
 .rahsepar-stage__table-wrap {
   overflow: auto;
-  border: 1px solid #E2E5EA;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  background: #FFFFFF;
+  background: var(--bg-surface);
 }
 
 .rahsepar-stage__table {
@@ -163,14 +163,14 @@
 .rahsepar-stage__table th,
 .rahsepar-stage__table td {
   padding: 0.65rem 0.7rem;
-  border-bottom: 1px solid #E2E5EA;
+  border-bottom: 1px solid var(--border-default);
   text-align: right;
   font-size: 0.82rem;
   vertical-align: middle;
 }
 
 .rahsepar-stage__table th {
-  background: #F5F6F8;
+  background: var(--bg-muted);
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -225,7 +225,7 @@
   margin: 0;
   padding: 0.7rem 0.85rem;
   background: #FFF7E6;
-  border: 1px solid #E2E5EA;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   color: #D98A00;
   font-size: 0.82rem;
@@ -244,9 +244,9 @@
 /* Flat print CTA — gloss reserved for Saranjam transition only */
 .rahsepar-stage__print-btn {
   padding: 0.7rem 1.15rem;
-  border: 1px solid #E2E5EA;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  background: #FFFFFF;
+  background: var(--bg-surface);
   color: var(--text-primary);
   font-family: var(--font-primary), Tahoma, sans-serif;
   font-size: 0.9rem;
@@ -257,13 +257,13 @@
 }
 
 .rahsepar-stage__print-btn:hover:not(:disabled) {
-  background: #F5F6F8;
+  background: var(--bg-muted);
 }
 
 .rahsepar-stage__print-btn:disabled {
-  background: #F5F6F8;
+  background: var(--bg-muted);
   color: #9CA3AF;
-  border-color: #E2E5EA;
+  border-color: var(--border-default);
   box-shadow: none;
   cursor: not-allowed;
   opacity: 1;
@@ -285,9 +285,9 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.6rem 0.95rem;
-  border: 1px solid #E2E5EA;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  background: #FFFFFF;
+  background: var(--bg-surface);
   color: var(--text-primary);
   font-family: var(--font-primary), Tahoma, sans-serif;
   font-size: 0.85rem;
@@ -297,7 +297,7 @@
 }
 
 .rahsepar-stage__upload-btn:hover {
-  background: #F5F6F8;
+  background: var(--bg-muted);
 }
 
 .rahsepar-stage__upload-btn.is-uploaded {
@@ -331,7 +331,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.35),
     0 1px 2px rgba(0, 0, 0, 0.15);
-  color: #ffffff;
+  color: var(--color-white-glossy);
   font-family: var(--font-primary), Tahoma, sans-serif;
   font-size: 0.95rem;
   font-weight: 700;
@@ -345,8 +345,8 @@
 
 .rahsepar-stage__toast {
   padding: 0.7rem 0.85rem;
-  background: #1F2937;
-  color: #FFFFFF;
+  background: var(--text-primary);
+  color: var(--color-white-glossy);
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
   text-align: center;

@@ -506,13 +506,17 @@
 }
 
 @media print {
-  @page {
+  @page proforma {
     size: A4 portrait;
     margin: 0;
   }
 
-  html,
-  body {
+  .proforma-preview-page,
+  .invoice-doc {
+    page: proforma;
+  }
+
+  body:has(.proforma-preview-page) {
     background: #fff !important;
     margin: 0;
     padding: 0 !important;

@@ -61,7 +61,13 @@
 .header__actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.header__actions .btn--icon[aria-pressed='true'] {
+  background: var(--bg-muted);
+  color: var(--color-accent-dark);
 }
 
 /* ——— سایدبار ثابت ——— */
@@ -166,7 +172,7 @@
 }
 
 .sidebar__toggle:hover {
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
   color: var(--text-primary);
 }
 
@@ -215,7 +221,7 @@
 }
 
 .sidebar__link:hover {
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
 }
 
 .sidebar__link.is-active {
@@ -240,7 +246,7 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
   flex-shrink: 0;
   color: var(--text-secondary);
 }
@@ -283,8 +289,8 @@
   content: attr(title);
   position: absolute;
   right: calc(var(--sidebar-width-collapsed) + 8px);
-  background: var(--color-neutral-800);
-  color: var(--color-white);
+  background: #111827;
+  color: var(--color-white-glossy);
   padding: 0.35rem 0.65rem;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;

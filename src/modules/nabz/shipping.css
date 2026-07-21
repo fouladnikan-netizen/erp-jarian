@@ -146,12 +146,17 @@
 }
 
 @media print {
-  @page {
+  @page shipping {
     size: A4 portrait;
     margin: 10mm;
   }
 
-  body {
+  .shipping-preview-page,
+  .shipping-doc {
+    page: shipping;
+  }
+
+  body:has(.shipping-preview-page) {
     background: #fff !important;
   }
 

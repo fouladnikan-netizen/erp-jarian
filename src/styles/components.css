@@ -45,7 +45,7 @@
 
 .btn--accent {
   background: linear-gradient(145deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
-  color: var(--color-white);
+  color: var(--color-white-glossy);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
@@ -59,7 +59,7 @@
 }
 
 .btn--ghost:hover {
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
 }
 
 .btn--outline {
@@ -113,7 +113,7 @@
 .kpi-card {
   padding: 1rem 1.1rem;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #f8fafc 0%, #e8ecf1 55%, #dde3ea 100%);
+  background: linear-gradient(135deg, var(--bg-muted) 0%, var(--bg-surface) 55%, var(--border-default) 100%);
   border: 1px solid var(--border-default);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
@@ -187,7 +187,7 @@
   padding: 0.6rem 2.5rem 0.6rem 1rem;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
   font-size: 0.875rem;
   color: var(--text-primary);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -201,7 +201,7 @@
   outline: none;
   border-color: var(--color-accent-dark);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
-  background: var(--color-white);
+  background: var(--bg-surface);
 }
 
 .actions-bar__search-icon {
@@ -293,7 +293,7 @@
   font-weight: 600;
   font-size: 0.75rem;
   color: var(--text-secondary);
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
   white-space: nowrap;
 }
 
@@ -302,7 +302,7 @@
 }
 
 .data-table tbody tr:hover {
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
 }
 
 .data-table__actions {

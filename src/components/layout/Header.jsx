@@ -1,3 +1,5 @@
+import { useTheme, THEMES } from '../../theme/ThemeContext';
+
 function BellIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -7,7 +9,27 @@ function BellIcon() {
   );
 }
 
+function SunIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M21 14.3A8.5 8.5 0 0 1 9.7 3a7 7 0 1 0 11.3 11.3z" />
+    </svg>
+  );
+}
+
 export default function Header({ module }) {
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === THEMES.DARK;
+
   return (
     <header className="header" role="banner">
       <div className="header__inner">
@@ -17,6 +39,16 @@ export default function Header({ module }) {
         </div>
 
         <div className="header__actions">
+          <button
+            type="button"
+            className="btn btn--ghost btn--icon"
+            aria-label={isDark ? 'فعال‌سازی حالت روز' : 'فعال‌سازی حالت شب'}
+            aria-pressed={isDark}
+            title={isDark ? 'حالت روز' : 'حالت شب'}
+            onClick={toggleTheme}
+          >
+            {isDark ? <SunIcon /> : <MoonIcon />}
+          </button>
           <button type="button" className="btn btn--ghost btn--icon" aria-label="اعلان‌ها">
             <BellIcon />
           </button>

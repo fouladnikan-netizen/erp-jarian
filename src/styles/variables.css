@@ -1,4 +1,6 @@
 :root {
+  color-scheme: light;
+
   --color-brand-red: #D32F2F;
   --color-brand-red-hover: #B71C1C;
   --color-brand-red-active: #9A1515;
@@ -24,6 +26,9 @@
   --bg-body: var(--color-neutral-100);
   --bg-surface: var(--color-white);
   --bg-sidebar: var(--color-white);
+  --bg-muted: var(--color-neutral-50);
+  --bg-elevated: var(--color-white);
+  --bg-paper: #FFFFFF;
   --text-primary: var(--color-neutral-800);
   --text-secondary: var(--color-neutral-500);
   --border-default: var(--color-neutral-200);
@@ -54,6 +59,36 @@
   --transition-base: 250ms ease;
 }
 
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-neutral-50: #1C1F26;
+  --color-neutral-100: #12141A;
+  --color-neutral-200: #2A2F38;
+  --color-neutral-300: #3A4150;
+  --color-neutral-400: #8B93A1;
+  --color-neutral-500: #A8AFBA;
+  --color-neutral-600: #C5CAD3;
+  --color-neutral-700: #DEE2E8;
+  --color-neutral-800: #F3F4F6;
+  --color-neutral-900: #FAFAFA;
+
+  --color-accent-muted: rgba(10, 209, 186, 0.16);
+
+  --bg-body: #0B0B0D;
+  --bg-surface: #16181D;
+  --bg-sidebar: #12141A;
+  --bg-muted: #1C1F26;
+  --bg-elevated: #1C1F26;
+  --bg-paper: #FFFFFF;
+  --text-primary: #F3F4F6;
+  --text-secondary: #A8AFBA;
+  --border-default: #2A2F38;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
 *,
 *::before,
 *::after {
@@ -74,6 +109,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100dvh;
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
 a {

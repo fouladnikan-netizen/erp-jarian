@@ -256,12 +256,13 @@
 
 /* ——— Print: A4 laser-optimized ——— */
 @media print {
-  @page {
+  @page sooratbar {
     size: A4 portrait;
     margin: 12mm;
   }
 
   body.rahsepar-printing .printable-sooratbar {
+    page: sooratbar;
     display: block !important;
     visibility: visible !important;
     position: absolute;

@@ -9,6 +9,7 @@ import ParvaneStagePanel from './orderProfile/operations/ParvaneStagePanel';
 import TadarokStagePanel from './orderProfile/operations/TadarokStagePanel';
 import TajhizStagePanel from './orderProfile/operations/TajhizStagePanel';
 import RahseparStagePanel from './orderProfile/operations/RahseparStagePanel';
+import SaranjamStagePanel from './orderProfile/operations/SaranjamStagePanel';
 import { GATEWAY_PHASES } from '../gatewayConfig';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
@@ -305,6 +306,9 @@ export default function QuickInquiryModal({
   const showRahseparPanel = order.status === ORDER_TABS.SUCCESS
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.RAHESPAR;
+  const showSaranjamPanel = order.status === ORDER_TABS.SUCCESS
+    && pipeline.viewMode === 'operations'
+    && activeOperationalPhase === OPERATIONAL_PHASES.SARANJAM;
   const tableColumns = useMemo(
     () => (showQuoting ? [...BASE_QUICK_TABLE_COLUMNS, ...QUOTING_TABLE_COLUMNS] : BASE_QUICK_TABLE_COLUMNS),
     [showQuoting],
@@ -471,6 +475,12 @@ export default function QuickInquiryModal({
               compact
               onUpdateOrder={updateModalOrder}
               onOperationalPhaseChange={pipeline.handleOperationalPhaseChange}
+            />
+          ) : showSaranjamPanel ? (
+            <SaranjamStagePanel
+              order={order}
+              compact
+              onUpdateOrder={updateModalOrder}
             />
           ) : (
             <>

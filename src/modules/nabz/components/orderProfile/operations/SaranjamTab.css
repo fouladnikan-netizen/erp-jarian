@@ -1,0 +1,1012 @@
+/* سرانجام — تسویه، فاکتور رسمی، آپلود فیش، بایگانی (Pure CSS, RTL) */
+
+.saranjam-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  direction: rtl;
+  padding: 1rem;
+  background: var(--bg-muted);
+  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
+  color: var(--text-primary);
+}
+
+.saranjam-tab .font-meem {
+  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
+}
+
+.saranjam-tab .font-yekan,
+.saranjam-modal .font-yekan {
+  font-family: 'Yekan Bakh', var(--font-numeric), Tahoma, sans-serif !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.saranjam-tab__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.saranjam-tab__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.saranjam-tab__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.saranjam-tab__order-id {
+  margin: 0.55rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.saranjam-tab__order-id-value {
+  color: #DC2626;
+  font-weight: 700;
+}
+
+.saranjam-tab__head-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+
+.saranjam-tab__admin-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.saranjam-tab__admin-toggle input {
+  accent-color: var(--color-brand-red);
+}
+
+.saranjam-tab__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  max-width: 24rem;
+}
+
+.saranjam-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: none;
+}
+
+.saranjam-badge--warn {
+  background: #FFF3CD;
+  color: #92400E;
+  border: 1px solid #F5E6B8;
+}
+
+.saranjam-badge--danger {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+.saranjam-badge--ok {
+  background: #E6F4EA;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+.saranjam-tab__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.saranjam-card {
+  padding: 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.saranjam-card__title {
+  margin: 0 0 0.85rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.saranjam-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.saranjam-btn--flat {
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.saranjam-btn--flat:hover:not(:disabled) {
+  background: var(--bg-muted);
+}
+
+.saranjam-btn--flat:disabled {
+  color: #9CA3AF;
+  cursor: not-allowed;
+  background: var(--bg-muted);
+}
+
+.saranjam-btn--solid {
+  border: none;
+  background: #DC2626;
+  color: var(--color-white-glossy);
+}
+
+.saranjam-file-input {
+  display: none;
+}
+
+.saranjam-file-name {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.saranjam-supply-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.saranjam-supply-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+  box-shadow: none;
+}
+
+.saranjam-supply-row.is-done {
+  background: #E6F4EA;
+  border-color: #BBF7D0;
+  opacity: 1;
+}
+
+.saranjam-supply-row.is-missing {
+  background: #FFF3CD;
+  border-color: #F5E6B8;
+  opacity: 1;
+}
+
+.saranjam-supply-row__main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.saranjam-supply-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.saranjam-modal__panel--purchase {
+  width: min(960px, 100%);
+  max-height: min(92vh, 900px);
+  display: flex;
+  flex-direction: column;
+}
+
+.saranjam-purchase-modal__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.saranjam-purchase-preview {
+  flex: 1;
+  min-height: 420px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.saranjam-purchase-preview__frame {
+  width: 100%;
+  height: min(62vh, 620px);
+  border: 0;
+  background: #F8FAFC;
+}
+
+.saranjam-purchase-preview__image-wrap {
+  max-height: min(62vh, 620px);
+  overflow: auto;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.saranjam-purchase-preview__image {
+  max-width: 100%;
+  height: auto;
+}
+
+.saranjam-purchase-preview__empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #92400E;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.saranjam-supply-row__name {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.saranjam-supply-row__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.saranjam-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+  background: #D97706;
+  flex-shrink: 0;
+}
+
+.saranjam-status-ok {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #166534;
+  white-space: nowrap;
+}
+
+.saranjam-sales-pending,
+.saranjam-sales-done {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+}
+
+.saranjam-sales-done {
+  background: #E6F4EA;
+  border-color: #BBF7D0;
+}
+
+.saranjam-sales-done__status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.saranjam-sales-done__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.saranjam-sales-done__refs {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #166534;
+  line-height: 1.45;
+}
+
+.saranjam-sales-done__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.saranjam-sales-pending p {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.saranjam-ledgers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.saranjam-ledger.is-zero {
+  background: #E6F4EA;
+  border-color: #BBF7D0;
+}
+
+.saranjam-ledger__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+
+.saranjam-ledger__head .saranjam-card__title {
+  margin: 0;
+}
+
+.saranjam-pay-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.saranjam-pay-row {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr auto;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+  padding: 0.45rem 0.55rem;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+}
+
+.saranjam-pay-row .saranjam-file-name {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.saranjam-supplier-block .saranjam-pay-row {
+  grid-template-columns: 6.5rem 1fr;
+}
+
+.saranjam-pay-row--empty {
+  grid-template-columns: 1fr;
+  color: var(--text-secondary);
+}
+
+.saranjam-ledger__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-default);
+  font-size: 0.82rem;
+}
+
+.saranjam-supplier-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.saranjam-supplier-block {
+  padding: 0.7rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+}
+
+.saranjam-supplier-block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.saranjam-postmortem__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.saranjam-postmortem__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.saranjam-postmortem__cell strong {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.saranjam-postmortem__profit {
+  color: #15803D !important;
+  font-weight: 700;
+}
+
+.saranjam-tab__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.saranjam-tab__gate-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #92400E;
+  line-height: 1.5;
+}
+
+.saranjam-tab__archived {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #166534;
+  font-weight: 600;
+}
+
+.saranjam-archive-btn {
+  width: 100%;
+  padding: 0.85rem 1.15rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--border-default);
+  color: #9CA3AF;
+  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.saranjam-archive-btn.is-active {
+  background: linear-gradient(145deg, #ff4d4d 0%, #dc2626 50%, #991b1b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.15);
+  color: var(--color-white-glossy);
+  cursor: pointer;
+}
+
+.saranjam-archive-btn.is-active:hover {
+  filter: brightness(1.08);
+}
+
+.saranjam-toast {
+  padding: 0.7rem 0.85rem;
+  background: #1F2937;
+  color: var(--color-white-glossy);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  text-align: center;
+  box-shadow: none;
+}
+
+/* Modal + official A4 landscape invoice (14050233 reference) */
+.saranjam-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.saranjam-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(17, 24, 39, 0.45);
+  cursor: pointer;
+}
+
+.saranjam-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(1200px, 100%);
+  max-height: min(94vh, 980px);
+  overflow: auto;
+  padding: 1rem;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  direction: rtl;
+}
+
+.saranjam-modal__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.saranjam-modal__toolbar-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.saranjam-modal__close {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.saranjam-modal__lock-msg {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  background: #FFF3CD;
+  border: 1px solid #F5E6B8;
+  border-radius: var(--radius-sm);
+  color: #92400E;
+  font-size: 0.8rem;
+  box-shadow: none;
+}
+
+.saranjam-modal__lock-msg--info {
+  background: #E8F1FB;
+  border-color: #BFDBFE;
+  color: #1E3A5F;
+}
+
+/* Official sales invoice (14050233.pdf) — NOT proforma */
+.saranjam-taxdoc {
+  width: 100%;
+  max-width: 297mm;
+  margin: 0 auto;
+  padding: 0.6rem 0.75rem 0.85rem;
+  background: var(--bg-paper);
+  border: 1px solid #CBD5E1;
+  color: #111827;
+}
+
+.saranjam-taxdoc__top {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #CBD5E1;
+}
+
+.saranjam-taxdoc__top-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.saranjam-taxdoc__logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.saranjam-taxdoc__top-company {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.saranjam-taxdoc__title {
+  margin: 0;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.saranjam-taxdoc__top-meta {
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.saranjam-taxdoc__top-meta p {
+  margin: 0.1rem 0;
+}
+
+.saranjam-taxdoc__party-box {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr;
+  border: 1px solid #94A3B8;
+  margin-bottom: 0.45rem;
+  background: var(--bg-paper);
+}
+
+.saranjam-taxdoc__party-side {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F1F5F9;
+  border-left: 1px solid #94A3B8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.saranjam-taxdoc__party-body {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 0.35rem 0.75rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.saranjam-taxdoc__party-col p {
+  margin: 0.12rem 0;
+}
+
+.saranjam-taxdoc__k {
+  font-weight: 700;
+  color: #475569;
+}
+
+.saranjam-taxdoc__table-wrap {
+  overflow: auto;
+  border: 1px solid #94A3B8;
+}
+
+.saranjam-taxdoc__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.saranjam-taxdoc__table th,
+.saranjam-taxdoc__table td {
+  border: 1px solid #94A3B8;
+  padding: 0.28rem 0.22rem;
+  font-size: 0.62rem;
+  text-align: center;
+  vertical-align: middle;
+  background: var(--bg-paper);
+  color: #111827;
+  word-wrap: break-word;
+}
+
+.saranjam-taxdoc__table th {
+  background: #F8FAFC;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.saranjam-taxdoc__desc {
+  text-align: right !important;
+  padding-right: 0.35rem !important;
+}
+
+.saranjam-taxdoc__table th:nth-child(1),
+.saranjam-taxdoc__table td:nth-child(1) { width: 3.5%; }
+.saranjam-taxdoc__table th:nth-child(2),
+.saranjam-taxdoc__table td:nth-child(2) { width: 6%; }
+.saranjam-taxdoc__table th:nth-child(3),
+.saranjam-taxdoc__table td:nth-child(3) { width: 18%; }
+.saranjam-taxdoc__table th:nth-child(4),
+.saranjam-taxdoc__table td:nth-child(4) { width: 6%; }
+.saranjam-taxdoc__table th:nth-child(5),
+.saranjam-taxdoc__table td:nth-child(5) { width: 7%; }
+
+.saranjam-taxdoc__input {
+  width: 100%;
+  max-width: 5.5rem;
+  padding: 0.15rem 0.2rem;
+  border: 1px solid var(--border-default);
+  border-radius: 2px;
+  background: var(--bg-paper);
+  font-size: 0.62rem;
+  text-align: center;
+  box-shadow: none;
+}
+
+.saranjam-taxdoc__sum-row td {
+  background: #F8FAFC;
+  font-weight: 700;
+}
+
+.saranjam-taxdoc__sum-label {
+  text-align: left !important;
+  padding-left: 0.5rem !important;
+}
+
+.saranjam-taxdoc__bottom {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+}
+
+.saranjam-taxdoc__notes {
+  border: 1px solid #94A3B8;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  background: var(--bg-paper);
+}
+
+.saranjam-taxdoc__notes p {
+  margin: 0.2rem 0;
+}
+
+.saranjam-taxdoc__sign {
+  border: 1px solid #94A3B8;
+  min-height: 5.5rem;
+  padding: 0.45rem;
+  text-align: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: var(--bg-paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.saranjam-taxdoc__sign p {
+  margin: 0;
+}
+
+.saranjam-taxdoc__sign-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  margin-top: 0.35rem;
+  opacity: 0.85;
+}
+
+.saranjam-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.saranjam-tab--compact {
+  padding: 0.75rem;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  @page saranjam-invoice {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  html.saranjam-invoice-printing,
+  body.saranjam-invoice-printing {
+    width: 297mm !important;
+    min-height: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
+  }
+
+  body.saranjam-invoice-printing,
+  body.saranjam-invoice-printing .saranjam-taxdoc {
+    page: saranjam-invoice;
+  }
+
+  body.saranjam-invoice-printing * {
+    visibility: hidden;
+  }
+
+  body.saranjam-invoice-printing .saranjam-modal,
+  body.saranjam-invoice-printing .saranjam-modal__panel,
+  body.saranjam-invoice-printing .saranjam-taxdoc,
+  body.saranjam-invoice-printing .saranjam-taxdoc * {
+    visibility: visible !important;
+  }
+
+  body.saranjam-invoice-printing .saranjam-modal {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  body.saranjam-invoice-printing .saranjam-modal__panel {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  body.saranjam-invoice-printing .saranjam-modal__no-print,
+  body.saranjam-invoice-printing .saranjam-modal__backdrop,
+  body.saranjam-invoice-printing .saranjam-modal__toolbar,
+  body.saranjam-invoice-printing .saranjam-modal__lock-msg,
+  body.saranjam-invoice-printing .saranjam-modal__footer {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.saranjam-invoice-printing .saranjam-taxdoc {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    width: 277mm !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
+    border: none !important;
+    background: #FFFFFF !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    transform: none !important;
+  }
+
+  /* Keep landscape grid — do not collapse to single column when printing */
+  body.saranjam-invoice-printing .saranjam-taxdoc__top {
+    grid-template-columns: 1fr 1.4fr 1fr !important;
+  }
+
+  body.saranjam-invoice-printing .saranjam-taxdoc__party-body {
+    grid-template-columns: 1.35fr 1fr !important;
+  }
+
+  body.saranjam-invoice-printing .saranjam-taxdoc__bottom {
+    grid-template-columns: 1.4fr 1fr 1fr !important;
+  }
+
+  body.saranjam-invoice-printing .saranjam-taxdoc__party-side {
+    writing-mode: vertical-rl !important;
+    transform: rotate(180deg) !important;
+    border-left: 1px solid #94A3B8 !important;
+    border-bottom: none !important;
+  }
+
+  body.saranjam-invoice-printing .saranjam-taxdoc__party-side,
+  body.saranjam-invoice-printing .saranjam-taxdoc__table th,
+  body.saranjam-invoice-printing .saranjam-taxdoc__sum-row td {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.saranjam-invoice-printing .saranjam-taxdoc__input {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    max-width: none;
+  }
+
+  body.saranjam-invoice-printing .saranjam-taxdoc__party-box,
+  body.saranjam-invoice-printing .saranjam-taxdoc__table tr,
+  body.saranjam-invoice-printing .saranjam-taxdoc__bottom {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  body.saranjam-invoice-printing .saranjam-taxdoc__table {
+    width: 100% !important;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .saranjam-ledgers,
+  .saranjam-postmortem__grid,
+  .saranjam-taxdoc__top,
+  .saranjam-taxdoc__party-body,
+  .saranjam-taxdoc__bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .saranjam-taxdoc__party-side {
+    writing-mode: horizontal-tb;
+    transform: none;
+    border-left: none;
+    border-bottom: 1px solid #94A3B8;
+    padding: 0.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .saranjam-tab__head {
+    flex-direction: column;
+  }
+
+  .saranjam-tab__head-aside,
+  .saranjam-tab__badges {
+    align-items: flex-start;
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .saranjam-supply-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saranjam-btn {
+    width: 100%;
+  }
+}
