@@ -14,9 +14,11 @@ export function createLineItemFromProduct(product) {
     productId: product.id,
     name: product.title,
     description: product.description || '',
+    size: product.specs?.size || product.specs?.thickness || '',
+    preferredMill: product.specs?.preferredMill || '',
     qty: 1,
     unitPriceRial: null,
-    weight: product.specs?.unitWeight || '—',
+    weight: product.specs?.unitWeight || '',
     unit: product.unit,
   };
 }
@@ -74,11 +76,13 @@ export function buildNewOrder({
     registeredDate,
     registeredTime,
     items: lineItems.map(({
-      productId, name, description, qty, weight, unit,
+      productId, name, description, size, preferredMill, qty, weight, unit,
     }) => ({
       productId,
       name,
       description,
+      size: size || '',
+      preferredMill: preferredMill || '',
       qty: Number(qty),
       unitPriceRial: null,
       weight,

@@ -42,7 +42,7 @@ export default function CustomerCombobox({ value, onChange }) {
     <div className="nabz-combobox" ref={wrapRef}>
       <input
         type="search"
-        className="nabz-form__input"
+        className="nabz-form__input font-meem"
         placeholder="جستجو در مخاطبین کانون..."
         value={query}
         onChange={handleInput}

@@ -5,19 +5,21 @@ import { useResizableColumns } from '../../../hooks/useResizableColumns';
 
 const CREATE_LINE_COLUMNS = [
   { key: 'drag', defaultWidth: 36, resizable: false },
-  { key: 'name', defaultWidth: 140 },
-  { key: 'description', defaultWidth: 300 },
-  { key: 'qty', defaultWidth: 72 },
-  { key: 'weight', defaultWidth: 88 },
+  { key: 'name', defaultWidth: 150 },
+  { key: 'size', defaultWidth: 100 },
+  { key: 'preferredMill', defaultWidth: 130 },
+  { key: 'qty', defaultWidth: 78 },
+  { key: 'weight', defaultWidth: 110 },
   { key: 'unit', defaultWidth: 64, resizable: false },
   { key: 'remove', defaultWidth: 40, resizable: false },
 ];
 
 const COLUMN_LABELS = {
   drag: '',
-  name: 'نام کالا',
-  description: 'توضیحات',
-  qty: 'تعداد',
+  name: 'نوع محصول',
+  size: 'سایز',
+  preferredMill: 'کارخانه ترجیحی',
+  qty: 'مقدار',
   weight: 'وزن',
   unit: 'واحد',
   remove: '',
@@ -58,7 +60,7 @@ function reorderItems(items, fromIndex, toIndex) {
 export default function OrderLineItemsTable({ items, onChange, onRemove }) {
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
-  const { widths, startResize } = useResizableColumns('nabz-create-line-items', CREATE_LINE_COLUMNS);
+  const { widths, startResize } = useResizableColumns('nabz-create-line-items-v2', CREATE_LINE_COLUMNS);
 
   const updateLine = (lineId, key, value) => {
     onChange(items.map((item) => (item.lineId === lineId ? { ...item, [key]: value } : item)));
@@ -72,7 +74,7 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
   };
 
   return (
-    <div className="nabz-create-table-wrap">
+    <div className="nabz-create-table-wrap nabz-create-table-wrap--premium">
       <table className="nabz-create-table data-table--resizable">
         <ResizableColGroup columns={CREATE_LINE_COLUMNS} widths={widths} />
         <thead className="nabz-create-table__head">
@@ -85,11 +87,9 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
                 onResizeStart={startResize}
                 className={`nabz-create-table__sticky-th${
                   col.key === 'drag' ? ' nabz-create-table__drag-col' : ''
-                }${col.key === 'remove' ? ' nabz-create-table__remove-col' : ''}${
-                  col.key === 'description' ? ' nabz-create-table__desc-col' : ''
-                }`}
+                }${col.key === 'remove' ? ' nabz-create-table__remove-col' : ''}`}
               >
-                {COLUMN_LABELS[col.key]}
+                <span className="font-meem">{COLUMN_LABELS[col.key]}</span>
               </ResizableTh>
             ))}
           </tr>
@@ -119,20 +119,30 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
               <td className="nabz-create-table__drag-cell">
                 <DragHandle />
               </td>
-              <td className="nabz-create-table__name">{item.name}</td>
-              <td className="nabz-create-table__desc-cell">
+              <td className="nabz-create-table__name font-meem">{item.name}</td>
+              <td>
                 <input
                   type="text"
-                  className="nabz-create-table__input"
-                  value={item.description}
-                  onChange={(e) => updateLine(item.lineId, 'description', e.target.value)}
+                  className="nabz-create-table__input font-yekan"
+                  value={item.size || ''}
+                  onChange={(e) => updateLine(item.lineId, 'size', e.target.value)}
+                  placeholder="سایز"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  className="nabz-create-table__input font-meem"
+                  value={item.preferredMill || ''}
+                  onChange={(e) => updateLine(item.lineId, 'preferredMill', e.target.value)}
+                  placeholder="کارخانه"
                 />
               </td>
               <td>
                 <input
                   type="number"
                   min="1"
-                  className="nabz-create-table__input nabz-create-table__input--qty"
+                  className="nabz-create-table__input nabz-create-table__input--qty font-yekan"
                   value={item.qty}
                   onChange={(e) => updateLine(item.lineId, 'qty', Number(e.target.value))}
                 />
@@ -140,12 +150,13 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
               <td>
                 <input
                   type="text"
-                  className="nabz-create-table__input"
-                  value={item.weight}
+                  className="nabz-create-table__input font-yekan"
+                  value={item.weight || ''}
                   onChange={(e) => updateLine(item.lineId, 'weight', e.target.value)}
+                  placeholder="وزن"
                 />
               </td>
-              <td>{item.unit}</td>
+              <td className="font-meem">{item.unit}</td>
               <td className="nabz-create-table__remove-col">
                 <button
                   type="button"

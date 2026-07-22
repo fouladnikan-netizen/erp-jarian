@@ -13,9 +13,27 @@ export function computeNabzKpis(orders) {
   };
 
   return [
-    { label: 'سفارشات جاری', value: current.length.toLocaleString('fa-IR'), trend: formatBillions(currentValue), trendDir: 'up', variant: 'accent' },
-    { label: 'سفارشات موفق', value: success.length.toLocaleString('fa-IR'), trend: 'نهایی‌شده', trendDir: 'up' },
-    { label: 'سفارشات ناموفق', value: failed.length.toLocaleString('fa-IR'), trend: 'متوقف‌شده', trendDir: 'down', variant: 'danger' },
+    {
+      label: 'سفارشات جاری',
+      value: current.length.toLocaleString('fa-IR'),
+      trend: formatBillions(currentValue),
+      trendDir: 'up',
+      tone: 'current',
+    },
+    {
+      label: 'سفارشات موفق',
+      value: success.length.toLocaleString('fa-IR'),
+      trend: 'نهایی‌شده',
+      trendDir: 'up',
+      tone: 'success',
+    },
+    {
+      label: 'سفارشات ناموفق',
+      value: failed.length.toLocaleString('fa-IR'),
+      trend: 'متوقف‌شده',
+      trendDir: 'down',
+      tone: 'failed',
+    },
   ];
 }
 

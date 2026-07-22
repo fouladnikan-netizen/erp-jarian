@@ -69,12 +69,15 @@ export function getOrderDisplayStatus(order) {
     return ORDER_DISPLAY_STATUS.NEEDS_SUPPLY;
   }
 
-  if (isMozeneEarned(order)) {
-    return getStageLabel(order.stageId);
-  }
+  const effectiveId = getEffectiveStageId(order);
 
-  if (canEnterMozeneStage(order)) {
-    return getStageLabel(STAGE_MOZENE_ID);
+  // After inquiry completion, always show the live Kanban stage
+  // (fixes stuck «مظنه» label when stageId has already advanced to پیش‌کش+)
+  if (effectiveId >= STAGE_MOZENE_ID || canEnterMozeneStage(order)) {
+    if (canEnterMozeneStage(order) && effectiveId < STAGE_MOZENE_ID) {
+      return getStageLabel(STAGE_MOZENE_ID);
+    }
+    return getStageLabel(effectiveId);
   }
 
   return ORDER_DISPLAY_STATUS.EXPLORING;
@@ -88,7 +91,9 @@ export function getOrderDisplayStatusKind(order) {
   const label = getOrderDisplayStatus(order);
   if (label === ORDER_DISPLAY_STATUS.ANNOUNCING) return 'pending';
   if (label === ORDER_DISPLAY_STATUS.NEEDS_SUPPLY) return 'needs-supply';
-  if (label === ORDER_DISPLAY_STATUS.EXPLORING) return 'in-progress';
+  if (label === ORDER_DISPLAY_STATUS.EXPLORING || label === 'کاوش') return 'kavosh';
+  if (label === 'مظنه') return 'mozene';
+  if (label === 'پیش‌کش') return 'pishkesh';
   return 'stage';
 }
 

@@ -1,11 +1,5 @@
-import { useMemo, useState } from 'react';
-import {
-  CURRENT_USER,
-  DEFAULT_ORDER_TYPE,
-  DEFAULT_SALE_TYPE,
-  ORDER_TYPES,
-  SALES_TYPES,
-} from '../constants';
+import { useEffect, useMemo, useState } from 'react';
+import { CURRENT_USER, DEFAULT_ORDER_TYPE, DEFAULT_SALE_TYPE } from '../constants';
 import {
   buildNewOrder,
   createLineItemsFromSelections,
@@ -15,23 +9,28 @@ import CustomerCombobox from './CustomerCombobox';
 import ProductPickerModal from './ProductPickerModal';
 import OrderLineItemsTable from './OrderLineItemsTable';
 
-function FormField({ label, children }) {
+function FormField({ label, children, hint }) {
   return (
-    <label className="nabz-form__field nabz-form__field--minimal">
-      <span className="nabz-form__label">{label}</span>
+    <label className="nabz-form__field nabz-create-premium__field">
+      <span className="nabz-form__label font-meem">{label}</span>
       {children}
+      {hint ? <span className="nabz-form__hint font-meem">{hint}</span> : null}
     </label>
   );
 }
 
 export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
   const [customerId, setCustomerId] = useState(null);
-  const [orderType, setOrderType] = useState(DEFAULT_ORDER_TYPE);
-  const [saleType, setSaleType] = useState(DEFAULT_SALE_TYPE);
   const [lineItems, setLineItems] = useState([]);
   const [generalNotes, setGeneralNotes] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setEntered(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const validation = useMemo(
     () => validateCreateOrder({ customerId, lineItems }),
@@ -46,6 +45,11 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
     setLineItems((items) => items.filter((item) => item.lineId !== lineId));
   };
 
+  const handleClose = () => {
+    setEntered(false);
+    window.setTimeout(onClose, 220);
+  };
+
   const handleSubmit = () => {
     if (!validation.valid) {
       setSubmitError(validation.reason);
@@ -56,111 +60,134 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
       customerId,
       assignee: CURRENT_USER,
       lineItems,
-      orderType,
-      saleType,
+      orderType: DEFAULT_ORDER_TYPE,
+      saleType: DEFAULT_SALE_TYPE,
       generalNotes,
     });
     onSubmit(order);
-    onClose();
+    handleClose();
   };
 
   return (
     <>
-      <div className="nabz-drawer-overlay nabz-drawer-overlay--create" onClick={onClose} role="presentation">
+      <div
+        className={`nabz-drawer-overlay nabz-drawer-overlay--create${entered ? ' is-open' : ''}`}
+        onClick={handleClose}
+        role="presentation"
+      >
         <aside
-          className="nabz-drawer nabz-drawer--create nabz-drawer--create-minimal"
+          className={`nabz-drawer nabz-drawer--create nabz-drawer--create-premium${entered ? ' is-open' : ''}`}
           role="dialog"
           aria-modal="true"
-          aria-label="ثبت سفارش جدید"
+          aria-labelledby="nabz-create-order-title"
           onClick={(e) => e.stopPropagation()}
         >
-          <header className="nabz-drawer__header nabz-drawer__header--create">
-            <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label="بستن">
+          <header className="nabz-create-premium__header">
+            <div className="nabz-create-premium__header-copy">
+              <p className="nabz-create-premium__eyebrow font-meem">نبض · سفارش جدید</p>
+              <h2 id="nabz-create-order-title" className="nabz-create-premium__title font-meem">
+                ثبت سفارش جدید
+              </h2>
+              <p className="nabz-create-premium__subtitle font-meem">
+                فقط مشتری، اقلام و یادداشت اولیه — جزئیات مالی و لجستیک بعداً تکمیل می‌شود.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="nabz-create-premium__close"
+              onClick={handleClose}
+              aria-label="بستن"
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M18 6 6 18M6 6l12 12" />
               </svg>
             </button>
-            <h2 className="nabz-drawer__title nabz-drawer__title--create">ثبت سفارش جدید</h2>
+          </header>
+
+          <div className="nabz-create-premium__body">
+            <section className="nabz-create-premium__section" aria-labelledby="nabz-create-customer">
+              <h3 id="nabz-create-customer" className="nabz-create-premium__section-title font-meem">
+                ۱. مشتری
+              </h3>
+              <FormField label="جستجو و انتخاب مشتری *">
+                <CustomerCombobox value={customerId} onChange={setCustomerId} />
+              </FormField>
+            </section>
+
+            <section className="nabz-create-premium__section" aria-labelledby="nabz-create-items">
+              <div className="nabz-create-premium__section-head">
+                <h3 id="nabz-create-items" className="nabz-create-premium__section-title font-meem">
+                  ۲. اقلام محصول
+                </h3>
+                <button
+                  type="button"
+                  className="nabz-create-premium__add-row font-meem"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  + افزودن سطر
+                </button>
+              </div>
+
+              {lineItems.length === 0 ? (
+                <div className="nabz-create-premium__empty">
+                  <p className="font-meem">هنوز کالایی اضافه نشده است.</p>
+                  <button
+                    type="button"
+                    className="nabz-create-premium__add-row nabz-create-premium__add-row--solid font-meem"
+                    onClick={() => setPickerOpen(true)}
+                  >
+                    انتخاب از ویترین
+                  </button>
+                </div>
+              ) : (
+                <OrderLineItemsTable
+                  items={lineItems}
+                  onChange={setLineItems}
+                  onRemove={removeLine}
+                />
+              )}
+            </section>
+
+            <section className="nabz-create-premium__section" aria-labelledby="nabz-create-notes">
+              <h3 id="nabz-create-notes" className="nabz-create-premium__section-title font-meem">
+                ۳. یادداشت اولیه
+              </h3>
+              <FormField label="توضیحات کارشناس فروش">
+                <textarea
+                  className="nabz-form__textarea nabz-create-premium__notes font-meem"
+                  rows={4}
+                  value={generalNotes}
+                  onChange={(e) => setGeneralNotes(e.target.value)}
+                  placeholder="نکات اولیه مربوط به این سفارش..."
+                />
+              </FormField>
+            </section>
+
+            {submitError && (
+              <p className="nabz-create-error font-meem" role="alert">{submitError}</p>
+            )}
+            {!validation.valid && validation.reason && (
+              <p className="nabz-create-hint font-meem">{validation.reason}</p>
+            )}
+          </div>
+
+          <footer className="nabz-create-premium__footer">
             <button
               type="button"
-              className="btn btn--primary"
+              className="nabz-create-premium__cancel font-meem"
+              onClick={handleClose}
+            >
+              انصراف
+            </button>
+            <button
+              type="button"
+              className="nabz-create-premium__submit font-meem"
               disabled={!validation.valid}
               onClick={handleSubmit}
             >
-              ثبت نهایی سفارش
+              ثبت و ایجاد سفارش
             </button>
-          </header>
-
-          <div className="nabz-drawer__body nabz-drawer__body--create nabz-drawer__body--create-minimal">
-            <section className="nabz-create-minimal">
-              <FormField label="مشتری *">
-                <CustomerCombobox value={customerId} onChange={setCustomerId} />
-              </FormField>
-
-              <FormField label="نوع سفارش">
-                <select
-                  className="nabz-form__input"
-                  value={orderType}
-                  onChange={(e) => setOrderType(e.target.value)}
-                >
-                  {ORDER_TYPES.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </FormField>
-
-              <FormField label="نوع فروش">
-                <select
-                  className="nabz-form__input"
-                  value={saleType}
-                  onChange={(e) => setSaleType(e.target.value)}
-                >
-                  {SALES_TYPES.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </FormField>
-
-              <FormField label="توضیحات کلی سفارش">
-                <textarea
-                  className="nabz-form__textarea nabz-form__textarea--minimal"
-                  rows={3}
-                  value={generalNotes}
-                  onChange={(e) => setGeneralNotes(e.target.value)}
-                  placeholder="نکات کلی مربوط به این سفارش..."
-                />
-              </FormField>
-
-              <div className="nabz-create-minimal__items">
-                <div className="nabz-create-minimal__items-head">
-                  <span className="nabz-form__label">اقلام سفارش *</span>
-                  <button type="button" className="btn btn--outline btn--sm" onClick={() => setPickerOpen(true)}>
-                    افزودن کالا
-                  </button>
-                </div>
-
-                {lineItems.length === 0 ? (
-                  <div className="nabz-create-empty nabz-create-empty--minimal">
-                    <p>کالایی انتخاب نشده است.</p>
-                    <button type="button" className="btn btn--outline btn--sm" onClick={() => setPickerOpen(true)}>
-                      انتخاب از ویترین
-                    </button>
-                  </div>
-                ) : (
-                  <OrderLineItemsTable
-                    items={lineItems}
-                    onChange={setLineItems}
-                    onRemove={removeLine}
-                  />
-                )}
-              </div>
-            </section>
-
-            {submitError && <p className="nabz-create-error" role="alert">{submitError}</p>}
-            {!validation.valid && validation.reason && (
-              <p className="nabz-create-hint">{validation.reason}</p>
-            )}
-          </div>
+          </footer>
         </aside>
       </div>
 
