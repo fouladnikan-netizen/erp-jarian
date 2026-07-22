@@ -1,7 +1,4 @@
-/** کاربر فعال سامانه — پیش‌فرض راهبر (مدیر) برای تست دسترسی کامل */
-export const CURRENT_USER = 'علی رضایی';
-export const CURRENT_USER_ROLE = 'leader';
-
+/** نقش‌های نبض */
 export const USER_ROLES = {
   KNIGHT: 'knight',
   EXPLORER: 'explorer',
@@ -11,6 +8,10 @@ export const USER_ROLES = {
   /** @deprecated use LEADER — راهبر */
   MANAGER: 'manager',
 };
+
+/** کاربر فعال سامانه — راهبر برای تست کامل همه ویرایش‌ها */
+export const CURRENT_USER = 'علی رضایی';
+export const CURRENT_USER_ROLE = USER_ROLES.LEADER;
 
 const SUPPLIER_VISIBLE_ROLES = new Set([
   USER_ROLES.EXPLORER,

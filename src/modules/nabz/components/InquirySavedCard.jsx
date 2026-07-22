@@ -14,7 +14,9 @@ export default function InquirySavedCard({ inquiry }) {
       {inquiry.notes && (
         <>
           <span className="nabz-inquiry-saved__sep">·</span>
-          <span className="nabz-inquiry-saved__notes">{inquiry.notes}</span>
+          <span className="nabz-inquiry-saved__notes" title={inquiry.notes}>
+            {inquiry.notes}
+          </span>
         </>
       )}
       {isDiscrepancySupplyType(inquiry.supplyType) && (

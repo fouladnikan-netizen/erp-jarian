@@ -30,6 +30,7 @@ export default function OrderProfileView({
   order,
   onUpdateOrder,
   onAddInquiry,
+  onUpdateInquiry,
   onSetTargetInquiry,
 }) {
   const navigate = useNavigate();
@@ -193,6 +194,7 @@ export default function OrderProfileView({
               currentStage={currentStage}
               operationalViewPhase={operationalViewPhase}
               onAddInquiry={onAddInquiry}
+              onUpdateInquiry={onUpdateInquiry}
               onSetTargetInquiry={onSetTargetInquiry}
               onUpdateOrder={updateOrder}
               onAdvancePhase={handleGatewayAdvance}

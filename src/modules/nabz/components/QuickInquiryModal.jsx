@@ -28,9 +28,8 @@ import {
 } from '../inquiryService';
 import { MARGIN_MODES } from '../quotingConfig';
 import { listSuppliers } from '../suppliers';
-import { PISHKESH_MODAL_TABS } from '../proformaConfig';
 import { getProformaTerms } from '../proformaService';
-import { isGatewayLivePhase } from '../gatewayService';
+import { isGatewayLivePhase, getGatewayPhaseIndex } from '../gatewayService';
 import {
   canEditInquiryPrices,
   canEditProfitMargin,
@@ -50,6 +49,7 @@ import {
   QuotingMatrix,
 } from './quickInquiryParts';
 import MoneyInput from './MoneyInput';
+import TruncatedText from './TruncatedText';
 
 const BASE_QUICK_TABLE_COLUMNS = [
   { key: 'row', defaultWidth: 52, resizable: false },
@@ -122,6 +122,7 @@ function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
         <span>نوع تامین</span>
         <span>{showSupplier ? 'نام تامین‌کننده' : 'مرجع تامین'}</span>
         <span>قیمت</span>
+        <span>توضیحات</span>
         <span />
       </div>
       <div className="nabz-inline-inquiry__fields">
@@ -154,6 +155,14 @@ function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
           onChange={(unitPrice) => onChange({ ...draft, unitPrice })}
           placeholder="قیمت"
           aria-label="قیمت"
+        />
+        <input
+          type="text"
+          className="nabz-inline-inquiry__input nabz-inline-inquiry__input--notes"
+          value={draft.notes || ''}
+          onChange={(e) => onChange({ ...draft, notes: e.target.value })}
+          placeholder="اختیاری"
+          aria-label="توضیحات استعلام"
         />
         <div className="nabz-inline-inquiry__actions">
           <button type="button" className="nabz-inline-inquiry__save" onClick={onSave} aria-label="ذخیره استعلام">
@@ -210,8 +219,12 @@ function SupplyStrip({
         onClick={() => onFocus(itemIndex)}
       >
         <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-        <td className="nabz-quick-table__name">{item.name}</td>
-        <td className="nabz-quick-table__desc">{item.description || '—'}</td>
+        <td className="nabz-quick-table__name">
+          <TruncatedText text={item.name} empty="—" />
+        </td>
+        <td className="nabz-quick-table__desc">
+          <TruncatedText text={item.description} empty="—" />
+        </td>
         <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
         <td>{item.unit || '—'}</td>
         <td className="nabz-quick-table__supply" onClick={(e) => e.stopPropagation()}>
@@ -389,7 +402,6 @@ export default function QuickInquiryModal({
   const [editingInquiryId, setEditingInquiryId] = useState(null);
   const [draft, setDraft] = useState(getEmptyQuickInquiryDraft());
   const [warning, setWarning] = useState('');
-  const [pishkeshTab, setPishkeshTab] = useState(PISHKESH_MODAL_TABS.PROFORMA);
   const isGatewayView = pipeline.viewMode === 'gateway';
   const viewPhase = pipeline.viewPhase;
   const orderPhase = pipeline.orderPhase;
@@ -397,10 +409,12 @@ export default function QuickInquiryModal({
   const showPishkesh = isGatewayView && viewPhase === GATEWAY_PHASES.PISHKESH;
   const showQuoting = isGatewayView && viewPhase === GATEWAY_PHASES.MOZENE;
   const showKavosh = isGatewayView && viewPhase === GATEWAY_PHASES.KAVOSH;
-  const showQuotingEditable = showQuoting && isLivePhase;
+  const showQuotingEditable = showQuoting
+    && order.status === ORDER_TABS.CURRENT
+    && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
   const showSupplier = canViewSupplierIdentity();
   // Inquiry price edit: کاشف/شوالیه in کاوش/مظنه views. Margin: راهبر only.
-  const canManageInquiries = (showKavosh || showQuoting) && canEditInquiryPrices();
+  const canManageInquiries = (showKavosh || showQuoting) && canEditInquiryPrices() && isLivePhase;
   const canManageQuoting = showQuotingEditable && canEditProfitMargin();
   const activeOperationalPhase = pipeline.operationalViewPhase || getOrderOperationalPhase(order);
   const showParvanePanel = order.status === ORDER_TABS.SUCCESS
@@ -540,7 +554,7 @@ export default function QuickInquiryModal({
   return (
     <div className="nabz-picker-overlay nabz-quick-inquiry-overlay" onClick={handleClose} role="presentation">
       <div
-        className={`nabz-quick-inquiry-modal${showPishkesh ? ' nabz-quick-inquiry-modal--pishkesh' : ''}`}
+        className="nabz-quick-inquiry-modal"
         role="dialog"
         aria-modal="true"
         aria-label="نمایش سریع سفارش"
@@ -669,48 +683,14 @@ export default function QuickInquiryModal({
             />
           )}
 
-          {showPishkesh && (
-            <div className="nabz-quick-modal-tabs" role="tablist" aria-label="بخش‌های پیش‌کش">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={pishkeshTab === PISHKESH_MODAL_TABS.MOZENE}
-                className={`nabz-quick-modal-tabs__btn${pishkeshTab === PISHKESH_MODAL_TABS.MOZENE ? ' is-active' : ''}`}
-                onClick={() => setPishkeshTab(PISHKESH_MODAL_TABS.MOZENE)}
-              >
-                مظنه
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={pishkeshTab === PISHKESH_MODAL_TABS.PROFORMA}
-                className={`nabz-quick-modal-tabs__btn${pishkeshTab === PISHKESH_MODAL_TABS.PROFORMA ? ' is-active' : ''}`}
-                onClick={() => setPishkeshTab(PISHKESH_MODAL_TABS.PROFORMA)}
-              >
-                پیش‌فاکتور
-              </button>
-            </div>
-          )}
-
           {showPishkesh ? (
-            pishkeshTab === PISHKESH_MODAL_TABS.MOZENE ? (
-              <QuotingReadOnlyPanel
-                order={order}
-                preview={preview}
-                quoting={quoting}
-                lineMarginMode={lineMarginMode}
-                showSupplier={showSupplier}
-                saleType={saleType}
-              />
-            ) : (
-              <ProformaTab
-                order={order}
-                terms={proformaTerms}
-                termsEditable={proformaTermsEditable}
-                onTermsChange={(terms) => onUpdateProforma(order.id, { terms })}
-                onToggleTermsEdit={(enabled) => onUpdateProforma(order.id, { termsEditable: enabled, terms: proformaTerms })}
-              />
-            )
+            <ProformaTab
+              order={order}
+              terms={proformaTerms}
+              termsEditable={proformaTermsEditable}
+              onTermsChange={(terms) => onUpdateProforma(order.id, { terms })}
+              onToggleTermsEdit={(enabled) => onUpdateProforma(order.id, { termsEditable: enabled, terms: proformaTerms })}
+            />
           ) : showQuoting && !showQuotingEditable ? (
             <QuotingReadOnlyPanel
               order={order}
@@ -725,12 +705,14 @@ export default function QuickInquiryModal({
           {showQuotingEditable && (
             <QuotingMatrix
               quoting={quoting}
+              namePrefix={`quick-${order.id}`}
               readOnly={!canManageQuoting}
               onChangeMode={(marginMode) => handleQuotingPatch({ marginMode })}
               onChangeOrderValue={(orderMarginValue) => handleQuotingPatch({ orderMarginValue })}
             />
           )}
 
+          <div className="nabz-quick-table-wrap">
           <table className="nabz-quick-table data-table--resizable">
             <ResizableColGroup columns={tableColumns} widths={widths} />
             <thead>
@@ -795,6 +777,7 @@ export default function QuickInquiryModal({
               )}
             </tbody>
           </table>
+          </div>
 
         {showQuotingEditable && (
           <footer className="nabz-quick-inquiry-modal__footer nabz-quoting-footer">

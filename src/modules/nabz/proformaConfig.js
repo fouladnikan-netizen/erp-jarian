@@ -60,11 +60,6 @@ export const DEFAULT_PROFORMA_TERMS =
 
 export const PROFORMA_PREVIEW_STORAGE_KEY = 'nabz-proforma-preview';
 
-export const PISHKESH_MODAL_TABS = {
-  MOZENE: 'mozene',
-  PROFORMA: 'proforma',
-};
-
 /** رنگ‌ها و فاصله‌ها — منطبق بر Assets/Invoice/DESIGN.md */
 export const INVOICE_THEME = {
   primary: '#272726',

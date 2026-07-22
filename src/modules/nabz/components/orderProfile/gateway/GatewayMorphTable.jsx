@@ -6,13 +6,16 @@ import { GATEWAY_PHASES } from '../../../gatewayConfig';
 import {
   isGatewayLivePhase,
   isGatewayPhaseReadOnly,
+  getGatewayPhaseIndex,
   shouldWipeInquiriesOnItemEdit,
 } from '../../../gatewayService';
+import { ORDER_TABS } from '../../../config';
 import {
   calculateQuotingPreview,
   getEmptyQuickInquiryDraft,
   getOrderQuoting,
   getTargetInquiry,
+  inquiryToQuickDraft,
   validateQuickInquiryDraft,
 } from '../../../inquiryService';
 import { MARGIN_MODES } from '../../../quotingConfig';
@@ -26,7 +29,8 @@ import {
 import { getSupplierName, listSuppliers } from '../../../suppliers';
 import { SUPPLY_CHANNEL_TYPES } from '../../../inquiryConfig';
 import { formatAmountRial } from '../../../orderCode';
-import { formatPriceLine } from '../../quickInquiryParts';
+import { formatPriceLine, QuotingMatrix } from '../../quickInquiryParts';
+import TruncatedText from '../../TruncatedText';
 import MoneyInput from '../../MoneyInput';
 import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
 
@@ -151,8 +155,14 @@ function MarginInputGroup({ value, unit, saved, onValueChange, onUnitChange, onS
   );
 }
 
-function InquiryDraftRow({ onSave, onCancel, showSupplier }) {
-  const [draft, setDraft] = useState(getEmptyQuickInquiryDraft());
+function InquiryDraftRow({
+  initialDraft,
+  onSave,
+  onCancel,
+  showSupplier,
+  submitLabel = 'ثبت',
+}) {
+  const [draft, setDraft] = useState(() => initialDraft || getEmptyQuickInquiryDraft());
   const suppliers = listSuppliers();
 
   const handleSave = () => {
@@ -193,7 +203,15 @@ function InquiryDraftRow({ onSave, onCancel, showSupplier }) {
         placeholder="قیمت خرید"
         aria-label="قیمت خرید"
       />
-      <button type="button" className="btn btn--primary btn--sm" onClick={handleSave}>ثبت</button>
+      <input
+        type="text"
+        className="gateway-inquiry-draft__input gateway-inquiry-draft__input--notes"
+        value={draft.notes || ''}
+        onChange={(e) => setDraft((prev) => ({ ...prev, notes: e.target.value }))}
+        placeholder="توضیحات (اختیاری)"
+        aria-label="توضیحات استعلام"
+      />
+      <button type="button" className="btn btn--primary btn--sm" onClick={handleSave}>{submitLabel}</button>
       <button type="button" className="btn btn--ghost btn--sm" onClick={onCancel}>انصراف</button>
     </div>
   );
@@ -219,6 +237,7 @@ function InquiryGridRow({
   canManage,
   showSupplier,
   onSelect,
+  onEdit,
   onDelete,
 }) {
   const supplierLabel = getInquirySupplierLabel(inquiry, inquiryIndex, showSupplier);
@@ -231,10 +250,21 @@ function InquiryGridRow({
             <CheckIcon size={12} />
           </span>
         )}
-        <span className="gateway-inquiry-grid__name">{supplierLabel}</span>
-        <span className={`gateway-inquiry-grid__type gateway-inquiry-grid__type--${SUPPLY_TYPE_DOT_CLASS[inquiry.supplyType] || 'is-official'}`}>
-          {inquiry.supplyType}
-        </span>
+        <div className="gateway-inquiry-grid__supplier-main">
+          <div className="gateway-inquiry-grid__supplier-line">
+            <span className="gateway-inquiry-grid__name" title={supplierLabel}>{supplierLabel}</span>
+            <span className={`gateway-inquiry-grid__type gateway-inquiry-grid__type--${SUPPLY_TYPE_DOT_CLASS[inquiry.supplyType] || 'is-official'}`}>
+              {inquiry.supplyType}
+            </span>
+          </div>
+          {inquiry.notes?.trim() ? (
+            <TruncatedText
+              text={inquiry.notes}
+              className="gateway-inquiry-grid__notes"
+              empty=""
+            />
+          ) : null}
+        </div>
       </div>
       <div className="gateway-inquiry-grid__price">
         <strong>{formatAmountRial(inquiry.unitPrice)}</strong>
@@ -256,6 +286,17 @@ function InquiryGridRow({
               انتخاب
             </button>
           )
+        )}
+        {canManage && (
+          <button
+            type="button"
+            className="gateway-icon-btn gateway-icon-btn--sm"
+            onClick={() => onEdit?.(inquiry.id)}
+            aria-label="ویرایش استعلام"
+            title="ویرایش استعلام"
+          >
+            <PencilIcon />
+          </button>
         )}
         {canManage && (
           <button
@@ -309,11 +350,14 @@ export default function GatewayMorphTable({
   onAddInquiry,
   onSetTargetInquiry,
   onDeleteInquiry,
+  onUpdateInquiry,
   onSaveMargin,
+  onUpdateQuoting,
   onEditItem,
   onDeleteItem,
 }) {
   const [draftItemIndex, setDraftItemIndex] = useState(null);
+  const [editingInquiryId, setEditingInquiryId] = useState(null);
   const [expandedIndex, setExpandedIndex] = useState(null);
   const [editingItemIndex, setEditingItemIndex] = useState(null);
   const [editDraft, setEditDraft] = useState({ name: '', qty: '', unit: '', description: '' });
@@ -330,6 +374,11 @@ export default function GatewayMorphTable({
   const allowInquiryEdit = canEditInquiryPrices();
   const allowMarginEdit = canEditProfitMargin();
   const allowLineFieldEdit = canEditOrderLineFields();
+  /* رهبر: ویرایش حاشیه در تب مظنه، وقتی سفارش جاری به مظنه رسیده باشد */
+  const marginEditable = allowMarginEdit
+    && viewPhase === GATEWAY_PHASES.MOZENE
+    && order.status === ORDER_TABS.CURRENT
+    && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
 
   const columns = useMemo(
     () => buildColumns(viewPhase, saleColumnLabel),
@@ -346,18 +395,38 @@ export default function GatewayMorphTable({
   useEffect(() => {
     setExpandedIndex(null);
     setDraftItemIndex(null);
+    setEditingInquiryId(null);
     setEditingItemIndex(null);
     setPendingSensitiveEdit(null);
   }, [viewPhase]);
-
-  const toggleExpand = (itemIndex) => {
-    setExpandedIndex((prev) => (prev === itemIndex ? null : itemIndex));
-  };
 
   const openInquiryDraft = (itemIndex) => {
     if (!allowInquiryEdit) return;
     setExpandedIndex(itemIndex);
     setDraftItemIndex(itemIndex);
+    setEditingInquiryId(null);
+  };
+
+  const openInquiryEdit = (itemIndex, inquiryId) => {
+    if (!allowInquiryEdit) return;
+    setExpandedIndex(itemIndex);
+    setDraftItemIndex(itemIndex);
+    setEditingInquiryId(inquiryId);
+  };
+
+  const closeInquiryDraft = () => {
+    setDraftItemIndex(null);
+    setEditingInquiryId(null);
+  };
+
+  const toggleExpand = (itemIndex) => {
+    setExpandedIndex((prev) => {
+      if (prev === itemIndex) {
+        if (draftItemIndex === itemIndex) closeInquiryDraft();
+        return null;
+      }
+      return itemIndex;
+    });
   };
 
   const startEdit = (itemIndex) => {
@@ -394,12 +463,30 @@ export default function GatewayMorphTable({
     commitEdit(itemIndex, patch, false);
   };
 
+  const isOrderLevelMargin = quoting.marginMode === MARGIN_MODES.ORDER_FIXED_PERCENT
+    || quoting.marginMode === MARGIN_MODES.ORDER_FIXED_RIAL;
+  const showQuotingMatrix = viewPhase === GATEWAY_PHASES.MOZENE;
+
   const handleSaveMargin = (itemIndex, marginValue, marginType) => {
-    if (!allowMarginEdit) return;
+    if (!marginEditable) return;
+    if (isOrderLevelMargin) {
+      onUpdateQuoting?.({
+        marginMode: marginType === 'percent'
+          ? MARGIN_MODES.ORDER_FIXED_PERCENT
+          : MARGIN_MODES.ORDER_FIXED_RIAL,
+        orderMarginValue: marginValue,
+      });
+      return;
+    }
     onSaveMargin?.(itemIndex, marginValue, marginType);
   };
 
   const isMarginSaved = (itemIndex) => {
+    if (isOrderLevelMargin) {
+      const raw = quoting.orderMarginValue;
+      if (raw === '' || raw == null) return false;
+      return Number.isFinite(Number(raw));
+    }
     const raw = quoting.lineMargins?.[itemIndex];
     if (raw === '' || raw == null) return false;
     const num = Number(raw);
@@ -466,7 +553,9 @@ export default function GatewayMorphTable({
     return (
       <tr key={itemIndex} className="gateway-table__row gateway-table__row--hoverable">
         <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-        <td className="gateway-table__text">{item.name || '—'}</td>
+        <td className="gateway-table__text">
+          <TruncatedText text={item.name} empty="—" />
+        </td>
         <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
         <td className="gateway-table__cell-actions-host">
           {item.unit || '—'}
@@ -515,7 +604,9 @@ export default function GatewayMorphTable({
         >
           <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
           <td className="gateway-table__text">
-            <LockedText>{item.name || '—'}</LockedText>
+            <LockedText>
+              <TruncatedText text={item.name} empty="—" />
+            </LockedText>
           </td>
           <td><LockedText>{item.qty?.toLocaleString('fa-IR') ?? '—'}</LockedText></td>
           <td><LockedText>{item.unit || '—'}</LockedText></td>
@@ -580,27 +671,43 @@ export default function GatewayMorphTable({
                       <span className="gateway-inquiry-grid__actions">عملیات</span>
                     </div>
                     {inquiries.map((inq, inquiryIndex) => (
-                      <InquiryGridRow
-                        key={inq.id}
-                        inquiry={inq}
-                        inquiryIndex={inquiryIndex}
-                        isTarget={target?.id === inq.id}
-                        canManage={canManage}
-                        showSupplier={showSupplier}
-                        onSelect={(inquiryId) => onSetTargetInquiry?.(itemIndex, inquiryId)}
-                        onDelete={(inquiryId) => onDeleteInquiry?.(itemIndex, inquiryId)}
-                      />
+                      isDraftOpen && editingInquiryId === inq.id ? (
+                        <InquiryDraftRow
+                          key={`edit-${inq.id}`}
+                          initialDraft={inquiryToQuickDraft(inq)}
+                          showSupplier={showSupplier}
+                          submitLabel="ذخیره"
+                          onSave={(draft) => {
+                            onUpdateInquiry?.(itemIndex, inq.id, draft);
+                            closeInquiryDraft();
+                          }}
+                          onCancel={closeInquiryDraft}
+                        />
+                      ) : (
+                        <InquiryGridRow
+                          key={inq.id}
+                          inquiry={inq}
+                          inquiryIndex={inquiryIndex}
+                          isTarget={target?.id === inq.id}
+                          canManage={canManage}
+                          showSupplier={showSupplier}
+                          onSelect={(inquiryId) => onSetTargetInquiry?.(itemIndex, inquiryId)}
+                          onEdit={(inquiryId) => openInquiryEdit(itemIndex, inquiryId)}
+                          onDelete={(inquiryId) => onDeleteInquiry?.(itemIndex, inquiryId)}
+                        />
+                      )
                     ))}
                   </div>
                 )}
-                {isDraftOpen && canManage && (
+                {isDraftOpen && canManage && editingInquiryId == null && (
                   <InquiryDraftRow
+                    key={`new-${itemIndex}`}
                     showSupplier={showSupplier}
                     onSave={(draft) => {
                       onAddInquiry?.(itemIndex, draft);
-                      setDraftItemIndex(null);
+                      closeInquiryDraft();
                     }}
-                    onCancel={() => setDraftItemIndex(null)}
+                    onCancel={closeInquiryDraft}
                   />
                 )}
                 {canManage && !isDraftOpen && (
@@ -682,11 +789,15 @@ export default function GatewayMorphTable({
       <tr key={itemIndex} className="gateway-table__row gateway-table__row--hoverable">
         <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
         <td className="gateway-table__text gateway-table__cell-actions-host">
-          <LockedText>{item.name || '—'}</LockedText>
+          <LockedText>
+            <TruncatedText text={item.name} empty="—" />
+          </LockedText>
           {item.description ? (
-            <span className="gateway-table__muted" style={{ display: 'block', fontSize: '0.75rem' }}>
-              {item.description}
-            </span>
+            <TruncatedText
+              text={item.description}
+              className="gateway-table__desc-line"
+              empty=""
+            />
           ) : null}
           {live && allowLineFieldEdit && (
             <RowHoverActions>
@@ -708,7 +819,7 @@ export default function GatewayMorphTable({
           {target ? formatAmountRial(target.unitPrice) : '—'}
         </td>
         <td className="gateway-td--sale">
-          {live && allowMarginEdit ? (
+          {marginEditable ? (
             <MarginInputGroup
               value={linePreview.marginInputValue}
               unit={marginUnit}
@@ -750,7 +861,9 @@ export default function GatewayMorphTable({
 
     return (
       <tr key={itemIndex} className="gateway-table__row">
-        <td className="gateway-table__text">{description}</td>
+        <td className="gateway-table__text gateway-table__desc">
+          <TruncatedText text={description} empty="—" />
+        </td>
         <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
         <td>{item.unit || '—'}</td>
         <td className="gateway-table__num gateway-td--sale">
@@ -781,6 +894,16 @@ export default function GatewayMorphTable({
 
   return (
     <div className={`gateway-morph${isReadOnly ? ' gateway-morph--readonly' : ''}`}>
+      {showQuotingMatrix && (
+        <QuotingMatrix
+          quoting={quoting}
+          namePrefix={`order-${order.id}`}
+          readOnly={!marginEditable}
+          onChangeMode={(marginMode) => onUpdateQuoting?.({ marginMode })}
+          onChangeOrderValue={(orderMarginValue) => onUpdateQuoting?.({ orderMarginValue })}
+        />
+      )}
+
       <div className="gateway-table-wrap">
         <table className="gateway-table">
           <ResizableColGroup columns={columns} widths={widths} />

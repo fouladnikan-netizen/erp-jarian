@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { calculateQuotingPreview } from '../../inquiryService';
 import { DEFAULT_SALE_TYPE } from '../../constants';
 import { GATEWAY_PHASES } from '../../gatewayConfig';
@@ -9,15 +9,17 @@ import {
   removeGatewayInquiry,
   updateGatewayOrderItemWithSensitivity,
 } from '../../gatewayService';
-import { saveItemMargin } from '../../quotingService';
+import { saveItemMargin, updateOrderQuoting } from '../../quotingService';
+import { updateInquiryOnOrder } from '../../inquiryService';
 import {
+  hasGatewayDecision,
   markGatewayDecisionFailed,
   markGatewayDecisionSuccess,
 } from '../../gatewayDecisionService';
 import GatewayMorphTable from './gateway/GatewayMorphTable';
 import GatewayFinancialSummary from './gateway/GatewayFinancialSummary';
-import GatewayDecisionPanel from './gateway/GatewayDecisionPanel';
 import GatewayPishkeshPanel from './gateway/GatewayPishkeshPanel';
+import OrderActionDrawer from './OrderActionDrawer';
 import OrderProfileOperationsTab from './OrderProfileOperationsTab';
 
 export default function OrderProfileGatewayTab({
@@ -29,6 +31,7 @@ export default function OrderProfileGatewayTab({
   operationalViewPhase,
   onAddInquiry,
   onSetTargetInquiry,
+  onUpdateInquiry,
   onUpdateOrder,
   onAdvancePhase,
   onOperationalPhaseChange,
@@ -36,11 +39,20 @@ export default function OrderProfileGatewayTab({
   onDecisionFailed,
   onReturnToGateway,
 }) {
+  const [actionDrawerOpen, setActionDrawerOpen] = useState(false);
   const preview = useMemo(() => calculateQuotingPreview(order), [order]);
   const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
 
   const handleAddInquiry = (itemIndex, draft) => {
     onAddInquiry?.(order.id, itemIndex, draft);
+  };
+
+  const handleUpdateInquiry = (itemIndex, inquiryId, draft) => {
+    if (onUpdateInquiry) {
+      onUpdateInquiry(order.id, itemIndex, inquiryId, draft);
+      return;
+    }
+    onUpdateOrder?.((current) => updateInquiryOnOrder(current, itemIndex, inquiryId, draft));
   };
 
   const handleSetTarget = (itemIndex, inquiryId) => {
@@ -49,6 +61,10 @@ export default function OrderProfileGatewayTab({
 
   const handleSaveMargin = (itemIndex, marginValue, marginType) => {
     onUpdateOrder?.((current) => saveItemMargin(current, itemIndex, marginValue, marginType));
+  };
+
+  const handleUpdateQuoting = (patch) => {
+    onUpdateOrder?.((current) => updateOrderQuoting(current, patch));
   };
 
   const handleSendProforma = () => {
@@ -91,7 +107,8 @@ export default function OrderProfileGatewayTab({
     onUpdateOrder?.((current) => markGatewayDecisionFailed(current, payload));
   };
 
-  const showDecisionPanel = viewPhase === GATEWAY_PHASES.PISHKESH && viewMode === 'gateway';
+  const showActionStrip = viewPhase === GATEWAY_PHASES.PISHKESH && viewMode === 'gateway';
+  const decided = hasGatewayDecision(order);
   const showMozeneSummary = viewMode === 'gateway'
     && viewPhase === GATEWAY_PHASES.MOZENE
     && shouldShowGatewayFinancialSummary(viewPhase);
@@ -111,25 +128,20 @@ export default function OrderProfileGatewayTab({
   }
 
   return (
-    <div className="order-profile-gateway" data-gateway-stage={currentStage}>
-      {showDecisionPanel && (
-        <GatewayDecisionPanel
-          order={order}
-          viewPhase={viewPhase}
-          orderPhase={orderPhase}
-          onSubmitSuccess={handleDecisionSuccess}
-          onSubmitFailed={handleDecisionFailed}
-        />
-      )}
-
+    <div
+      className={`order-profile-gateway${showActionStrip ? ' order-profile-gateway--with-action-strip' : ''}`}
+      data-gateway-stage={currentStage}
+    >
       <GatewayMorphTable
         order={order}
         viewPhase={viewPhase}
         orderPhase={orderPhase}
         onAddInquiry={handleAddInquiry}
         onSetTargetInquiry={handleSetTarget}
+        onUpdateInquiry={handleUpdateInquiry}
         onDeleteInquiry={handleDeleteInquiry}
         onSaveMargin={handleSaveMargin}
+        onUpdateQuoting={handleUpdateQuoting}
         onEditItem={handleEditItem}
         onDeleteItem={handleDeleteItem}
       />
@@ -145,6 +157,28 @@ export default function OrderProfileGatewayTab({
         preview={preview}
         saleType={saleType}
         onSendToCustomer={handleSendProforma}
+      />
+
+      {showActionStrip && (
+        <div className="order-profile-action-strip">
+          <button
+            type="button"
+            className="order-profile-action-strip__btn font-meem"
+            onClick={() => setActionDrawerOpen(true)}
+          >
+            {decided ? 'مشاهده نتیجه تعیین تکلیف' : 'تعیین تکلیف'}
+          </button>
+        </div>
+      )}
+
+      <OrderActionDrawer
+        open={actionDrawerOpen}
+        order={order}
+        viewPhase={viewPhase}
+        orderPhase={orderPhase}
+        onClose={() => setActionDrawerOpen(false)}
+        onSubmitSuccess={handleDecisionSuccess}
+        onSubmitFailed={handleDecisionFailed}
       />
     </div>
   );

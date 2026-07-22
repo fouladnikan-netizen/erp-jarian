@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TruncatedText from './TruncatedText';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
 import { useResizableColumns } from '../../../hooks/useResizableColumns';
@@ -137,14 +138,17 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
                   onDragEnd={handleDragEnd}
                 />
               </td>
-              <td className="nabz-create-table__name font-meem">{item.name}</td>
-              <td>
+              <td className="nabz-create-table__name font-meem">
+                <TruncatedText text={item.name} empty="—" />
+              </td>
+              <td className="nabz-create-table__desc-cell">
                 <input
                   type="text"
                   className="nabz-create-table__input font-meem"
                   value={item.description || ''}
                   onChange={(e) => updateLine(item.lineId, 'description', e.target.value)}
                   placeholder="توضیحات"
+                  title={item.description || undefined}
                 />
               </td>
               <td>

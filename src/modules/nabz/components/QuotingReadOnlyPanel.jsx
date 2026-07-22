@@ -9,6 +9,7 @@ import {
   InquiryCompact,
   QuotingMatrix,
 } from './quickInquiryParts';
+import TruncatedText from './TruncatedText';
 
 const QUOTING_READONLY_COLUMNS = [
   { key: 'row', defaultWidth: 52, resizable: false },
@@ -49,6 +50,7 @@ export default function QuotingReadOnlyPanel({
     <div className="nabz-quoting-readonly">
       <QuotingMatrix quoting={quoting} readOnly />
 
+      <div className="nabz-quick-table-wrap">
       <table className="nabz-quick-table data-table--resizable">
         <ResizableColGroup columns={QUOTING_READONLY_COLUMNS} widths={widths} />
         <thead>
@@ -78,8 +80,12 @@ export default function QuotingReadOnlyPanel({
               return (
                 <tr key={itemIndex} className="nabz-quick-table__row">
                   <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-                  <td className="nabz-quick-table__name">{item.name}</td>
-                  <td className="nabz-quick-table__desc">{item.description || '—'}</td>
+                  <td className="nabz-quick-table__name">
+                    <TruncatedText text={item.name} empty="—" />
+                  </td>
+                  <td className="nabz-quick-table__desc">
+                    <TruncatedText text={item.description} empty="—" />
+                  </td>
                   <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
                   <td>{item.unit || '—'}</td>
                   <td className="nabz-quick-table__supply">
@@ -125,6 +131,7 @@ export default function QuotingReadOnlyPanel({
           )}
         </tbody>
       </table>
+      </div>
 
       <footer className="nabz-quick-inquiry-modal__footer nabz-quoting-footer">
         <section className="nabz-quoting-footer__summary">

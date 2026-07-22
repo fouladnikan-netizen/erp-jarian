@@ -51,6 +51,7 @@ export function getEmptyQuickInquiryDraft() {
     supplyType: 'رسمی',
     supplierId: '',
     unitPrice: '',
+    notes: '',
     discrepancyDescription: '',
     discrepancyWeight: '',
     discrepancyUnitPrice: '',
@@ -135,6 +136,7 @@ export function inquiryToQuickDraft(inquiry) {
     supplyType: inquiry.supplyType,
     supplierId: inquiry.supplierId,
     unitPrice: inquiry.unitPrice,
+    notes: inquiry.notes || '',
     discrepancyDescription: inquiry.discrepancyDescription || '',
     discrepancyWeight: inquiry.discrepancyWeight ?? '',
     discrepancyUnitPrice: inquiry.discrepancyUnitPrice ?? '',
@@ -147,6 +149,7 @@ function applyDraftToInquiry(inquiry, draft) {
     supplyType: draft.supplyType,
     supplierId: Number(draft.supplierId),
     unitPrice: parseMoneyInput(draft.unitPrice) || 0,
+    notes: (draft.notes || '').trim(),
   };
 
   if (isDiscrepancySupplyType(draft.supplyType)) {

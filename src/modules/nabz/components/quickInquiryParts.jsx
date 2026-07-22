@@ -36,11 +36,13 @@ export function QuotingMatrix({
   onChangeMode,
   onChangeOrderValue,
   readOnly = false,
+  namePrefix = 'margin',
 }) {
   const isPercentOrder = quoting.marginMode === MARGIN_MODES.ORDER_FIXED_PERCENT;
   const isFixedOrder = quoting.marginMode === MARGIN_MODES.ORDER_FIXED_RIAL;
   const isLinePercent = quoting.marginMode === MARGIN_MODES.LINE_FIXED_PERCENT;
   const isLineFixed = quoting.marginMode === MARGIN_MODES.LINE_FIXED_RIAL;
+  const radioName = `${namePrefix}-mode`;
 
   return (
     <section className={`nabz-quoting-matrix${readOnly ? ' nabz-quoting-matrix--readonly' : ''}`}>
@@ -55,10 +57,9 @@ export function QuotingMatrix({
         <label className={`nabz-quoting-matrix__cell${isPercentOrder ? ' is-selected' : ''}`}>
           <input
             type="radio"
-            name="margin-mode"
+            name={radioName}
             checked={isPercentOrder}
             disabled={readOnly}
-            readOnly={readOnly}
             onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.ORDER_FIXED_PERCENT)}
           />
           <div className="nabz-quoting-matrix__cell-body">
@@ -71,7 +72,6 @@ export function QuotingMatrix({
               onChange={(e) => onChangeOrderValue?.(e.target.value)}
               placeholder="%"
               disabled={readOnly || !isPercentOrder}
-              readOnly={readOnly}
             />
           </div>
         </label>
@@ -79,10 +79,9 @@ export function QuotingMatrix({
         <label className={`nabz-quoting-matrix__cell${isLinePercent ? ' is-selected' : ''}`}>
           <input
             type="radio"
-            name="margin-mode"
+            name={radioName}
             checked={isLinePercent}
             disabled={readOnly}
-            readOnly={readOnly}
             onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.LINE_FIXED_PERCENT)}
           />
           <div className="nabz-quoting-matrix__cell-body">
@@ -94,10 +93,9 @@ export function QuotingMatrix({
         <label className={`nabz-quoting-matrix__cell${isFixedOrder ? ' is-selected' : ''}`}>
           <input
             type="radio"
-            name="margin-mode"
+            name={radioName}
             checked={isFixedOrder}
             disabled={readOnly}
-            readOnly={readOnly}
             onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.ORDER_FIXED_RIAL)}
           />
           <div className="nabz-quoting-matrix__cell-body">
@@ -108,7 +106,6 @@ export function QuotingMatrix({
               onChange={(next) => onChangeOrderValue?.(next)}
               placeholder="ریال"
               disabled={readOnly || !isFixedOrder}
-              readOnly={readOnly}
             />
           </div>
         </label>
@@ -116,10 +113,9 @@ export function QuotingMatrix({
         <label className={`nabz-quoting-matrix__cell${isLineFixed ? ' is-selected' : ''}`}>
           <input
             type="radio"
-            name="margin-mode"
+            name={radioName}
             checked={isLineFixed}
             disabled={readOnly}
-            readOnly={readOnly}
             onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.LINE_FIXED_RIAL)}
           />
           <div className="nabz-quoting-matrix__cell-body">
@@ -168,7 +164,12 @@ export function InquiryCompact({
   const supplier = showSupplier
     ? getSupplierName(inquiry.supplierId)
     : `تامین‌کننده ${(inquiryIndex + 1).toLocaleString('fa-IR')}`;
-  const hoverDetails = `${inquiry.supplyType} — ${supplier} — ${amount} ریال`;
+  const hoverDetails = [
+    inquiry.supplyType,
+    supplier,
+    `${amount} ریال`,
+    inquiry.notes?.trim() || null,
+  ].filter(Boolean).join(' — ');
 
   return (
     <div
