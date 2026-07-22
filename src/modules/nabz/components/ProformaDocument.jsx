@@ -1,4 +1,4 @@
-import logo from '../../../assets/images/nikan2.jpg';
+import headerBrand from '../../../assets/images/nikan-proforma-header.jpg';
 import { formatAmountRial } from '../orderCode';
 import {
   COMPANY_BRAND,
@@ -74,11 +74,12 @@ export default function ProformaDocument({ viewModel, terms, termsCustom = false
       <div className="invoice-doc__print-header">
         <header className="invoice-doc__header">
           <div className="invoice-doc__header-brand">
-            <div className="invoice-doc__brand-top">
-              <div className="invoice-doc__logo-wrap">
-                <img src={logo} alt="" className="invoice-doc__logo" />
-              </div>
-              <span className="invoice-doc__company-name">{COMPANY_BRAND.name}</span>
+            <div className="invoice-doc__brand-mark">
+              <img
+                src={headerBrand}
+                alt=""
+                className="invoice-doc__brand-mark-img"
+              />
             </div>
             <p className="invoice-doc__tagline">{COMPANY_BRAND.tagline}</p>
             <div className="invoice-doc__company-ids">
@@ -89,7 +90,7 @@ export default function ProformaDocument({ viewModel, terms, termsCustom = false
           <div className="invoice-doc__header-meta">
             <div className="invoice-doc__meta-grid">
               <span className="invoice-doc__meta-label">شماره:</span>
-              <span className="invoice-doc__meta-value invoice-doc__meta-value--bold">{viewModel.orderCode}</span>
+              <span className="invoice-doc__meta-value invoice-doc__meta-value--number">{viewModel.orderCode}</span>
               <span className="invoice-doc__meta-label">تاریخ صدور:</span>
               <span className="invoice-doc__meta-value">{viewModel.issueDate}</span>
             </div>

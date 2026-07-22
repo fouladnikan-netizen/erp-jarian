@@ -1,6 +1,6 @@
-/** کاربر فعال سامانه — پیش‌فرض شوالیه ثبت‌کننده */
+/** کاربر فعال سامانه — پیش‌فرض راهبر (مدیر) برای تست دسترسی کامل */
 export const CURRENT_USER = 'علی رضایی';
-export const CURRENT_USER_ROLE = 'knight';
+export const CURRENT_USER_ROLE = 'leader';
 
 export const USER_ROLES = {
   KNIGHT: 'knight',

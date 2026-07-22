@@ -34,6 +34,7 @@ import './nabz.css';
 
 export default function NabzPage() {
   const { orders, setOrders } = useNabzOrders();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(ORDER_TABS.CURRENT);
   const [viewMode, setViewMode] = useState(VIEW_MODES.LIST);
   const [search, setSearch] = useState('');
@@ -42,7 +43,6 @@ export default function NabzPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [inquiryModalOrderId, setInquiryModalOrderId] = useState(null);
   const [stageRejectMessage, setStageRejectMessage] = useState('');
-  const [searchParams] = useSearchParams();
 
   const kpis = useMemo(() => computeNabzKpis(orders), [orders]);
 
@@ -67,6 +67,13 @@ export default function NabzPage() {
       setViewMode(VIEW_MODES.LIST);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === ORDER_TABS.FAILED || tab === ORDER_TABS.CURRENT || tab === ORDER_TABS.SUCCESS) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const code = searchParams.get('order');

@@ -12,7 +12,10 @@ import {
   GATEWAY_PHASE_ORDER,
 } from './gatewayConfig';
 import { getOrderGatewayPhase } from './gatewayService';
-import { getEffectiveStageId } from './orderStageService';
+import {
+  getEffectiveStageId,
+  hasInquiryCompletionEvent,
+} from './orderStageService';
 import {
   completeOrderInquiries,
   completeOrderQuoting,
@@ -118,7 +121,9 @@ export function advanceKavoshToMozene(order) {
   if (!check.ok) return { order, accepted: false, error: check.message };
 
   const nextOrder = completeOrderInquiries(order);
-  if (nextOrder.stageId === order.stageId) {
+  // stageId ممکن است از قبل مظنه باشد (داده ناسازگار) ولی رویداد تکمیل کاوش نباشد؛
+  // موفقیت را با تکمیل واقعی می‌سنجیم نه فقط تغییر stageId.
+  if (!hasInquiryCompletionEvent(nextOrder) || nextOrder.stageId < STAGE_MOZENE_ID) {
     return { order, accepted: false, error: 'تکمیل کاوش ممکن نیست.' };
   }
 
@@ -130,7 +135,9 @@ export function advanceMozeneToPishkesh(order) {
   if (!check.ok) return { order, accepted: false, error: check.message };
 
   const nextOrder = completeOrderQuoting(order);
-  if (nextOrder.stageId === order.stageId) {
+  const quotingDone = (nextOrder.events || []).some((e) => e.type === 'quoting_completed')
+    || nextOrder.stageId >= STAGE_PISHKESH_ID;
+  if (!quotingDone || nextOrder.stageId < STAGE_PISHKESH_ID) {
     return { order, accepted: false, error: 'صدور پیش‌فاکتور ممکن نیست.' };
   }
 

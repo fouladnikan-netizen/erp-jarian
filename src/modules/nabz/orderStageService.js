@@ -16,7 +16,6 @@ import { canDropOnPhase2KanbanStage, tryChangePhase2Stage } from './phase2Servic
 
 export const ORDER_DISPLAY_STATUS = {
   ANNOUNCING: 'در حال اعلام',
-  NEEDS_SUPPLY: 'نیازمند تامین',
   EXPLORING: 'کاوش',
 };
 
@@ -65,10 +64,6 @@ export function getOrderDisplayStatus(order) {
     return ORDER_DISPLAY_STATUS.ANNOUNCING;
   }
 
-  if (!hasInquiryOnAllLines(order)) {
-    return ORDER_DISPLAY_STATUS.NEEDS_SUPPLY;
-  }
-
   const effectiveId = getEffectiveStageId(order);
 
   // After inquiry completion, always show the live Kanban stage
@@ -90,7 +85,6 @@ export function getOrderDisplayStatusKind(order) {
 
   const label = getOrderDisplayStatus(order);
   if (label === ORDER_DISPLAY_STATUS.ANNOUNCING) return 'pending';
-  if (label === ORDER_DISPLAY_STATUS.NEEDS_SUPPLY) return 'needs-supply';
   if (label === ORDER_DISPLAY_STATUS.EXPLORING || label === 'کاوش') return 'kavosh';
   if (label === 'مظنه') return 'mozene';
   if (label === 'پیش‌کش') return 'pishkesh';

@@ -1,6 +1,7 @@
 import { getDefaultQuoting, MARGIN_MODES } from './quotingConfig';
 import { DEFAULT_SALE_TYPE, SALES_TYPES } from './constants';
 import { parseMoneyInput } from './orderCode';
+import { canEditProfitMargin } from './orderEditPermissions';
 
 function parseNumber(value) {
   if (value === '' || value == null) return null;
@@ -217,6 +218,9 @@ export function setTargetInquiryOnOrder(order, itemIndex, inquiryId) {
 }
 
 export function updateOrderQuoting(order, patch) {
+  if (!canEditProfitMargin()) {
+    return order;
+  }
   const quoting = {
     ...getOrderQuoting(order),
     ...patch,
@@ -277,6 +281,9 @@ export function allLinesHaveSavedMargin(order) {
  * @param {'percent'|'rial'} marginType — واحد سود
  */
 export function saveItemMargin(order, itemIndex, marginValue, marginType) {
+  if (!canEditProfitMargin()) {
+    return order;
+  }
   const mode = marginTypeToMode(marginType);
   const updated = updateOrderQuoting(order, {
     marginMode: mode,

@@ -6,6 +6,7 @@ import { GATEWAY_PHASES } from '../../../gatewayConfig';
 import {
   isGatewayLivePhase,
   isGatewayPhaseReadOnly,
+  shouldWipeInquiriesOnItemEdit,
 } from '../../../gatewayService';
 import {
   calculateQuotingPreview,
@@ -16,11 +17,18 @@ import {
 } from '../../../inquiryService';
 import { MARGIN_MODES } from '../../../quotingConfig';
 import { canViewSupplierIdentity, DEFAULT_SALE_TYPE } from '../../../constants';
+import {
+  canEditInquiryPrices,
+  canEditOrderLineFields,
+  canEditProfitMargin,
+  SENSITIVE_WIPE_CONFIRM_MESSAGE,
+} from '../../../orderEditPermissions';
 import { getSupplierName, listSuppliers } from '../../../suppliers';
 import { SUPPLY_CHANNEL_TYPES } from '../../../inquiryConfig';
 import { formatAmountRial } from '../../../orderCode';
 import { formatPriceLine } from '../../quickInquiryParts';
 import MoneyInput from '../../MoneyInput';
+import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
 
 const SUPPLY_TYPE_DOT_CLASS = {
   رسمی: 'is-official',
@@ -85,6 +93,7 @@ function buildColumns(viewPhase, saleColumnLabel) {
       { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 80 },
       { key: 'supplier', label: 'تامین‌کننده', group: 'supply', defaultWidth: 180 },
       { key: 'buy', label: 'قیمت خرید', group: 'supply', defaultWidth: 140 },
+      { key: 'expand', label: '', group: 'base', defaultWidth: 48, resizable: false },
     ];
   }
 
@@ -308,6 +317,7 @@ export default function GatewayMorphTable({
   const [expandedIndex, setExpandedIndex] = useState(null);
   const [editingItemIndex, setEditingItemIndex] = useState(null);
   const [editDraft, setEditDraft] = useState({ name: '', qty: '', unit: '', description: '' });
+  const [pendingSensitiveEdit, setPendingSensitiveEdit] = useState(null);
 
   const items = order.items || [];
   const quoting = getOrderQuoting(order);
@@ -317,6 +327,9 @@ export default function GatewayMorphTable({
   const showSupplier = canViewSupplierIdentity();
   const live = isGatewayLivePhase(orderPhase, viewPhase);
   const isReadOnly = isGatewayPhaseReadOnly(orderPhase, viewPhase);
+  const allowInquiryEdit = canEditInquiryPrices();
+  const allowMarginEdit = canEditProfitMargin();
+  const allowLineFieldEdit = canEditOrderLineFields();
 
   const columns = useMemo(
     () => buildColumns(viewPhase, saleColumnLabel),
@@ -334,6 +347,7 @@ export default function GatewayMorphTable({
     setExpandedIndex(null);
     setDraftItemIndex(null);
     setEditingItemIndex(null);
+    setPendingSensitiveEdit(null);
   }, [viewPhase]);
 
   const toggleExpand = (itemIndex) => {
@@ -341,11 +355,13 @@ export default function GatewayMorphTable({
   };
 
   const openInquiryDraft = (itemIndex) => {
+    if (!allowInquiryEdit) return;
     setExpandedIndex(itemIndex);
     setDraftItemIndex(itemIndex);
   };
 
   const startEdit = (itemIndex) => {
+    if (!allowLineFieldEdit) return;
     const item = items[itemIndex];
     setEditingItemIndex(itemIndex);
     setEditDraft({
@@ -356,17 +372,30 @@ export default function GatewayMorphTable({
     });
   };
 
-  const saveEdit = (itemIndex) => {
-    onEditItem?.(itemIndex, {
-      name: editDraft.name.trim(),
-      qty: Number(editDraft.qty) || 0,
-      unit: editDraft.unit.trim(),
-      description: editDraft.description.trim(),
-    });
+  const buildEditPatch = () => ({
+    name: editDraft.name.trim(),
+    qty: Number(editDraft.qty) || 0,
+    unit: editDraft.unit.trim(),
+    description: editDraft.description.trim(),
+  });
+
+  const commitEdit = (itemIndex, patch, wipeConfirmed = false) => {
+    onEditItem?.(itemIndex, patch, { wipeConfirmed });
     setEditingItemIndex(null);
+    setPendingSensitiveEdit(null);
+  };
+
+  const saveEdit = (itemIndex) => {
+    const patch = buildEditPatch();
+    if (shouldWipeInquiriesOnItemEdit(order, itemIndex, patch)) {
+      setPendingSensitiveEdit({ itemIndex, patch });
+      return;
+    }
+    commitEdit(itemIndex, patch, false);
   };
 
   const handleSaveMargin = (itemIndex, marginValue, marginType) => {
+    if (!allowMarginEdit) return;
     onSaveMargin?.(itemIndex, marginValue, marginType);
   };
 
@@ -394,7 +423,7 @@ export default function GatewayMorphTable({
   );
 
   const renderElamRow = (item, itemIndex) => {
-    const isEditing = editingItemIndex === itemIndex && live;
+    const isEditing = editingItemIndex === itemIndex && live && allowLineFieldEdit;
 
     if (isEditing) {
       return (
@@ -441,7 +470,7 @@ export default function GatewayMorphTable({
         <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
         <td className="gateway-table__cell-actions-host">
           {item.unit || '—'}
-          {live && (
+          {live && allowLineFieldEdit && (
             <RowHoverActions>
               <button
                 type="button"
@@ -471,7 +500,7 @@ export default function GatewayMorphTable({
   const renderKavoshRows = (item, itemIndex) => {
     const target = getTargetInquiry(item);
     const inquiries = item.inquiries || [];
-    const canManage = live || viewPhase === GATEWAY_PHASES.KAVOSH;
+    const canManage = allowInquiryEdit && (live || viewPhase === GATEWAY_PHASES.KAVOSH);
     const isDraftOpen = draftItemIndex === itemIndex;
     const isExpanded = expandedIndex === itemIndex;
     const targetIndex = target
@@ -483,23 +512,10 @@ export default function GatewayMorphTable({
         <tr
           key={`main-${itemIndex}`}
           className={`gateway-table__row gateway-table__row--master gateway-table__row--expandable${target ? ' has-target' : ''}${isExpanded ? ' is-expanded' : ''}`}
-          onClick={() => toggleExpand(itemIndex)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              toggleExpand(itemIndex);
-            }
-          }}
-          tabIndex={0}
-          role="button"
-          aria-expanded={isExpanded}
         >
           <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
           <td className="gateway-table__text">
-            <span className="gateway-table__expand-cell">
-              <ChevronIcon expanded={isExpanded} />
-              <LockedText>{item.name || '—'}</LockedText>
-            </span>
+            <LockedText>{item.name || '—'}</LockedText>
           </td>
           <td><LockedText>{item.qty?.toLocaleString('fa-IR') ?? '—'}</LockedText></td>
           <td><LockedText>{item.unit || '—'}</LockedText></td>
@@ -536,6 +552,17 @@ export default function GatewayMorphTable({
                 </button>
               </RowHoverActions>
             )}
+          </td>
+          <td className="gateway-table__expand">
+            <button
+              type="button"
+              className="gateway-expand-btn"
+              onClick={() => toggleExpand(itemIndex)}
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? 'بستن استعلام‌ها' : 'نمایش استعلام‌ها'}
+            >
+              <ChevronIcon expanded={isExpanded} />
+            </button>
           </td>
         </tr>
         {isExpanded && (
@@ -599,18 +626,89 @@ export default function GatewayMorphTable({
   const renderMozeneRow = (item, itemIndex) => {
     const linePreview = preview.lines[itemIndex] || {};
     const target = getTargetInquiry(item);
+    const isEditing = editingItemIndex === itemIndex && live && allowLineFieldEdit;
+
+    if (isEditing) {
+      return (
+        <tr key={itemIndex} className="gateway-table__row gateway-table__row--editing">
+          <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
+          <td className="gateway-table__text">
+            <input
+              className="gateway-table__inline-input"
+              value={editDraft.name}
+              onChange={(e) => setEditDraft((prev) => ({ ...prev, name: e.target.value }))}
+              aria-label="شرح کالا"
+              placeholder="شرح کالا"
+            />
+            <input
+              className="gateway-table__inline-input"
+              style={{ marginTop: '0.35rem' }}
+              value={editDraft.description}
+              onChange={(e) => setEditDraft((prev) => ({ ...prev, description: e.target.value }))}
+              aria-label="توضیحات"
+              placeholder="توضیحات"
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              min="0"
+              className="gateway-table__inline-input gateway-table__inline-input--narrow"
+              value={editDraft.qty}
+              onChange={(e) => setEditDraft((prev) => ({ ...prev, qty: e.target.value }))}
+              aria-label="مقدار"
+            />
+          </td>
+          <td className="gateway-table__cell-actions-host">
+            <input
+              className="gateway-table__inline-input gateway-table__inline-input--narrow"
+              value={editDraft.unit}
+              onChange={(e) => setEditDraft((prev) => ({ ...prev, unit: e.target.value }))}
+              aria-label="واحد"
+            />
+            <RowHoverActions>
+              <button type="button" className="gateway-icon-btn gateway-icon-btn--save" onClick={() => saveEdit(itemIndex)} aria-label="ذخیره">✓</button>
+              <button type="button" className="gateway-icon-btn" onClick={() => { setEditingItemIndex(null); setPendingSensitiveEdit(null); }} aria-label="انصراف">×</button>
+            </RowHoverActions>
+          </td>
+          <td className="gateway-table__muted">—</td>
+          <td className="gateway-table__muted">—</td>
+          <td className="gateway-table__muted">—</td>
+        </tr>
+      );
+    }
 
     return (
-      <tr key={itemIndex} className="gateway-table__row">
+      <tr key={itemIndex} className="gateway-table__row gateway-table__row--hoverable">
         <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-        <td className="gateway-table__text"><LockedText>{item.name || '—'}</LockedText></td>
+        <td className="gateway-table__text gateway-table__cell-actions-host">
+          <LockedText>{item.name || '—'}</LockedText>
+          {item.description ? (
+            <span className="gateway-table__muted" style={{ display: 'block', fontSize: '0.75rem' }}>
+              {item.description}
+            </span>
+          ) : null}
+          {live && allowLineFieldEdit && (
+            <RowHoverActions>
+              <button
+                type="button"
+                className="gateway-icon-btn"
+                onClick={() => startEdit(itemIndex)}
+                aria-label="ویرایش کالا"
+                title="ویرایش کالا"
+              >
+                <PencilIcon />
+              </button>
+            </RowHoverActions>
+          )}
+        </td>
         <td><LockedText>{item.qty?.toLocaleString('fa-IR') ?? '—'}</LockedText></td>
         <td><LockedText>{item.unit || '—'}</LockedText></td>
         <td className="gateway-table__num gateway-td--supply">
           {target ? formatAmountRial(target.unitPrice) : '—'}
         </td>
         <td className="gateway-td--sale">
-          {live ? (
+          {live && allowMarginEdit ? (
             <MarginInputGroup
               value={linePreview.marginInputValue}
               unit={marginUnit}
@@ -690,6 +788,18 @@ export default function GatewayMorphTable({
           <tbody>{renderBody()}</tbody>
         </table>
       </div>
+
+      <OrderProfileConfirmDialog
+        open={Boolean(pendingSensitiveEdit)}
+        title="بازنشانی قیمت‌های استعلامی"
+        message={SENSITIVE_WIPE_CONFIRM_MESSAGE}
+        confirmLabel="تایید و ادامه"
+        onConfirm={() => {
+          if (!pendingSensitiveEdit) return;
+          commitEdit(pendingSensitiveEdit.itemIndex, pendingSensitiveEdit.patch, true);
+        }}
+        onCancel={() => setPendingSensitiveEdit(null)}
+      />
     </div>
   );
 }

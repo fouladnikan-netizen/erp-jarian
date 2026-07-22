@@ -2,15 +2,12 @@ import { useMemo } from 'react';
 import { calculateQuotingPreview } from '../../inquiryService';
 import { DEFAULT_SALE_TYPE } from '../../constants';
 import { GATEWAY_PHASES } from '../../gatewayConfig';
-import {
-  advanceGatewayPhase,
-  sendProformaToCustomer,
-} from '../../gatewayLifecycleService';
+import { sendProformaToCustomer } from '../../gatewayLifecycleService';
 import {
   shouldShowGatewayFinancialSummary,
   removeGatewayOrderItem,
   removeGatewayInquiry,
-  updateGatewayOrderItem,
+  updateGatewayOrderItemWithSensitivity,
 } from '../../gatewayService';
 import { saveItemMargin } from '../../quotingService';
 import {
@@ -20,7 +17,6 @@ import {
 import GatewayMorphTable from './gateway/GatewayMorphTable';
 import GatewayFinancialSummary from './gateway/GatewayFinancialSummary';
 import GatewayDecisionPanel from './gateway/GatewayDecisionPanel';
-import GatewayStageActions from './gateway/GatewayStageActions';
 import GatewayPishkeshPanel from './gateway/GatewayPishkeshPanel';
 import OrderProfileOperationsTab from './OrderProfileOperationsTab';
 
@@ -55,22 +51,18 @@ export default function OrderProfileGatewayTab({
     onUpdateOrder?.((current) => saveItemMargin(current, itemIndex, marginValue, marginType));
   };
 
-  const handleAdvance = (phase) => {
-    const result = advanceGatewayPhase(order, phase);
-    if (!result.accepted) {
-      window.alert(result.error || 'امکان پیشروی به مرحله بعد وجود ندارد.');
-      return;
-    }
-    onAdvancePhase?.(result.order);
-  };
-
   const handleSendProforma = () => {
     onUpdateOrder?.((current) => sendProformaToCustomer(current));
     window.alert(`پیش‌فاکتور سفارش برای ${order.customer} ارسال شد.`);
   };
 
-  const handleEditItem = (itemIndex, patch) => {
-    onUpdateOrder?.((current) => updateGatewayOrderItem(current, itemIndex, patch));
+  const handleEditItem = (itemIndex, patch, { wipeConfirmed = false } = {}) => {
+    onUpdateOrder?.((current) => updateGatewayOrderItemWithSensitivity(
+      current,
+      itemIndex,
+      patch,
+      { wipeConfirmed },
+    ));
   };
 
   const handleDeleteItem = (itemIndex) => {
@@ -152,15 +144,7 @@ export default function OrderProfileGatewayTab({
         orderPhase={orderPhase}
         preview={preview}
         saleType={saleType}
-        onAdvance={handleAdvance}
         onSendToCustomer={handleSendProforma}
-      />
-
-      <GatewayStageActions
-        order={order}
-        viewPhase={viewPhase}
-        orderPhase={orderPhase}
-        onAdvance={handleAdvance}
       />
     </div>
   );

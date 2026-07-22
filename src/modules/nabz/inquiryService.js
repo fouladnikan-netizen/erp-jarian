@@ -6,6 +6,7 @@ import {
   INQUIRY_STATUS,
   ITEM_INQUIRY_STATUS,
 } from './inquiryConfig';
+import { canEditInquiryPrices } from './orderEditPermissions';
 import { getSupplierName } from './suppliers';
 import { formatAmountRial, parseMoneyInput } from './orderCode';
 import {
@@ -178,6 +179,7 @@ function applyDraftToInquiry(inquiry, draft) {
 }
 
 export function updateInquiryOnOrder(order, itemIndex, inquiryId, draft) {
+  if (!canEditInquiryPrices()) return order;
   const items = (order.items || []).map((item, idx) => {
     if (idx !== itemIndex) return item;
     return {
@@ -232,6 +234,7 @@ export function appendInquiryToOrder(
   registeredBy = CURRENT_USER,
   status = INQUIRY_STATUS.DRAFT,
 ) {
+  if (!canEditInquiryPrices()) return order;
   const inquiry = buildInquiryFromDraft(draft, registeredBy, status);
   const event = buildInquiryEvent(order, itemIndex, inquiry);
   const items = (order.items || []).map((item, idx) => {

@@ -7,10 +7,14 @@ import {
   SALES_TYPES,
 } from '../constants';
 import {
+  applyOrderEdit,
   buildNewOrder,
   createLineItemsFromSelections,
+  orderToEditDraft,
   validateCreateOrder,
 } from '../createOrder';
+import { expertKey, listCustomerExperts } from '../customers';
+import { SENSITIVE_WIPE_CONFIRM_MESSAGE } from '../orderEditPermissions';
 import CustomerCombobox from './CustomerCombobox';
 import ExpertCombobox, { getExpertFromValue } from './ExpertCombobox';
 import FormSegment from './FormSegment';
@@ -18,6 +22,7 @@ import ProductPickerModal from './ProductPickerModal';
 import OrderLineItemsTable from './OrderLineItemsTable';
 import QuickAddCustomerModal from './QuickAddCustomerModal';
 import QuickAddExpertModal from './QuickAddExpertModal';
+import OrderProfileConfirmDialog from './orderProfile/OrderProfileConfirmDialog';
 
 function FormField({ label, children, hint, action }) {
   return (
@@ -43,18 +48,46 @@ function QuickAddLink({ children, onClick, disabled }) {
   );
 }
 
-export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
-  const [customerId, setCustomerId] = useState(null);
-  const [expertKey, setExpertKey] = useState(null);
-  const [saleType, setSaleType] = useState(DEFAULT_SALE_TYPE);
-  const [orderType, setOrderType] = useState(DEFAULT_ORDER_TYPE);
-  const [lineItems, setLineItems] = useState([]);
-  const [generalNotes, setGeneralNotes] = useState('');
+function resolveExpertKey(customerId, requesterName, requesterMobile) {
+  if (!customerId || !requesterName) return null;
+  const match = listCustomerExperts(customerId).find((person) => (
+    person.name === requesterName
+    && (!requesterMobile || person.mobile === requesterMobile)
+  ));
+  return match ? expertKey(match) : null;
+}
+
+export default function CreateOrderDrawer({
+  orders,
+  onClose,
+  onSubmit,
+  mode = 'create',
+  order = null,
+  onSave,
+}) {
+  const isEdit = mode === 'edit' && Boolean(order);
+  const initialDraft = isEdit ? orderToEditDraft(order) : null;
+
+  const [customerId, setCustomerId] = useState(initialDraft?.customerId ?? null);
+  const [expertKeyValue, setExpertKeyValue] = useState(() => (
+    initialDraft
+      ? resolveExpertKey(
+        initialDraft.customerId,
+        initialDraft.requesterName,
+        initialDraft.requesterMobile,
+      )
+      : null
+  ));
+  const [saleType, setSaleType] = useState(initialDraft?.saleType ?? DEFAULT_SALE_TYPE);
+  const [orderType, setOrderType] = useState(initialDraft?.orderType ?? DEFAULT_ORDER_TYPE);
+  const [lineItems, setLineItems] = useState(initialDraft?.lineItems ?? []);
+  const [generalNotes, setGeneralNotes] = useState(initialDraft?.generalNotes ?? '');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [expertModalOpen, setExpertModalOpen] = useState(false);
   const [contactsTick, setContactsTick] = useState(0);
   const [submitError, setSubmitError] = useState('');
+  const [wipeConfirmOpen, setWipeConfirmOpen] = useState(false);
   const [entered, setEntered] = useState(false);
 
   useEffect(() => {
@@ -64,7 +97,7 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
 
   const handleCustomerChange = (nextId) => {
     setCustomerId(nextId);
-    setExpertKey(null);
+    setExpertKeyValue(null);
   };
 
   const validation = useMemo(
@@ -73,8 +106,8 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
   );
 
   const selectedExpert = useMemo(
-    () => getExpertFromValue(customerId, expertKey),
-    [customerId, expertKey, contactsTick],
+    () => getExpertFromValue(customerId, expertKeyValue),
+    [customerId, expertKeyValue, contactsTick],
   );
 
   const addProductsFromPicker = (selections) => {
@@ -90,12 +123,40 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
     window.setTimeout(onClose, 220);
   };
 
+  const buildEditPayload = () => ({
+    customerId,
+    lineItems,
+    orderType,
+    saleType,
+    generalNotes,
+    requesterName: selectedExpert?.name,
+    requesterMobile: selectedExpert?.mobile,
+  });
+
+  const commitEdit = (wipeConfirmed = false) => {
+    const result = applyOrderEdit(order, buildEditPayload(), { wipeConfirmed });
+    if (result.needsWipeConfirm) {
+      setWipeConfirmOpen(true);
+      return;
+    }
+    if (!result.ok) return;
+    onSave?.(result.order);
+    handleClose();
+  };
+
   const handleSubmit = () => {
     if (!validation.valid) {
       setSubmitError(validation.reason);
       return;
     }
-    const order = buildNewOrder({
+    setSubmitError('');
+
+    if (isEdit) {
+      commitEdit(false);
+      return;
+    }
+
+    const nextOrder = buildNewOrder({
       orders,
       customerId,
       assignee: CURRENT_USER,
@@ -106,9 +167,13 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
       requesterName: selectedExpert?.name,
       requesterMobile: selectedExpert?.mobile,
     });
-    onSubmit(order);
+    onSubmit(nextOrder);
     handleClose();
   };
+
+  const title = isEdit ? 'ویرایش سفارش' : 'ثبت سفارش جدید';
+  const eyebrow = isEdit ? 'نبض · ویرایش سفارش' : 'نبض · سفارش جدید';
+  const submitLabel = isEdit ? 'ذخیره تغییرات' : 'ثبت و ایجاد سفارش';
 
   return (
     <>
@@ -126,10 +191,13 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
         >
           <header className="nabz-create-premium__header">
             <div className="nabz-create-premium__header-copy">
-              <p className="nabz-create-premium__eyebrow font-meem">نبض · سفارش جدید</p>
+              <p className="nabz-create-premium__eyebrow font-meem">{eyebrow}</p>
               <h2 id="nabz-create-order-title" className="nabz-create-premium__title font-meem">
-                ثبت سفارش جدید
+                {title}
               </h2>
+              {isEdit && order?.code ? (
+                <p className="nabz-create-premium__code font-yekan">{order.code}</p>
+              ) : null}
             </div>
             <button
               type="button"
@@ -174,8 +242,8 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
                 <ExpertCombobox
                   key={`expert-${customerId}-${contactsTick}`}
                   customerId={customerId}
-                  value={expertKey}
-                  onChange={setExpertKey}
+                  value={expertKeyValue}
+                  onChange={setExpertKeyValue}
                 />
               </FormField>
             </div>
@@ -265,7 +333,7 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
               disabled={!validation.valid}
               onClick={handleSubmit}
             >
-              ثبت و ایجاد سفارش
+              {submitLabel}
             </button>
           </footer>
         </aside>
@@ -294,10 +362,22 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
           onClose={() => setExpertModalOpen(false)}
           onAdded={(key) => {
             setContactsTick((tick) => tick + 1);
-            setExpertKey(key);
+            setExpertKeyValue(key);
           }}
         />
       )}
+
+      <OrderProfileConfirmDialog
+        open={wipeConfirmOpen}
+        title="بازنشانی قیمت‌های استعلامی"
+        message={SENSITIVE_WIPE_CONFIRM_MESSAGE}
+        confirmLabel="تایید و ذخیره"
+        onConfirm={() => {
+          setWipeConfirmOpen(false);
+          commitEdit(true);
+        }}
+        onCancel={() => setWipeConfirmOpen(false)}
+      />
     </>
   );
 }

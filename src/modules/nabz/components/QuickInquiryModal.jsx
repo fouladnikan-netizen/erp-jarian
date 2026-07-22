@@ -28,13 +28,19 @@ import {
 } from '../inquiryService';
 import { MARGIN_MODES } from '../quotingConfig';
 import { listSuppliers } from '../suppliers';
-import { shouldShowPishkeshTabs, shouldShowQuotingSection } from '../orderStageService';
 import { PISHKESH_MODAL_TABS } from '../proformaConfig';
 import { getProformaTerms } from '../proformaService';
+import { isGatewayLivePhase } from '../gatewayService';
+import {
+  canEditInquiryPrices,
+  canEditProfitMargin,
+} from '../orderEditPermissions';
 import {
   canViewSupplierIdentity,
   DEFAULT_SALE_TYPE,
 } from '../constants';
+import { toDisplayOrderCode } from '../orderCode';
+import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../orderStageService';
 import ProformaTab from './ProformaTab';
 import QuotingReadOnlyPanel from './QuotingReadOnlyPanel';
 import {
@@ -182,6 +188,8 @@ function SupplyStrip({
   allowTargetSelection,
   showQuoting,
   showSupplier,
+  canManage = true,
+  canEditMargins = false,
   lineMarginMode,
   lineMarginInputValue,
   onLineMarginChange,
@@ -189,8 +197,10 @@ function SupplyStrip({
 }) {
   const inquiries = item.inquiries || [];
   const targetInquiry = getTargetInquiry(item);
-  const isLineMarginEditable = lineMarginMode === MARGIN_MODES.LINE_FIXED_RIAL
-    || lineMarginMode === MARGIN_MODES.LINE_FIXED_PERCENT;
+  const isLineMarginEditable = canEditMargins && (
+    lineMarginMode === MARGIN_MODES.LINE_FIXED_RIAL
+    || lineMarginMode === MARGIN_MODES.LINE_FIXED_PERCENT
+  );
   const lineMarginPlaceholder = lineMarginMode === MARGIN_MODES.LINE_FIXED_PERCENT ? '%' : 'ریال';
 
   return (
@@ -216,9 +226,9 @@ function SupplyStrip({
                 flat
               />
             ) : (
-              !draftOpen && <span className="nabz-quick-table__muted">—</span>
+              canManage && !draftOpen && <span className="nabz-quick-table__muted">—</span>
             )}
-            {!draftOpen && (
+            {canManage && !draftOpen && (
               <button
                 type="button"
                 className="nabz-inquiry-add-btn nabz-inquiry-add-btn--mini"
@@ -312,13 +322,15 @@ function SupplyStrip({
                         <InquiryCompact
                           inquiry={inq}
                           inquiryIndex={inquiryIndex}
-                          selectable={allowTargetSelection}
+                          selectable={allowTargetSelection && (canManage || canEditMargins)}
                           isTarget={targetInquiry?.id === inq.id}
                           onSelectTarget={onSelectTarget}
                           showSupplier={showSupplier}
                           flat
                           targetGroupName={`nabz-inquiry-target-${itemIndex}`}
-                          onEdit={!draftOpen ? (inquiryId) => onEditInquiry(itemIndex, inquiryId) : undefined}
+                          onEdit={canManage && !draftOpen
+                            ? (inquiryId) => onEditInquiry(itemIndex, inquiryId)
+                            : undefined}
                         />
                       </div>
                     )
@@ -326,7 +338,7 @@ function SupplyStrip({
                 </div>
               )}
 
-              {draftOpen && editingInquiryId == null && (
+              {canManage && draftOpen && editingInquiryId == null && (
                 <InlineQuickForm
                   draft={draft}
                   onChange={onDraftChange}
@@ -336,7 +348,7 @@ function SupplyStrip({
                 />
               )}
 
-              {inquiries.length === 0 && !draftOpen && (
+              {inquiries.length === 0 && !(canManage && draftOpen) && (
                 <p className="nabz-quick-subrow__empty">هنوز استعلامی ثبت نشده است.</p>
               )}
             </div>
@@ -372,15 +384,24 @@ export default function QuickInquiryModal({
     }));
   };
   const [activeItemIndex, setActiveItemIndex] = useState(focusItemIndex);
-  const [expandedItems, setExpandedItems] = useState(() => new Set([focusItemIndex]));
+  const [expandedItems, setExpandedItems] = useState(() => new Set());
   const [draftItemIndex, setDraftItemIndex] = useState(null);
   const [editingInquiryId, setEditingInquiryId] = useState(null);
   const [draft, setDraft] = useState(getEmptyQuickInquiryDraft());
   const [warning, setWarning] = useState('');
   const [pishkeshTab, setPishkeshTab] = useState(PISHKESH_MODAL_TABS.PROFORMA);
-  const showPishkesh = shouldShowPishkeshTabs(order);
-  const showQuoting = shouldShowQuotingSection(order);
+  const isGatewayView = pipeline.viewMode === 'gateway';
+  const viewPhase = pipeline.viewPhase;
+  const orderPhase = pipeline.orderPhase;
+  const isLivePhase = isGatewayLivePhase(orderPhase, viewPhase);
+  const showPishkesh = isGatewayView && viewPhase === GATEWAY_PHASES.PISHKESH;
+  const showQuoting = isGatewayView && viewPhase === GATEWAY_PHASES.MOZENE;
+  const showKavosh = isGatewayView && viewPhase === GATEWAY_PHASES.KAVOSH;
+  const showQuotingEditable = showQuoting && isLivePhase;
   const showSupplier = canViewSupplierIdentity();
+  // Inquiry price edit: کاشف/شوالیه in کاوش/مظنه views. Margin: راهبر only.
+  const canManageInquiries = (showKavosh || showQuoting) && canEditInquiryPrices();
+  const canManageQuoting = showQuotingEditable && canEditProfitMargin();
   const activeOperationalPhase = pipeline.operationalViewPhase || getOrderOperationalPhase(order);
   const showParvanePanel = order.status === ORDER_TABS.SUCCESS
     && pipeline.viewMode === 'operations'
@@ -414,12 +435,19 @@ export default function QuickInquiryModal({
   const preview = useMemo(() => calculateQuotingPreview(order), [order]);
   const canCompleteInquiry = useMemo(() => canCompleteOrderInquiries(order), [order]);
   const canCompleteQuote = useMemo(() => canCompleteQuoting(order), [order]);
-  const missingTargetMessage = showQuoting ? getMissingTargetMessage(order) : '';
+  const missingTargetMessage = showQuotingEditable ? getMissingTargetMessage(order) : '';
   const lineMarginMode = quoting.marginMode;
   const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
   const saleColumnLabel = saleType === 'رسمی' ? 'قیمت قبل از مالیات' : 'قیمت فروش';
+  const showPrimaryAction = isGatewayView && isLivePhase && !showPishkesh;
   const primaryActionLabel = showQuoting ? 'تکمیل مظنه' : 'تکمیل کاوش';
   const primaryActionDisabled = showQuoting ? !canCompleteQuote : !canCompleteInquiry;
+  const statusKind = getOrderDisplayStatusKind(order);
+  const statusLabel = getOrderDisplayStatus(order);
+  const displayOrderCode = toDisplayOrderCode(order.code);
+  const expertName = order.requesterName || '—';
+  const knightName = order.assignee || '—';
+  const registeredAt = [order.registeredDate, order.registeredTime].filter(Boolean).join(' · ');
   const proformaTerms = getProformaTerms(order);
   const proformaTermsEditable = Boolean(order.proforma?.termsEditable);
   const handlePrimaryAction = () => {
@@ -431,7 +459,7 @@ export default function QuickInquiryModal({
   };
 
   const handleClose = () => {
-    if (showQuoting && missingTargetMessage) {
+    if (showQuotingEditable && missingTargetMessage) {
       setWarning(missingTargetMessage);
       return;
     }
@@ -439,11 +467,13 @@ export default function QuickInquiryModal({
   };
 
   const handleSelectTarget = (itemIndex, inquiryId) => {
+    if (!canManageInquiries && !canManageQuoting) return;
     setWarning('');
     onSetTargetInquiry(order.id, itemIndex, inquiryId);
   };
 
   const handleQuotingPatch = (patch) => {
+    if (!canManageQuoting) return;
     if (missingTargetMessage) {
       setWarning(missingTargetMessage);
       return;
@@ -518,21 +548,42 @@ export default function QuickInquiryModal({
       >
         <header className="nabz-quick-inquiry-modal__header">
           <div className="nabz-quick-inquiry-modal__header-main">
-            <h3>نمایش سریع سفارش</h3>
-            <p className="nabz-quick-inquiry-modal__order">{order.code}</p>
-            <div className="nabz-quick-inquiry-modal__context">
-              <strong className="nabz-quick-inquiry-modal__customer">{order.customer}</strong>
-              {order.generalNotes ? (
-                <p className="nabz-quick-inquiry-modal__general-notes">{order.generalNotes}</p>
-              ) : (
-                <p className="nabz-quick-inquiry-modal__general-notes nabz-quick-inquiry-modal__general-notes--empty">
-                  توضیحات کلی ثبت نشده است.
-                </p>
-              )}
+            <h3 className="nabz-quick-inquiry-modal__title font-meem">
+              پروفایل سفارش شرکت
+              {' '}
+              {order.customer}
+            </h3>
+            <p className="nabz-quick-inquiry-modal__meta-line font-meem">
+              <span className="nabz-quick-inquiry-modal__meta-label">کارشناس مرتبط:</span>
+              {' '}
+              <span className="nabz-quick-inquiry-modal__meta-value">{expertName}</span>
+            </p>
+            <p className="nabz-quick-inquiry-modal__meta-line font-meem">
+              <span className="nabz-quick-inquiry-modal__meta-label">شوالیه:</span>
+              {' '}
+              <span className="nabz-quick-inquiry-modal__meta-value">{knightName}</span>
+            </p>
+            <div className="nabz-quick-inquiry-modal__identity">
+              <span className="nabz-quick-inquiry-modal__code font-yekan" title={displayOrderCode}>
+                {displayOrderCode}
+              </span>
+              <span className={`nabz-order-status nabz-order-status--${statusKind}`}>
+                {statusLabel}
+              </span>
             </div>
+            {registeredAt && (
+              <p className="nabz-quick-inquiry-modal__meta-line nabz-quick-inquiry-modal__meta-line--datetime font-meem">
+                <span className="nabz-quick-inquiry-modal__meta-label">تاریخ و زمان ثبت:</span>
+                {' '}
+                <span className="nabz-quick-inquiry-modal__meta-value font-yekan">{registeredAt}</span>
+              </p>
+            )}
+            {order.generalNotes ? (
+              <p className="nabz-quick-inquiry-modal__general-notes">{order.generalNotes}</p>
+            ) : null}
           </div>
           <div className="nabz-quick-inquiry-modal__header-actions">
-            {!showPishkesh && (
+            {!showPishkesh && showPrimaryAction && (
               <button
                 type="button"
                 className="btn btn--primary"
@@ -546,7 +597,7 @@ export default function QuickInquiryModal({
               type="button"
               className="btn btn--ghost btn--icon"
               onClick={handleClose}
-              disabled={showQuoting && Boolean(missingTargetMessage)}
+              disabled={showQuotingEditable && Boolean(missingTargetMessage)}
               aria-label="بستن"
             >
               <CloseIcon />
@@ -660,11 +711,21 @@ export default function QuickInquiryModal({
                 onToggleTermsEdit={(enabled) => onUpdateProforma(order.id, { termsEditable: enabled, terms: proformaTerms })}
               />
             )
+          ) : showQuoting && !showQuotingEditable ? (
+            <QuotingReadOnlyPanel
+              order={order}
+              preview={preview}
+              quoting={quoting}
+              lineMarginMode={lineMarginMode}
+              showSupplier={showSupplier}
+              saleType={saleType}
+            />
           ) : (
             <>
-          {showQuoting && (
+          {showQuotingEditable && (
             <QuotingMatrix
               quoting={quoting}
+              readOnly={!canManageQuoting}
               onChangeMode={(marginMode) => handleQuotingPatch({ marginMode })}
               onChangeOrderValue={(orderMarginValue) => handleQuotingPatch({ orderMarginValue })}
             />
@@ -721,6 +782,8 @@ export default function QuickInquiryModal({
                     allowTargetSelection={(item.inquiries || []).length > 1}
                     showQuoting={showQuoting}
                     showSupplier={showSupplier}
+                    canManage={canManageInquiries}
+                    canEditMargins={canManageQuoting}
                     lineMarginMode={lineMarginMode}
                     lineMarginInputValue={preview.lines[itemIndex]?.marginInputValue ?? ''}
                     onLineMarginChange={(idx, value) => handleQuotingPatch({
@@ -733,7 +796,7 @@ export default function QuickInquiryModal({
             </tbody>
           </table>
 
-        {showQuoting && (
+        {showQuotingEditable && (
           <footer className="nabz-quick-inquiry-modal__footer nabz-quoting-footer">
             <section className="nabz-quoting-footer__summary">
               <div className="nabz-quoting-footer__billing">

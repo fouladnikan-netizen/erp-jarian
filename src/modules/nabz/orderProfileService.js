@@ -1,5 +1,7 @@
-import { ORDER_TABS, ORDER_TAB_META, getStageLabel, STAGE_PISHKESH_ID, STAGE_KAVOSH_ID, STAGE_MOZENE_ID } from './config';
-import { buildStatusHistory } from './orderStageService';
+import { ORDER_TABS, getStageLabel, STAGE_PISHKESH_ID, STAGE_KAVOSH_ID, STAGE_MOZENE_ID } from './config';
+import { CURRENT_USER } from './constants';
+import { getTodayJalali, getNowTimeFa } from './dateUtils';
+import { buildStatusHistory, getEffectiveStageId } from './orderStageService';
 
 let commentIdCounter = 1000;
 let attachmentIdCounter = 2000;
@@ -93,14 +95,9 @@ export function appendProfileAttachment(order, file) {
   };
 }
 
-export function getOrderProfileBreadcrumb(order) {
-  const listLabel = ORDER_TAB_META[order.status]?.label
-    ? `سفارشات ${ORDER_TAB_META[order.status].label}`
-    : 'سفارشات جاری';
+export function getOrderProfileBreadcrumb() {
   return [
     { label: 'بازگشت به لیست سفارشات', to: '/nabz', isBack: true },
-    { label: 'نبض', to: '/nabz' },
-    { label: listLabel },
   ];
 }
 
@@ -156,15 +153,21 @@ export function buildOrderActivityTimeline(order) {
 }
 
 export function shouldShowPrintProforma(order) {
+  // صدور/چاپ پیش‌فاکتور فقط در مرحله پیش‌کش (مظنه قبلاً تکمیل شده)
+  return order.stageId >= STAGE_PISHKESH_ID;
+}
+
+export function shouldShowIssueProforma(order) {
   return order.stageId >= STAGE_PISHKESH_ID;
 }
 
 export function getOrderProfileNextAction(order) {
-  if (order.stageId === STAGE_KAVOSH_ID) {
+  const stageId = getEffectiveStageId(order);
+  if (stageId === STAGE_KAVOSH_ID) {
     return { id: 'complete-kavosh', label: 'تایید استعلام‌ها و ورود به مظنه' };
   }
-  if (order.stageId === STAGE_MOZENE_ID) {
-    return { id: 'complete-mozene', label: 'صدور پیش‌فاکتور (پیش‌کش)' };
+  if (stageId === STAGE_MOZENE_ID) {
+    return { id: 'complete-mozene', label: 'تکمیل مظنه و ورود به پیش‌کش' };
   }
   return null;
 }
@@ -172,10 +175,10 @@ export function getOrderProfileNextAction(order) {
 export function getOrderProfilePrimaryActions(order) {
   const actions = [];
 
-  if (order.stageId >= STAGE_PISHKESH_ID) {
+  if (shouldShowIssueProforma(order)) {
     actions.push({
       id: 'print-proforma',
-      label: 'چاپ پیش‌فاکتور',
+      label: 'صدور پیش‌فاکتور',
       variant: 'primary',
     });
   }
@@ -183,19 +186,61 @@ export function getOrderProfilePrimaryActions(order) {
   return actions;
 }
 
-export function markOrderCancelled(order) {
+export function markOrderCancelled(order, failReason) {
+  const reason = String(failReason || '').trim();
+  if (!reason) return order;
+
+  const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
   return {
     ...order,
     status: ORDER_TABS.FAILED,
-    failReason: order.failReason || 'لغو توسط کاربر',
+    failReason: reason,
     events: [
       ...(order.events || []),
       {
         id: Date.now(),
         type: 'order_cancelled',
-        at: new Date().toLocaleDateString('fa-IR'),
+        at,
+        by: CURRENT_USER,
+        summary: `لغو سفارش ${order.code} — ${reason}`,
+        failReason: reason,
+      },
+    ],
+  };
+}
+
+export function markOrderArchived(order) {
+  const at = new Date().toLocaleDateString('fa-IR');
+  return {
+    ...order,
+    archivedAt: at,
+    events: [
+      ...(order.events || []),
+      {
+        id: Date.now(),
+        type: 'order_archived',
+        at,
         by: 'کاربر جاری',
-        summary: `لغو سفارش ${order.code}`,
+        summary: `بایگانی سفارش ${order.code}`,
+      },
+    ],
+  };
+}
+
+export function markOrderClosed(order) {
+  const at = new Date().toLocaleDateString('fa-IR');
+  return {
+    ...order,
+    closedAt: at,
+    status: order.status === ORDER_TABS.FAILED ? order.status : ORDER_TABS.SUCCESS,
+    events: [
+      ...(order.events || []),
+      {
+        id: Date.now(),
+        type: 'order_closed',
+        at,
+        by: 'کاربر جاری',
+        summary: `بستن سفارش ${order.code}`,
       },
     ],
   };

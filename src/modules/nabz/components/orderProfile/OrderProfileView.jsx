@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ORDER_TABS } from '../../config';
 import { ORDER_PROFILE_TABS } from '../../orderProfileConfig';
 import { getOrderGatewayPhase } from '../../gatewayService';
 import {
   executeGatewayHeaderAction,
-  gatewayStageToPhase,
   getGatewayCurrentStage,
 } from '../../gatewayLifecycleService';
 import { getOrderOperationalPhase } from '../../phase2Service';
@@ -14,7 +13,9 @@ import {
   appendCrmActivity,
   updateCrmActivity,
 } from '../../orderCrmService';
+import { canEditWholeOrder } from '../../orderEditPermissions';
 import QuickActivityModal from '../QuickActivityModal';
+import CreateOrderDrawer from '../CreateOrderDrawer';
 import OrderProfileChrome from './OrderProfileChrome';
 import OrderProfileGatewayTab from './OrderProfileGatewayTab';
 import OrderProfileCrmTab from './OrderProfileCrmTab';
@@ -31,6 +32,7 @@ export default function OrderProfileView({
   onAddInquiry,
   onSetTargetInquiry,
 }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(ORDER_PROFILE_TABS.GATEWAY);
   const orderPhase = getOrderGatewayPhase(order);
   const operationalPhase = getOrderOperationalPhase(order);
@@ -41,6 +43,7 @@ export default function OrderProfileView({
     order.status === ORDER_TABS.SUCCESS ? 'operations' : 'gateway',
   );
   const [activityModal, setActivityModal] = useState({ open: false, editActivity: null });
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
 
   useEffect(() => {
     setViewPhase(orderPhase);
@@ -75,7 +78,7 @@ export default function OrderProfileView({
 
   const handleGatewayAdvance = (nextOrder) => {
     updateOrder(() => nextOrder);
-    setViewPhase(gatewayStageToPhase(nextOrder.stageId));
+    setViewPhase(getOrderGatewayPhase(nextOrder));
     if (nextOrder.status === ORDER_TABS.SUCCESS) {
       setOperationalViewPhase(getOrderOperationalPhase(nextOrder));
       setViewMode('operations');
@@ -136,12 +139,35 @@ export default function OrderProfileView({
           viewMode={viewMode}
           onPhaseChange={handlePhaseChange}
           onOperationalPhaseChange={handleOperationalPhaseChange}
-          onCancelOrder={() => updateOrder(markOrderCancelled)}
-          onEditOrder={() => window.alert('ویرایش کلی سفارش — در نسخه بعدی فعال می‌شود.')}
+          onCancelOrder={(reason) => {
+            updateOrder((current) => markOrderCancelled(current, reason));
+            navigate(`/nabz?tab=${ORDER_TABS.FAILED}`);
+          }}
+          onEditOrder={() => {
+            if (!canEditWholeOrder()) {
+              window.alert('ویرایش کلی سفارش فقط برای نقش شوالیه فعال است.');
+              return;
+            }
+            setEditDrawerOpen(true);
+          }}
           onNextAction={handleNextAction}
           onOpenActivityModal={() => openActivityModal()}
         />
       </div>
+
+      {editDrawerOpen && (
+        <CreateOrderDrawer
+          key={`edit-${order.id}`}
+          mode="edit"
+          order={order}
+          orders={[]}
+          onClose={() => setEditDrawerOpen(false)}
+          onSave={(nextOrder) => {
+            updateOrder(() => nextOrder);
+            setEditDrawerOpen(false);
+          }}
+        />
+      )}
 
       <QuickActivityModal
         open={activityModal.open}
