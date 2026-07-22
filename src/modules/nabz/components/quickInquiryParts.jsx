@@ -132,6 +132,15 @@ export function QuotingMatrix({
   );
 }
 
+function PencilIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
 function SupplyTypeDot({ supplyType, className = '' }) {
   const dotClass = SUPPLY_TYPE_DOT_CLASS[supplyType] || 'is-official';
   return (
@@ -145,50 +154,60 @@ function SupplyTypeDot({ supplyType, className = '' }) {
 
 export function InquiryCompact({
   inquiry,
+  inquiryIndex = 0,
   selectable,
   isTarget,
   onSelectTarget,
   showSupplier,
   readOnly = false,
+  flat = false,
+  onEdit,
+  targetGroupName,
 }) {
   const amount = formatAmountRial(inquiry.unitPrice);
-  const supplier = getSupplierName(inquiry.supplierId);
-  const hoverDetails = showSupplier
-    ? `${inquiry.supplyType} — ${supplier} — ${amount} ریال`
-    : `${inquiry.supplyType} — ${amount} ریال`;
+  const supplier = showSupplier
+    ? getSupplierName(inquiry.supplierId)
+    : `تامین‌کننده ${(inquiryIndex + 1).toLocaleString('fa-IR')}`;
+  const hoverDetails = `${inquiry.supplyType} — ${supplier} — ${amount} ریال`;
 
   return (
     <div
-      className={`nabz-inquiry-compact${isTarget ? ' is-target' : ''}${showSupplier ? '' : ' is-knight-view'}${readOnly ? ' is-readonly' : ''}`}
+      className={`nabz-inquiry-compact${isTarget ? ' is-target' : ''}${flat ? ' is-flat' : ''}${readOnly ? ' is-readonly' : ''}`}
       title={hoverDetails}
     >
       {selectable && !readOnly && (
         <input
-          type="checkbox"
+          type="radio"
+          name={targetGroupName || `nabz-inquiry-target-${inquiry.id}`}
           className="nabz-inquiry-compact__target"
           checked={isTarget}
           onChange={() => {
             if (!isTarget) onSelectTarget?.(inquiry.id);
           }}
-          aria-label="انتخاب به عنوان هدف"
+          aria-label="انتخاب به عنوان استعلام منتخب"
         />
       )}
-      {readOnly && isTarget && (
-        <span className="nabz-inquiry-compact__target-badge" aria-label="استعلام هدف">✓</span>
+      {!selectable && !readOnly && isTarget && (
+        <span className="nabz-inquiry-compact__target-badge" aria-label="استعلام منتخب">✓</span>
       )}
-      <div className={`nabz-inquiry-compact__body${showSupplier ? '' : ' nabz-inquiry-compact__body--single-line'}`}>
+      <div className="nabz-inquiry-compact__body nabz-inquiry-compact__body--single-line">
         <div className="nabz-inquiry-compact__amount">
-          {!showSupplier && <SupplyTypeDot supplyType={inquiry.supplyType} />}
+          <SupplyTypeDot supplyType={inquiry.supplyType} />
           <span className="nabz-inquiry-compact__amount-value">{amount}</span>
           <span className="nabz-inquiry-compact__currency">ریال</span>
+          <span className="nabz-inquiry-compact__supplier-inline">({supplier})</span>
         </div>
-        {showSupplier && (
-          <div className="nabz-inquiry-compact__meta">
-            <SupplyTypeDot supplyType={inquiry.supplyType} />
-            <span className="nabz-inquiry-compact__supplier">{supplier}</span>
-          </div>
-        )}
       </div>
+      {onEdit && !readOnly && (
+        <button
+          type="button"
+          className="nabz-inquiry-compact__edit"
+          onClick={() => onEdit(inquiry.id)}
+          aria-label="ویرایش استعلام"
+        >
+          <PencilIcon />
+        </button>
+      )}
     </div>
   );
 }

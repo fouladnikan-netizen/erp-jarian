@@ -13,6 +13,7 @@ import {
   completeOrderInquiries,
   completeOrderQuoting,
   setTargetInquiryOnOrder,
+  updateInquiryOnOrder,
   updateOrderQuoting,
 } from './inquiryService';
 import { updateOrderProforma } from './proformaService';
@@ -82,6 +83,12 @@ export default function NabzPage() {
   const addInquiry = (orderId, itemIndex, draft) => {
     setOrders((prev) => prev.map((order) => (
       order.id === orderId ? appendInquiryToOrder(order, itemIndex, draft) : order
+    )));
+  };
+
+  const updateInquiry = (orderId, itemIndex, inquiryId, draft) => {
+    setOrders((prev) => prev.map((order) => (
+      order.id === orderId ? updateInquiryOnOrder(order, itemIndex, inquiryId, draft) : order
     )));
   };
 
@@ -226,6 +233,7 @@ export default function NabzPage() {
           order={inquiryModalOrder}
           onClose={() => setInquiryModalOrderId(null)}
           onSaveInquiry={addInquiry}
+          onUpdateInquiry={updateInquiry}
           onSetTargetInquiry={setTargetInquiry}
           onUpdateQuoting={updateQuoting}
           onCompleteInquiry={completeInquiry}

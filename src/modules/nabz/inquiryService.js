@@ -129,6 +129,71 @@ export function buildInquiryFromDraft(
   return base;
 }
 
+export function inquiryToQuickDraft(inquiry) {
+  return {
+    supplyType: inquiry.supplyType,
+    supplierId: inquiry.supplierId,
+    unitPrice: inquiry.unitPrice,
+    discrepancyDescription: inquiry.discrepancyDescription || '',
+    discrepancyWeight: inquiry.discrepancyWeight ?? '',
+    discrepancyUnitPrice: inquiry.discrepancyUnitPrice ?? '',
+  };
+}
+
+function applyDraftToInquiry(inquiry, draft) {
+  const updated = {
+    ...inquiry,
+    supplyType: draft.supplyType,
+    supplierId: Number(draft.supplierId),
+    unitPrice: parseMoneyInput(draft.unitPrice) || 0,
+  };
+
+  if (isDiscrepancySupplyType(draft.supplyType)) {
+    const discrepancyDescription = (draft.discrepancyDescription ?? '').trim();
+    const discrepancyWeight = draft.discrepancyWeight;
+    const discrepancyUnitPrice = draft.discrepancyUnitPrice;
+
+    if (discrepancyDescription) {
+      updated.discrepancyDescription = discrepancyDescription;
+    } else {
+      delete updated.discrepancyDescription;
+    }
+    if (discrepancyWeight !== '' && discrepancyWeight != null) {
+      updated.discrepancyWeight = Number(discrepancyWeight);
+    } else {
+      delete updated.discrepancyWeight;
+    }
+    if (discrepancyUnitPrice !== '' && discrepancyUnitPrice != null) {
+      updated.discrepancyUnitPrice = parseMoneyInput(discrepancyUnitPrice) || 0;
+    } else {
+      delete updated.discrepancyUnitPrice;
+    }
+  } else {
+    delete updated.discrepancyDescription;
+    delete updated.discrepancyWeight;
+    delete updated.discrepancyUnitPrice;
+  }
+
+  return updated;
+}
+
+export function updateInquiryOnOrder(order, itemIndex, inquiryId, draft) {
+  const items = (order.items || []).map((item, idx) => {
+    if (idx !== itemIndex) return item;
+    return {
+      ...item,
+      inquiries: (item.inquiries || []).map((inq) => (
+        inq.id === inquiryId ? applyDraftToInquiry(inq, draft) : inq
+      )),
+    };
+  });
+
+  return {
+    ...order,
+    items,
+  };
+}
+
 export function formatInquirySummary(inquiry, itemName) {
   const supplier = getSupplierName(inquiry.supplierId);
   const statusLabel = inquiry.status === INQUIRY_STATUS.FINALIZED ? 'تکمیل‌شده' : 'پیش‌نویس';

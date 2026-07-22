@@ -23,6 +23,7 @@ import {
   getMissingTargetMessage,
   getOrderQuoting,
   getTargetInquiry,
+  inquiryToQuickDraft,
   validateQuickInquiryDraft,
 } from '../inquiryService';
 import { MARGIN_MODES } from '../quotingConfig';
@@ -50,8 +51,10 @@ const BASE_QUICK_TABLE_COLUMNS = [
   { key: 'description', defaultWidth: 260 },
   { key: 'qty', defaultWidth: 72 },
   { key: 'unit', defaultWidth: 72 },
-  { key: 'supply', defaultWidth: 300 },
+  { key: 'supply', defaultWidth: 220 },
 ];
+
+const EXPAND_TABLE_COLUMN = { key: 'expand', defaultWidth: 48, resizable: false };
 
 const QUOTING_TABLE_COLUMNS = [
   { key: 'margin', defaultWidth: 110 },
@@ -65,7 +68,8 @@ const COLUMN_LABELS = {
   description: 'توضیحات',
   qty: 'مقدار',
   unit: 'واحد',
-  supply: 'مدیریت تامین',
+  supply: 'قیمت استعلامی',
+  expand: '',
   margin: 'حاشیه سود',
   total: 'قیمت کل',
 };
@@ -86,47 +90,74 @@ function CloseIcon() {
   );
 }
 
+function ChevronIcon({ expanded }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+      className={`nabz-quick-expand__icon${expanded ? ' is-expanded' : ''}`}
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
 function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
   const suppliers = listSuppliers();
 
   return (
-    <div className="nabz-inline-inquiry">
-      <select
-        className="nabz-inline-inquiry__input"
-        value={draft.supplyType}
-        onChange={(e) => onChange({ ...draft, supplyType: e.target.value })}
-        aria-label="نوع تامین"
-      >
-        {SUPPLY_CHANNEL_TYPES.map((type) => (
-          <option key={type} value={type}>{type}</option>
-        ))}
-      </select>
-      <select
-        className="nabz-inline-inquiry__input nabz-inline-inquiry__input--supplier"
-        value={draft.supplierId}
-        onChange={(e) => onChange({ ...draft, supplierId: Number(e.target.value) || '' })}
-        aria-label={showSupplier ? 'نام تامین‌کننده' : 'مرجع تامین'}
-      >
-        <option value="">{showSupplier ? 'تامین‌کننده...' : 'مرجع تامین...'}</option>
-        {suppliers.map((s, index) => (
-          <option key={s.id} value={s.id}>
-            {showSupplier ? (s.companyName || s.personName) : `تامین‌کننده ${index + 1}`}
-          </option>
-        ))}
-      </select>
-      <MoneyInput
-        className="nabz-inline-inquiry__input nabz-inline-inquiry__input--price"
-        value={draft.unitPrice}
-        onChange={(unitPrice) => onChange({ ...draft, unitPrice })}
-        placeholder="فی"
-        aria-label="قیمت فی"
-      />
-      <button type="button" className="nabz-inline-inquiry__save" onClick={onSave} aria-label="ذخیره استعلام">
-        <TickIcon />
-      </button>
-      <button type="button" className="nabz-inline-inquiry__cancel" onClick={onCancel} aria-label="انصراف">
-        ×
-      </button>
+    <div className="nabz-inline-inquiry nabz-inline-inquiry--labeled">
+      <div className="nabz-inline-inquiry__labels" aria-hidden="true">
+        <span>نوع تامین</span>
+        <span>{showSupplier ? 'نام تامین‌کننده' : 'مرجع تامین'}</span>
+        <span>قیمت</span>
+        <span />
+      </div>
+      <div className="nabz-inline-inquiry__fields">
+        <select
+          className="nabz-inline-inquiry__input"
+          value={draft.supplyType}
+          onChange={(e) => onChange({ ...draft, supplyType: e.target.value })}
+          aria-label="نوع تامین"
+        >
+          {SUPPLY_CHANNEL_TYPES.map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+        <select
+          className="nabz-inline-inquiry__input nabz-inline-inquiry__input--supplier"
+          value={draft.supplierId}
+          onChange={(e) => onChange({ ...draft, supplierId: Number(e.target.value) || '' })}
+          aria-label={showSupplier ? 'نام تامین‌کننده' : 'مرجع تامین'}
+        >
+          <option value="">{showSupplier ? 'تامین‌کننده...' : 'مرجع تامین...'}</option>
+          {suppliers.map((s, index) => (
+            <option key={s.id} value={s.id}>
+              {showSupplier ? (s.companyName || s.personName) : `تامین‌کننده ${index + 1}`}
+            </option>
+          ))}
+        </select>
+        <MoneyInput
+          className="nabz-inline-inquiry__input nabz-inline-inquiry__input--price"
+          value={draft.unitPrice}
+          onChange={(unitPrice) => onChange({ ...draft, unitPrice })}
+          placeholder="قیمت"
+          aria-label="قیمت"
+        />
+        <div className="nabz-inline-inquiry__actions">
+          <button type="button" className="nabz-inline-inquiry__save" onClick={onSave} aria-label="ذخیره استعلام">
+            <TickIcon />
+          </button>
+          <button type="button" className="nabz-inline-inquiry__cancel" onClick={onCancel} aria-label="انصراف">
+            ×
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -135,9 +166,14 @@ function SupplyStrip({
   item,
   itemIndex,
   isActive,
+  isExpanded,
+  totalCols,
   onFocus,
+  onToggleExpand,
   onOpenDraft,
+  onEditInquiry,
   draftOpen,
+  editingInquiryId,
   draft,
   onDraftChange,
   onSaveDraft,
@@ -152,113 +188,162 @@ function SupplyStrip({
   linePreview,
 }) {
   const inquiries = item.inquiries || [];
+  const targetInquiry = getTargetInquiry(item);
   const isLineMarginEditable = lineMarginMode === MARGIN_MODES.LINE_FIXED_RIAL
     || lineMarginMode === MARGIN_MODES.LINE_FIXED_PERCENT;
   const lineMarginPlaceholder = lineMarginMode === MARGIN_MODES.LINE_FIXED_PERCENT ? '%' : 'ریال';
 
   return (
-    <tr
-      className={`nabz-quick-table__row${isActive ? ' is-active' : ''}`}
-      onClick={() => onFocus(itemIndex)}
-    >
-      <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-      <td className="nabz-quick-table__name">{item.name}</td>
-      <td className="nabz-quick-table__desc">{item.description || '—'}</td>
-      <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
-      <td>{item.unit || '—'}</td>
-      <td className="nabz-quick-table__supply" onClick={(e) => e.stopPropagation()}>
-        <div className="nabz-supply-strip">
-          {inquiries.map((inq) => (
-            <div key={inq.id} className="nabz-supply-strip__unit">
+    <>
+      <tr
+        className={`nabz-quick-table__row nabz-quick-table__row--master${isActive ? ' is-active' : ''}${isExpanded ? ' is-expanded' : ''}`}
+        onClick={() => onFocus(itemIndex)}
+      >
+        <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
+        <td className="nabz-quick-table__name">{item.name}</td>
+        <td className="nabz-quick-table__desc">{item.description || '—'}</td>
+        <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
+        <td>{item.unit || '—'}</td>
+        <td className="nabz-quick-table__supply" onClick={(e) => e.stopPropagation()}>
+          <div className="nabz-quick-supply-cell">
+            {targetInquiry ? (
               <InquiryCompact
-                inquiry={inq}
-                selectable={allowTargetSelection}
-                isTarget={getTargetInquiry(item)?.id === inq.id}
-                onSelectTarget={onSelectTarget}
+                inquiry={targetInquiry}
+                selectable={false}
+                isTarget
                 showSupplier={showSupplier}
+                readOnly
+                flat
               />
-              {!draftOpen && (
-                <button
-                  type="button"
-                  className="nabz-inquiry-add-btn nabz-inquiry-add-btn--mini"
-                  onClick={() => onOpenDraft(itemIndex)}
-                  aria-label="افزودن استعلام بعدی"
-                >
-                  +
-                </button>
+            ) : (
+              !draftOpen && <span className="nabz-quick-table__muted">—</span>
+            )}
+            {!draftOpen && (
+              <button
+                type="button"
+                className="nabz-inquiry-add-btn nabz-inquiry-add-btn--mini"
+                onClick={() => onOpenDraft(itemIndex)}
+                aria-label={inquiries.length === 0 ? 'ثبت استعلام' : 'ثبت استعلام مجدد'}
+              >
+                +
+              </button>
+            )}
+          </div>
+        </td>
+        {showQuoting && (
+          <>
+            <td className="nabz-quick-table__margin" onClick={(e) => e.stopPropagation()}>
+              {isLineMarginEditable ? (
+                lineMarginMode === MARGIN_MODES.LINE_FIXED_RIAL ? (
+                  <MoneyInput
+                    className="nabz-quick-table__margin-input"
+                    value={lineMarginInputValue ?? ''}
+                    onChange={(next) => onLineMarginChange(itemIndex, next)}
+                    placeholder={lineMarginPlaceholder}
+                    aria-label="حاشیه سود سطر"
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    min="0"
+                    className="nabz-quick-table__margin-input"
+                    value={lineMarginInputValue ?? ''}
+                    onChange={(e) => onLineMarginChange(itemIndex, e.target.value)}
+                    placeholder={lineMarginPlaceholder}
+                    aria-label="حاشیه سود سطر"
+                  />
+                )
+              ) : (
+                <span className="nabz-quick-table__margin-badge">
+                  {formatMarginCellValue(lineMarginMode, linePreview)}
+                </span>
+              )}
+            </td>
+            <td className="nabz-quick-table__final">
+              {linePreview?.hasTarget && linePreview.saleUnitPrice > 0 ? (
+                <div className="nabz-price-line nabz-price-line--emphasis">
+                  {formatPriceLine(linePreview.saleUnitPrice)}
+                </div>
+              ) : (
+                <span className="nabz-quick-table__muted">—</span>
+              )}
+            </td>
+            <td className="nabz-quick-table__final">
+              {linePreview?.hasTarget && linePreview.lineTotal > 0 ? (
+                <div className="nabz-price-line nabz-price-line--emphasis">
+                  {formatPriceLine(linePreview.lineTotal)}
+                </div>
+              ) : (
+                <span className="nabz-quick-table__muted">—</span>
+              )}
+            </td>
+          </>
+        )}
+        <td className="nabz-quick-table__expand" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="nabz-quick-expand__btn"
+            onClick={() => onToggleExpand(itemIndex)}
+            aria-expanded={isExpanded}
+            aria-label={isExpanded ? 'بستن استعلام‌ها' : 'نمایش استعلام‌ها'}
+          >
+            <ChevronIcon expanded={isExpanded} />
+          </button>
+        </td>
+      </tr>
+      {isExpanded && (
+        <tr className="nabz-quick-table__subrow">
+          <td colSpan={totalCols}>
+            <div className="nabz-quick-subrow" onClick={(e) => e.stopPropagation()}>
+              {inquiries.length > 0 && (
+                <div className="nabz-quick-subrow__list">
+                  {inquiries.map((inq, inquiryIndex) => (
+                    draftOpen && editingInquiryId === inq.id ? (
+                      <InlineQuickForm
+                        key={inq.id}
+                        draft={draft}
+                        onChange={onDraftChange}
+                        onSave={onSaveDraft}
+                        onCancel={onCancelDraft}
+                        showSupplier={showSupplier}
+                      />
+                    ) : (
+                      <div key={inq.id} className="nabz-quick-subrow__item">
+                        <InquiryCompact
+                          inquiry={inq}
+                          inquiryIndex={inquiryIndex}
+                          selectable={allowTargetSelection}
+                          isTarget={targetInquiry?.id === inq.id}
+                          onSelectTarget={onSelectTarget}
+                          showSupplier={showSupplier}
+                          flat
+                          targetGroupName={`nabz-inquiry-target-${itemIndex}`}
+                          onEdit={!draftOpen ? (inquiryId) => onEditInquiry(itemIndex, inquiryId) : undefined}
+                        />
+                      </div>
+                    )
+                  ))}
+                </div>
+              )}
+
+              {draftOpen && editingInquiryId == null && (
+                <InlineQuickForm
+                  draft={draft}
+                  onChange={onDraftChange}
+                  onSave={onSaveDraft}
+                  onCancel={onCancelDraft}
+                  showSupplier={showSupplier}
+                />
+              )}
+
+              {inquiries.length === 0 && !draftOpen && (
+                <p className="nabz-quick-subrow__empty">هنوز استعلامی ثبت نشده است.</p>
               )}
             </div>
-          ))}
-          {draftOpen ? (
-            <InlineQuickForm
-              draft={draft}
-              onChange={onDraftChange}
-              onSave={onSaveDraft}
-              onCancel={onCancelDraft}
-              showSupplier={showSupplier}
-            />
-          ) : inquiries.length === 0 && (
-            <button
-              type="button"
-              className="nabz-inquiry-add-btn nabz-inquiry-add-btn--inline"
-              onClick={() => onOpenDraft(itemIndex)}
-              aria-label="افزودن استعلام"
-            >
-              +
-            </button>
-          )}
-        </div>
-      </td>
-      {showQuoting && (
-        <>
-          <td className="nabz-quick-table__margin" onClick={(e) => e.stopPropagation()}>
-            {isLineMarginEditable ? (
-              lineMarginMode === MARGIN_MODES.LINE_FIXED_RIAL ? (
-                <MoneyInput
-                  className="nabz-quick-table__margin-input"
-                  value={lineMarginInputValue ?? ''}
-                  onChange={(next) => onLineMarginChange(itemIndex, next)}
-                  placeholder={lineMarginPlaceholder}
-                  aria-label="حاشیه سود سطر"
-                />
-              ) : (
-                <input
-                  type="number"
-                  min="0"
-                  className="nabz-quick-table__margin-input"
-                  value={lineMarginInputValue ?? ''}
-                  onChange={(e) => onLineMarginChange(itemIndex, e.target.value)}
-                  placeholder={lineMarginPlaceholder}
-                  aria-label="حاشیه سود سطر"
-                />
-              )
-            ) : (
-              <span className="nabz-quick-table__margin-badge">
-                {formatMarginCellValue(lineMarginMode, linePreview)}
-              </span>
-            )}
           </td>
-          <td className="nabz-quick-table__final">
-            {linePreview?.hasTarget && linePreview.saleUnitPrice > 0 ? (
-              <div className="nabz-price-line nabz-price-line--emphasis">
-                {formatPriceLine(linePreview.saleUnitPrice)}
-              </div>
-            ) : (
-              <span className="nabz-quick-table__muted">—</span>
-            )}
-          </td>
-          <td className="nabz-quick-table__final">
-            {linePreview?.hasTarget && linePreview.lineTotal > 0 ? (
-              <div className="nabz-price-line nabz-price-line--emphasis">
-                {formatPriceLine(linePreview.lineTotal)}
-              </div>
-            ) : (
-              <span className="nabz-quick-table__muted">—</span>
-            )}
-          </td>
-        </>
+        </tr>
       )}
-    </tr>
+    </>
   );
 }
 
@@ -267,6 +352,7 @@ export default function QuickInquiryModal({
   focusItemIndex = 0,
   onClose,
   onSaveInquiry,
+  onUpdateInquiry,
   onSetTargetInquiry,
   onUpdateQuoting,
   onCompleteInquiry,
@@ -286,7 +372,9 @@ export default function QuickInquiryModal({
     }));
   };
   const [activeItemIndex, setActiveItemIndex] = useState(focusItemIndex);
+  const [expandedItems, setExpandedItems] = useState(() => new Set([focusItemIndex]));
   const [draftItemIndex, setDraftItemIndex] = useState(null);
+  const [editingInquiryId, setEditingInquiryId] = useState(null);
   const [draft, setDraft] = useState(getEmptyQuickInquiryDraft());
   const [warning, setWarning] = useState('');
   const [pishkeshTab, setPishkeshTab] = useState(PISHKESH_MODAL_TABS.PROFORMA);
@@ -310,7 +398,9 @@ export default function QuickInquiryModal({
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.SARANJAM;
   const tableColumns = useMemo(
-    () => (showQuoting ? [...BASE_QUICK_TABLE_COLUMNS, ...QUOTING_TABLE_COLUMNS] : BASE_QUICK_TABLE_COLUMNS),
+    () => (showQuoting
+      ? [...BASE_QUICK_TABLE_COLUMNS, ...QUOTING_TABLE_COLUMNS, EXPAND_TABLE_COLUMN]
+      : [...BASE_QUICK_TABLE_COLUMNS, EXPAND_TABLE_COLUMN]),
     [showQuoting],
   );
 
@@ -364,12 +454,41 @@ export default function QuickInquiryModal({
 
   const openDraft = (itemIndex) => {
     setActiveItemIndex(itemIndex);
+    setExpandedItems((prev) => new Set(prev).add(itemIndex));
     setDraftItemIndex(itemIndex);
+    setEditingInquiryId(null);
     setDraft(getEmptyQuickInquiryDraft());
+  };
+
+  const openEditInquiry = (itemIndex, inquiryId) => {
+    const inquiry = (items[itemIndex]?.inquiries || []).find((row) => row.id === inquiryId);
+    if (!inquiry) return;
+    setActiveItemIndex(itemIndex);
+    setExpandedItems((prev) => new Set(prev).add(itemIndex));
+    setDraftItemIndex(itemIndex);
+    setEditingInquiryId(inquiryId);
+    setDraft(inquiryToQuickDraft(inquiry));
+  };
+
+  const toggleExpand = (itemIndex) => {
+    setExpandedItems((prev) => {
+      const isCurrentlyExpanded = prev.has(itemIndex);
+      if (isCurrentlyExpanded && draftItemIndex === itemIndex) {
+        setDraftItemIndex(null);
+        setEditingInquiryId(null);
+        setDraft(getEmptyQuickInquiryDraft());
+      }
+      const next = new Set(prev);
+      if (isCurrentlyExpanded) next.delete(itemIndex);
+      else next.add(itemIndex);
+      return next;
+    });
+    setActiveItemIndex(itemIndex);
   };
 
   const cancelDraft = () => {
     setDraftItemIndex(null);
+    setEditingInquiryId(null);
     setDraft(getEmptyQuickInquiryDraft());
   };
 
@@ -378,8 +497,13 @@ export default function QuickInquiryModal({
     const validation = validateQuickInquiryDraft(draft);
     if (!validation.valid) return;
     setWarning('');
-    onSaveInquiry(order.id, draftItemIndex, draft);
+    if (editingInquiryId != null) {
+      onUpdateInquiry?.(order.id, draftItemIndex, editingInquiryId, draft);
+    } else {
+      onSaveInquiry(order.id, draftItemIndex, draft);
+    }
     setDraftItemIndex(null);
+    setEditingInquiryId(null);
     setDraft(getEmptyQuickInquiryDraft());
   };
 
@@ -581,15 +705,20 @@ export default function QuickInquiryModal({
                     item={item}
                     itemIndex={itemIndex}
                     isActive={activeItemIndex === itemIndex}
+                    isExpanded={expandedItems.has(itemIndex)}
+                    totalCols={tableColumns.length}
                     onFocus={setActiveItemIndex}
+                    onToggleExpand={toggleExpand}
                     onOpenDraft={openDraft}
+                    onEditInquiry={openEditInquiry}
                     draftOpen={draftItemIndex === itemIndex}
+                    editingInquiryId={draftItemIndex === itemIndex ? editingInquiryId : null}
                     draft={draft}
                     onDraftChange={setDraft}
                     onSaveDraft={saveDraft}
                     onCancelDraft={cancelDraft}
                     onSelectTarget={(inquiryId) => handleSelectTarget(itemIndex, inquiryId)}
-                    allowTargetSelection={showQuoting}
+                    allowTargetSelection={(item.inquiries || []).length > 1}
                     showQuoting={showQuoting}
                     showSupplier={showSupplier}
                     lineMarginMode={lineMarginMode}
