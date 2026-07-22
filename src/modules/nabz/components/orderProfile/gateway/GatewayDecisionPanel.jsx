@@ -143,19 +143,17 @@ export default function GatewayDecisionPanel({
         <div className="gateway-decision__options">
           <button
             type="button"
-            className={`gateway-decision__option${selectedOutcome === GATEWAY_DECISION_OUTCOMES.SUCCESS ? ' is-active' : ''}`}
+            className={`gateway-decision__option gateway-decision__option--success${selectedOutcome === GATEWAY_DECISION_OUTCOMES.SUCCESS ? ' is-active' : ''}`}
             onClick={() => setSelectedOutcome(GATEWAY_DECISION_OUTCOMES.SUCCESS)}
           >
-            <span className="gateway-decision__option-icon" aria-hidden="true">🏆</span>
-            <span>🏆 تایید و فروش موفق</span>
+            موفق
           </button>
           <button
             type="button"
             className={`gateway-decision__option gateway-decision__option--failed${selectedOutcome === GATEWAY_DECISION_OUTCOMES.FAILED ? ' is-active' : ''}`}
             onClick={() => setSelectedOutcome(GATEWAY_DECISION_OUTCOMES.FAILED)}
           >
-            <span className="gateway-decision__option-icon" aria-hidden="true">❌</span>
-            <span>❌ عدم موفقیت / لغو</span>
+            ناموفق
           </button>
         </div>
 

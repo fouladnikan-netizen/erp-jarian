@@ -456,6 +456,7 @@ export default function QuickInquiryModal({
   const showPrimaryAction = isGatewayView && isLivePhase && !showPishkesh;
   const primaryActionLabel = showQuoting ? 'تکمیل مظنه' : 'تکمیل کاوش';
   const primaryActionDisabled = showQuoting ? !canCompleteQuote : !canCompleteInquiry;
+  const primaryActionReady = !primaryActionDisabled;
   const statusKind = getOrderDisplayStatusKind(order);
   const statusLabel = getOrderDisplayStatus(order);
   const displayOrderCode = toDisplayOrderCode(order.code);
@@ -539,7 +540,10 @@ export default function QuickInquiryModal({
   const saveDraft = () => {
     if (draftItemIndex == null) return;
     const validation = validateQuickInquiryDraft(draft);
-    if (!validation.valid) return;
+    if (!validation.valid) {
+      setWarning(validation.reason || 'اطلاعات استعلام کامل نیست.');
+      return;
+    }
     setWarning('');
     if (editingInquiryId != null) {
       onUpdateInquiry?.(order.id, draftItemIndex, editingInquiryId, draft);
@@ -600,7 +604,7 @@ export default function QuickInquiryModal({
             {!showPishkesh && showPrimaryAction && (
               <button
                 type="button"
-                className="btn btn--primary"
+                className={`btn btn--outline order-profile-stage-btn${primaryActionReady ? ' is-ready' : ''}`}
                 disabled={primaryActionDisabled}
                 onClick={handlePrimaryAction}
               >

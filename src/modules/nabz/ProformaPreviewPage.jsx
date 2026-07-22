@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProformaDocument from './components/ProformaDocument';
-import { readProformaPreviewPayload } from './proformaPrint';
+import {
+  readProformaPreviewPayload,
+  PROFORMA_SEND_MESSAGE_TYPE,
+} from './proformaPrint';
 import './proforma.css';
 
 export default function ProformaPreviewPage() {
@@ -38,10 +41,24 @@ export default function ProformaPreviewPage() {
     return () => window.clearTimeout(timer);
   }, [shouldPrint, payload]);
 
+  const handleSend = () => {
+    const documentNumber = payload?.viewModel?.documentNumber || payload?.viewModel?.orderCode;
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({
+        type: PROFORMA_SEND_MESSAGE_TYPE,
+        orderId: payload?.orderId,
+        versionId: payload?.versionId,
+        documentNumber,
+      }, window.location.origin);
+      return;
+    }
+    window.alert('برای ارسال پیش‌فاکتور، این پنجره را از صفحه سفارش باز کنید یا از تب سوابق اقدام کنید.');
+  };
+
   if (!payload) {
     return (
       <div className="proforma-preview-page proforma-preview-page--empty">
-        <p>داده پیش‌فاکتور یافت نشد. لطفاً از مودال نمایش سریع سفارش اقدام کنید.</p>
+        <p>داده پیش‌فاکتور یافت نشد. لطفاً دوباره از دکمه «صدور پیش‌فاکتور» اقدام کنید.</p>
       </div>
     );
   }
@@ -51,7 +68,10 @@ export default function ProformaPreviewPage() {
       {!shouldPrint && (
         <div className="proforma-preview-page__toolbar no-print">
           <button type="button" className="btn btn--outline" onClick={() => window.print()}>
-            چاپ / PDF
+            چاپ
+          </button>
+          <button type="button" className="btn btn--outline" onClick={handleSend}>
+            ارسال برای مشتری
           </button>
           <button type="button" className="btn btn--ghost" onClick={() => window.close()}>
             بستن

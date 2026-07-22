@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
-import { calculateQuotingPreview } from '../../inquiryService';
+import { useMemo } from 'react';
+import { calculateQuotingPreview, updateInquiryOnOrder } from '../../inquiryService';
 import { DEFAULT_SALE_TYPE } from '../../constants';
 import { GATEWAY_PHASES } from '../../gatewayConfig';
-import { sendProformaToCustomer } from '../../gatewayLifecycleService';
 import {
   shouldShowGatewayFinancialSummary,
   removeGatewayOrderItem,
@@ -10,16 +9,9 @@ import {
   updateGatewayOrderItemWithSensitivity,
 } from '../../gatewayService';
 import { saveItemMargin, updateOrderQuoting } from '../../quotingService';
-import { updateInquiryOnOrder } from '../../inquiryService';
-import {
-  hasGatewayDecision,
-  markGatewayDecisionFailed,
-  markGatewayDecisionSuccess,
-} from '../../gatewayDecisionService';
 import GatewayMorphTable from './gateway/GatewayMorphTable';
 import GatewayFinancialSummary from './gateway/GatewayFinancialSummary';
 import GatewayPishkeshPanel from './gateway/GatewayPishkeshPanel';
-import OrderActionDrawer from './OrderActionDrawer';
 import OrderProfileOperationsTab from './OrderProfileOperationsTab';
 
 export default function OrderProfileGatewayTab({
@@ -33,13 +25,9 @@ export default function OrderProfileGatewayTab({
   onSetTargetInquiry,
   onUpdateInquiry,
   onUpdateOrder,
-  onAdvancePhase,
   onOperationalPhaseChange,
-  onDecisionSuccess,
-  onDecisionFailed,
   onReturnToGateway,
 }) {
-  const [actionDrawerOpen, setActionDrawerOpen] = useState(false);
   const preview = useMemo(() => calculateQuotingPreview(order), [order]);
   const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
 
@@ -67,11 +55,6 @@ export default function OrderProfileGatewayTab({
     onUpdateOrder?.((current) => updateOrderQuoting(current, patch));
   };
 
-  const handleSendProforma = () => {
-    onUpdateOrder?.((current) => sendProformaToCustomer(current));
-    window.alert(`پیش‌فاکتور سفارش برای ${order.customer} ارسال شد.`);
-  };
-
   const handleEditItem = (itemIndex, patch, { wipeConfirmed = false } = {}) => {
     onUpdateOrder?.((current) => updateGatewayOrderItemWithSensitivity(
       current,
@@ -91,24 +74,6 @@ export default function OrderProfileGatewayTab({
     onUpdateOrder?.((current) => removeGatewayInquiry(current, itemIndex, inquiryId));
   };
 
-  const handleDecisionSuccess = (payload) => {
-    if (onDecisionSuccess) {
-      onDecisionSuccess(payload);
-      return;
-    }
-    onUpdateOrder?.((current) => markGatewayDecisionSuccess(current, payload));
-  };
-
-  const handleDecisionFailed = (payload) => {
-    if (onDecisionFailed) {
-      onDecisionFailed(payload);
-      return;
-    }
-    onUpdateOrder?.((current) => markGatewayDecisionFailed(current, payload));
-  };
-
-  const showActionStrip = viewPhase === GATEWAY_PHASES.PISHKESH && viewMode === 'gateway';
-  const decided = hasGatewayDecision(order);
   const showMozeneSummary = viewMode === 'gateway'
     && viewPhase === GATEWAY_PHASES.MOZENE
     && shouldShowGatewayFinancialSummary(viewPhase);
@@ -128,10 +93,7 @@ export default function OrderProfileGatewayTab({
   }
 
   return (
-    <div
-      className={`order-profile-gateway${showActionStrip ? ' order-profile-gateway--with-action-strip' : ''}`}
-      data-gateway-stage={currentStage}
-    >
+    <div className="order-profile-gateway" data-gateway-stage={currentStage}>
       <GatewayMorphTable
         order={order}
         viewPhase={viewPhase}
@@ -151,34 +113,9 @@ export default function OrderProfileGatewayTab({
       )}
 
       <GatewayPishkeshPanel
-        order={order}
         viewPhase={viewPhase}
-        orderPhase={orderPhase}
         preview={preview}
         saleType={saleType}
-        onSendToCustomer={handleSendProforma}
-      />
-
-      {showActionStrip && (
-        <div className="order-profile-action-strip">
-          <button
-            type="button"
-            className="order-profile-action-strip__btn font-meem"
-            onClick={() => setActionDrawerOpen(true)}
-          >
-            {decided ? 'مشاهده نتیجه تعیین تکلیف' : 'تعیین تکلیف'}
-          </button>
-        </div>
-      )}
-
-      <OrderActionDrawer
-        open={actionDrawerOpen}
-        order={order}
-        viewPhase={viewPhase}
-        orderPhase={orderPhase}
-        onClose={() => setActionDrawerOpen(false)}
-        onSubmitSuccess={handleDecisionSuccess}
-        onSubmitFailed={handleDecisionFailed}
       />
     </div>
   );

@@ -164,10 +164,10 @@ export function shouldShowIssueProforma(order) {
 export function getOrderProfileNextAction(order) {
   const stageId = getEffectiveStageId(order);
   if (stageId === STAGE_KAVOSH_ID) {
-    return { id: 'complete-kavosh', label: 'تایید استعلام‌ها و ورود به مظنه' };
+    return { id: 'complete-kavosh', label: 'تکمیل کاوش' };
   }
   if (stageId === STAGE_MOZENE_ID) {
-    return { id: 'complete-mozene', label: 'تکمیل مظنه و ورود به پیش‌کش' };
+    return { id: 'complete-mozene', label: 'تکمیل مظنه' };
   }
   return null;
 }

@@ -167,7 +167,10 @@ function InquiryDraftRow({
 
   const handleSave = () => {
     const validation = validateQuickInquiryDraft(draft);
-    if (!validation.valid) return;
+    if (!validation.valid) {
+      window.alert(validation.reason || 'اطلاعات استعلام کامل نیست.');
+      return;
+    }
     onSave(draft);
   };
 
@@ -211,8 +214,10 @@ function InquiryDraftRow({
         placeholder="توضیحات (اختیاری)"
         aria-label="توضیحات استعلام"
       />
-      <button type="button" className="btn btn--primary btn--sm" onClick={handleSave}>{submitLabel}</button>
-      <button type="button" className="btn btn--ghost btn--sm" onClick={onCancel}>انصراف</button>
+      <div className="gateway-inquiry-draft__actions">
+        <button type="button" className="btn btn--primary btn--sm" onClick={handleSave}>{submitLabel}</button>
+        <button type="button" className="btn btn--ghost btn--sm" onClick={onCancel}>انصراف</button>
+      </div>
     </div>
   );
 }
@@ -241,34 +246,35 @@ function InquiryGridRow({
   onDelete,
 }) {
   const supplierLabel = getInquirySupplierLabel(inquiry, inquiryIndex, showSupplier);
+  const notes = inquiry.notes?.trim() || '';
+  const registeredAt = inquiry.registeredAt || '';
 
   return (
     <div className={`gateway-inquiry-grid${isTarget ? ' is-selected' : ''}`}>
-      <div className="gateway-inquiry-grid__supplier">
+      <div className="gateway-inquiry-grid__content">
         {isTarget && (
           <span className="gateway-inquiry-grid__tick" aria-hidden="true">
             <CheckIcon size={12} />
           </span>
         )}
-        <div className="gateway-inquiry-grid__supplier-main">
-          <div className="gateway-inquiry-grid__supplier-line">
-            <span className="gateway-inquiry-grid__name" title={supplierLabel}>{supplierLabel}</span>
-            <span className={`gateway-inquiry-grid__type gateway-inquiry-grid__type--${SUPPLY_TYPE_DOT_CLASS[inquiry.supplyType] || 'is-official'}`}>
-              {inquiry.supplyType}
-            </span>
-          </div>
-          {inquiry.notes?.trim() ? (
-            <TruncatedText
-              text={inquiry.notes}
-              className="gateway-inquiry-grid__notes"
-              empty=""
-            />
-          ) : null}
-        </div>
-      </div>
-      <div className="gateway-inquiry-grid__price">
-        <strong>{formatAmountRial(inquiry.unitPrice)}</strong>
-        <span className="gateway-inquiry-grid__currency">ریال</span>
+        <span
+          className={`gateway-inquiry-grid__dot gateway-inquiry-grid__type--${SUPPLY_TYPE_DOT_CLASS[inquiry.supplyType] || 'is-official'}`}
+          title={inquiry.supplyType}
+          aria-label={inquiry.supplyType}
+        />
+        {registeredAt ? (
+          <span className="gateway-inquiry-grid__datetime font-yekan" title={registeredAt}>
+            {registeredAt}
+          </span>
+        ) : null}
+        <span className="gateway-inquiry-grid__name" title={supplierLabel}>{supplierLabel}</span>
+        <span className="gateway-inquiry-grid__price">
+          <strong>{formatAmountRial(inquiry.unitPrice)}</strong>
+          <span className="gateway-inquiry-grid__currency">ریال</span>
+        </span>
+        {notes ? (
+          <span className="gateway-inquiry-grid__notes">{notes}</span>
+        ) : null}
       </div>
       <div className="gateway-inquiry-grid__actions">
         {canManage && (
@@ -666,8 +672,7 @@ export default function GatewayMorphTable({
                 {inquiries.length > 0 && (
                   <div className="gateway-inquiry-sheet">
                     <div className="gateway-inquiry-grid gateway-inquiry-grid--head" aria-hidden="true">
-                      <span className="gateway-inquiry-grid__supplier">تامین‌کننده</span>
-                      <span className="gateway-inquiry-grid__price">قیمت اعلامی</span>
+                      <span className="gateway-inquiry-grid__content">تامین‌کننده · قیمت اعلامی · توضیحات</span>
                       <span className="gateway-inquiry-grid__actions">عملیات</span>
                     </div>
                     {inquiries.map((inq, inquiryIndex) => (

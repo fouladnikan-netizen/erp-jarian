@@ -6,23 +6,35 @@ import { getOrderGatewayPhase } from '../../gatewayService';
 import {
   executeGatewayHeaderAction,
   getGatewayCurrentStage,
+  sendProformaToCustomer,
 } from '../../gatewayLifecycleService';
 import { getOrderOperationalPhase } from '../../phase2Service';
 import { markOrderCancelled } from '../../orderProfileService';
+import { issueProforma } from '../../proformaService';
+import {
+  openStoredProformaPreview,
+  PROFORMA_SEND_MESSAGE_TYPE,
+} from '../../proformaPrint';
 import {
   appendCrmActivity,
   updateCrmActivity,
 } from '../../orderCrmService';
 import { canEditWholeOrder } from '../../orderEditPermissions';
+import {
+  markGatewayDecisionFailed,
+  markGatewayDecisionSuccess,
+} from '../../gatewayDecisionService';
 import QuickActivityModal from '../QuickActivityModal';
 import CreateOrderDrawer from '../CreateOrderDrawer';
 import OrderProfileChrome from './OrderProfileChrome';
 import OrderProfileGatewayTab from './OrderProfileGatewayTab';
 import OrderProfileCrmTab from './OrderProfileCrmTab';
+import OrderProfileTimelineTab from './OrderProfileTimelineTab';
 import OrderProfilePlaceholderTab from './OrderProfilePlaceholderTab';
+import OrderActionDrawer from './OrderActionDrawer';
+import { GATEWAY_PHASES } from '../../gatewayConfig';
 
 const PLACEHOLDER_MESSAGES = {
-  [ORDER_PROFILE_TABS.TIMELINE]: 'محتوای تب سوابق و تایم‌لاین در اینجا قرار می‌گیرد.',
   [ORDER_PROFILE_TABS.ATTACHMENTS]: 'محتوای تب اسناد و فایل‌ها در اینجا قرار می‌گیرد.',
 };
 
@@ -45,6 +57,7 @@ export default function OrderProfileView({
   );
   const [activityModal, setActivityModal] = useState({ open: false, editActivity: null });
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [decisionDrawerOpen, setDecisionDrawerOpen] = useState(false);
 
   useEffect(() => {
     setViewPhase(orderPhase);
@@ -126,6 +139,49 @@ export default function OrderProfileView({
     closeActivityModal();
   };
 
+  const handleSendProforma = (version) => {
+    updateOrder((current) => sendProformaToCustomer(current));
+    const label = version?.documentNumber || order.code;
+    window.alert(`پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.`);
+  };
+
+  const handleIssueProforma = () => {
+    const result = issueProforma(order);
+    if (result.changed) {
+      updateOrder(() => result.order);
+    }
+    openStoredProformaPreview(result.payload);
+  };
+
+  const handleDecisionSuccess = (payload) => {
+    updateOrder((current) => markGatewayDecisionSuccess(current, payload));
+    setDecisionDrawerOpen(false);
+  };
+
+  const handleDecisionFailed = (payload) => {
+    updateOrder((current) => markGatewayDecisionFailed(current, payload));
+    setDecisionDrawerOpen(false);
+  };
+
+  const handleOpenDecisionDrawer = () => {
+    setActiveTab(ORDER_PROFILE_TABS.GATEWAY);
+    setViewMode('gateway');
+    setViewPhase(GATEWAY_PHASES.PISHKESH);
+    setDecisionDrawerOpen(true);
+  };
+
+  useEffect(() => {
+    const onMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || data.type !== PROFORMA_SEND_MESSAGE_TYPE) return;
+      if (data.orderId != null && data.orderId !== order.id) return;
+      handleSendProforma({ documentNumber: data.documentNumber });
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [order.id, order.customer]);
+
   return (
     <div className="order-profile-view" data-module="nabz">
       <div className="order-profile-view__sticky">
@@ -153,8 +209,20 @@ export default function OrderProfileView({
           }}
           onNextAction={handleNextAction}
           onOpenActivityModal={() => openActivityModal()}
+          onIssueProforma={handleIssueProforma}
+          onOpenDecisionDrawer={handleOpenDecisionDrawer}
         />
       </div>
+
+      <OrderActionDrawer
+        open={decisionDrawerOpen}
+        order={order}
+        viewPhase={GATEWAY_PHASES.PISHKESH}
+        orderPhase={orderPhase}
+        onClose={() => setDecisionDrawerOpen(false)}
+        onSubmitSuccess={handleDecisionSuccess}
+        onSubmitFailed={handleDecisionFailed}
+      />
 
       {editDrawerOpen && (
         <CreateOrderDrawer
@@ -197,7 +265,6 @@ export default function OrderProfileView({
               onUpdateInquiry={onUpdateInquiry}
               onSetTargetInquiry={onSetTargetInquiry}
               onUpdateOrder={updateOrder}
-              onAdvancePhase={handleGatewayAdvance}
               onOperationalPhaseChange={handleOperationalPhaseChange}
               onReturnToGateway={handlePhaseChange}
             />
@@ -224,7 +291,10 @@ export default function OrderProfileView({
             id="order-profile-panel-timeline"
             aria-labelledby="order-profile-tab-timeline"
           >
-            <OrderProfilePlaceholderTab message={PLACEHOLDER_MESSAGES[ORDER_PROFILE_TABS.TIMELINE]} />
+            <OrderProfileTimelineTab
+              order={order}
+              onSendProformaVersion={handleSendProforma}
+            />
           </div>
         )}
         {activeTab === ORDER_PROFILE_TABS.ATTACHMENTS && (

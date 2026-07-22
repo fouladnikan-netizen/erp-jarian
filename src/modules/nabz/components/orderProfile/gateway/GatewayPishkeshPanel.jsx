@@ -1,37 +1,18 @@
 import { DEFAULT_SALE_TYPE } from '../../../constants';
 import { GATEWAY_PHASES } from '../../../gatewayConfig';
-import { isGatewayActivePhase } from '../../../gatewayService';
 import { formatAmountRialWords } from '../../../numberToPersianWords';
-import { getProformaTerms } from '../../../proformaService';
-import { openProformaPreview, printProforma } from '../../../proformaPrint';
 import { formatPriceLine } from '../../quickInquiryParts';
 
 export default function GatewayPishkeshPanel({
-  order,
   viewPhase,
-  orderPhase,
   preview,
   saleType,
-  onSendToCustomer,
 }) {
-  const live = isGatewayActivePhase(orderPhase, viewPhase);
   const showPanel = viewPhase === GATEWAY_PHASES.PISHKESH;
 
   if (!showPanel) return null;
 
   const isOfficial = (saleType || DEFAULT_SALE_TYPE) === 'رسمی';
-
-  const handlePrint = () => {
-    printProforma(order, getProformaTerms(order));
-  };
-
-  const handlePreview = () => {
-    openProformaPreview(order, getProformaTerms(order));
-  };
-
-  const handleSend = () => {
-    onSendToCustomer?.();
-  };
 
   return (
     <section className="gateway-pishkesh-panel">
@@ -59,32 +40,6 @@ export default function GatewayPishkeshPanel({
           {formatAmountRialWords(preview.orderTotal)}
         </p>
       </div>
-
-      {live && (
-        <div className="gateway-pishkesh-panel__actions">
-          <button
-            type="button"
-            className="btn btn--outline"
-            onClick={handlePrint}
-          >
-            🖨️ چاپ پیش‌فاکتور
-          </button>
-          <button
-            type="button"
-            className="btn btn--outline"
-            onClick={handlePreview}
-          >
-            پیش‌نمایش
-          </button>
-          <button
-            type="button"
-            className="btn btn--outline"
-            onClick={handleSend}
-          >
-            📲 ارسال برای مشتری
-          </button>
-        </div>
-      )}
     </section>
   );
 }

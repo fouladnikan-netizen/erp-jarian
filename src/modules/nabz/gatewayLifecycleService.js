@@ -32,11 +32,11 @@ let lifecycleEventIdCounter = 1;
 
 export const GATEWAY_STAGE_ACTIONS = {
   [GATEWAY_PHASES.KAVOSH]: {
-    label: 'تایید استعلام‌ها و ورود به مظنه ➔',
+    label: 'تکمیل کاوش',
     nextPhase: GATEWAY_PHASES.MOZENE,
   },
   [GATEWAY_PHASES.MOZENE]: {
-    label: 'محاسبه نهایی و صدور پیش‌فاکتور (پیش‌کش) ➔',
+    label: 'تکمیل مظنه',
     nextPhase: GATEWAY_PHASES.PISHKESH,
   },
 };

@@ -8,8 +8,11 @@ import {
   getOrderProfileNextAction,
   shouldShowIssueProforma,
 } from '../../orderProfileService';
-import { getProformaTerms } from '../../proformaService';
-import { printProforma } from '../../proformaPrint';
+import { getProformaVersions } from '../../proformaService';
+import {
+  canCompleteOrderInquiries,
+  canCompleteQuoting,
+} from '../../quotingService';
 import {
   ORDER_PROFILE_TAB_META,
   getOrderProfileTabOrder,
@@ -18,6 +21,7 @@ import {
 import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
 import OrderProfileCancelDialog from './OrderProfileCancelDialog';
 import { ORDER_TABS } from '../../config';
+import { hasGatewayDecision } from '../../gatewayDecisionService';
 
 function BackArrowIcon() {
   return (
@@ -60,6 +64,8 @@ export default function OrderProfileChrome({
   onEditOrder,
   onNextAction,
   onOpenActivityModal,
+  onIssueProforma,
+  onOpenDecisionDrawer,
 }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -72,7 +78,16 @@ export default function OrderProfileChrome({
   const statusKind = getOrderDisplayStatusKind(order);
   const statusLabel = getOrderDisplayStatus(order);
   const nextAction = getOrderProfileNextAction(order);
+  const nextActionReady = nextAction?.id === 'complete-kavosh'
+    ? canCompleteOrderInquiries(order)
+    : nextAction?.id === 'complete-mozene'
+      ? canCompleteQuoting(order)
+      : false;
   const showIssueProforma = shouldShowIssueProforma(order);
+  const showDecisionAction = showIssueProforma && getProformaVersions(order).length > 0;
+  const decisionLabel = hasGatewayDecision(order)
+    ? 'مشاهده نتیجه تعیین تکلیف'
+    : 'تعیین تکلیف';
   const profileTabs = getOrderProfileTabOrder();
   const expertName = order.requesterName || '—';
   const knightName = order.assignee || '—';
@@ -189,7 +204,8 @@ export default function OrderProfileChrome({
           {nextAction && (
             <button
               type="button"
-              className="btn btn--primary order-profile-activity-btn"
+              className={`btn btn--outline order-profile-activity-btn order-profile-stage-btn${nextActionReady ? ' is-ready' : ''}`}
+              disabled={!nextActionReady}
               onClick={() => onNextAction?.(nextAction.id)}
             >
               {nextAction.label}
@@ -200,9 +216,19 @@ export default function OrderProfileChrome({
             <button
               type="button"
               className="btn btn--outline order-profile-activity-btn"
-              onClick={() => printProforma(order, getProformaTerms(order))}
+              onClick={() => onIssueProforma?.()}
             >
               صدور پیش‌فاکتور
+            </button>
+          )}
+
+          {showDecisionAction && (
+            <button
+              type="button"
+              className="btn btn--outline order-profile-activity-btn"
+              onClick={() => onOpenDecisionDrawer?.()}
+            >
+              {decisionLabel}
             </button>
           )}
 
