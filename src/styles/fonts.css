@@ -1,38 +1,50 @@
-/* فونت میم — Jaryan */
+/* فونت وزیرمتن — فونت اصلی سیستم جریان */
 @font-face {
-  font-family: 'Jaryan';
-  src: url('/assets/fonts/meem/MeemFaNum-Regular.woff2') format('woff2');
+  font-family: 'Vazirmatn';
+  src: url('/assets/fonts/vazirmatn/Vazirmatn-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
 }
 
 @font-face {
-  font-family: 'Jaryan';
-  src: url('/assets/fonts/meem/MeemFaNum-Medium.woff2') format('woff2');
+  font-family: 'Vazirmatn';
+  src: url('/assets/fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
 }
 
 @font-face {
-  font-family: 'Jaryan';
-  src: url('/assets/fonts/meem/MeemFaNum-SemiBold.woff2') format('woff2');
+  font-family: 'Vazirmatn';
+  src: url('/assets/fonts/vazirmatn/Vazirmatn-SemiBold.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
 }
 
 @font-face {
-  font-family: 'Jaryan';
-  src: url('/assets/fonts/meem/MeemFaNum-Bold.woff2') format('woff2');
+  font-family: 'Vazirmatn';
+  src: url('/assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/assets/fonts/vazirmatn/Vazirmatn-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
 }
 
 /* فونت یکان‌بخ — منحصراً اعداد (فارسی و انگلیسی) */
@@ -85,8 +97,8 @@
 
 @font-face {
   font-family: 'AppFont';
-  src: url('/assets/fonts/meem/MeemFaNum-Regular.woff2') format('woff2'),
-       local('Meem');
+  src: url('/assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2'),
+       local('Vazirmatn');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -95,27 +107,10 @@
 
 @font-face {
   font-family: 'AppFont';
-  src: url('/assets/fonts/meem/MeemFaNum-Bold.woff2') format('woff2'),
-       local('Meem');
+  src: url('/assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2'),
+       local('Vazirmatn');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
   unicode-range: U+0600-06EF, U+0750-077F, U+FB50-FDFF;
-}
-
-/* فونت کمکی — برای برچسب‌ها و placeholder */
-@font-face {
-  font-family: 'Vazirmatn';
-  src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Vazirmatn';
-  src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
 }

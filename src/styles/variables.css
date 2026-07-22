@@ -41,7 +41,7 @@
   --status-success: #2E8B57;
   --status-silent: #475569;
 
-  --font-primary: 'Jaryan', 'Vazirmatn', Tahoma, sans-serif;
+  --font-primary: 'Vazirmatn', Tahoma, sans-serif;
   --font-numeric: 'Yekan Bakh', Tahoma, sans-serif;
   --font-secondary: 'Vazirmatn', Tahoma, sans-serif;
   --font-body: var(--font-primary), var(--font-numeric), Tahoma, sans-serif;
@@ -135,7 +135,8 @@ select {
 }
 
 .font-meem {
-  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
+  /* legacy class name — maps to system primary (Vazirmatn) */
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
 }
 
 .font-yekan {

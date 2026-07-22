@@ -21,13 +21,13 @@ const TAX_INVOICE_PRINT_CSS = `
     background: #fff;
     color: #111827;
     direction: rtl;
-    font-family: 'Jaryan', 'Meem', Tahoma, sans-serif;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
   .font-meem {
-    font-family: 'Jaryan', 'Meem', Tahoma, sans-serif !important;
+    font-family: 'Vazirmatn', Tahoma, sans-serif !important;
   }
 
   .font-yekan {
@@ -273,15 +273,15 @@ function buildPrintHtml(taxdocEl) {
   <base href="${origin}/" />
   <style>
     @font-face {
-      font-family: 'Jaryan';
-      src: url('${origin}/assets/fonts/meem/MeemFaNum-Regular.woff2') format('woff2');
+      font-family: 'Vazirmatn';
+      src: url('${origin}/assets/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
       font-weight: 400;
       font-style: normal;
       font-display: swap;
     }
     @font-face {
-      font-family: 'Jaryan';
-      src: url('${origin}/assets/fonts/meem/MeemFaNum-Bold.woff2') format('woff2');
+      font-family: 'Vazirmatn';
+      src: url('${origin}/assets/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
       font-weight: 700;
       font-style: normal;
       font-display: swap;

@@ -5,30 +5,33 @@ import { useResizableColumns } from '../../../hooks/useResizableColumns';
 
 const CREATE_LINE_COLUMNS = [
   { key: 'drag', defaultWidth: 36, resizable: false },
-  { key: 'name', defaultWidth: 150 },
-  { key: 'size', defaultWidth: 100 },
-  { key: 'preferredMill', defaultWidth: 130 },
-  { key: 'qty', defaultWidth: 78 },
-  { key: 'weight', defaultWidth: 110 },
-  { key: 'unit', defaultWidth: 64, resizable: false },
+  { key: 'name', defaultWidth: 200 },
+  { key: 'description', defaultWidth: 220 },
+  { key: 'qty', defaultWidth: 88 },
+  { key: 'unit', defaultWidth: 72, resizable: false },
   { key: 'remove', defaultWidth: 40, resizable: false },
 ];
 
 const COLUMN_LABELS = {
   drag: '',
-  name: 'نوع محصول',
-  size: 'سایز',
-  preferredMill: 'کارخانه ترجیحی',
+  name: 'شرح کالا',
+  description: 'توضیحات',
   qty: 'مقدار',
-  weight: 'وزن',
   unit: 'واحد',
   remove: '',
 };
 
-function DragHandle() {
+function DragHandle({ onDragStart, onDragEnd }) {
   return (
-    <span className="nabz-create-table__drag" aria-hidden="true">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+    <button
+      type="button"
+      className="nabz-create-table__drag-handle"
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      aria-label="جابجایی سطر"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <circle cx="9" cy="7" r="1.5" />
         <circle cx="15" cy="7" r="1.5" />
         <circle cx="9" cy="12" r="1.5" />
@@ -36,7 +39,7 @@ function DragHandle() {
         <circle cx="9" cy="17" r="1.5" />
         <circle cx="15" cy="17" r="1.5" />
       </svg>
-    </span>
+    </button>
   );
 }
 
@@ -60,7 +63,7 @@ function reorderItems(items, fromIndex, toIndex) {
 export default function OrderLineItemsTable({ items, onChange, onRemove }) {
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
-  const { widths, startResize } = useResizableColumns('nabz-create-line-items-v2', CREATE_LINE_COLUMNS);
+  const { widths, startResize } = useResizableColumns('nabz-create-line-items-v3', CREATE_LINE_COLUMNS);
 
   const updateLine = (lineId, key, value) => {
     onChange(items.map((item) => (item.lineId === lineId ? { ...item, [key]: value } : item)));
@@ -71,6 +74,30 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
     onChange(reorderItems(items, fromIndex, toIndex));
     setDragIndex(null);
     setOverIndex(null);
+  };
+
+  const handleDragStart = (index) => (event) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+    setDragIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  const handleDragOver = (index) => (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    if (overIndex !== index) setOverIndex(index);
+  };
+
+  const handleDrop = (index) => (event) => {
+    event.preventDefault();
+    const fromRaw = event.dataTransfer.getData('text/plain');
+    const fromIndex = fromRaw !== '' ? Number(fromRaw) : dragIndex;
+    finishDrag(fromIndex, index);
   };
 
   return (
@@ -101,41 +128,23 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
               className={`nabz-create-table__row-draggable${
                 overIndex === index ? ' is-drag-over' : ''
               }${dragIndex === index ? ' is-dragging' : ''}`}
-              draggable
-              onDragStart={() => setDragIndex(index)}
-              onDragEnd={() => {
-                setDragIndex(null);
-                setOverIndex(null);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setOverIndex(index);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                finishDrag(dragIndex, index);
-              }}
+              onDragOver={handleDragOver(index)}
+              onDrop={handleDrop(index)}
             >
               <td className="nabz-create-table__drag-cell">
-                <DragHandle />
+                <DragHandle
+                  onDragStart={handleDragStart(index)}
+                  onDragEnd={handleDragEnd}
+                />
               </td>
               <td className="nabz-create-table__name font-meem">{item.name}</td>
               <td>
                 <input
                   type="text"
-                  className="nabz-create-table__input font-yekan"
-                  value={item.size || ''}
-                  onChange={(e) => updateLine(item.lineId, 'size', e.target.value)}
-                  placeholder="سایز"
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
                   className="nabz-create-table__input font-meem"
-                  value={item.preferredMill || ''}
-                  onChange={(e) => updateLine(item.lineId, 'preferredMill', e.target.value)}
-                  placeholder="کارخانه"
+                  value={item.description || ''}
+                  onChange={(e) => updateLine(item.lineId, 'description', e.target.value)}
+                  placeholder="توضیحات"
                 />
               </td>
               <td>
@@ -145,15 +154,6 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
                   className="nabz-create-table__input nabz-create-table__input--qty font-yekan"
                   value={item.qty}
                   onChange={(e) => updateLine(item.lineId, 'qty', Number(e.target.value))}
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  className="nabz-create-table__input font-yekan"
-                  value={item.weight || ''}
-                  onChange={(e) => updateLine(item.lineId, 'weight', e.target.value)}
-                  placeholder="وزن"
                 />
               </td>
               <td className="font-meem">{item.unit}</td>

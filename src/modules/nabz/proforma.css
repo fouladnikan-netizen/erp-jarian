@@ -1,37 +1,5 @@
 /* پیش‌فاکتور — منطبق بر Assets/Invoice/code.html */
 
-@font-face {
-  font-family: 'Meem';
-  src: url('/assets/fonts/meem/MeemFaNum-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Meem';
-  src: url('/assets/fonts/meem/MeemFaNum-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Meem';
-  src: url('/assets/fonts/meem/MeemFaNum-SemiBold.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Meem';
-  src: url('/assets/fonts/meem/MeemFaNum-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --invoice-primary: #272726;
   --invoice-header-bg: #272726;
@@ -52,7 +20,7 @@
   background: #eae7e7;
   padding: 2rem 1rem;
   direction: rtl;
-  font-family: 'Meem', 'Jaryan', 'Vazirmatn', Tahoma, sans-serif;
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
 }
 
 .proforma-preview-page--empty {
@@ -80,7 +48,7 @@
   padding-right: var(--invoice-page-margin-x);
   background: #fff;
   color: var(--invoice-on-surface);
-  font-family: 'Meem', 'Jaryan', 'Vazirmatn', Tahoma, sans-serif;
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
   font-size: 13px;
   line-height: 1.5;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -521,7 +489,7 @@
     margin: 0;
     padding: 0 !important;
     width: 210mm;
-    font-family: 'Meem', 'Jaryan', 'Vazirmatn', Tahoma, sans-serif !important;
+    font-family: 'Vazirmatn', Tahoma, sans-serif !important;
   }
 
   .no-print {
@@ -531,7 +499,7 @@
   .proforma-preview-page {
     padding: 0;
     background: #fff;
-    font-family: 'Meem', 'Jaryan', 'Vazirmatn', Tahoma, sans-serif !important;
+    font-family: 'Vazirmatn', Tahoma, sans-serif !important;
   }
 
   .invoice-doc {
@@ -545,7 +513,7 @@
     box-shadow: none;
     display: flex !important;
     flex-direction: column !important;
-    font-family: 'Meem', 'Jaryan', 'Vazirmatn', Tahoma, sans-serif !important;
+    font-family: 'Vazirmatn', Tahoma, sans-serif !important;
     page-break-after: auto;
   }
 

@@ -29,6 +29,8 @@ export const UNPRICED_LABEL = 'هنوز قیمت‌گذاری نشده';
 
 export const ORDER_TYPES = ['فوری', 'خرید', 'استعلام قیمت'];
 
+export const CREATE_ORDER_TYPES = ['استعلام قیمت', 'خرید'];
+
 export const DEFAULT_ORDER_TYPE = 'خرید';
 
 export const SALES_TYPES = ['رسمی', 'غیر رسمی'];

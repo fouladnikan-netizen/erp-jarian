@@ -127,7 +127,7 @@
 
 .rahsepar-stage .font-meem,
 .rahsepar-stage__input.font-meem {
-  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
 }
 
 .rahsepar-stage__input:focus,
@@ -270,7 +270,7 @@
 }
 
 .rahsepar-stage__cell-input--notes {
-  font-family: 'AppFont', 'Jaryan', 'Yekan Bakh', Tahoma, sans-serif;
+  font-family: 'AppFont', 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif;
 }
 
 .rahsepar-stage__upload {

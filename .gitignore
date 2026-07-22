@@ -29,6 +29,7 @@ Thumbs.db
 
 # Heavy local asset packs (web fonts live in public/assets/fonts/)
 Assets/Meem-Font-www.fontha.com_/
+Assets/Font/
 
 # Design references & large binaries not needed in repo
 Assets/Invoice/

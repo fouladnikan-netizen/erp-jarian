@@ -10,7 +10,7 @@
   padding: 0;
   color: #000000;
   background: #FFFFFF;
-  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
 }
 
 .printable-sooratbar *,
@@ -21,7 +21,7 @@
 }
 
 .printable-sooratbar .font-meem {
-  font-family: 'Jaryan', var(--font-primary), Tahoma, sans-serif;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
 }
 
 .printable-sooratbar .font-yekan {
@@ -201,7 +201,7 @@
 }
 
 .printable-sooratbar__notes-text {
-  font-family: 'AppFont', 'Jaryan', 'Yekan Bakh', Tahoma, sans-serif;
+  font-family: 'AppFont', 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif;
 }
 
 .printable-sooratbar__empty {

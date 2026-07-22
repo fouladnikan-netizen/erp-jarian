@@ -11,8 +11,8 @@ export default function ShippingPreviewPage() {
   const previewId = searchParams.get('id');
 
   useEffect(() => {
-    document.fonts.load('400 1rem Meem');
-    document.fonts.load('700 1rem Meem');
+    document.fonts.load('400 1rem Vazirmatn');
+    document.fonts.load('700 1rem Vazirmatn');
   }, []);
 
   useEffect(() => {

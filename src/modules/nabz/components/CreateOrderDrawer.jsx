@@ -1,29 +1,59 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CURRENT_USER, DEFAULT_ORDER_TYPE, DEFAULT_SALE_TYPE } from '../constants';
+import {
+  CREATE_ORDER_TYPES,
+  CURRENT_USER,
+  DEFAULT_ORDER_TYPE,
+  DEFAULT_SALE_TYPE,
+  SALES_TYPES,
+} from '../constants';
 import {
   buildNewOrder,
   createLineItemsFromSelections,
   validateCreateOrder,
 } from '../createOrder';
 import CustomerCombobox from './CustomerCombobox';
+import ExpertCombobox, { getExpertFromValue } from './ExpertCombobox';
+import FormSegment from './FormSegment';
 import ProductPickerModal from './ProductPickerModal';
 import OrderLineItemsTable from './OrderLineItemsTable';
+import QuickAddCustomerModal from './QuickAddCustomerModal';
+import QuickAddExpertModal from './QuickAddExpertModal';
 
-function FormField({ label, children, hint }) {
+function FormField({ label, children, hint, action }) {
   return (
-    <label className="nabz-form__field nabz-create-premium__field">
+    <div className="nabz-create-field">
       <span className="nabz-form__label font-meem">{label}</span>
       {children}
+      {action}
       {hint ? <span className="nabz-form__hint font-meem">{hint}</span> : null}
-    </label>
+    </div>
+  );
+}
+
+function QuickAddLink({ children, onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      className="nabz-create-quick-add font-meem"
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {children}
+    </button>
   );
 }
 
 export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
   const [customerId, setCustomerId] = useState(null);
+  const [expertKey, setExpertKey] = useState(null);
+  const [saleType, setSaleType] = useState(DEFAULT_SALE_TYPE);
+  const [orderType, setOrderType] = useState(DEFAULT_ORDER_TYPE);
   const [lineItems, setLineItems] = useState([]);
   const [generalNotes, setGeneralNotes] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [expertModalOpen, setExpertModalOpen] = useState(false);
+  const [contactsTick, setContactsTick] = useState(0);
   const [submitError, setSubmitError] = useState('');
   const [entered, setEntered] = useState(false);
 
@@ -32,9 +62,19 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
+  const handleCustomerChange = (nextId) => {
+    setCustomerId(nextId);
+    setExpertKey(null);
+  };
+
   const validation = useMemo(
     () => validateCreateOrder({ customerId, lineItems }),
     [customerId, lineItems],
+  );
+
+  const selectedExpert = useMemo(
+    () => getExpertFromValue(customerId, expertKey),
+    [customerId, expertKey, contactsTick],
   );
 
   const addProductsFromPicker = (selections) => {
@@ -60,9 +100,11 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
       customerId,
       assignee: CURRENT_USER,
       lineItems,
-      orderType: DEFAULT_ORDER_TYPE,
-      saleType: DEFAULT_SALE_TYPE,
+      orderType,
+      saleType,
       generalNotes,
+      requesterName: selectedExpert?.name,
+      requesterMobile: selectedExpert?.mobile,
     });
     onSubmit(order);
     handleClose();
@@ -88,9 +130,6 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
               <h2 id="nabz-create-order-title" className="nabz-create-premium__title font-meem">
                 ثبت سفارش جدید
               </h2>
-              <p className="nabz-create-premium__subtitle font-meem">
-                فقط مشتری، اقلام و یادداشت اولیه — جزئیات مالی و لجستیک بعداً تکمیل می‌شود.
-              </p>
             </div>
             <button
               type="button"
@@ -105,19 +144,61 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
           </header>
 
           <div className="nabz-create-premium__body">
-            <section className="nabz-create-premium__section" aria-labelledby="nabz-create-customer">
-              <h3 id="nabz-create-customer" className="nabz-create-premium__section-title font-meem">
-                ۱. مشتری
-              </h3>
-              <FormField label="جستجو و انتخاب مشتری *">
-                <CustomerCombobox value={customerId} onChange={setCustomerId} />
+            <div className="nabz-create-grid-row">
+              <FormField
+                label="نام شرکت *"
+                action={(
+                  <QuickAddLink onClick={() => setCustomerModalOpen(true)}>
+                    + افزودن سریع
+                  </QuickAddLink>
+                )}
+              >
+                <CustomerCombobox
+                  key={`customer-${contactsTick}`}
+                  value={customerId}
+                  onChange={handleCustomerChange}
+                />
               </FormField>
-            </section>
+
+              <FormField
+                label="کارشناس مرتبط"
+                action={(
+                  <QuickAddLink
+                    onClick={() => setExpertModalOpen(true)}
+                    disabled={!customerId}
+                  >
+                    + افزودن کارشناس
+                  </QuickAddLink>
+                )}
+              >
+                <ExpertCombobox
+                  key={`expert-${customerId}-${contactsTick}`}
+                  customerId={customerId}
+                  value={expertKey}
+                  onChange={setExpertKey}
+                />
+              </FormField>
+            </div>
+
+            <div className="nabz-create-grid-row">
+              <FormSegment
+                label="نوع فروش"
+                options={SALES_TYPES}
+                value={saleType}
+                onChange={setSaleType}
+              />
+              <FormSegment
+                label="نوع سفارش"
+                options={CREATE_ORDER_TYPES}
+                value={orderType}
+                onChange={setOrderType}
+              />
+            </div>
 
             <section className="nabz-create-premium__section" aria-labelledby="nabz-create-items">
               <div className="nabz-create-premium__section-head">
                 <h3 id="nabz-create-items" className="nabz-create-premium__section-title font-meem">
-                  ۲. اقلام محصول
+                  اقلام محصول
                 </h3>
                 <button
                   type="button"
@@ -150,17 +231,16 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
 
             <section className="nabz-create-premium__section" aria-labelledby="nabz-create-notes">
               <h3 id="nabz-create-notes" className="nabz-create-premium__section-title font-meem">
-                ۳. یادداشت اولیه
+                توضیحات
               </h3>
-              <FormField label="توضیحات کارشناس فروش">
-                <textarea
-                  className="nabz-form__textarea nabz-create-premium__notes font-meem"
-                  rows={4}
-                  value={generalNotes}
-                  onChange={(e) => setGeneralNotes(e.target.value)}
-                  placeholder="نکات اولیه مربوط به این سفارش..."
-                />
-              </FormField>
+              <textarea
+                className="nabz-form__textarea nabz-create-premium__notes nabz-create-input font-meem"
+                rows={4}
+                value={generalNotes}
+                onChange={(e) => setGeneralNotes(e.target.value)}
+                placeholder="توضیحات تکمیلی سفارش..."
+                aria-label="توضیحات"
+              />
             </section>
 
             {submitError && (
@@ -195,6 +275,27 @@ export default function CreateOrderDrawer({ orders, onClose, onSubmit }) {
         <ProductPickerModal
           onClose={() => setPickerOpen(false)}
           onConfirm={addProductsFromPicker}
+        />
+      )}
+
+      {customerModalOpen && (
+        <QuickAddCustomerModal
+          onClose={() => setCustomerModalOpen(false)}
+          onAdded={(record) => {
+            setContactsTick((tick) => tick + 1);
+            handleCustomerChange(record.id);
+          }}
+        />
+      )}
+
+      {expertModalOpen && customerId && (
+        <QuickAddExpertModal
+          customerId={customerId}
+          onClose={() => setExpertModalOpen(false)}
+          onAdded={(key) => {
+            setContactsTick((tick) => tick + 1);
+            setExpertKey(key);
+          }}
         />
       )}
     </>

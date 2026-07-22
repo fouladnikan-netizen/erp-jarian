@@ -49,6 +49,7 @@ export function validateCreateOrder({ customerId, lineItems }) {
 
 export function buildNewOrder({
   orders, customerId, assignee, lineItems, orderType, saleType, generalNotes,
+  requesterName, requesterMobile,
 }) {
   const customer = getCustomerById(customerId);
   const registeredDate = getTodayJalali();
@@ -67,6 +68,8 @@ export function buildNewOrder({
     orderType: orderType || DEFAULT_ORDER_TYPE,
     saleType: saleType || DEFAULT_SALE_TYPE,
     generalNotes: (generalNotes || '').trim(),
+    requesterName: (requesterName || '').trim() || undefined,
+    requesterMobile: (requesterMobile || '').trim() || undefined,
     itemCount,
     amountRial: null,
     isPriced: false,
