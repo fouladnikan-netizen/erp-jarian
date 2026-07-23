@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ORDER_TABS, STAGE_MOZENE_ID, STAGE_TINTS } from '../config';
+import { ORDER_TABS, STAGE_TINTS } from '../config';
 import { formatOrderAmount } from '../orderCode';
 import { UNPRICED_LABEL } from '../constants';
 import {
@@ -9,6 +9,7 @@ import {
   getOrderDisplayStatusKind,
   MOZENE_LOCKED_MESSAGE,
 } from '../orderStageService';
+import ProformaRevisionTag from './ProformaRevisionTag';
 
 export default function NabzKanban({
   orders,
@@ -106,12 +107,11 @@ export default function NabzKanban({
       <div className="nabz-kanban-board">
         {stages.map((stage) => {
           const columnOrders = ordersByStage.get(stage.id) || [];
-          const isMozeneLocked = stage.id === STAGE_MOZENE_ID;
 
           return (
             <div
               key={stage.id}
-              className={`nabz-kanban-col${dragOverStageId === stage.id ? ' is-drag-over' : ''}${rejectStageId === stage.id ? ' is-reject' : ''}${isMozeneLocked ? ' is-mozene-locked' : ''}`}
+              className={`nabz-kanban-col${dragOverStageId === stage.id ? ' is-drag-over' : ''}${rejectStageId === stage.id ? ' is-reject' : ''}`}
               onDragOver={(event) => handleDragOver(event, stage.id)}
               onDragLeave={() => setDragOverStageId((current) => (current === stage.id ? null : current))}
               onDrop={(event) => handleDrop(event, stage.id)}
@@ -122,9 +122,6 @@ export default function NabzKanban({
                   {columnOrders.length.toLocaleString('fa-IR')}
                 </span>
               </header>
-              {isMozeneLocked && (
-                <p className="nabz-kanban-col__hint">فقط پس از تکمیل کاوش</p>
-              )}
               <ul className="nabz-kanban-col__cards">
                 {columnOrders.map((order) => {
                   const tint = STAGE_TINTS[getEffectiveStageId(order)] || STAGE_TINTS[1];
@@ -152,7 +149,10 @@ export default function NabzKanban({
                           }}
                           onClick={() => onOrderClick(order)}
                         >
-                          <span className="nabz-kanban-card__code">{order.code}</span>
+                          <span className="nabz-kanban-card__code-row">
+                            <span className="nabz-kanban-card__code">{order.code}</span>
+                            <ProformaRevisionTag order={order} className="proforma-revision-tag--kanban" />
+                          </span>
                           <span className={`nabz-order-status nabz-order-status--${statusKind}`}>
                             {displayStatus}
                           </span>

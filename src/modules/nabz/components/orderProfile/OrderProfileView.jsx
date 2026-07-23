@@ -166,10 +166,9 @@ export default function OrderProfileView({
   const handleUpdateProforma = () => {
     const withArchive = archivePreviousSignedProforma(order);
     const result = updateProforma(withArchive);
-    if (result.changed) {
-      updateOrder(() => result.order);
-    }
-    openStoredProformaPreview(result.payload);
+    updateOrder(() => result.order);
+    // پیش‌نمایش را باز نکن — برگشت به فهرست سفارشات جاری
+    navigate(`/nabz?tab=${ORDER_TABS.CURRENT}`);
   };
 
   const handleDecisionSuccess = (payload) => {

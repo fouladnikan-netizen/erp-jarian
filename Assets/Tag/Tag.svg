@@ -1,0 +1,24 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- تگ قیمت مینیمال — هم‌سبک آیکون‌های منو؛ کادر قرمز براق -->
+  <defs>
+    <linearGradient id="tagStroke" x1="2" y1="2" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fca5a5"/>
+      <stop offset="40%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+  </defs>
+  <path
+    d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+    stroke="url(#tagStroke)"
+    stroke-width="1.75"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle
+    cx="7"
+    cy="7"
+    r="1.35"
+    stroke="url(#tagStroke)"
+    stroke-width="1.75"
+  />
+</svg>

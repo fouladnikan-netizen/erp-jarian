@@ -245,6 +245,16 @@ export function ensureTargetOnAppend(order, itemIndex, inquiryId) {
 export function canCompleteOrderInquiries(order) {
   const items = order.items || [];
   if (!items.length) return false;
+
+  // بعد از به‌روزرسانی پیش‌فاکتور: هر سطر باید حداقل یک استعلام جدید داشته باشد
+  const baseline = order.proformaUpdate?.baselineInquiryIds;
+  if (baseline) {
+    return items.every((item, index) => {
+      const prior = new Set(baseline[index] || baseline[String(index)] || []);
+      return (item.inquiries || []).some((inq) => !prior.has(inq.id));
+    });
+  }
+
   return items.every((item) => (item.inquiries || []).length > 0);
 }
 

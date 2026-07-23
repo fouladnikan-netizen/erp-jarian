@@ -9,6 +9,7 @@ import { UNPRICED_LABEL } from '../constants';
 import { countOrderLineItems } from '../inquiryService';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../orderStageService';
 import OrderRowActions from './OrderRowActions';
+import ProformaRevisionTag from './ProformaRevisionTag';
 
 const NABZ_CURRENT_COLUMNS = [
   { key: 'code', defaultWidth: 140 },
@@ -418,7 +419,12 @@ export default function NabzOrderTable({
 
                 return (
                   <tr key={order.id} {...rowProps}>
-                    <td className="nabz-table__code font-yekan">{order.code}</td>
+                    <td className="nabz-table__code font-yekan">
+                      <span className="nabz-table__code-wrap">
+                        {order.code}
+                        <ProformaRevisionTag order={order} className="proforma-revision-tag--table" />
+                      </span>
+                    </td>
                     <td className="nabz-table__datetime font-yekan">{formatRegisteredAt(order)}</td>
                     <td>{order.assignee}</td>
                     <td onClick={(e) => e.stopPropagation()}>

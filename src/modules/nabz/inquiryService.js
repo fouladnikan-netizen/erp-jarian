@@ -360,6 +360,7 @@ export function completeOrderInquiries(order) {
     items,
     stageId: nextStageId,
     inquiryCompletedAt: at,
+    proformaUpdate: null,
     amountRial: preview.orderTotal > 0 ? Math.round(preview.orderTotal) : pricedOrder.amountRial,
     isPriced: preview.orderTotal > 0,
     events: [...(pricedOrder.events || []), event],
@@ -395,6 +396,7 @@ export function completeOrderQuoting(order) {
   return {
     ...pricedOrder,
     stageId: nextStageId,
+    quotingCompletedAt: at,
     amountRial: preview.orderTotal > 0 ? Math.round(preview.orderTotal) : pricedOrder.amountRial,
     isPriced: preview.orderTotal > 0,
     events: [...(pricedOrder.events || []), event],

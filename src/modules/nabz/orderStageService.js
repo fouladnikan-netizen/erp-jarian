@@ -35,6 +35,8 @@ export function hasInquiryOnAllLines(order) {
 }
 
 export function hasInquiryCompletionEvent(order) {
+  // پس از به‌روزرسانی پیش‌فاکتور، تا «تکمیل کاوش» دوباره، رویدادهای قبلی را حساب نکن
+  if (order.proformaUpdate) return false;
   return Boolean(order.inquiryCompletedAt)
     || (order.events || []).some((event) => event.type === 'inquiry_order_completed');
 }

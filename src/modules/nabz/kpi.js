@@ -55,12 +55,12 @@ export function filterOrders(orders, { tab, search }) {
     return haystack.includes(search.toLowerCase());
   });
 
-  // سفارشات تازه‌به‌روزشده (updatedAt) بالای لیست «سفارشات امروز»
+  // سفارشات تازه‌به‌روزشده (updatedAt / updated_at) بالای لیست «سفارشات امروز»
   return filtered
     .map((order, index) => ({ order, index }))
     .sort((a, b) => {
-      const ta = a.order.updatedAt || 0;
-      const tb = b.order.updatedAt || 0;
+      const ta = a.order.updatedAt || a.order.updated_at || 0;
+      const tb = b.order.updatedAt || b.order.updated_at || 0;
       if (tb !== ta) return tb - ta;
       return a.index - b.index;
     })
