@@ -7,6 +7,7 @@ import {
   getOrderProfileBreadcrumb,
   getOrderProfileNextAction,
   shouldShowIssueProforma,
+  getProformaHeaderActions,
 } from '../../orderProfileService';
 import { getProformaVersions } from '../../proformaService';
 import {
@@ -65,6 +66,8 @@ export default function OrderProfileChrome({
   onNextAction,
   onOpenActivityModal,
   onIssueProforma,
+  onViewProforma,
+  onUpdateProforma,
   onOpenDecisionDrawer,
 }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -83,8 +86,13 @@ export default function OrderProfileChrome({
     : nextAction?.id === 'complete-mozene'
       ? canCompleteQuoting(order)
       : false;
-  const showIssueProforma = shouldShowIssueProforma(order);
-  const showDecisionAction = showIssueProforma && getProformaVersions(order).length > 0;
+  const showIssueProformaGate = shouldShowIssueProforma(order);
+  const {
+    showIssue: showIssueProforma,
+    showView: showViewProforma,
+    showUpdate: showUpdateProforma,
+  } = getProformaHeaderActions(order);
+  const showDecisionAction = showIssueProformaGate && getProformaVersions(order).length > 0;
   const decisionLabel = hasGatewayDecision(order)
     ? 'مشاهده نتیجه تعیین تکلیف'
     : 'تعیین تکلیف';
@@ -219,6 +227,26 @@ export default function OrderProfileChrome({
               onClick={() => onIssueProforma?.()}
             >
               صدور پیش‌فاکتور
+            </button>
+          )}
+
+          {showViewProforma && (
+            <button
+              type="button"
+              className="btn btn--outline order-profile-activity-btn"
+              onClick={() => onViewProforma?.()}
+            >
+              نمایش پیش‌فاکتور
+            </button>
+          )}
+
+          {showUpdateProforma && (
+            <button
+              type="button"
+              className="btn btn--outline order-profile-activity-btn"
+              onClick={() => onUpdateProforma?.()}
+            >
+              به‌روزرسانی پیش‌فاکتور
             </button>
           )}
 

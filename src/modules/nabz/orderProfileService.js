@@ -2,6 +2,11 @@ import { ORDER_TABS, getStageLabel, STAGE_PISHKESH_ID, STAGE_KAVOSH_ID, STAGE_MO
 import { CURRENT_USER } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { buildStatusHistory, getEffectiveStageId } from './orderStageService';
+import {
+  getLatestProformaVersion,
+  getProformaVersions,
+  buildProformaFingerprint,
+} from './proformaService';
 
 let commentIdCounter = 1000;
 let attachmentIdCounter = 2000;
@@ -98,6 +103,7 @@ export function appendProfileAttachment(order, file) {
     uploadedAt: new Date().toLocaleDateString('fa-IR'),
     uploadedBy: file.uploadedBy || 'کاربر جاری',
     note: file.note,
+    readOnly: Boolean(file.readOnly),
   };
 
   return {
@@ -113,6 +119,7 @@ export function appendSignedProformaRecord(order, meta = {}) {
     size: meta.size || '۲۴۸ کیلوبایت',
     uploadedBy: 'سیستم مهر و امضا',
     note: meta.note || 'نسخه مهر و امضا شده پیش‌فاکتور',
+    readOnly: true,
   });
 
   const at = new Date().toLocaleDateString('fa-IR', {
@@ -136,6 +143,52 @@ export function appendSignedProformaRecord(order, meta = {}) {
         type: 'proforma_signed',
         at,
         summary: `پیش‌فاکتور ${meta.documentNumber || ''} مهر و امضا و در مستندات بایگانی شد`.trim(),
+      },
+    ],
+  };
+}
+
+/**
+ * هنگام به‌روزرسانی: نسخه مهرشده قبلی را در اسناد به‌صورت فقط‌خواندنی قفل/بایگانی می‌کند.
+ */
+export function archivePreviousSignedProforma(order) {
+  const latest = getLatestProformaVersion(order);
+  const docNumber = order.proforma?.signedDocumentNumber
+    || latest?.documentNumber
+    || null;
+  if (!order.proforma?.signed && !order.proforma?.signedDocumentNumber) {
+    return order;
+  }
+
+  const label = docNumber || order.code || '';
+  const archiveName = `پیش‌فاکتور مهرشده ${label}.pdf`.trim();
+  const alreadyArchived = getOrderProfileAttachments(order).some(
+    (file) => file.name === archiveName && file.readOnly,
+  );
+
+  if (alreadyArchived) {
+    return order;
+  }
+
+  const withAttachment = appendProfileAttachment(order, {
+    name: archiveName,
+    type: 'pdf',
+    size: '۲۴۸ کیلوبایت',
+    uploadedBy: 'سیستم به‌روزرسانی پیش‌فاکتور',
+    note: 'بایگانی نسخه قبلی مهر و امضا شده — فقط خواندنی',
+    readOnly: true,
+  });
+
+  const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
+  return {
+    ...withAttachment,
+    events: [
+      ...(withAttachment.events || []),
+      {
+        id: `pf-archive-${Date.now()}`,
+        type: 'proforma_archived',
+        at,
+        summary: `نسخه قبلی پیش‌فاکتور ${label} در مستندات بایگانی شد`.trim(),
       },
     ],
   };
@@ -207,6 +260,45 @@ export function shouldShowIssueProforma(order) {
   return order.stageId >= STAGE_PISHKESH_ID;
 }
 
+/**
+ * دکمه‌های پیش‌فاکتور در هدر پروفایل:
+ * - هنوز صادر نشده → صدور
+ * - صادر + امضا + بدون تغییر محتوا → به‌روزرسانی + نمایش
+ * - هر تغییر در سفارش/قیمت/حاشیه → به‌جای نمایش، دوباره صدور
+ * - صادر شده ولی هنوز امضا نشده و محتوا جاری → فقط نمایش
+ */
+export function getProformaHeaderActions(order) {
+  const empty = { showIssue: false, showView: false, showUpdate: false };
+  if (!shouldShowIssueProforma(order)) return empty;
+
+  const versions = getProformaVersions(order);
+  const hasVersion = versions.length > 0;
+  if (!hasVersion) {
+    return { showIssue: true, showView: false, showUpdate: false };
+  }
+
+  const latest = getLatestProformaVersion(order);
+  const contentCurrent = Boolean(
+    latest?.contentHash && latest.contentHash === buildProformaFingerprint(order),
+  );
+  const signed = Boolean(order.proforma?.signed);
+
+  if (!contentCurrent) {
+    return { showIssue: true, showView: false, showUpdate: false };
+  }
+
+  if (signed) {
+    return { showIssue: false, showView: true, showUpdate: true };
+  }
+
+  return { showIssue: false, showView: true, showUpdate: false };
+}
+
+/** @deprecated استفاده از getProformaHeaderActions */
+export function shouldShowUpdateProforma(order) {
+  return getProformaHeaderActions(order).showUpdate;
+}
+
 export function getOrderProfileNextAction(order) {
   const stageId = getEffectiveStageId(order);
   if (stageId === STAGE_KAVOSH_ID) {
@@ -220,12 +312,27 @@ export function getOrderProfileNextAction(order) {
 
 export function getOrderProfilePrimaryActions(order) {
   const actions = [];
+  const flags = getProformaHeaderActions(order);
 
-  if (shouldShowIssueProforma(order)) {
+  if (flags.showIssue) {
     actions.push({
       id: 'print-proforma',
       label: 'صدور پیش‌فاکتور',
       variant: 'primary',
+    });
+  }
+  if (flags.showView) {
+    actions.push({
+      id: 'view-proforma',
+      label: 'نمایش پیش‌فاکتور',
+      variant: 'outline',
+    });
+  }
+  if (flags.showUpdate) {
+    actions.push({
+      id: 'update-proforma',
+      label: 'به‌روزرسانی پیش‌فاکتور',
+      variant: 'outline',
     });
   }
 

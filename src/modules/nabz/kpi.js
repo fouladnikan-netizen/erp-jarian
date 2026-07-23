@@ -38,7 +38,7 @@ export function computeNabzKpis(orders) {
 }
 
 export function filterOrders(orders, { tab, search }) {
-  return orders.filter((order) => {
+  const filtered = orders.filter((order) => {
     if (order.status !== tab) return false;
     if (!search) return true;
     const haystack = [
@@ -54,6 +54,17 @@ export function filterOrders(orders, { tab, search }) {
       .toLowerCase();
     return haystack.includes(search.toLowerCase());
   });
+
+  // سفارشات تازه‌به‌روزشده (updatedAt) بالای لیست «سفارشات امروز»
+  return filtered
+    .map((order, index) => ({ order, index }))
+    .sort((a, b) => {
+      const ta = a.order.updatedAt || 0;
+      const tb = b.order.updatedAt || 0;
+      if (tb !== ta) return tb - ta;
+      return a.index - b.index;
+    })
+    .map(({ order }) => order);
 }
 
 /** سفارشات قابل نمایش در کانبان — فقط وضعیت تب فعال */

@@ -9,8 +9,8 @@ import {
   sendProformaToCustomer,
 } from '../../gatewayLifecycleService';
 import { getOrderOperationalPhase } from '../../phase2Service';
-import { markOrderCancelled, appendProfileAttachment, appendSignedProformaRecord } from '../../orderProfileService';
-import { issueProforma } from '../../proformaService';
+import { markOrderCancelled, appendProfileAttachment, appendSignedProformaRecord, archivePreviousSignedProforma } from '../../orderProfileService';
+import { issueProforma, updateProforma, getLatestProformaVersion } from '../../proformaService';
 import {
   openStoredProformaPreview,
   PROFORMA_SEND_MESSAGE_TYPE,
@@ -150,6 +150,28 @@ export default function OrderProfileView({
     openStoredProformaPreview(result.payload);
   };
 
+  const handleViewProforma = () => {
+    const latest = getLatestProformaVersion(order);
+    if (!latest) return;
+    openStoredProformaPreview({
+      viewModel: latest.viewModel,
+      terms: latest.terms,
+      termsCustom: latest.termsCustom,
+      orderId: order.id,
+      versionId: latest.id,
+      signed: Boolean(order.proforma?.signed),
+    });
+  };
+
+  const handleUpdateProforma = () => {
+    const withArchive = archivePreviousSignedProforma(order);
+    const result = updateProforma(withArchive);
+    if (result.changed) {
+      updateOrder(() => result.order);
+    }
+    openStoredProformaPreview(result.payload);
+  };
+
   const handleDecisionSuccess = (payload) => {
     updateOrder((current) => markGatewayDecisionSuccess(current, payload));
     setDecisionDrawerOpen(false);
@@ -218,6 +240,8 @@ export default function OrderProfileView({
           onNextAction={handleNextAction}
           onOpenActivityModal={() => openActivityModal()}
           onIssueProforma={handleIssueProforma}
+          onViewProforma={handleViewProforma}
+          onUpdateProforma={handleUpdateProforma}
           onOpenDecisionDrawer={handleOpenDecisionDrawer}
         />
       </div>

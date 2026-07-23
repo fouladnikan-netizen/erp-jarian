@@ -63,7 +63,7 @@ export function resolveAssigneeMobile(assigneeName) {
 export function formatProformaDocumentNumber(orderCode, revision = 1) {
   const base = toPersianDigits(orderCode || '—');
   if (!revision || revision <= 1) return base;
-  return `${base} (بازنگری ${toPersianDigits(revision)})`;
+  return `${base}-R${toPersianDigits(revision)}`;
 }
 
 export function getProformaVersions(order) {
@@ -159,9 +159,12 @@ export function buildProformaViewModel(order, options = {}) {
  * صدور پیش‌فاکتور:
  * - همیشه payload پیش‌نمایش را برمی‌گرداند
  * - اگر محتوا تغییر کرده (یا اولین صدور است): بازنگری + بایگانی در سوابق
- * - اگر تغییری نبوده: فقط همان نسخه آخر را برای نمایش برمی‌گرداند
+ * - اگر تغییری نبوده و forceRevision نباشد: همان نسخه آخر برای نمایش
+ * - Order ID / code هرگز عوض نمی‌شود؛ فقط revision بالا می‌رود
+ * - استعلام‌ها و قیمت‌های قبلی دست‌نخورده می‌مانند
  */
-export function issueProforma(order) {
+export function issueProforma(order, options = {}) {
+  const forceRevision = Boolean(options.forceRevision);
   const terms = getProformaTerms(order);
   const termsCustom = Boolean(order.proforma?.customTerms);
   const fingerprint = buildProformaFingerprint(order);
@@ -171,7 +174,7 @@ export function issueProforma(order) {
   const isFirstIssue = !latest;
   const contentChanged = isFirstIssue || previousHash !== fingerprint;
 
-  if (!contentChanged) {
+  if (!contentChanged && !forceRevision) {
     return {
       order,
       changed: false,
@@ -208,8 +211,18 @@ export function issueProforma(order) {
     termsCustom,
   };
 
+  const previousVersions = forceRevision && latest
+    ? versions.map((entry) => (
+      entry.id === latest.id
+        ? { ...entry, archived: true, archivedAt: issuedAt }
+        : entry
+    ))
+    : versions;
+
   const nextOrder = {
     ...order,
+    // شناسه و کد سفارش ثابت؛ استعلام‌ها بدون تغییر
+    updatedAt: Date.now(),
     proforma: {
       termsEditable: false,
       customTerms: termsCustom,
@@ -218,18 +231,22 @@ export function issueProforma(order) {
       revision,
       contentHash: fingerprint,
       lastIssuedAt: issuedAt,
-      versions: [...versions, version],
+      // نسخه جدید تا مهر مجدد، unsigned است
+      signed: false,
+      signedAt: null,
+      signedDocumentNumber: null,
+      versions: [...previousVersions, version],
     },
     events: [
       ...(order.events || []),
       {
         id: proformaEventIdCounter++,
-        type: 'proforma_issued',
+        type: forceRevision ? 'proforma_updated' : 'proforma_issued',
         at: issuedAt,
         by: CURRENT_USER,
         summary: revision <= 1
           ? `صدور پیش‌فاکتور ${documentNumber}`
-          : `بازنگری پیش‌فاکتور — نسخه ${documentNumber}`,
+          : `به‌روزرسانی پیش‌فاکتور — نسخه ${documentNumber}`,
         proformaVersionId: version.id,
         revision,
         documentNumber,
@@ -241,6 +258,7 @@ export function issueProforma(order) {
     order: nextOrder,
     changed: true,
     version,
+    previousVersion: latest,
     payload: {
       viewModel,
       terms,
@@ -249,6 +267,11 @@ export function issueProforma(order) {
       versionId: version.id,
     },
   };
+}
+
+/** به‌روزرسانی پیش‌فاکتور: همان Order ID + افزایش revision اجباری */
+export function updateProforma(order) {
+  return issueProforma(order, { forceRevision: true });
 }
 
 export function updateOrderProforma(order, patch) {
