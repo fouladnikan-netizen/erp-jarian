@@ -1,7 +1,7 @@
 import { PERSON_TYPES } from '../kanoon/config';
 import { getCustomerById } from './customers';
 import { calculateQuotingPreview } from './quotingService';
-import { getTodayJalali, getNowTimeFa } from './dateUtils';
+import { getTodayJalali, getNowTimeFa, toPersianDigits } from './dateUtils';
 import { formatAmountRialWords } from './numberToPersianWords';
 import { DEFAULT_PROFORMA_TERMS } from './proformaConfig';
 import { CURRENT_USER } from './constants';
@@ -61,9 +61,9 @@ export function resolveAssigneeMobile(assigneeName) {
 }
 
 export function formatProformaDocumentNumber(orderCode, revision = 1) {
-  const base = orderCode || '—';
+  const base = toPersianDigits(orderCode || '—');
   if (!revision || revision <= 1) return base;
-  return `${base}-R${revision}`;
+  return `${base} (بازنگری ${toPersianDigits(revision)})`;
 }
 
 export function getProformaVersions(order) {

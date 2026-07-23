@@ -9,11 +9,12 @@ import {
   sendProformaToCustomer,
 } from '../../gatewayLifecycleService';
 import { getOrderOperationalPhase } from '../../phase2Service';
-import { markOrderCancelled } from '../../orderProfileService';
+import { markOrderCancelled, appendProfileAttachment, appendSignedProformaRecord } from '../../orderProfileService';
 import { issueProforma } from '../../proformaService';
 import {
   openStoredProformaPreview,
   PROFORMA_SEND_MESSAGE_TYPE,
+  PROFORMA_SIGNED_MESSAGE_TYPE,
 } from '../../proformaPrint';
 import {
   appendCrmActivity,
@@ -30,13 +31,9 @@ import OrderProfileChrome from './OrderProfileChrome';
 import OrderProfileGatewayTab from './OrderProfileGatewayTab';
 import OrderProfileCrmTab from './OrderProfileCrmTab';
 import OrderProfileTimelineTab from './OrderProfileTimelineTab';
-import OrderProfilePlaceholderTab from './OrderProfilePlaceholderTab';
+import OrderProfileAttachmentsTab from './OrderProfileAttachmentsTab';
 import OrderActionDrawer from './OrderActionDrawer';
 import { GATEWAY_PHASES } from '../../gatewayConfig';
-
-const PLACEHOLDER_MESSAGES = {
-  [ORDER_PROFILE_TABS.ATTACHMENTS]: 'محتوای تب اسناد و فایل‌ها در اینجا قرار می‌گیرد.',
-};
 
 export default function OrderProfileView({
   order,
@@ -174,9 +171,20 @@ export default function OrderProfileView({
     const onMessage = (event) => {
       if (event.origin !== window.location.origin) return;
       const data = event.data;
-      if (!data || data.type !== PROFORMA_SEND_MESSAGE_TYPE) return;
+      if (!data) return;
       if (data.orderId != null && data.orderId !== order.id) return;
-      handleSendProforma({ documentNumber: data.documentNumber });
+
+      if (data.type === PROFORMA_SEND_MESSAGE_TYPE) {
+        handleSendProforma({ documentNumber: data.documentNumber });
+        return;
+      }
+
+      if (data.type === PROFORMA_SIGNED_MESSAGE_TYPE) {
+        updateOrder((current) => appendSignedProformaRecord(current, {
+          ...(data.attachment || {}),
+          documentNumber: data.documentNumber,
+        }));
+      }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
@@ -304,7 +312,10 @@ export default function OrderProfileView({
             id="order-profile-panel-attachments"
             aria-labelledby="order-profile-tab-attachments"
           >
-            <OrderProfilePlaceholderTab message={PLACEHOLDER_MESSAGES[ORDER_PROFILE_TABS.ATTACHMENTS]} />
+            <OrderProfileAttachmentsTab
+              order={order}
+              onUpload={(file) => updateOrder((current) => appendProfileAttachment(current, file))}
+            />
           </div>
         )}
       </div>

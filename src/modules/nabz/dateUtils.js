@@ -8,6 +8,14 @@ export function toAsciiDigits(value) {
   return String(value).replace(/[۰-۹]/g, (d) => PERSIAN_DIGITS.indexOf(d));
 }
 
+/**
+ * متن نمایشی پیش‌فاکتور: فقط ارقام به فارسی (حروف انگلیسی دست‌نخورده می‌مانند).
+ */
+export function toPersianInvoiceText(value) {
+  if (value == null || value === '') return value == null ? '' : value;
+  return toPersianDigits(String(value));
+}
+
 export function getTodayJalali() {
   try {
     const parts = new Intl.DateTimeFormat('fa-IR', {

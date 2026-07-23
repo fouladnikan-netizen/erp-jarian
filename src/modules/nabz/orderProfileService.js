@@ -78,20 +78,66 @@ export function appendProfileComment(order, text) {
 }
 
 export function appendProfileAttachment(order, file) {
+  const isBrowserFile = typeof File !== 'undefined' && file instanceof File;
+  const mime = isBrowserFile ? file.type || '' : '';
+  const type = file.type === 'pdf' || mime === 'application/pdf'
+    ? 'pdf'
+    : (mime.startsWith('image/') || file.type === 'image')
+      ? 'image'
+      : (file.type || 'file');
+
   const attachment = {
     id: attachmentIdCounter++,
     name: file.name,
-    type: file.type?.startsWith('image/') ? 'image' : 'file',
-    size: file.size > 1024 * 1024
-      ? `${(file.size / (1024 * 1024)).toFixed(1)} مگابایت`
-      : `${Math.round(file.size / 1024)} کیلوبایت`,
+    type,
+    size: typeof file.size === 'string'
+      ? file.size
+      : file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} مگابایت`
+        : `${Math.round((file.size || 0) / 1024)} کیلوبایت`,
     uploadedAt: new Date().toLocaleDateString('fa-IR'),
-    uploadedBy: 'کاربر جاری',
+    uploadedBy: file.uploadedBy || 'کاربر جاری',
+    note: file.note,
   };
 
   return {
     ...order,
     profileAttachments: [...getOrderProfileAttachments(order), attachment],
+  };
+}
+
+export function appendSignedProformaRecord(order, meta = {}) {
+  const withAttachment = appendProfileAttachment(order, {
+    name: meta.name || `پیش‌فاکتور مهرشده ${meta.documentNumber || ''}.pdf`.trim(),
+    type: 'pdf',
+    size: meta.size || '۲۴۸ کیلوبایت',
+    uploadedBy: 'سیستم مهر و امضا',
+    note: meta.note || 'نسخه مهر و امضا شده پیش‌فاکتور',
+  });
+
+  const at = new Date().toLocaleDateString('fa-IR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }) + ` · ${new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}`;
+
+  return {
+    ...withAttachment,
+    proforma: {
+      ...(withAttachment.proforma || {}),
+      signed: true,
+      signedAt: at,
+      signedDocumentNumber: meta.documentNumber || null,
+    },
+    events: [
+      ...(withAttachment.events || []),
+      {
+        id: `pf-signed-${Date.now()}`,
+        type: 'proforma_signed',
+        at,
+        summary: `پیش‌فاکتور ${meta.documentNumber || ''} مهر و امضا و در مستندات بایگانی شد`.trim(),
+      },
+    ],
   };
 }
 

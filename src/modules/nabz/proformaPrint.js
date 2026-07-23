@@ -3,6 +3,7 @@ import { buildProformaViewModel, getProformaTerms } from './proformaService';
 
 const PREVIEW_PATH = '/nabz/proforma/preview';
 export const PROFORMA_SEND_MESSAGE_TYPE = 'nabz-proforma-send';
+export const PROFORMA_SIGNED_MESSAGE_TYPE = 'nabz-proforma-signed';
 
 function serializePayload(payload) {
   return JSON.stringify(payload);

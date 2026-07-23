@@ -20,7 +20,24 @@
   background: #eae7e7;
   padding: 2rem 1rem;
   direction: rtl;
-  font-family: 'Vazirmatn', Tahoma, sans-serif;
+  font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
+}
+
+.invoice-doc-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.invoice-doc-stack__measure {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 210mm;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .proforma-preview-page--empty {
@@ -34,45 +51,403 @@
   display: flex;
   gap: 0.5rem;
   justify-content: center;
-  margin: 0 auto 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0 auto;
   max-width: 210mm;
 }
 
-/* کانتینر A4 */
+.proforma-preview-page__toolbar--top {
+  margin-bottom: 1rem;
+  justify-content: flex-start;
+}
+
+.proforma-preview-page__toolbar--bottom {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e2e1;
+  box-shadow: 0 4px 16px rgba(28, 27, 27, 0.06);
+}
+
+.proforma-preview-page__sign-btn {
+  min-width: 11.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.proforma-preview-page__sign-btn.is-loading,
+.proforma-preview-page__sign-btn:disabled {
+  opacity: 0.72;
+  cursor: wait;
+  transform: none;
+}
+
+.proforma-preview-page__spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: proforma-spin 0.7s linear infinite;
+}
+
+@keyframes proforma-spin {
+  to { transform: rotate(360deg); }
+}
+
+.proforma-preview-page__approved-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  animation: proforma-fade-in 0.45s ease both;
+}
+
+.proforma-preview-page__status-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border: 1px solid #a5d6a7;
+}
+
+.proforma-preview-page__send-wrap {
+  position: relative;
+}
+
+.proforma-preview-page__send-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  min-width: 9.5rem;
+  padding: 0.35rem;
+  background: #fff;
+  border: 1px solid #e5e2e1;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(28, 27, 27, 0.14);
+  z-index: 20;
+  animation: proforma-fade-in 0.2s ease both;
+}
+
+.proforma-preview-page__send-menu--up {
+  top: auto;
+  bottom: calc(100% + 0.35rem);
+}
+
+.proforma-preview-page__send-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: right;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  font: inherit;
+  color: #1c1b1b;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.proforma-preview-page__send-item:hover,
+.proforma-preview-page__send-item:focus-visible {
+  background: #f6f3f2;
+  outline: none;
+}
+
+@keyframes proforma-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* —— مهر و امضا: فشرده —— */
+.invoice-doc__signatures {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  direction: rtl;
+  margin: 0.1rem 0 0;
+  padding: 0;
+  border: 0;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  flex-shrink: 0;
+}
+
+.invoice-doc__sign-block {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+}
+
+.invoice-doc__sign-slot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0.95rem;
+  padding: 0.02rem 0.2rem;
+}
+
+.invoice-doc__sign-title {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--invoice-on-surface);
+  text-align: center;
+  line-height: 1.15;
+  border: 0;
+  padding: 0;
+  background: none;
+  position: relative;
+  z-index: 1;
+}
+
+.invoice-doc__sign-marks {
+  position: absolute;
+  left: -0.35rem;
+  right: -0.35rem;
+  top: -0.05rem;
+  bottom: -0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  pointer-events: none;
+  z-index: 2;
+  /* استقرار مهر و امضا ۰٫۵ سانتی‌متر بالاتر از برچسب */
+  transform: translateY(-0.5cm);
+}
+
+.invoice-doc__signatures.is-signing .invoice-doc__sign-block--seller,
+.invoice-doc__signatures.is-approved .invoice-doc__sign-block--seller {
+  padding-block: 0.15rem 0.25rem;
+}
+
+.invoice-doc__signature {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.invoice-doc__signature-img {
+  display: block;
+  height: 2.65rem;
+  width: auto;
+  max-width: 7.5rem;
+  object-fit: contain;
+  object-position: center;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.invoice-doc__signature.is-drawing .invoice-doc__signature-img {
+  animation: proforma-sign-reveal 1.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.invoice-doc__signature.is-drawn .invoice-doc__signature-img {
+  clip-path: inset(0 0 0 0);
+  opacity: 1;
+}
+
+@keyframes proforma-sign-reveal {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.35;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+.invoice-doc__stamp {
+  width: 3.7rem;
+  height: 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(2.2) rotate(-12deg);
+  transform-origin: 50% 55%;
+  will-change: transform, opacity;
+  flex-shrink: 0;
+}
+
+.invoice-doc__stamp.is-smashing {
+  animation: proforma-stamp-smash 0.85s cubic-bezier(0.22, 1.2, 0.36, 1) 0.55s forwards;
+}
+
+.invoice-doc__stamp.is-stamped {
+  opacity: 1;
+  transform: scale(1) rotate(-8deg);
+}
+
+.invoice-doc__stamp-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@keyframes proforma-stamp-smash {
+  0% {
+    opacity: 0;
+    transform: scale(2.6) rotate(-14deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-6deg);
+  }
+  72% {
+    transform: scale(1.08) rotate(-10deg);
+  }
+  86% {
+    transform: scale(0.97) rotate(-7deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+/* کانتینر A4 — یک صفحه واقعی (پیش‌نمایش = چاپ) */
 .invoice-doc {
+  --invoice-footer-print-h: 2.6cm;
   width: 210mm;
   max-width: 210mm;
+  height: 297mm;
   min-height: 297mm;
+  max-height: 297mm;
   margin: 0 auto;
   padding-top: 0;
   padding-left: var(--invoice-page-margin-x);
   padding-right: var(--invoice-page-margin-x);
+  padding-bottom: 0;
   background: #fff;
   color: var(--invoice-on-surface);
-  font-family: 'Vazirmatn', Tahoma, sans-serif;
+  font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.45;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   position: relative;
   box-sizing: border-box;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
-.invoice-doc__print-body {
+.invoice-doc__page-body {
   flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  overflow: hidden;
 }
 
-.invoice-doc__page-bottom {
+.invoice-doc__print-header {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* ۵: توضیحات + مهر — همیشه نزدیک فوتر؛ فضای خالی بالای آن */
+.invoice-doc__terms-foot {
   margin-top: auto;
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
+}
+
+.invoice-doc--measure .invoice-doc__terms-foot {
+  margin-top: 0;
+}
+
+/* Sheet table — enables repeating thead on print
+   مهم: flex رشد نکند؛ وگرنه ارتفاع اضافهٔ صفحه بین سطرها پخش می‌شود */
+.invoice-doc__sheet {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: fixed;
+  direction: rtl;
+  flex: 0 0 auto;
+}
+
+/* عرض ستون‌ها از CSS variables (قابل تنظیم در پیش‌نمایش) */
+
+.invoice-doc__thead {
+  display: table-header-group;
+}
+
+.invoice-doc__tbody {
+  display: table-row-group;
+}
+
+.invoice-doc__thead-banner > th {
+  padding: 0;
+  border: 0;
+  font-weight: inherit;
+  text-align: inherit;
+  vertical-align: top;
+  background: #fff;
+}
+
+.invoice-doc__print-header {
+  width: 100%;
+}
+
+.invoice-doc__col-head {
+  background: var(--invoice-table-header);
+  color: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.invoice-doc__col-head > th {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+  font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #fff;
+  border-top: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  vertical-align: middle;
+  text-align: center;
+  white-space: nowrap;
+  position: relative;
+}
+
+.invoice-doc__closing-row > td {
+  padding: 0;
+  border: 0;
+  vertical-align: top;
 }
 
 /* سربرگ */
@@ -231,84 +606,225 @@
 }
 
 /* جدول */
-.invoice-doc__table-section {
-  flex: 0 0 auto;
-}
-
-.invoice-doc__table-head,
 .invoice-doc__table-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  height: var(--invoice-row-h, 42px);
 }
 
-.invoice-doc__table-head {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  background: var(--invoice-table-header);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  border-top: 2px solid #fff;
-  border-bottom: 2px solid #fff;
+.invoice-doc__table-row > td {
+  /* ارتفاع با --invoice-row-h؛ فونت ثابت می‌ماند — فقط فاصلهٔ عمودی عوض می‌شود */
+  height: var(--invoice-row-h, 42px);
+  padding-top: var(--invoice-row-pad, 14px);
+  padding-bottom: var(--invoice-row-pad, 14px);
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+  border-bottom: 0;
+  font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.2;
+  vertical-align: middle;
+  overflow: hidden;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-.invoice-doc__table-head .invoice-doc__col {
-  color: #fff;
+.invoice-doc__table-row > td.invoice-doc__col--desc {
+  text-align: right;
 }
 
-.invoice-doc__table-row {
-  padding-top: 0.45rem;
-  padding-bottom: 0.45rem;
-  border-bottom: 1px solid var(--invoice-surface-variant);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.invoice-doc__table-row.is-alt {
+.invoice-doc__table-row.is-alt > td {
   background: var(--invoice-surface-low);
 }
 
-.invoice-doc__col--row { width: 8%; text-align: center; font-weight: 700; color: var(--invoice-on-surface-variant); flex-shrink: 0; }
+.invoice-doc__colg--row { width: var(--invoice-col-0, 8%); }
+.invoice-doc__colg--desc { width: var(--invoice-col-1, 42%); }
+.invoice-doc__colg--qty { width: var(--invoice-col-2, 10%); }
+.invoice-doc__colg--unit { width: var(--invoice-col-3, 10%); }
+.invoice-doc__colg--price { width: var(--invoice-col-4, 15%); }
+.invoice-doc__colg--total { width: var(--invoice-col-5, 15%); }
+
+.invoice-doc__col--row {
+  width: var(--invoice-col-0, 8%);
+  max-width: none;
+  text-align: center;
+  font-weight: 700;
+  color: var(--invoice-on-surface-variant);
+  overflow: hidden;
+  padding-left: 0.1rem;
+  padding-right: 0.1rem;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
 .invoice-doc__col--desc {
-  width: 42%;
+  width: var(--invoice-col-1, 42%);
   text-align: right;
   padding-right: 0.5rem;
-  flex-shrink: 0;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  box-sizing: border-box;
 }
-.invoice-doc__col--qty { width: 10%; text-align: center; flex-shrink: 0; }
-.invoice-doc__col--unit { width: 10%; text-align: center; flex-shrink: 0; }
-.invoice-doc__col--price {
-  width: 15%;
+.invoice-doc__col--qty {
+  width: var(--invoice-col-2, 10%);
+  max-width: none;
   text-align: center;
-  padding-left: 0;
-  padding-right: 0;
+  overflow: hidden;
+  padding-left: 0.1rem;
+  padding-right: 0.1rem;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.invoice-doc__col--unit {
+  width: var(--invoice-col-3, 10%);
+  max-width: none;
+  text-align: center;
+  overflow: hidden;
+  padding-left: 0.1rem;
+  padding-right: 0.1rem;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.invoice-doc__col--price {
+  width: var(--invoice-col-4, 15%);
+  text-align: center;
   direction: ltr;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  unicode-bidi: isolate;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 .invoice-doc__col--total {
-  width: 15%;
-  text-align: left;
-  padding-left: 1.35rem;
+  width: var(--invoice-col-5, 15%);
+  text-align: center;
+  padding-left: 0.35rem;
   direction: ltr;
-  flex-shrink: 0;
+  unicode-bidi: isolate;
   box-sizing: border-box;
+  white-space: nowrap;
 }
 .invoice-doc__col--bold { font-weight: 700; }
 
+.invoice-doc__col-head > th.invoice-doc__col--row,
+.invoice-doc__col-head > th.invoice-doc__col--qty,
+.invoice-doc__col-head > th.invoice-doc__col--unit,
+.invoice-doc__col-head > th.invoice-doc__col--desc,
+.invoice-doc__col-head > th.invoice-doc__col--price,
+.invoice-doc__col-head > th.invoice-doc__col--total {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+}
+
+/* —— تغییر اندازه تعاملی (فقط پیش‌نمایش) —— */
+.invoice-doc-stack--editable .invoice-doc__col-resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 5;
+  touch-action: none;
+}
+
+.invoice-doc-stack--editable .invoice-doc__col-resize:hover,
+.invoice-doc-stack--editable .invoice-doc__col-resize.is-active {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.invoice-doc-stack--editable .invoice-doc__col-head {
+  position: relative;
+}
+
+.invoice-doc-stack__toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 auto 0.65rem;
+  max-width: 210mm;
+  width: 100%;
+}
+
+.invoice-doc-stack__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.invoice-doc-stack__row-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e5e2e1;
+  font-size: 0.8rem;
+  color: #1c1b1b;
+}
+
+.invoice-doc-stack__row-control input[type='range'] {
+  width: 10rem;
+  accent-color: #d31120;
+  cursor: pointer;
+}
+
+.invoice-doc-stack__row-value {
+  min-width: 2.2rem;
+  font-variant-numeric: tabular-nums;
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.invoice-doc-stack__row-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid #e5e2e1;
+  border-radius: 6px;
+  background: #f6f3f2;
+  cursor: row-resize;
+  touch-action: none;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: #454742;
+}
+
+.invoice-doc-stack__row-drag:hover {
+  background: #ece9e8;
+}
+
+body.is-invoice-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+body.is-invoice-resizing[data-resize='row'] {
+  cursor: row-resize;
+}
+
 .invoice-doc__product-desc {
-  display: inline;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  display: block;
+  max-height: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: normal;
+  overflow-wrap: normal;
+  line-height: 1.2;
 }
 
 .invoice-doc__product-name {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--invoice-on-surface);
 }
 
@@ -317,11 +833,12 @@
   opacity: 0.85;
 }
 
-/* جمع‌ها — بلافاصله بعد از جدول */
+/* ۴: محاسبات — بلافاصله بعد از جدول */
 .invoice-doc__totals-wrap {
   display: flex;
   flex-direction: row-reverse;
-  padding: 0.6rem 0 0.45rem;
+  padding: 0.3rem 0 0.2rem;
+  padding-left: 20px;
   flex-shrink: 0;
   page-break-inside: avoid;
   break-inside: avoid;
@@ -336,9 +853,12 @@
 .invoice-doc__totals-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.25rem 0;
+  align-items: center;
+  height: 40px;
+  padding: 0;
   border-bottom: 1px solid var(--invoice-surface-variant);
   font-size: 12px;
+  box-sizing: border-box;
 }
 
 .invoice-doc__totals-row span:first-child {
@@ -348,7 +868,10 @@
 
 .invoice-doc__totals-row--grand {
   margin-top: 0.35rem;
-  padding: 0.5rem 0.75rem;
+  margin-left: -20px;
+  width: calc(100% + 20px);
+  height: 40px;
+  padding: 0 0.75rem 0 calc(0.75rem + 20px);
   background: var(--invoice-primary);
   color: #fff;
   border-bottom: none;
@@ -356,6 +879,7 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   font-size: 14px;
   font-weight: 700;
+  box-sizing: border-box;
 }
 
 .invoice-doc__totals-row--grand span {
@@ -364,11 +888,11 @@
 }
 
 .invoice-doc__totals-words {
-  margin: 0.45rem 0 0;
-  padding: 0.35rem 0 0;
+  margin: 0.25rem 0 0;
+  padding: 0.2rem 0 0;
   border-top: 1px solid var(--invoice-surface-variant);
   font-size: 11px;
-  line-height: 1.55;
+  line-height: 1.4;
   color: var(--invoice-on-surface-variant);
 }
 
@@ -379,16 +903,16 @@
 
 /* شروط */
 .invoice-doc__terms-section {
-  padding: 0.45rem 0 0.55rem;
+  padding: 0.25rem 0 0.15rem;
   font-size: 11px;
-  line-height: 1.55;
+  line-height: 1.4;
   color: var(--invoice-on-surface);
 }
 
 .invoice-doc__accounts {
   border-bottom: 1px solid var(--invoice-surface-variant);
-  padding-bottom: 0.45rem;
-  margin-bottom: 0.55rem;
+  padding-bottom: 0.3rem;
+  margin-bottom: 0.3rem;
 }
 
 .invoice-doc__terms-heading {
@@ -434,9 +958,9 @@
   white-space: pre-wrap;
 }
 
-/* فوتر */
+/* فوتر — پایین هر صفحه A4 (جریان عادی، نه fixed) */
 .invoice-doc__footer {
-  margin: 0.4rem 0 0.5rem;
+  margin: auto 0 0;
   background: var(--invoice-primary);
   color: #fff;
   border-top-left-radius: 28px;
@@ -444,6 +968,8 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
   font-size: 12px;
   flex-shrink: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .invoice-doc__footer-inner {
@@ -479,14 +1005,9 @@
 }
 
 @media print {
-  @page proforma {
+  @page {
     size: A4 portrait;
     margin: 0;
-  }
-
-  .proforma-preview-page,
-  .invoice-doc {
-    page: proforma;
   }
 
   body:has(.proforma-preview-page) {
@@ -494,43 +1015,69 @@
     margin: 0;
     padding: 0 !important;
     width: 210mm;
-    font-family: 'Vazirmatn', Tahoma, sans-serif !important;
+    font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif !important;
   }
 
   .no-print {
     display: none !important;
   }
 
-  .proforma-preview-page {
-    padding: 0;
-    background: #fff;
-    font-family: 'Vazirmatn', Tahoma, sans-serif !important;
+  .invoice-doc__col-resize,
+  .invoice-doc__row-resize,
+  .invoice-doc-stack__hint,
+  .invoice-doc-stack__toolbar {
+    display: none !important;
   }
 
-  .invoice-doc {
-    width: 210mm;
-    max-width: 210mm;
-    min-height: 297mm;
-    height: auto;
-    margin: 0 auto;
-    padding-top: 0 !important;
+  .proforma-preview-page {
+    padding: 0 !important;
+    background: #fff !important;
+    font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif !important;
+  }
+
+  .invoice-doc-stack {
+    gap: 0 !important;
+    align-items: stretch;
+  }
+
+  .invoice-doc-stack__measure {
+    display: none !important;
+  }
+
+  .invoice-doc,
+  .invoice-doc--page {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
     padding-left: var(--invoice-page-margin-x) !important;
     padding-right: var(--invoice-page-margin-x) !important;
-    box-shadow: none;
-    display: flex !important;
-    flex-direction: column !important;
-    font-family: 'Vazirmatn', Tahoma, sans-serif !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .invoice-doc--page.is-last {
+    break-after: auto;
     page-break-after: auto;
   }
 
-  .invoice-doc__print-header {
-    position: static !important;
+  .invoice-doc__sheet {
     width: 100% !important;
-    margin: 0 !important;
-    background: #fff;
-    page-break-inside: avoid;
-    break-inside: avoid;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    flex: 0 0 auto !important;
   }
+
+  .invoice-doc__colg--row { width: var(--invoice-col-0, 8%) !important; }
+  .invoice-doc__colg--desc { width: var(--invoice-col-1, 42%) !important; }
+  .invoice-doc__colg--qty { width: var(--invoice-col-2, 10%) !important; }
+  .invoice-doc__colg--unit { width: var(--invoice-col-3, 10%) !important; }
+  .invoice-doc__colg--price { width: var(--invoice-col-4, 15%) !important; }
+  .invoice-doc__colg--total { width: var(--invoice-col-5, 15%) !important; }
 
   .invoice-doc__header {
     display: flex !important;
@@ -558,8 +1105,8 @@
   }
 
   .invoice-doc__brand-mark-img {
-    height: 3.4rem;
-    max-width: min(100%, 20rem);
+    height: 3.6rem;
+    max-width: min(100%, 22rem);
   }
 
   .invoice-doc__buyer-row,
@@ -577,12 +1124,24 @@
     white-space: nowrap !important;
   }
 
+  .invoice-doc__col-head {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .invoice-doc__table-row,
+  .invoice-doc__table-row > td {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
   .invoice-doc__totals-wrap {
     display: flex !important;
     flex-direction: row-reverse !important;
     justify-content: flex-start !important;
     width: 100% !important;
     margin: 0 !important;
+    flex-shrink: 0 !important;
   }
 
   .invoice-doc__totals {
@@ -590,102 +1149,70 @@
     margin: 0 !important;
   }
 
-  .invoice-doc__col--price {
-    text-align: center !important;
-    justify-content: center !important;
-    align-items: center !important;
-  }
-
-  .invoice-doc__print-body {
-    flex: 1 1 auto !important;
-    padding: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  .invoice-doc__page-bottom {
+  .invoice-doc__terms-foot {
     margin-top: auto !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
+    flex-shrink: 0 !important;
   }
 
   .invoice-doc__footer {
     position: static !important;
+    margin-top: auto !important;
     width: auto !important;
-    margin: 0.4rem 0 0.5rem !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .invoice-doc__table-head {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .invoice-doc__table-row {
-    page-break-inside: avoid;
-    break-inside: avoid;
-    padding-top: 0.45rem;
-    padding-bottom: 0.45rem;
-  }
-
-  .invoice-doc__totals-wrap,
-  .invoice-doc__terms-section {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
+  .invoice-doc__totals-row--grand,
   .invoice-doc__totals-row--grand span {
     color: #fff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  .invoice-doc__totals-row--grand {
+  .invoice-doc__signature.is-drawn .invoice-doc__signature-img,
+  .invoice-doc__signature.is-drawing .invoice-doc__signature-img {
+    clip-path: inset(0 0 0 0) !important;
+    opacity: 1 !important;
+    animation: none !important;
+  }
+
+  .invoice-doc__stamp.is-stamped,
+  .invoice-doc__stamp.is-smashing {
+    opacity: 1 !important;
+    transform: scale(1) rotate(-8deg) !important;
+    animation: none !important;
+  }
+
+  .invoice-doc__stamp-img {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 }
 
 @media (max-width: 900px) {
-  .invoice-doc {
-    width: 100%;
-    max-width: 100%;
+  .proforma-preview-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .invoice-doc-stack {
+    transform-origin: top center;
+  }
+
+  /* Keep A4 geometry identical to print — only scale the stack visually if needed */
+  .invoice-doc,
+  .invoice-doc--page {
+    width: 210mm;
+    max-width: 210mm;
+    height: 297mm;
     min-height: 297mm;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    max-height: 297mm;
+    padding-left: var(--invoice-page-margin-x);
+    padding-right: var(--invoice-page-margin-x);
   }
 
-  .invoice-doc__header {
+  .invoice-doc__signatures {
     flex-direction: column;
-  }
-
-  .invoice-doc__header-meta {
-    width: 100%;
-    max-width: 100%;
-    flex: 1 1 auto;
-    align-items: flex-start;
-    justify-content: flex-start;
-    padding: 0.85rem 0;
-  }
-
-  .invoice-doc__header-brand {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 28px;
-  }
-
-  .invoice-doc__buyer-inline {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.35rem;
-  }
-
-  .invoice-doc__table-head,
-  .invoice-doc__table-row {
-    font-size: 11px;
-  }
-
-  .invoice-doc__totals {
-    width: 100%;
+    align-items: stretch;
+    gap: 1rem;
   }
 }

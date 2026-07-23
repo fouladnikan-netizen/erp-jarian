@@ -26,6 +26,8 @@ function o({
   tadarokLines,
   tajhizExpertNotes,
   qcInspections,
+  inquiryCompletedAt,
+  quotingCompletedAt,
 }) {
   const orderItems = items || [];
   return {
@@ -47,6 +49,8 @@ function o({
     failReason,
     isPriced: true,
     events: [],
+    ...(inquiryCompletedAt ? { inquiryCompletedAt } : {}),
+    ...(quotingCompletedAt ? { quotingCompletedAt } : {}),
     ...(gatewayDecision ? { gatewayDecision } : {}),
     ...(parvaneDriverNotes ? { parvaneDriverNotes } : {}),
     ...(quoting ? { quoting } : {}),
@@ -56,7 +60,69 @@ function o({
   };
 }
 
+/** سفارش تستی ۱۲آیتمی در مرحله پیش‌کش — برای بررسی پیش‌نمایش پیش‌فاکتور */
+const TEST_PROFORMA_12_ITEMS = [
+  { name: 'میلگرد ۱۲', qty: 12, description: 'آجدار A3 — شاخه ۱۲ متری', unit: 'تن', price: 41_500_000 },
+  { name: 'میلگرد ۱۴', qty: 8, description: 'آجدار A3', unit: 'تن', price: 42_200_000 },
+  { name: 'میلگرد ۱۶', qty: 6, description: 'آجدار A3', unit: 'تن', price: 43_000_000 },
+  { name: 'میلگرد ۱۸', qty: 4, description: 'آجدار A3', unit: 'تن', price: 44_800_000 },
+  { name: 'تیرآهن IPE ۱۴۰', qty: 3, description: 'ذوب‌آهن', unit: 'تن', price: 51_000_000 },
+  { name: 'تیرآهن IPE ۱۶۰', qty: 2.5, description: 'ذوب‌آهن', unit: 'تن', price: 52_500_000 },
+  { name: 'ورق سیاه ۶mm', qty: 5, description: 'ابعاد ۶×۱۵۰۰', unit: 'تن', price: 38_750_000 },
+  { name: 'ورق سیاه ۸mm', qty: 4, description: 'ابعاد ۸×۱۵۰۰', unit: 'تن', price: 39_200_000 },
+  { name: 'ورق گالوانیزه ۲mm', qty: 2, description: 'A653', unit: 'تن', price: 55_000_000 },
+  { name: 'نبشی ۵', qty: 3, description: 'استاندارد ۵۰×۵', unit: 'تن', price: 46_500_000 },
+  { name: 'نبشی ۶', qty: 2, description: 'استاندارد ۶۰×۶', unit: 'تن', price: 47_800_000 },
+  { name: 'لوله ۸ اینچ', qty: 1.5, description: 'مانیسمان — رده ۴۰', unit: 'تن', price: 68_000_000 },
+].map((row, index) => {
+  const inquiryId = 17001 + index;
+  return {
+    name: row.name,
+    qty: row.qty,
+    description: row.description,
+    unit: row.unit,
+    targetInquiryId: inquiryId,
+    inquiries: [{
+      id: inquiryId,
+      supplyType: 'رسمی',
+      supplierId: index % 2 === 0 ? 5 : 6,
+      unitPrice: row.price,
+      status: 'finalized',
+      registeredAt: '۱۴۰۴/۰۱/۱۴ · ۰۹:۳۰',
+      registeredBy: 'حسین کریمی',
+      notes: '',
+    }],
+  };
+});
+
+const TEST_PROFORMA_12_AMOUNT = TEST_PROFORMA_12_ITEMS.reduce((sum, item) => {
+  const price = item.inquiries[0].unitPrice;
+  return sum + Math.round(price * 1.05 * item.qty);
+}, 0);
+
 export const initialOrders = [
+  o({
+    id: 17,
+    yy: 5,
+    mm: 1,
+    dd: 14,
+    serial: 99,
+    customerId: 2,
+    customer: 'صنایع فلزی کرمان',
+    assignee: 'حسین کریمی',
+    amountRial: TEST_PROFORMA_12_AMOUNT,
+    stageId: 3,
+    status: ORDER_TABS.CURRENT,
+    registeredDate: '۱۴۰۴/۰۱/۱۴',
+    registeredTime: '۱۰:۰۰',
+    orderType: 'خرید',
+    saleType: 'رسمی',
+    generalNotes: 'سفارش تستی ۱۲ آیتمی برای بررسی پیش‌نمایش پیش‌فاکتور در مرحله پیش‌کش.',
+    inquiryCompletedAt: '۱۴۰۴/۰۱/۱۴ · ۰۹:۴۵',
+    quotingCompletedAt: '۱۴۰۴/۰۱/۱۴ · ۰۹:۵۵',
+    quoting: { marginMode: 'order_fixed_percent', orderMarginValue: '5', lineMargins: {} },
+    items: TEST_PROFORMA_12_ITEMS,
+  }),
   o({ id: 1, yy: 5, mm: 1, dd: 12, serial: 1, customerId: 1, customer: 'فولاد پارس', assignee: 'علی رضایی', itemCount: 2, amountRial: 4_850_000_000, stageId: 1, status: ORDER_TABS.CURRENT, registeredDate: '۱۴۰۴/۰۱/۱۲', registeredTime: '۰۹:۱۵', orderType: 'فوری', generalNotes: 'نیاز به تحویل فوری در انبار تهران — تائید کیفیت الزامی است.', items: [{ name: 'میلگرد ۱۴', qty: 2, description: 'آجدار', unit: 'تن' }, { name: 'ورق ۸mm', qty: 1, description: 'سیاه', unit: 'تن' }] }),
   o({ id: 2, yy: 5, mm: 1, dd: 11, serial: 2, customerId: 2, customer: 'صنایع فلزی کرمان', assignee: 'حسین کریمی', itemCount: 2, amountRial: 2_120_000_000, stageId: 2, status: ORDER_TABS.CURRENT, registeredDate: '۱۴۰۴/۰۱/۱۱', registeredTime: '۱۱:۴۰', inquiryCompletedAt: '۱۴۰۴/۰۱/۱۱ · ۱۱:۳۰', quoting: { marginMode: 'order_fixed_percent', orderMarginValue: '5', lineMargins: {} }, items: [{ name: 'تیرآهن ۱۶', qty: 2, description: 'IPE 160', unit: 'تن', targetInquiryId: 201, inquiries: [{ id: 201, supplyType: 'رسمی', supplierId: 5, unitPrice: 52_000_000, status: 'finalized', registeredAt: '۱۴۰۴/۰۱/۱۱ · ۱۰:۰۰', registeredBy: 'حسین کریمی', notes: '' }, { id: 202, supplyType: 'غیررسمی', supplierId: 6, unitPrice: 50_500_000, status: 'finalized', registeredAt: '۱۴۰۴/۰۱/۱۱ · ۱۰:۳۰', registeredBy: 'حسین کریمی', notes: '' }] }, { name: 'نبشی ۵', qty: 1, description: 'استاندارد', unit: 'تن', targetInquiryId: 203, inquiries: [{ id: 203, supplyType: 'رسمی', supplierId: 5, unitPrice: 48_000_000, status: 'finalized', registeredAt: '۱۴۰۴/۰۱/۱۱ · ۱۰:۴۵', registeredBy: 'حسین کریمی', notes: '' }] }] }),
   o({ id: 3, yy: 5, mm: 1, dd: 10, serial: 3, customerId: 8, customer: 'بازرگانی آذر', assignee: 'سارا موسوی', itemCount: 1, amountRial: 1_950_000_000, stageId: 1, status: ORDER_TABS.CURRENT, registeredDate: '۱۴۰۴/۰۱/۱۰', registeredTime: '۱۴:۰۵', items: [{ name: 'نبشی ۵', qty: 1 }] }),
