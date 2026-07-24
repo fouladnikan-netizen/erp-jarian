@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   GATEWAY_CANCEL_REASONS,
   GATEWAY_DECISION_OUTCOMES,
@@ -11,8 +11,13 @@ import {
   hasGatewayDecision,
   isGatewayDecisionEditable,
 } from '../../../gatewayDecisionService';
+import {
+  resolveDeliveryInfoPrefill,
+  validateDeliveryInfo,
+} from '../../../deliveryInfoService';
 import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { pickRandomSalesQuote } from '../../../salesMotivationalQuotes';
+import DeliveryInfoForm from '../../DeliveryInfoForm';
 import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
 import DealCelebrationModal from './DealCelebrationModal';
 import GatewaySelect from './GatewaySelect';
@@ -33,6 +38,17 @@ function formatPaymentTermsSummary(decision) {
   return lines;
 }
 
+function formatDeliverySummary(deliveryInfo) {
+  if (!deliveryInfo?.needsShipping) return ['ارسال: ندارد'];
+  return [
+    `تحویل‌گیرنده: ${deliveryInfo.recipientName || '—'}`,
+    `تماس: ${deliveryInfo.recipientPhone || '—'}`,
+    `کد پستی: ${deliveryInfo.postalCode || '—'}`,
+    `آدرس تخلیه: ${deliveryInfo.unloadAddress || '—'}`,
+    deliveryInfo.shippingNotes ? `توضیحات ارسال: ${deliveryInfo.shippingNotes}` : null,
+  ].filter(Boolean);
+}
+
 export default function GatewayDecisionPanel({
   order,
   viewPhase,
@@ -43,6 +59,7 @@ export default function GatewayDecisionPanel({
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const [paymentTerms, setPaymentTerms] = useState(() => getEmptyPaymentTerms());
   const [financeNotes, setFinanceNotes] = useState('');
+  const [deliveryInfo, setDeliveryInfo] = useState(() => resolveDeliveryInfoPrefill(order));
   const [cancelReason, setCancelReason] = useState(GATEWAY_CANCEL_REASONS[0].value);
   const [cancelNotes, setCancelNotes] = useState('');
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
@@ -54,16 +71,27 @@ export default function GatewayDecisionPanel({
   const editable = isGatewayDecisionEditable(order, orderPhase, viewPhase);
   const decided = hasGatewayDecision(order);
 
+  useEffect(() => {
+    if (!editable || decided) return;
+    setDeliveryInfo(resolveDeliveryInfoPrefill(order));
+  }, [order?.id, order?.customerId, editable, decided]);
+
   const handleSuccessSubmit = () => {
-    const error = validatePaymentTerms(paymentTerms);
-    if (error) {
-      window.alert(error);
+    const paymentError = validatePaymentTerms(paymentTerms);
+    if (paymentError) {
+      window.alert(paymentError);
+      return;
+    }
+    const deliveryError = validateDeliveryInfo(deliveryInfo);
+    if (deliveryError) {
+      window.alert(deliveryError);
       return;
     }
     setPendingSuccessPayload({
       paymentType: paymentTerms.paymentType,
       financeNotes,
       paymentTerms,
+      deliveryInfo,
     });
     setCelebrationQuote(pickRandomSalesQuote());
     setCelebrationOpen(true);
@@ -95,6 +123,7 @@ export default function GatewayDecisionPanel({
     setFinanceNotes('');
     setCancelNotes('');
     setPaymentTerms(getEmptyPaymentTerms());
+    setDeliveryInfo(resolveDeliveryInfoPrefill(order));
     setCancelReason(GATEWAY_CANCEL_REASONS[0].value);
   };
 
@@ -106,6 +135,9 @@ export default function GatewayDecisionPanel({
   if (decided && decision) {
     const isSuccess = decision.outcome === GATEWAY_DECISION_OUTCOMES.SUCCESS;
     const summaryLines = isSuccess ? formatPaymentTermsSummary(decision) : [];
+    const deliveryLines = isSuccess
+      ? formatDeliverySummary(order.deliveryInfo || decision.deliveryInfo)
+      : [];
     return (
       <section className={`gateway-decision gateway-decision--resolved${isSuccess ? ' is-success' : ' is-failed'}`}>
         <header className="gateway-decision__head">
@@ -127,6 +159,9 @@ export default function GatewayDecisionPanel({
                   {decision.financeNotes}
                 </p>
               )}
+              {deliveryLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
             </>
           ) : (
             <>
@@ -207,6 +242,12 @@ export default function GatewayDecisionPanel({
                 placeholder="یادداشت تکمیلی مالی..."
               />
             </label>
+            <DeliveryInfoForm
+              value={deliveryInfo}
+              onChange={setDeliveryInfo}
+              idPrefix={`gateway-delivery-${order.id}`}
+              compact
+            />
             <button
               type="button"
               className="btn gateway-decision__submit gateway-decision__submit--success"

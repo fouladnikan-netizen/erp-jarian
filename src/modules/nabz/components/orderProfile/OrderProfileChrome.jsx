@@ -16,6 +16,7 @@ import {
   getOrderProfileTabOrder,
   ORDER_PROFILE_TABS,
 } from '../../orderProfileConfig';
+import { canShowDeliveryLocationAction } from '../../deliveryInfoService';
 import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
 import OrderProfileCancelDialog from './OrderProfileCancelDialog';
 import ProformaHeaderActions from '../ProformaHeaderActions';
@@ -62,6 +63,7 @@ export default function OrderProfileChrome({
   onEditOrder,
   onNextAction,
   onOpenActivityModal,
+  onOpenDeliveryModal,
   onIssueProforma,
   onViewProforma,
   onUpdateProforma,
@@ -91,6 +93,7 @@ export default function OrderProfileChrome({
   const canEdit = canEditWholeOrder();
   const canCancel = order.status !== ORDER_TABS.FAILED;
   const hasOverflowItems = canEdit || canCancel;
+  const showDeliveryLocation = canShowDeliveryLocationAction(order);
 
   useEffect(() => {
     if (!detailsOpen && !moreOpen) return undefined;
@@ -189,6 +192,17 @@ export default function OrderProfileChrome({
             <ActivityBellIcon />
             فعالیت
           </button>
+
+          {showDeliveryLocation && (
+            <button
+              type="button"
+              className={`btn btn--outline order-profile-activity-btn${order.deliveryInfo?.needsShipping ? ' is-ready' : ''}`}
+              onClick={() => onOpenDeliveryModal?.()}
+              title={order.deliveryInfo?.needsShipping ? 'مشاهده / ویرایش محل ارسال' : 'ثبت محل ارسال'}
+            >
+              محل ارسال
+            </button>
+          )}
 
           {nextAction && (
             <button

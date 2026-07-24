@@ -98,6 +98,38 @@ export function addExpertToCustomer(customerId, person) {
   return getCustomerById(customerId);
 }
 
+/** به‌روزرسانی عمومی پروفایل مشتری در رجیستری مشترک نبض/کانون */
+export function updateCustomer(customerId, patch) {
+  if (!customerId || !patch) return null;
+  contactsRegistry = contactsRegistry.map((contact) => {
+    if (contact.id !== customerId) return contact;
+    return { ...contact, ...patch };
+  });
+  return getCustomerById(customerId);
+}
+
+export function getCustomerLastUsedDeliveryInfo(customerId) {
+  const customer = getCustomerById(customerId);
+  return customer?.lastUsedDeliveryInfo || null;
+}
+
+/**
+ * Smart Persistence — آخرین اطلاعات تحویل استفاده‌شده را روی پروفایل مشتری می‌نشاند
+ */
+export function updateCustomerLastUsedDeliveryInfo(customerId, lastUsedDeliveryInfo) {
+  if (!customerId || !lastUsedDeliveryInfo) return null;
+  return updateCustomer(customerId, {
+    lastUsedDeliveryInfo: {
+      unloadAddress: lastUsedDeliveryInfo.unloadAddress || '',
+      postalCode: lastUsedDeliveryInfo.postalCode || '',
+      recipientName: lastUsedDeliveryInfo.recipientName || '',
+      recipientPhone: lastUsedDeliveryInfo.recipientPhone || '',
+      shippingNotes: lastUsedDeliveryInfo.shippingNotes || '',
+      updatedAt: new Date().toISOString(),
+    },
+  });
+}
+
 export function getCustomerPreview(customerId) {
   const contact = getCustomerById(customerId);
   if (!contact) return null;

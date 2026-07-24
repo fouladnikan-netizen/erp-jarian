@@ -2,6 +2,7 @@ import { CURRENT_USER } from './constants';
 import { ORDER_TABS, STAGE_TAJHIZ_ID } from './config';
 import { getCustomerById } from './customers';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
+import { getDeliveryRecipientForShipping } from './deliveryInfoService';
 import { OPERATIONAL_PHASES } from './phase2Config';
 import { getOrderOperationalPhase } from './phase2Service';
 import { formatAmountRial } from './orderCode';
@@ -81,6 +82,18 @@ export function getTajhizExpertNotes(order) {
 }
 
 export function getShippingRecipient(order) {
+  const fromDelivery = getDeliveryRecipientForShipping(order);
+  if (fromDelivery) {
+    return {
+      name: fromDelivery.name,
+      nationalId: fromDelivery.nationalId,
+      phone: fromDelivery.phone,
+      postalCode: fromDelivery.postalCode,
+      address: fromDelivery.address,
+      shippingNotes: fromDelivery.shippingNotes,
+    };
+  }
+
   const customer = getCustomerById(order.customerId);
   if (!customer) {
     return {

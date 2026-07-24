@@ -26,6 +26,8 @@ import {
   markGatewayDecisionSuccess,
 } from '../../gatewayDecisionService';
 import QuickActivityModal from '../QuickActivityModal';
+import DeliveryLocationModal from '../DeliveryLocationModal';
+import { canShowDeliveryLocationAction } from '../../deliveryInfoService';
 import CreateOrderDrawer from '../CreateOrderDrawer';
 import OrderProfileChrome from './OrderProfileChrome';
 import OrderProfileGatewayTab from './OrderProfileGatewayTab';
@@ -53,6 +55,7 @@ export default function OrderProfileView({
     order.status === ORDER_TABS.SUCCESS ? 'operations' : 'gateway',
   );
   const [activityModal, setActivityModal] = useState({ open: false, editActivity: null });
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [decisionDrawerOpen, setDecisionDrawerOpen] = useState(false);
 
@@ -238,6 +241,7 @@ export default function OrderProfileView({
           }}
           onNextAction={handleNextAction}
           onOpenActivityModal={() => openActivityModal()}
+          onOpenDeliveryModal={() => setDeliveryModalOpen(true)}
           onIssueProforma={handleIssueProforma}
           onViewProforma={handleViewProforma}
           onUpdateProforma={handleUpdateProforma}
@@ -275,6 +279,15 @@ export default function OrderProfileView({
         editActivity={activityModal.editActivity}
         onClose={closeActivityModal}
         onSubmit={handleActivityModalSubmit}
+      />
+
+      <DeliveryLocationModal
+        open={deliveryModalOpen && canShowDeliveryLocationAction(order)}
+        order={order}
+        onClose={() => setDeliveryModalOpen(false)}
+        onSave={(nextOrder) => {
+          updateOrder(() => nextOrder);
+        }}
       />
 
       <div className="order-profile-view__body">
