@@ -29,7 +29,7 @@ import {
 import { getSupplierName, listSuppliers } from '../../../suppliers';
 import { SUPPLY_CHANNEL_TYPES } from '../../../inquiryConfig';
 import { formatAmountRial } from '../../../orderCode';
-import { formatPriceLine, QuotingMatrix } from '../../quickInquiryParts';
+import { formatPriceLine, formatMarginCellValue, LineMarginCell, QuotingMatrix } from '../../quickInquiryParts';
 import TruncatedText from '../../TruncatedText';
 import MoneyInput from '../../MoneyInput';
 import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
@@ -84,7 +84,7 @@ function buildColumns(viewPhase, saleColumnLabel) {
       { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 80 },
       { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 80 },
       { key: 'buy', label: 'قیمت خرید', group: 'supply', defaultWidth: 140 },
-      { key: 'margin', label: 'حاشیه سود', group: 'sale', defaultWidth: 220 },
+      { key: 'margin', label: 'حاشیه سود', group: 'sale', defaultWidth: 160 },
       { key: 'sale', label: saleColumnLabel, group: 'sale', defaultWidth: 150 },
     ];
   }
@@ -107,52 +107,6 @@ function buildColumns(viewPhase, saleColumnLabel) {
     { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 100 },
     { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 100 },
   ];
-}
-
-function MarginInputGroup({ value, unit, saved, onValueChange, onUnitChange, onSave }) {
-  return (
-    <div className="gateway-margin-cell">
-      <div className="gateway-input-group">
-        {unit === 'rial' ? (
-          <MoneyInput
-            className="gateway-input-group__field"
-            value={value ?? ''}
-            onChange={onValueChange}
-            placeholder="مقدار"
-            aria-label="مقدار حاشیه سود"
-          />
-        ) : (
-          <input
-            type="number"
-            min="0"
-            className="gateway-input-group__field"
-            value={value ?? ''}
-            onChange={(e) => onValueChange(e.target.value)}
-            placeholder="مقدار"
-            aria-label="مقدار حاشیه سود"
-          />
-        )}
-        <select
-          className="gateway-input-group__unit"
-          value={unit}
-          onChange={(e) => onUnitChange(e.target.value)}
-          aria-label="واحد حاشیه سود"
-        >
-          <option value="percent">٪</option>
-          <option value="rial">ریال</option>
-        </select>
-      </div>
-      <button
-        type="button"
-        className={`gateway-margin-save${saved ? ' is-saved' : ''}`}
-        onClick={onSave}
-        title="ثبت حاشیه سود"
-        aria-label="ثبت حاشیه سود"
-      >
-        <CheckIcon size={13} />
-      </button>
-    </div>
-  );
 }
 
 function InquiryDraftRow({
@@ -368,6 +322,7 @@ export default function GatewayMorphTable({
   const [editingItemIndex, setEditingItemIndex] = useState(null);
   const [editDraft, setEditDraft] = useState({ name: '', qty: '', unit: '', description: '' });
   const [pendingSensitiveEdit, setPendingSensitiveEdit] = useState(null);
+  const [marginDrafts, setMarginDrafts] = useState({});
 
   const items = order.items || [];
   const quoting = getOrderQuoting(order);
@@ -385,6 +340,9 @@ export default function GatewayMorphTable({
     && viewPhase === GATEWAY_PHASES.MOZENE
     && order.status === ORDER_TABS.CURRENT
     && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
+  const isLineMarginMode = quoting.marginMode === MARGIN_MODES.LINE_FIXED_RIAL
+    || quoting.marginMode === MARGIN_MODES.LINE_FIXED_PERCENT;
+  const isLineMarginEditable = marginEditable && isLineMarginMode;
 
   const columns = useMemo(
     () => buildColumns(viewPhase, saleColumnLabel),
@@ -405,6 +363,10 @@ export default function GatewayMorphTable({
     setEditingItemIndex(null);
     setPendingSensitiveEdit(null);
   }, [viewPhase]);
+
+  useEffect(() => {
+    setMarginDrafts({});
+  }, [quoting.marginMode]);
 
   const openInquiryDraft = (itemIndex) => {
     if (!allowInquiryEdit) return;
@@ -469,30 +431,14 @@ export default function GatewayMorphTable({
     commitEdit(itemIndex, patch, false);
   };
 
-  const isOrderLevelMargin = quoting.marginMode === MARGIN_MODES.ORDER_FIXED_PERCENT
-    || quoting.marginMode === MARGIN_MODES.ORDER_FIXED_RIAL;
   const showQuotingMatrix = viewPhase === GATEWAY_PHASES.MOZENE;
 
-  const handleSaveMargin = (itemIndex, marginValue, marginType) => {
-    if (!marginEditable) return;
-    if (isOrderLevelMargin) {
-      onUpdateQuoting?.({
-        marginMode: marginType === 'percent'
-          ? MARGIN_MODES.ORDER_FIXED_PERCENT
-          : MARGIN_MODES.ORDER_FIXED_RIAL,
-        orderMarginValue: marginValue,
-      });
-      return;
-    }
-    onSaveMargin?.(itemIndex, marginValue, marginType);
+  const handleSaveMargin = (itemIndex, marginValue) => {
+    if (!isLineMarginEditable) return;
+    onSaveMargin?.(itemIndex, marginValue, marginUnit);
   };
 
   const isMarginSaved = (itemIndex) => {
-    if (isOrderLevelMargin) {
-      const raw = quoting.orderMarginValue;
-      if (raw === '' || raw == null) return false;
-      return Number.isFinite(Number(raw));
-    }
     const raw = quoting.lineMargins?.[itemIndex];
     if (raw === '' || raw == null) return false;
     const num = Number(raw);
@@ -824,28 +770,22 @@ export default function GatewayMorphTable({
           {target ? formatAmountRial(target.unitPrice) : '—'}
         </td>
         <td className="gateway-td--sale">
-          {marginEditable ? (
-            <MarginInputGroup
-              value={linePreview.marginInputValue}
+          {isLineMarginEditable ? (
+            <LineMarginCell
+              value={marginDrafts[itemIndex] ?? linePreview.marginInputValue ?? ''}
               unit={marginUnit}
               saved={isMarginSaved(itemIndex)}
-              onValueChange={(nextValue) => handleSaveMargin(itemIndex, nextValue, marginUnit)}
-              onUnitChange={(nextUnit) => handleSaveMargin(
-                itemIndex,
-                linePreview.marginInputValue ?? '',
-                nextUnit,
-              )}
-              onSave={() => handleSaveMargin(
-                itemIndex,
-                linePreview.marginInputValue ?? '',
-                marginUnit,
-              )}
+              onValueChange={(nextValue) => {
+                setMarginDrafts((prev) => ({ ...prev, [itemIndex]: nextValue }));
+              }}
+              onSave={() => {
+                const nextValue = marginDrafts[itemIndex] ?? linePreview.marginInputValue ?? '';
+                handleSaveMargin(itemIndex, nextValue);
+              }}
             />
           ) : (
             <span className="gateway-table__margin-badge">
-              {linePreview.marginInputValue
-                ? `${linePreview.marginInputValue}${marginUnit === 'percent' ? '٪' : ' ریال'}`
-                : '—'}
+              {formatMarginCellValue(quoting.marginMode, linePreview)}
             </span>
           )}
         </td>

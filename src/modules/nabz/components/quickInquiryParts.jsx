@@ -31,6 +31,63 @@ export function formatMarginCellValue(mode, linePreview) {
   return `${formatAmountRial(Number(linePreview.marginInputValue))} ریال`;
 }
 
+function MarginCheckIcon({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+/** سلول حاشیه سود سطری: ورودی + واحد ثابت + دکمه ثبت */
+export function LineMarginCell({
+  value,
+  unit,
+  saved = false,
+  onValueChange,
+  onSave,
+}) {
+  const unitLabel = unit === 'percent' ? '٪' : 'ریال';
+
+  return (
+    <div className="gateway-margin-cell">
+      <div className="gateway-input-group">
+        {unit === 'rial' ? (
+          <MoneyInput
+            className="gateway-input-group__field"
+            value={value ?? ''}
+            onChange={onValueChange}
+            placeholder="مقدار"
+            aria-label="مقدار حاشیه سود"
+          />
+        ) : (
+          <input
+            type="number"
+            min="0"
+            className="gateway-input-group__field"
+            value={value ?? ''}
+            onChange={(e) => onValueChange?.(e.target.value)}
+            placeholder="مقدار"
+            aria-label="مقدار حاشیه سود"
+          />
+        )}
+        <span className="gateway-input-group__unit gateway-input-group__unit--static" aria-hidden="true">
+          {unitLabel}
+        </span>
+      </div>
+      <button
+        type="button"
+        className={`gateway-margin-save${saved ? ' is-saved' : ''}`}
+        onClick={onSave}
+        title="ثبت حاشیه سود"
+        aria-label="ثبت حاشیه سود"
+      >
+        <MarginCheckIcon size={13} />
+      </button>
+    </div>
+  );
+}
+
 export function QuotingMatrix({
   quoting,
   onChangeMode,

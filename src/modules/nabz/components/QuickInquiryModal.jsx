@@ -65,6 +65,7 @@ import {
   formatMarginCellValue,
   formatPriceLine,
   InquiryCompact,
+  LineMarginCell,
   QuotingMatrix,
 } from './quickInquiryParts';
 import MoneyInput from './MoneyInput';
@@ -82,7 +83,7 @@ const BASE_QUICK_TABLE_COLUMNS = [
 const EXPAND_TABLE_COLUMN = { key: 'expand', defaultWidth: 48, resizable: false };
 
 const QUOTING_TABLE_COLUMNS = [
-  { key: 'margin', defaultWidth: 110 },
+  { key: 'margin', defaultWidth: 160 },
   { key: 'sale', defaultWidth: 130 },
   { key: 'total', defaultWidth: 130 },
 ];
@@ -220,7 +221,10 @@ function SupplyStrip({
   canEditMargins = false,
   lineMarginMode,
   lineMarginInputValue,
-  onLineMarginChange,
+  lineMarginDraftValue,
+  onLineMarginDraftChange,
+  onLineMarginSave,
+  lineMarginSaved = false,
   linePreview,
 }) {
   const inquiries = item.inquiries || [];
@@ -229,7 +233,8 @@ function SupplyStrip({
     lineMarginMode === MARGIN_MODES.LINE_FIXED_RIAL
     || lineMarginMode === MARGIN_MODES.LINE_FIXED_PERCENT
   );
-  const lineMarginPlaceholder = lineMarginMode === MARGIN_MODES.LINE_FIXED_PERCENT ? '%' : 'ریال';
+  const lineMarginUnit = lineMarginMode === MARGIN_MODES.LINE_FIXED_PERCENT ? 'percent' : 'rial';
+  const marginFieldValue = lineMarginDraftValue ?? lineMarginInputValue ?? '';
 
   return (
     <>
@@ -276,25 +281,13 @@ function SupplyStrip({
           <>
             <td className="nabz-quick-table__margin" onClick={(e) => e.stopPropagation()}>
               {isLineMarginEditable ? (
-                lineMarginMode === MARGIN_MODES.LINE_FIXED_RIAL ? (
-                  <MoneyInput
-                    className="nabz-quick-table__margin-input"
-                    value={lineMarginInputValue ?? ''}
-                    onChange={(next) => onLineMarginChange(itemIndex, next)}
-                    placeholder={lineMarginPlaceholder}
-                    aria-label="حاشیه سود سطر"
-                  />
-                ) : (
-                  <input
-                    type="number"
-                    min="0"
-                    className="nabz-quick-table__margin-input"
-                    value={lineMarginInputValue ?? ''}
-                    onChange={(e) => onLineMarginChange(itemIndex, e.target.value)}
-                    placeholder={lineMarginPlaceholder}
-                    aria-label="حاشیه سود سطر"
-                  />
-                )
+                <LineMarginCell
+                  value={marginFieldValue}
+                  unit={lineMarginUnit}
+                  saved={lineMarginSaved}
+                  onValueChange={(next) => onLineMarginDraftChange(itemIndex, next)}
+                  onSave={() => onLineMarginSave(itemIndex, marginFieldValue)}
+                />
               ) : (
                 <span className="nabz-quick-table__margin-badge">
                   {formatMarginCellValue(lineMarginMode, linePreview)}
@@ -442,6 +435,7 @@ export default function QuickInquiryModal({
     hasGatewayDecision(order) || Boolean(order.proforma?.signed)
   );
   const [decisionOpen, setDecisionOpen] = useState(false);
+  const [marginDrafts, setMarginDrafts] = useState({});
   const activeOperationalPhase = pipeline.operationalViewPhase || getOrderOperationalPhase(order);
   const showParvanePanel = order.status === ORDER_TABS.SUCCESS
     && pipeline.viewMode === 'operations'
@@ -477,6 +471,11 @@ export default function QuickInquiryModal({
   const canCompleteQuote = useMemo(() => canCompleteQuoting(order), [order]);
   const missingTargetMessage = showQuotingEditable ? getMissingTargetMessage(order) : '';
   const lineMarginMode = quoting.marginMode;
+
+  useEffect(() => {
+    setMarginDrafts({});
+  }, [lineMarginMode]);
+
   const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
   const saleColumnLabel = saleType === 'رسمی' ? 'قیمت قبل از مالیات' : 'قیمت فروش';
   const showPrimaryAction = isGatewayView && isLivePhase && !showPishkesh;
@@ -883,9 +882,18 @@ export default function QuickInquiryModal({
                     canEditMargins={canManageQuoting}
                     lineMarginMode={lineMarginMode}
                     lineMarginInputValue={preview.lines[itemIndex]?.marginInputValue ?? ''}
-                    onLineMarginChange={(idx, value) => handleQuotingPatch({
+                    lineMarginDraftValue={marginDrafts[itemIndex]}
+                    onLineMarginDraftChange={(idx, value) => {
+                      setMarginDrafts((prev) => ({ ...prev, [idx]: value }));
+                    }}
+                    onLineMarginSave={(idx, value) => handleQuotingPatch({
                       lineMargins: { [idx]: value },
                     })}
+                    lineMarginSaved={(() => {
+                      const raw = quoting.lineMargins?.[itemIndex];
+                      if (raw === '' || raw == null) return false;
+                      return Number.isFinite(Number(raw));
+                    })()}
                     linePreview={preview.lines[itemIndex]}
                   />
                 ))

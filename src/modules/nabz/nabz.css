@@ -7302,6 +7302,17 @@ html[data-theme='dark'] .nabz-excel-filter {
   cursor: pointer;
 }
 
+.gateway-input-group__unit--static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+  cursor: default;
+  user-select: none;
+}
+
 .gateway-input-group:focus-within {
   border-color: var(--color-accent-dark);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
