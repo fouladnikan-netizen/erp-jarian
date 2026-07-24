@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ORDER_TABS } from '../config';
 import { useOrderPipelineView } from '../hooks/useOrderPipelineView';
 import { OPERATIONAL_PHASES } from '../phase2Config';
@@ -28,7 +29,23 @@ import {
 } from '../inquiryService';
 import { MARGIN_MODES } from '../quotingConfig';
 import { listSuppliers } from '../suppliers';
-import { getProformaTerms } from '../proformaService';
+import {
+  getLatestProformaVersion,
+  getProformaTerms,
+  issueProforma,
+  updateProforma as reviseProforma,
+} from '../proformaService';
+import {
+  openStoredProformaPreview,
+  PROFORMA_SEND_MESSAGE_TYPE,
+  PROFORMA_SIGNED_MESSAGE_TYPE,
+} from '../proformaPrint';
+import {
+  appendSignedProformaRecord,
+  archivePreviousSignedProforma,
+} from '../orderProfileService';
+import { sendProformaToCustomer } from '../gatewayLifecycleService';
+import { hasGatewayDecision } from '../gatewayDecisionService';
 import { isGatewayLivePhase, getGatewayPhaseIndex } from '../gatewayService';
 import {
   canEditInquiryPrices,
@@ -41,6 +58,7 @@ import {
 import { toDisplayOrderCode } from '../orderCode';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../orderStageService';
 import ProformaTab from './ProformaTab';
+import ProformaHeaderActions from './ProformaHeaderActions';
 import QuotingReadOnlyPanel from './QuotingReadOnlyPanel';
 import {
   formatMarginCellValue,
@@ -387,6 +405,7 @@ export default function QuickInquiryModal({
   onDecisionFailed,
   onUpdateOrder,
 }) {
+  const navigate = useNavigate();
   const pipeline = useOrderPipelineView(order);
   const updateModalOrder = (orderUpdater) => {
     onUpdateOrder?.((prev) => prev.map((item) => {
@@ -413,9 +432,15 @@ export default function QuickInquiryModal({
     && order.status === ORDER_TABS.CURRENT
     && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
   const showSupplier = canViewSupplierIdentity();
-  // Inquiry price edit: کاشف/شوالیه in کاوش/مظنه views. Margin: راهبر only.
-  const canManageInquiries = (showKavosh || showQuoting) && canEditInquiryPrices() && isLivePhase;
+  // ویرایش استعلام در کاوش حتی اگر سفارش جلوتر رفته و کاربر به تب کاوش برگشته
+  // (هم‌راستا با GatewayMorphTable: live || viewPhase === KAVOSH)
+  const canManageInquiries = canEditInquiryPrices()
+    && (showKavosh || (showQuoting && isLivePhase));
   const canManageQuoting = showQuotingEditable && canEditProfitMargin();
+  const showDecisionPanel = showPishkesh && (
+    hasGatewayDecision(order) || Boolean(order.proforma?.signed)
+  );
+  const [decisionOpen, setDecisionOpen] = useState(false);
   const activeOperationalPhase = pipeline.operationalViewPhase || getOrderOperationalPhase(order);
   const showParvanePanel = order.status === ORDER_TABS.SUCCESS
     && pipeline.viewMode === 'operations'
@@ -465,6 +490,65 @@ export default function QuickInquiryModal({
   const registeredAt = [order.registeredDate, order.registeredTime].filter(Boolean).join(' · ');
   const proformaTerms = getProformaTerms(order);
   const proformaTermsEditable = Boolean(order.proforma?.termsEditable);
+
+  const handleSendProforma = (version) => {
+    updateModalOrder((current) => sendProformaToCustomer(current));
+    const label = version?.documentNumber || order.code;
+    window.alert(`پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.`);
+  };
+
+  const handleIssueProforma = () => {
+    const result = issueProforma(order);
+    if (result.changed) {
+      updateModalOrder(() => result.order);
+    }
+    openStoredProformaPreview(result.payload);
+  };
+
+  const handleViewProforma = () => {
+    const latest = getLatestProformaVersion(order);
+    if (!latest) return;
+    openStoredProformaPreview({
+      viewModel: latest.viewModel,
+      terms: latest.terms,
+      termsCustom: latest.termsCustom,
+      orderId: order.id,
+      versionId: latest.id,
+      signed: Boolean(order.proforma?.signed),
+    });
+  };
+
+  const handleUpdateProforma = () => {
+    const withArchive = archivePreviousSignedProforma(order);
+    const result = reviseProforma(withArchive);
+    updateModalOrder(() => result.order);
+    onClose();
+    navigate(`/nabz?tab=${ORDER_TABS.CURRENT}`);
+  };
+
+  useEffect(() => {
+    const onMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data) return;
+      if (data.orderId != null && data.orderId !== order.id) return;
+
+      if (data.type === PROFORMA_SEND_MESSAGE_TYPE) {
+        handleSendProforma({ documentNumber: data.documentNumber });
+        return;
+      }
+
+      if (data.type === PROFORMA_SIGNED_MESSAGE_TYPE) {
+        updateModalOrder((current) => appendSignedProformaRecord(current, {
+          ...(data.attachment || {}),
+          documentNumber: data.documentNumber,
+        }));
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [order.id, order.customer]);
+
   const handlePrimaryAction = () => {
     if (showQuoting) {
       onCompleteQuoting(order.id);
@@ -611,6 +695,14 @@ export default function QuickInquiryModal({
                 {primaryActionLabel}
               </button>
             )}
+            <ProformaHeaderActions
+              order={order}
+              active={showPishkesh}
+              onIssue={handleIssueProforma}
+              onView={handleViewProforma}
+              onUpdate={handleUpdateProforma}
+              onDecision={() => setDecisionOpen(true)}
+            />
             <button
               type="button"
               className="btn btn--ghost btn--icon"
@@ -677,13 +769,19 @@ export default function QuickInquiryModal({
             />
           ) : (
             <>
-          {showPishkesh && (
+          {showDecisionPanel && (decisionOpen || hasGatewayDecision(order)) && (
             <GatewayDecisionPanel
               order={order}
               viewPhase={pipeline.viewPhase}
               orderPhase={pipeline.orderPhase}
-              onSubmitSuccess={onDecisionSuccess}
-              onSubmitFailed={onDecisionFailed}
+              onSubmitSuccess={(payload) => {
+                setDecisionOpen(false);
+                onDecisionSuccess?.(payload);
+              }}
+              onSubmitFailed={(payload) => {
+                setDecisionOpen(false);
+                onDecisionFailed?.(payload);
+              }}
             />
           )}
 

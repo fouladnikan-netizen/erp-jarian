@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { formatAmountRial } from '../orderCode';
 import { buildProformaViewModel } from '../proformaService';
-import { openProformaPreview, printProforma } from '../proformaPrint';
 import { DEFAULT_PROFORMA_TERMS } from '../proformaConfig';
 
 function formatPriceLine(amount) {
@@ -13,6 +12,11 @@ function formatPriceLine(amount) {
   );
 }
 
+/**
+ * محتوای خلاصه پیش‌فاکتور در نمایش سریع.
+ * صدور / نمایش / به‌روزرسانی و چاپ/ارسال در هدر مودال و صفحهٔ پیش‌نمایش انجام می‌شود
+ * (هم‌منطق با پروفایل سفارش).
+ */
 export default function ProformaTab({
   order,
   terms,
@@ -24,18 +28,6 @@ export default function ProformaTab({
 
   return (
     <div className="nabz-proforma-tab">
-      <div className="nabz-proforma-tab__actions">
-        <button type="button" className="btn btn--outline" onClick={() => openProformaPreview(order, terms)}>
-          پیش‌نمایش
-        </button>
-        <button type="button" className="btn btn--outline" onClick={() => printProforma(order, terms)}>
-          چاپ
-        </button>
-        <button type="button" className="btn btn--ghost" disabled title="ارسال به پیام‌رسان‌ها — به‌زودی">
-          ارسال مستقیم
-        </button>
-      </div>
-
       <section className="nabz-proforma-meta">
         <div className="nabz-proforma-meta__item">
           <span>نام مشتری</span>

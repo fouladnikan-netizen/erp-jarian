@@ -127,7 +127,7 @@ export default function GatewayDecisionPanel({
       <section className="gateway-decision gateway-decision--readonly">
         <h2 className="gateway-decision__title">تعیین تکلیف نهایی سفارش</h2>
         <p className="gateway-decision__hint">
-          برای ثبت تصمیم نهایی، سفارش باید در مرحله «پیش‌کش» باشد.
+          تعیین تکلیف پس از صدور، مهر و امضای پیش‌فاکتور در مرحله «پیش‌کش» فعال می‌شود.
         </p>
       </section>
     );

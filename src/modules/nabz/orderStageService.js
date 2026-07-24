@@ -68,12 +68,8 @@ export function getOrderDisplayStatus(order) {
 
   const effectiveId = getEffectiveStageId(order);
 
-  // After inquiry completion, always show the live Kanban stage
-  // (fixes stuck «مظنه» label when stageId has already advanced to پیش‌کش+)
-  if (effectiveId >= STAGE_MOZENE_ID || canEnterMozeneStage(order)) {
-    if (canEnterMozeneStage(order) && effectiveId < STAGE_MOZENE_ID) {
-      return getStageLabel(STAGE_MOZENE_ID);
-    }
+  // وضعیت نمایشی همان مرحلهٔ مؤثر کانبان است (برگشت عمدی به کاوش را مظنه نشان نده)
+  if (effectiveId >= STAGE_MOZENE_ID) {
     return getStageLabel(effectiveId);
   }
 
@@ -181,6 +177,11 @@ export function tryChangeOrderStage(order, targetStageId) {
     stageId: targetStageId,
     events: [...(current.events || []), buildStageAdvancedEvent(current, targetStageId)],
   };
+
+  // برگشت به کاوش: تکمیل کاوش قبلی باطل می‌شود تا دوباره بتوان استعلام ثبت/ویرایش کرد
+  if (targetStageId === STAGE_KAVOSH_ID && current.stageId > STAGE_KAVOSH_ID) {
+    nextOrder.inquiryCompletedAt = null;
+  }
 
   return { order: nextOrder, accepted: true };
 }

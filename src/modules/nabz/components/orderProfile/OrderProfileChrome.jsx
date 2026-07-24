@@ -6,10 +6,7 @@ import { canEditWholeOrder } from '../../orderEditPermissions';
 import {
   getOrderProfileBreadcrumb,
   getOrderProfileNextAction,
-  shouldShowIssueProforma,
-  getProformaHeaderActions,
 } from '../../orderProfileService';
-import { getProformaVersions } from '../../proformaService';
 import {
   canCompleteOrderInquiries,
   canCompleteQuoting,
@@ -21,8 +18,8 @@ import {
 } from '../../orderProfileConfig';
 import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
 import OrderProfileCancelDialog from './OrderProfileCancelDialog';
+import ProformaHeaderActions from '../ProformaHeaderActions';
 import { ORDER_TABS } from '../../config';
-import { hasGatewayDecision } from '../../gatewayDecisionService';
 
 function BackArrowIcon() {
   return (
@@ -86,16 +83,6 @@ export default function OrderProfileChrome({
     : nextAction?.id === 'complete-mozene'
       ? canCompleteQuoting(order)
       : false;
-  const showIssueProformaGate = shouldShowIssueProforma(order);
-  const {
-    showIssue: showIssueProforma,
-    showView: showViewProforma,
-    showUpdate: showUpdateProforma,
-  } = getProformaHeaderActions(order);
-  const showDecisionAction = showIssueProformaGate && getProformaVersions(order).length > 0;
-  const decisionLabel = hasGatewayDecision(order)
-    ? 'مشاهده نتیجه تعیین تکلیف'
-    : 'تعیین تکلیف';
   const profileTabs = getOrderProfileTabOrder();
   const expertName = order.requesterName || '—';
   const knightName = order.assignee || '—';
@@ -220,45 +207,13 @@ export default function OrderProfileChrome({
             </button>
           )}
 
-          {showIssueProforma && (
-            <button
-              type="button"
-              className="btn btn--outline order-profile-activity-btn"
-              onClick={() => onIssueProforma?.()}
-            >
-              صدور پیش‌فاکتور
-            </button>
-          )}
-
-          {showViewProforma && (
-            <button
-              type="button"
-              className="btn btn--outline order-profile-activity-btn"
-              onClick={() => onViewProforma?.()}
-            >
-              نمایش پیش‌فاکتور
-            </button>
-          )}
-
-          {showUpdateProforma && (
-            <button
-              type="button"
-              className="btn btn--outline order-profile-activity-btn"
-              onClick={() => onUpdateProforma?.()}
-            >
-              به‌روزرسانی پیش‌فاکتور
-            </button>
-          )}
-
-          {showDecisionAction && (
-            <button
-              type="button"
-              className="btn btn--outline order-profile-activity-btn"
-              onClick={() => onOpenDecisionDrawer?.()}
-            >
-              {decisionLabel}
-            </button>
-          )}
+          <ProformaHeaderActions
+            order={order}
+            onIssue={onIssueProforma}
+            onView={onViewProforma}
+            onUpdate={onUpdateProforma}
+            onDecision={onOpenDecisionDrawer}
+          />
 
           {hasOverflowItems && (
             <div className="order-profile-slim-more" ref={moreRef}>

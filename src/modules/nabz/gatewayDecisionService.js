@@ -33,7 +33,8 @@ export function isGatewayDecisionEditable(order, orderPhase, viewPhase) {
     && orderPhase === GATEWAY_PHASES.PISHKESH
     && !hasGatewayDecision(order)
     && order.status === ORDER_TABS.CURRENT
-    && order.stageId === STAGE_PISHKESH_ID;
+    && order.stageId === STAGE_PISHKESH_ID
+    && Boolean(order.proforma?.signed);
 }
 
 export function getOrderDecisionLabel(order) {

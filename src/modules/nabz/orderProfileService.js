@@ -260,6 +260,11 @@ export function shouldShowIssueProforma(order) {
   return order.stageId >= STAGE_PISHKESH_ID;
 }
 
+/** تعیین تکلیف فقط بعد از صدور و مهر/امضای پیش‌فاکتور */
+export function shouldShowGatewayDecisionAction(order) {
+  return shouldShowIssueProforma(order) && Boolean(order.proforma?.signed);
+}
+
 /**
  * دکمه‌های پیش‌فاکتور در هدر پروفایل:
  * - هنوز صادر نشده → صدور
