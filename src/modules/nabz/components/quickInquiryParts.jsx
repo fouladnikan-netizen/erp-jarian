@@ -46,15 +46,13 @@ export function QuotingMatrix({
 
   return (
     <section className={`nabz-quoting-matrix${readOnly ? ' nabz-quoting-matrix--readonly' : ''}`}>
-      <div className="nabz-quoting-matrix__head">
-        <h4>تعیین حاشیه سود</h4>
-        {readOnly && <span className="nabz-quoting-matrix__badge">فقط نمایش</span>}
-      </div>
-      <div className="nabz-quoting-matrix__grid">
-        <span className="nabz-quoting-matrix__column-title">اعمال کلی</span>
-        <span className="nabz-quoting-matrix__column-title">اعمال سطری</span>
+      <div className="nabz-quoting-matrix__row">
+        <div className="nabz-quoting-matrix__title font-meem">
+          <span>تعیین حاشیه سود:</span>
+          {readOnly && <span className="nabz-quoting-matrix__badge">فقط نمایش</span>}
+        </div>
 
-        <label className={`nabz-quoting-matrix__cell${isPercentOrder ? ' is-selected' : ''}`}>
+        <label className={`nabz-quoting-matrix__pill${isPercentOrder ? ' is-selected' : ''}`}>
           <input
             type="radio"
             name={radioName}
@@ -62,35 +60,20 @@ export function QuotingMatrix({
             disabled={readOnly}
             onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.ORDER_FIXED_PERCENT)}
           />
-          <div className="nabz-quoting-matrix__cell-body">
-            <span>درصد کلی</span>
-            <input
-              type="number"
-              min="0"
-              className="nabz-form__input nabz-quoting-matrix__input"
-              value={isPercentOrder ? (quoting.orderMarginValue ?? '') : ''}
-              onChange={(e) => onChangeOrderValue?.(e.target.value)}
-              placeholder="%"
-              disabled={readOnly || !isPercentOrder}
-            />
-          </div>
-        </label>
-
-        <label className={`nabz-quoting-matrix__cell${isLinePercent ? ' is-selected' : ''}`}>
+          <span className="nabz-quoting-matrix__pill-label">درصد کلی</span>
           <input
-            type="radio"
-            name={radioName}
-            checked={isLinePercent}
-            disabled={readOnly}
-            onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.LINE_FIXED_PERCENT)}
+            type="number"
+            min="0"
+            className="nabz-form__input nabz-quoting-matrix__input"
+            value={isPercentOrder ? (quoting.orderMarginValue ?? '') : ''}
+            onChange={(e) => onChangeOrderValue?.(e.target.value)}
+            placeholder="%"
+            disabled={readOnly || !isPercentOrder}
+            onClick={(e) => e.stopPropagation()}
           />
-          <div className="nabz-quoting-matrix__cell-body">
-            <span>درصد سطری</span>
-            <span className="nabz-quoting-matrix__input-spacer" aria-hidden="true" />
-          </div>
         </label>
 
-        <label className={`nabz-quoting-matrix__cell${isFixedOrder ? ' is-selected' : ''}`}>
+        <label className={`nabz-quoting-matrix__pill${isFixedOrder ? ' is-selected' : ''}`}>
           <input
             type="radio"
             name={radioName}
@@ -98,19 +81,28 @@ export function QuotingMatrix({
             disabled={readOnly}
             onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.ORDER_FIXED_RIAL)}
           />
-          <div className="nabz-quoting-matrix__cell-body">
-            <span>مبلغ کلی (هر سطر)</span>
-            <MoneyInput
-              className="nabz-form__input nabz-quoting-matrix__input"
-              value={isFixedOrder ? (quoting.orderMarginValue ?? '') : ''}
-              onChange={(next) => onChangeOrderValue?.(next)}
-              placeholder="ریال"
-              disabled={readOnly || !isFixedOrder}
-            />
-          </div>
+          <span className="nabz-quoting-matrix__pill-label">مبلغ کلی</span>
+          <MoneyInput
+            className="nabz-form__input nabz-quoting-matrix__input"
+            value={isFixedOrder ? (quoting.orderMarginValue ?? '') : ''}
+            onChange={(next) => onChangeOrderValue?.(next)}
+            placeholder="ریال"
+            disabled={readOnly || !isFixedOrder}
+          />
         </label>
 
-        <label className={`nabz-quoting-matrix__cell${isLineFixed ? ' is-selected' : ''}`}>
+        <label className={`nabz-quoting-matrix__pill${isLinePercent ? ' is-selected' : ''}`}>
+          <input
+            type="radio"
+            name={radioName}
+            checked={isLinePercent}
+            disabled={readOnly}
+            onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.LINE_FIXED_PERCENT)}
+          />
+          <span className="nabz-quoting-matrix__pill-label">درصد سطری</span>
+        </label>
+
+        <label className={`nabz-quoting-matrix__pill${isLineFixed ? ' is-selected' : ''}`}>
           <input
             type="radio"
             name={radioName}
@@ -118,10 +110,7 @@ export function QuotingMatrix({
             disabled={readOnly}
             onChange={() => !readOnly && onChangeMode?.(MARGIN_MODES.LINE_FIXED_RIAL)}
           />
-          <div className="nabz-quoting-matrix__cell-body">
-            <span>مبلغ سطری</span>
-            <span className="nabz-quoting-matrix__input-spacer" aria-hidden="true" />
-          </div>
+          <span className="nabz-quoting-matrix__pill-label">مبلغ سطری</span>
         </label>
       </div>
     </section>

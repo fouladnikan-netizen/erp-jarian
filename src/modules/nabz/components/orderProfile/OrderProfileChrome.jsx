@@ -175,12 +175,6 @@ export default function OrderProfileChrome({
                     <strong className="order-profile-slim-details__value font-yekan">{registeredAt}</strong>
                   </div>
                 )}
-                {order.generalNotes ? (
-                  <div className="order-profile-slim-details__notes font-meem">
-                    <span className="order-profile-slim-details__label">توضیحات</span>
-                    <p>{order.generalNotes}</p>
-                  </div>
-                ) : null}
               </div>
             )}
           </div>
@@ -289,6 +283,20 @@ export default function OrderProfileChrome({
           </button>
         ))}
       </div>
+
+      {order.generalNotes?.trim() ? (
+        <aside
+          className="nabz-requester-notes"
+          aria-label="توضیحات مهم درخواست‌کننده"
+        >
+          <span className="nabz-requester-notes__label font-meem">
+            توضیحات مهم درخواست‌کننده
+          </span>
+          <p className="nabz-requester-notes__text font-meem">
+            {order.generalNotes.trim()}
+          </p>
+        </aside>
+      ) : null}
 
       {activeTab === ORDER_PROFILE_TABS.GATEWAY && (
         <div className="order-profile-stepper-band">

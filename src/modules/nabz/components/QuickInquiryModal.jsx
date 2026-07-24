@@ -57,6 +57,7 @@ import {
 } from '../constants';
 import { toDisplayOrderCode } from '../orderCode';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../orderStageService';
+import { getCustomerById } from '../customers';
 import ProformaTab from './ProformaTab';
 import ProformaHeaderActions from './ProformaHeaderActions';
 import QuotingReadOnlyPanel from './QuotingReadOnlyPanel';
@@ -485,9 +486,13 @@ export default function QuickInquiryModal({
   const statusKind = getOrderDisplayStatusKind(order);
   const statusLabel = getOrderDisplayStatus(order);
   const displayOrderCode = toDisplayOrderCode(order.code);
-  const expertName = order.requesterName || '—';
-  const knightName = order.assignee || '—';
   const registeredAt = [order.registeredDate, order.registeredTime].filter(Boolean).join(' · ');
+  const buyerCustomer = getCustomerById(order.customerId);
+  const buyerPhone = order.requesterMobile
+    || buyerCustomer?.officialSpecs?.phone
+    || buyerCustomer?.mobile
+    || '';
+  const expertName = order.requesterName || '';
   const proformaTerms = getProformaTerms(order);
   const proformaTermsEditable = Boolean(order.proforma?.termsEditable);
 
@@ -649,71 +654,79 @@ export default function QuickInquiryModal({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="nabz-quick-inquiry-modal__header">
-          <div className="nabz-quick-inquiry-modal__header-main">
-            <h3 className="nabz-quick-inquiry-modal__title font-meem">
-              پروفایل سفارش شرکت
-              {' '}
-              {order.customer}
+          <div className="nabz-quick-inquiry-modal__header-identity">
+            <h3 className="nabz-quick-inquiry-modal__customer font-meem" title={order.customer}>
+              {order.customer || '—'}
             </h3>
-            <p className="nabz-quick-inquiry-modal__meta-line font-meem">
-              <span className="nabz-quick-inquiry-modal__meta-label">کارشناس مرتبط:</span>
-              {' '}
-              <span className="nabz-quick-inquiry-modal__meta-value">{expertName}</span>
-            </p>
-            <p className="nabz-quick-inquiry-modal__meta-line font-meem">
-              <span className="nabz-quick-inquiry-modal__meta-label">شوالیه:</span>
-              {' '}
-              <span className="nabz-quick-inquiry-modal__meta-value">{knightName}</span>
-            </p>
-            <div className="nabz-quick-inquiry-modal__identity">
-              <span className="nabz-quick-inquiry-modal__code font-yekan" title={displayOrderCode}>
-                {displayOrderCode}
+            {buyerPhone ? (
+              <span className="nabz-quick-inquiry-modal__pill font-yekan" title="تلفن" dir="ltr">
+                {buyerPhone}
               </span>
-              <span className={`nabz-order-status nabz-order-status--${statusKind}`}>
-                {statusLabel}
+            ) : null}
+            {expertName ? (
+              <span className="nabz-quick-inquiry-modal__pill font-meem" title="کارشناس مرتبط">
+                {expertName}
               </span>
-            </div>
-            {registeredAt && (
-              <p className="nabz-quick-inquiry-modal__meta-line nabz-quick-inquiry-modal__meta-line--datetime font-meem">
-                <span className="nabz-quick-inquiry-modal__meta-label">تاریخ و زمان ثبت:</span>
-                {' '}
-                <span className="nabz-quick-inquiry-modal__meta-value font-yekan">{registeredAt}</span>
-              </p>
-            )}
-            {order.generalNotes ? (
-              <p className="nabz-quick-inquiry-modal__general-notes">{order.generalNotes}</p>
             ) : null}
           </div>
-          <div className="nabz-quick-inquiry-modal__header-actions">
-            {!showPishkesh && showPrimaryAction && (
+
+          <div className="nabz-quick-inquiry-modal__header-meta">
+            <span className="nabz-quick-inquiry-modal__code font-yekan" title={displayOrderCode}>
+              {displayOrderCode}
+            </span>
+            <span className={`nabz-order-status nabz-order-status--${statusKind}`}>
+              {statusLabel}
+            </span>
+            {registeredAt ? (
+              <span className="nabz-quick-inquiry-modal__date font-yekan" title="تاریخ ثبت">
+                {registeredAt}
+              </span>
+            ) : null}
+            <div className="nabz-quick-inquiry-modal__header-actions">
+              {!showPishkesh && showPrimaryAction && (
+                <button
+                  type="button"
+                  className={`btn btn--outline order-profile-stage-btn${primaryActionReady ? ' is-ready' : ''}`}
+                  disabled={primaryActionDisabled}
+                  onClick={handlePrimaryAction}
+                >
+                  {primaryActionLabel}
+                </button>
+              )}
+              <ProformaHeaderActions
+                order={order}
+                active={showPishkesh}
+                onIssue={handleIssueProforma}
+                onView={handleViewProforma}
+                onUpdate={handleUpdateProforma}
+                onDecision={() => setDecisionOpen(true)}
+              />
               <button
                 type="button"
-                className={`btn btn--outline order-profile-stage-btn${primaryActionReady ? ' is-ready' : ''}`}
-                disabled={primaryActionDisabled}
-                onClick={handlePrimaryAction}
+                className="btn btn--ghost btn--icon"
+                onClick={handleClose}
+                disabled={showQuotingEditable && Boolean(missingTargetMessage)}
+                aria-label="بستن"
               >
-                {primaryActionLabel}
+                <CloseIcon />
               </button>
-            )}
-            <ProformaHeaderActions
-              order={order}
-              active={showPishkesh}
-              onIssue={handleIssueProforma}
-              onView={handleViewProforma}
-              onUpdate={handleUpdateProforma}
-              onDecision={() => setDecisionOpen(true)}
-            />
-            <button
-              type="button"
-              className="btn btn--ghost btn--icon"
-              onClick={handleClose}
-              disabled={showQuotingEditable && Boolean(missingTargetMessage)}
-              aria-label="بستن"
-            >
-              <CloseIcon />
-            </button>
+            </div>
           </div>
         </header>
+
+        {order.generalNotes?.trim() ? (
+          <aside
+            className="nabz-requester-notes"
+            aria-label="توضیحات مهم درخواست‌کننده"
+          >
+            <span className="nabz-requester-notes__label font-meem">
+              توضیحات مهم درخواست‌کننده
+            </span>
+            <p className="nabz-requester-notes__text font-meem">
+              {order.generalNotes.trim()}
+            </p>
+          </aside>
+        ) : null}
 
         <div className="nabz-quick-inquiry-modal__stepper">
           <GatewayHorizontalStepper

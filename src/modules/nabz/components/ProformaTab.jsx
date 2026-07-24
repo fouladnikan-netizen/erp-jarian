@@ -15,7 +15,7 @@ function formatPriceLine(amount) {
 /**
  * محتوای خلاصه پیش‌فاکتور در نمایش سریع.
  * صدور / نمایش / به‌روزرسانی و چاپ/ارسال در هدر مودال و صفحهٔ پیش‌نمایش انجام می‌شود
- * (هم‌منطق با پروفایل سفارش).
+ * (هم‌منطق با پروفایل سفارش). مشخصات خریدار در هدر مودال است نه اینجا.
  */
 export default function ProformaTab({
   order,
@@ -28,29 +28,6 @@ export default function ProformaTab({
 
   return (
     <div className="nabz-proforma-tab">
-      <section className="nabz-proforma-meta">
-        <div className="nabz-proforma-meta__item">
-          <span>نام مشتری</span>
-          <strong>{viewModel.customerName}</strong>
-        </div>
-        <div className="nabz-proforma-meta__item">
-          <span>شماره سفارش</span>
-          <strong>{viewModel.orderCode}</strong>
-        </div>
-        <div className="nabz-proforma-meta__item">
-          <span>تاریخ سفارش</span>
-          <strong>{viewModel.orderDate}</strong>
-        </div>
-        <div className="nabz-proforma-meta__item">
-          <span>درخواست‌کننده (کارشناس مشتری)</span>
-          <strong>{viewModel.requesterName}</strong>
-        </div>
-        <div className="nabz-proforma-meta__item">
-          <span>موبایل درخواست‌کننده</span>
-          <strong dir="ltr">{viewModel.requesterMobile}</strong>
-        </div>
-      </section>
-
       <div className="nabz-proforma-table-wrap">
         <table className="nabz-proforma-table">
           <thead>
