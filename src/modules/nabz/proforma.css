@@ -818,24 +818,32 @@ body.is-invoice-resizing[data-resize='row'] {
 }
 
 .invoice-doc__product-desc {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.1rem;
   max-height: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  word-wrap: normal;
-  overflow-wrap: normal;
-  line-height: 1.2;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  text-align: right;
 }
 
 .invoice-doc__product-name {
+  font-size: 14px;
   font-weight: 700;
   color: var(--invoice-on-surface);
+  text-align: right;
 }
 
 .invoice-doc__product-note {
-  color: var(--invoice-note-muted);
-  opacity: 0.85;
+  font-size: 12px;
+  font-weight: 500;
+  color: #757575;
+  opacity: 1;
+  text-align: right;
 }
 
 /* ۴: محاسبات — بلافاصله بعد از جدول */

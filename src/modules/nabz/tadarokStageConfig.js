@@ -4,7 +4,7 @@ export const TADAROK_LINE_STATUS = {
 };
 
 export const TADAROK_LINE_STATUS_LABEL = {
-  [TADAROK_LINE_STATUS.PENDING]: 'در انتظار سفارش خرید',
+  [TADAROK_LINE_STATUS.PENDING]: 'در انتظار خرید',
   [TADAROK_LINE_STATUS.PO_ISSUED]: 'خرید شد',
 };
 

@@ -1,5 +1,6 @@
 import { MARGIN_MODES } from '../quotingConfig';
 import { formatAmountRial } from '../orderCode';
+import { formatJarianMoney } from '../../../config/JarianUI.config';
 import { getSupplierName } from '../suppliers';
 import MoneyInput from './MoneyInput';
 
@@ -10,12 +11,11 @@ export const SUPPLY_TYPE_DOT_CLASS = {
 };
 
 export function formatPriceLine(amount) {
-  if (amount == null || Number.isNaN(amount)) return '—';
+  if (amount == null || Number.isNaN(Number(amount))) return '—';
   return (
-    <>
-      <span className="nabz-price-line__value">{formatAmountRial(amount)}</span>
-      <span className="nabz-price-line__currency">ریال</span>
-    </>
+    <span className="jarian-money font-vazir jarian-money--with-currency">
+      {formatJarianMoney(amount, { withCurrency: true })}
+    </span>
   );
 }
 
@@ -73,13 +73,13 @@ export function SalePriceColumnHeader({
 export function formatMarginCellValue(mode, linePreview) {
   if (!linePreview) return '—';
   if (mode === MARGIN_MODES.ORDER_FIXED_PERCENT || mode === MARGIN_MODES.ORDER_FIXED_RIAL) {
-    return `${formatAmountRial(Math.round(linePreview.unitMarginRial || 0))} ریال`;
+    return `${formatJarianMoney(Math.round(linePreview.unitMarginRial || 0))}`;
   }
   if (linePreview.marginInputValue == null || linePreview.marginInputValue === '') return '—';
   if (mode === MARGIN_MODES.LINE_FIXED_PERCENT) {
     return `${linePreview.marginInputValue}٪`;
   }
-  return `${formatAmountRial(Number(linePreview.marginInputValue))} ریال`;
+  return formatJarianMoney(Number(linePreview.marginInputValue));
 }
 
 function MarginCheckIcon({ size = 13 }) {
@@ -246,10 +246,7 @@ function SupplyTypeDot({ supplyType, className = '' }) {
 }
 
 /**
- * کارت فشرده استعلام
- * - سطر اصلی (showNotes=false): فقط نقطه رنگی + قیمت + نام تامین‌کننده
- * - زیرسطر (showNotes=true): همان‌ها + توضیحات در همان سطر بعد از تامین‌کننده
- * - بدون چک‌باکس؛ انتخاب با کلیک روی کارت
+ * نمایش فشرده استعلام — بدون باکس؛ نقطه نوع تأمین + مبلغ با ریال + نام تأمین‌کننده
  */
 export function InquiryCompact({
   inquiry,
@@ -259,7 +256,7 @@ export function InquiryCompact({
   onSelectTarget,
   showSupplier,
   readOnly = false,
-  flat = false,
+  flat = true,
   showNotes = false,
   onEdit,
 }) {
@@ -271,7 +268,7 @@ export function InquiryCompact({
   const hoverDetails = [
     inquiry.supplyType,
     supplier,
-    `${amount} ریال`,
+    formatJarianMoney(inquiry.unitPrice),
     showNotes && notes ? notes : null,
   ].filter(Boolean).join(' — ');
 
@@ -283,7 +280,7 @@ export function InquiryCompact({
 
   return (
     <div
-      className={`nabz-inquiry-compact${isTarget ? ' is-target' : ''}${flat ? ' is-flat' : ''}${readOnly ? ' is-readonly' : ''}${canSelect ? ' is-selectable' : ''}`}
+      className={`nabz-inquiry-compact is-flat${isTarget ? ' is-target' : ''}${flat ? '' : ''}${readOnly ? ' is-readonly' : ''}${canSelect ? ' is-selectable' : ''}`}
       title={hoverDetails}
       onClick={canSelect ? handleSelect : undefined}
       onKeyDown={canSelect ? (event) => {
@@ -298,11 +295,10 @@ export function InquiryCompact({
       aria-label={canSelect ? `استعلام ${supplier}${isTarget ? ' (منتخب)' : ''}` : undefined}
     >
       <div className="nabz-inquiry-compact__body nabz-inquiry-compact__body--single-line">
-        <div className="nabz-inquiry-compact__amount">
+        <div className="nabz-inquiry-compact__amount jarian-money font-vazir">
           <SupplyTypeDot supplyType={inquiry.supplyType} />
           <span className="nabz-inquiry-compact__amount-value">{amount}</span>
-          <span className="nabz-inquiry-compact__currency">ریال</span>
-          <span className="nabz-inquiry-compact__supplier-inline">({supplier})</span>
+          <span className="nabz-inquiry-compact__supplier-inline jarian-supplier__name">{supplier}</span>
           {showNotes && notes ? (
             <span className="nabz-inquiry-compact__notes" title={notes}>
               {notes}

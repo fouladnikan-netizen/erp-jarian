@@ -349,7 +349,7 @@ export default function NabzOrderTable({
         </span>
       </div>
       <div className="data-table-wrap nabz-table-wrap">
-        <table className="data-table nabz-table data-table--resizable">
+        <table className="data-table nabz-table jarian-table data-table--resizable">
           {useStandardColumns && (
             <>
               <ResizableColGroup columns={columnDefs} widths={widths} />

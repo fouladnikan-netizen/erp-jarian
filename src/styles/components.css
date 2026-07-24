@@ -284,7 +284,7 @@
 .data-table th,
 .data-table td {
   padding: 0.85rem 1.25rem;
-  text-align: right;
+  text-align: center;
   border-bottom: 1px solid var(--border-default);
 }
 

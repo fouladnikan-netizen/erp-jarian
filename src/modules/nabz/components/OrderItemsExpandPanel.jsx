@@ -55,7 +55,7 @@ export default function OrderItemsExpandPanel({ order, onAddInquiry }) {
 
   return (
     <div className="nabz-expand-panel">
-      <table className="nabz-items-table">
+      <table className="nabz-items-table jarian-table">
         <thead>
           <tr>
             <th>ردیف</th>

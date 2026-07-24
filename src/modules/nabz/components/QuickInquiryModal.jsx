@@ -55,7 +55,7 @@ import {
   canViewSupplierIdentity,
   DEFAULT_SALE_TYPE,
 } from '../constants';
-import { toDisplayOrderCode, formatAmountRial } from '../orderCode';
+import { toDisplayOrderCode } from '../orderCode';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../orderStageService';
 import { getCustomerById } from '../customers';
 import ProformaTab from './ProformaTab';
@@ -70,12 +70,14 @@ import {
   SalePriceColumnHeader,
 } from './quickInquiryParts';
 import MoneyInput from './MoneyInput';
-import TruncatedText from './TruncatedText';
+import {
+  JarianMoney,
+  JarianProductCell,
+} from '../../../components/jarian/JarianPresentation';
 
 const BASE_QUICK_TABLE_COLUMNS = [
   { key: 'row', defaultWidth: 52, resizable: false },
-  { key: 'name', defaultWidth: 220 },
-  { key: 'description', defaultWidth: 260 },
+  { key: 'name', defaultWidth: 280 },
   { key: 'qty', defaultWidth: 72 },
   { key: 'unit', defaultWidth: 72 },
   { key: 'supply', defaultWidth: 220 },
@@ -92,7 +94,6 @@ const QUOTING_TABLE_COLUMNS = [
 const COLUMN_LABELS = {
   row: 'ردیف',
   name: 'شرح کالا',
-  description: 'توضیحات',
   qty: 'مقدار',
   unit: 'واحد',
   supply: 'قیمت استعلامی',
@@ -244,11 +245,8 @@ function SupplyStrip({
         onClick={() => onFocus(itemIndex)}
       >
         <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-        <td className="nabz-quick-table__name">
-          <TruncatedText text={item.name} empty="—" />
-        </td>
-        <td className="nabz-quick-table__desc">
-          <TruncatedText text={item.description} empty="—" />
+        <td className="nabz-quick-table__name jarian-td-product">
+          <JarianProductCell name={item.name} description={item.description} />
         </td>
         <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
         <td>{item.unit || '—'}</td>
@@ -295,20 +293,16 @@ function SupplyStrip({
                 </span>
               )}
             </td>
-            <td className="nabz-quick-table__final">
+            <td className="nabz-quick-table__final jarian-td-money">
               {linePreview?.hasTarget && linePreview.saleUnitPrice > 0 ? (
-                <div className="nabz-price-line nabz-price-line--emphasis">
-                  <span className="nabz-price-line__value">{formatAmountRial(linePreview.saleUnitPrice)}</span>
-                </div>
+                <JarianMoney amount={linePreview.saleUnitPrice} emphasis />
               ) : (
                 <span className="nabz-quick-table__muted">—</span>
               )}
             </td>
-            <td className="nabz-quick-table__final">
+            <td className="nabz-quick-table__final jarian-td-money">
               {linePreview?.hasTarget && linePreview.lineTotal > 0 ? (
-                <div className="nabz-price-line nabz-price-line--emphasis">
-                  {formatPriceLine(linePreview.lineTotal)}
-                </div>
+                <JarianMoney amount={linePreview.lineTotal} emphasis />
               ) : (
                 <span className="nabz-quick-table__muted">—</span>
               )}
@@ -461,7 +455,7 @@ export default function QuickInquiryModal({
   );
 
   const { widths, startResize } = useResizableColumns(
-    showQuoting ? 'nabz-quick-inquiry-quoting' : 'nabz-quick-inquiry-basic',
+    showQuoting ? 'nabz-quick-inquiry-quoting-v3' : 'nabz-quick-inquiry-basic-v3',
     tableColumns,
   );
 
@@ -842,7 +836,7 @@ export default function QuickInquiryModal({
           )}
 
           <div className="nabz-quick-table-wrap">
-          <table className="nabz-quick-table data-table--resizable">
+          <table className="nabz-quick-table jarian-table data-table--resizable">
             <ResizableColGroup columns={tableColumns} widths={widths} />
             <thead>
               <tr>
@@ -853,7 +847,7 @@ export default function QuickInquiryModal({
                     resizable={col.resizable !== false}
                     onResizeStart={startResize}
                     className={
-                      col.key === 'name' || col.key === 'description'
+                      col.key === 'name'
                         ? `nabz-quick-table__col--${col.key}`
                         : undefined
                     }

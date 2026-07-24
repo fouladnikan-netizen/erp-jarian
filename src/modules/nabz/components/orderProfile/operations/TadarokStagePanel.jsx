@@ -3,7 +3,11 @@ import ResizableColGroup from '../../../../../components/table/ResizableColGroup
 import ResizableTh from '../../../../../components/table/ResizableTh';
 import { useResizableColumns } from '../../../../../hooks/useResizableColumns';
 import { DEFAULT_SALE_TYPE } from '../../../constants';
-import { formatAmountRial } from '../../../orderCode';
+import {
+  JarianMoney,
+  JarianProductCell,
+  JarianSupplier,
+} from '../../../../../components/jarian/JarianPresentation';
 import { canEditProfitMargin } from '../../../orderEditPermissions';
 import { getOrderOperationalPhase } from '../../../phase2Service';
 import { calculateQuotingPreview, updateOrderQuoting } from '../../../quotingService';
@@ -24,12 +28,11 @@ import SplitLineModal from './SplitLineModal';
 
 const TADAROK_COLUMNS = [
   { key: 'row', label: 'ردیف', defaultWidth: 56, resizable: false },
-  { key: 'name', label: 'شرح کالا', defaultWidth: 150 },
-  { key: 'description', label: 'توضیحات کالا', defaultWidth: 180 },
+  { key: 'name', label: 'شرح کالا', defaultWidth: 240 },
   { key: 'qty', label: 'مقدار', defaultWidth: 80 },
   { key: 'unit', label: 'واحد', defaultWidth: 64 },
   { key: 'salePrice', label: 'قیمت فروش', defaultWidth: 160 },
-  { key: 'estimatedPrice', label: 'قیمت تأمین', defaultWidth: 160 },
+  { key: 'estimatedPrice', label: 'قیمت تأمین', defaultWidth: 200 },
   { key: 'status', label: 'وضعیت', defaultWidth: 120 },
   { key: 'actions', label: 'عملیات', defaultWidth: 96, resizable: false },
 ];
@@ -95,10 +98,14 @@ function ViewPurchaseOrderIcon() {
   );
 }
 
-function formatSupplyPrice(amount, supplierName) {
+function SupplyPriceCell({ amount, supplierName, supplyType }) {
   if (!amount) return '—';
-  const name = supplierName?.trim() || '—';
-  return `${formatAmountRial(amount)} ${name}`;
+  return (
+    <div className="tadarok-stage__supply-price">
+      <JarianMoney amount={amount} emphasis />
+      <JarianSupplier name={supplierName} supplyType={supplyType} />
+    </div>
+  );
 }
 
 export default function TadarokStagePanel({
@@ -118,7 +125,7 @@ export default function TadarokStagePanel({
   const canToggleVat = canEditProfitMargin() && isOfficialSale;
   const [splitLine, setSplitLine] = useState(null);
   const [poModal, setPoModal] = useState({ open: false, line: null, mode: 'create' });
-  const { widths, startResize } = useResizableColumns('nabz-tadarok-lines-v4', TADAROK_COLUMNS);
+  const { widths, startResize } = useResizableColumns('nabz-tadarok-lines-v6', TADAROK_COLUMNS);
 
   const handleVatInclusiveChange = (next) => {
     if (!canToggleVat) return;
@@ -194,7 +201,7 @@ export default function TadarokStagePanel({
       )}
 
       <div className="tadarok-stage__table-wrap">
-        <table className="tadarok-stage__table data-table--resizable">
+        <table className="tadarok-stage__table jarian-table data-table--resizable">
           <ResizableColGroup columns={TADAROK_COLUMNS} widths={widths} />
           <thead>
             <tr>
@@ -234,16 +241,21 @@ export default function TadarokStagePanel({
                   className={row.isSplitChild ? 'tadarok-stage__row--split' : undefined}
                 >
                   <td>{row.rowNumber.toLocaleString('fa-IR')}</td>
-                  <td>{row.name}</td>
-                  <td>{row.description || '—'}</td>
+                  <td className="jarian-td-product"><JarianProductCell name={row.name} description={row.description} /></td>
                   <td>{row.qty.toLocaleString('fa-IR')}</td>
                   <td>{row.unit}</td>
-                  <td>
+                  <td className="jarian-td-money">
                     {row.saleUnitPriceRial
-                      ? formatAmountRial(row.saleUnitPriceRial)
+                      ? <JarianMoney amount={row.saleUnitPriceRial} />
                       : '—'}
                   </td>
-                  <td>{formatSupplyPrice(row.supplyUnitPriceRial, row.supplySupplierName)}</td>
+                  <td>
+                    <SupplyPriceCell
+                      amount={row.supplyUnitPriceRial}
+                      supplierName={row.supplySupplierName}
+                      supplyType={row.purchaseOrder?.supplyType || row.kavoshSupplyType}
+                    />
+                  </td>
                   <td>
                     <span
                       className={`tadarok-stage__badge tadarok-stage__badge--${

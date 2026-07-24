@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { formatAmountRial } from '../../../orderCode';
+import { formatJarianMoney } from '../../../../../config/JarianUI.config';
+import { JarianMoney } from '../../../../../components/jarian/JarianPresentation';
 import { calculateQuotingPreview, getOrderQuoting, updateOrderQuoting } from '../../../inquiryService';
 import { canViewSupplierIdentity, DEFAULT_SALE_TYPE } from '../../../constants';
 import { canEditProfitMargin } from '../../../orderEditPermissions';
@@ -37,7 +38,7 @@ function buildPaymentTermsRows(decision) {
   if (terms.partialAmount) {
     rows.push({
       label: 'مبلغ علی‌الحساب',
-      value: `${formatAmountRial(terms.partialAmount)} ریال`,
+      value: formatJarianMoney(terms.partialAmount, { withCurrency: true }),
     });
   }
   if (terms.document?.name) {
@@ -116,9 +117,7 @@ export default function ParvaneStagePanel({
           <div className="parvane-stage__ribbon-total">
             <span className="parvane-stage__summary-label">مبلغ کل سفارش</span>
             <strong className="parvane-stage__summary-amount">
-              {formatAmountRial(orderTotal)}
-              {' '}
-              <span>ریال</span>
+              <JarianMoney amount={orderTotal} emphasis withCurrency />
             </strong>
           </div>
         </div>
@@ -126,9 +125,7 @@ export default function ParvaneStagePanel({
         <div className="parvane-stage__profit-chip">
           <span className="parvane-stage__profit-label">سود پیش‌بینی‌شده:</span>
           <strong className="parvane-stage__profit-value">
-            {formatAmountRial(predictedProfit)}
-            {' '}
-            ریال
+            <JarianMoney amount={predictedProfit} emphasis withCurrency />
             {' '}
             <span className="parvane-stage__profit-pct">({profitPercentLabel}٪)</span>
           </strong>

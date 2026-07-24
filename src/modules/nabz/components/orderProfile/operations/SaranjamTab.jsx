@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import logo from '../../../../../assets/images/nikan2.jpg';
 import { COMPANY_BRAND, PROFORMA_BANK_ACCOUNTS } from '../../../proformaConfig';
 import { formatAmountRial, toDisplayOrderCode } from '../../../orderCode';
+import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { getCustomerById } from '../../../customers';
 import { getTodayJalali } from '../../../dateUtils';
 import { printTaxInvoice } from './printTaxInvoice';
@@ -176,7 +177,7 @@ function PurchaseInvoiceModal({ open, onClose, item }) {
               {' · '}
               {item.name}
               {' · '}
-              <span className="font-yekan">{fileName}</span>
+              <span className="font-vazir">{fileName}</span>
             </p>
           </div>
           <button type="button" className="saranjam-modal__close" onClick={onClose} aria-label="بستن">×</button>
@@ -331,27 +332,27 @@ function PartyInfoBox({ sideLabel, name, address, city, province, nationalId, ec
           <p className="font-meem">
             <span className="saranjam-taxdoc__k">شناسه ملی:</span>
             {' '}
-            <span className="font-yekan">{nationalId || '—'}</span>
+            <span className="font-vazir">{nationalId || '—'}</span>
           </p>
           <p className="font-meem">
             <span className="saranjam-taxdoc__k">شماره اقتصادی:</span>
             {' '}
-            <span className="font-yekan">{economicId || '—'}</span>
+            <span className="font-vazir">{economicId || '—'}</span>
           </p>
           <p className="font-meem">
             <span className="saranjam-taxdoc__k">کد پستی:</span>
             {' '}
-            <span className="font-yekan">{postalCode || '—'}</span>
+            <span className="font-vazir">{postalCode || '—'}</span>
           </p>
           <p className="font-meem">
             <span className="saranjam-taxdoc__k">شماره ثبت:</span>
             {' '}
-            <span className="font-yekan">{registrationNumber || '—'}</span>
+            <span className="font-vazir">{registrationNumber || '—'}</span>
           </p>
           <p className="font-meem">
             <span className="saranjam-taxdoc__k">تلفن:</span>
             {' '}
-            <span className="font-yekan">{phone || '—'}</span>
+            <span className="font-vazir">{phone || '—'}</span>
           </p>
         </div>
       </div>
@@ -451,17 +452,17 @@ function TaxInvoiceModal({
               <p className="font-meem">
                 شماره:
                 {' '}
-                <span className="font-yekan">{invoiceNumber}</span>
+                <span className="font-vazir">{invoiceNumber}</span>
               </p>
               <p className="font-meem">
                 تاریخ:
                 {' '}
-                <span className="font-yekan">{issueDate}</span>
+                <span className="font-vazir">{issueDate}</span>
               </p>
               <p className="font-meem">
                 سفارش:
                 {' '}
-                <span className="font-yekan">{orderCode}</span>
+                <span className="font-vazir">{orderCode}</span>
               </p>
             </div>
           </header>
@@ -514,20 +515,20 @@ function TaxInvoiceModal({
                   const econ = lineEconomics(row);
                   return (
                     <tr key={row.id}>
-                      <td><span className="font-yekan">{(index + 1).toLocaleString('fa-IR')}</span></td>
-                      <td><span className="font-yekan">{row.code || ''}</span></td>
+                      <td><span className="font-vazir">{(index + 1).toLocaleString('fa-IR')}</span></td>
+                      <td><span className="font-vazir">{row.code || ''}</span></td>
                       <td className="saranjam-taxdoc__desc font-meem">{row.name}</td>
                       <td>
                         {canEdit ? (
                           <input
                             type="text"
                             inputMode="decimal"
-                            className="saranjam-taxdoc__input font-yekan"
+                            className="saranjam-taxdoc__input font-vazir"
                             value={row.qty}
                             onChange={(e) => onChangeDraft(row.id, 'qty', e.target.value)}
                           />
                         ) : (
-                          <span className="font-yekan">{toNumber(row.qty).toLocaleString('fa-IR')}</span>
+                          <span className="font-vazir">{toNumber(row.qty).toLocaleString('fa-IR')}</span>
                         )}
                       </td>
                       <td className="font-meem">{row.unit}</td>
@@ -536,19 +537,19 @@ function TaxInvoiceModal({
                           <input
                             type="text"
                             inputMode="decimal"
-                            className="saranjam-taxdoc__input font-yekan"
+                            className="saranjam-taxdoc__input font-vazir"
                             value={row.unitPriceRial}
                             onChange={(e) => onChangeDraft(row.id, 'unitPriceRial', e.target.value)}
                           />
                         ) : (
-                          <span className="font-yekan">{formatAmountRial(row.unitPriceRial)}</span>
+                          <span className="jarian-money font-vazir">{formatJarianMoney(row.unitPriceRial)}</span>
                         )}
                       </td>
-                      <td><span className="font-yekan">{formatAmountRial(econ.subtotal)}</span></td>
-                      <td><span className="font-yekan">{formatAmountRial(econ.discount)}</span></td>
-                      <td><span className="font-yekan">{formatAmountRial(econ.afterDiscount)}</span></td>
-                      <td><span className="font-yekan">{formatAmountRial(econ.vat)}</span></td>
-                      <td><span className="font-yekan">{formatAmountRial(econ.finalTotal)}</span></td>
+                      <td><span className="jarian-money font-vazir">{formatJarianMoney(econ.subtotal)}</span></td>
+                      <td><span className="jarian-money font-vazir">{formatJarianMoney(econ.discount)}</span></td>
+                      <td><span className="jarian-money font-vazir">{formatJarianMoney(econ.afterDiscount)}</span></td>
+                      <td><span className="jarian-money font-vazir">{formatJarianMoney(econ.vat)}</span></td>
+                      <td><span className="jarian-money font-vazir">{formatJarianMoney(econ.finalTotal)}</span></td>
                     </tr>
                   );
                 })}
@@ -556,10 +557,10 @@ function TaxInvoiceModal({
               <tfoot>
                 <tr className="saranjam-taxdoc__sum-row">
                   <td colSpan={7} className="font-meem saranjam-taxdoc__sum-label">جمع کل</td>
-                  <td><span className="font-yekan">{formatAmountRial(totals.discount)}</span></td>
-                  <td><span className="font-yekan">{formatAmountRial(totals.afterDiscount)}</span></td>
-                  <td><span className="font-yekan">{formatAmountRial(totals.vat)}</span></td>
-                  <td><span className="font-yekan">{formatAmountRial(totals.finalTotal)}</span></td>
+                  <td><span className="jarian-money font-vazir">{formatJarianMoney(totals.discount, { withCurrency: true })}</span></td>
+                  <td><span className="jarian-money font-vazir">{formatJarianMoney(totals.afterDiscount, { withCurrency: true })}</span></td>
+                  <td><span className="jarian-money font-vazir">{formatJarianMoney(totals.vat, { withCurrency: true })}</span></td>
+                  <td><span className="jarian-money font-vazir">{formatJarianMoney(totals.finalTotal, { withCurrency: true })}</span></td>
                 </tr>
               </tfoot>
             </table>
@@ -579,9 +580,9 @@ function TaxInvoiceModal({
                 {' — '}
                 حساب:
                 {' '}
-                <span className="font-yekan">{primaryBank.account}</span>
+                <span className="font-vazir">{primaryBank.account}</span>
                 {' | شبا: '}
-                <span className="font-yekan">{primaryBank.sheba}</span>
+                <span className="font-vazir">{primaryBank.sheba}</span>
               </p>
             </div>
             <div className="saranjam-taxdoc__sign">
@@ -851,7 +852,7 @@ export default function SaranjamTab({
           <p className="saranjam-tab__order-id">
             شماره سفارش:
             {' '}
-            <span className="font-yekan saranjam-tab__order-id-value">{orderCode}</span>
+            <span className="font-vazir saranjam-tab__order-id-value">{orderCode}</span>
           </p>
         </div>
 
@@ -875,7 +876,7 @@ export default function SaranjamTab({
               <span className="saranjam-badge saranjam-badge--danger">
                 مانده مشتری:
                 {' '}
-                <span className="font-yekan">{formatAmountRial(customerBalanceRial)}</span>
+                <span className="jarian-money font-vazir">{formatJarianMoney(customerBalanceRial, { withCurrency: true })}</span>
               </span>
             )}
             {!gates.allSupplierBalancesZero && (
@@ -902,10 +903,10 @@ export default function SaranjamTab({
                       <p className="saranjam-supply-row__meta">
                         تأمین‌کننده: {item.supplier}
                         {' · '}
-                        مقدار: <span className="font-yekan">{toNumber(item.qty).toLocaleString('fa-IR')}</span> {item.unit}
+                        مقدار: <span className="font-vazir">{toNumber(item.qty).toLocaleString('fa-IR')}</span> {item.unit}
                       </p>
                       {item.invoiceFileName && (
-                        <p className="saranjam-file-name font-yekan">{item.invoiceFileName}</p>
+                        <p className="saranjam-file-name font-vazir">{item.invoiceFileName}</p>
                       )}
                     </div>
                   </div>
@@ -976,11 +977,11 @@ export default function SaranjamTab({
                   <p className="saranjam-sales-done__refs font-meem">
                     شماره:
                     {' '}
-                    <span className="font-yekan">{invoiceNumber}</span>
+                    <span className="font-vazir">{invoiceNumber}</span>
                     {' · '}
                     تاریخ:
                     {' '}
-                    <span className="font-yekan">{issueDate}</span>
+                    <span className="font-vazir">{issueDate}</span>
                   </p>
                 </div>
               </div>
@@ -1032,18 +1033,18 @@ export default function SaranjamTab({
             <ul className="saranjam-pay-list">
               {sortedCustomerPayments.map((pay) => (
                 <li key={pay.id} className="saranjam-pay-row">
-                  <span className="font-yekan">{pay.date}</span>
+                  <span className="font-vazir">{pay.date}</span>
                   <span className="font-meem">{pay.note || '—'}</span>
-                  <span className="font-yekan">{formatAmountRial(pay.amountRial)}</span>
+                  <span className="jarian-money font-vazir">{formatJarianMoney(pay.amountRial)}</span>
                   {pay.receiptFileName && (
-                    <span className="saranjam-file-name font-yekan">{pay.receiptFileName}</span>
+                    <span className="saranjam-file-name font-vazir">{pay.receiptFileName}</span>
                   )}
                 </li>
               ))}
             </ul>
             <div className="saranjam-ledger__foot">
               <span className="font-meem">مانده مشتری</span>
-              <strong className="font-yekan">{formatAmountRial(customerBalanceRial)} ریال</strong>
+              <strong className="jarian-money font-vazir">{formatJarianMoney(customerBalanceRial, { withCurrency: true })}</strong>
             </div>
           </div>
 
@@ -1054,7 +1055,7 @@ export default function SaranjamTab({
                 <div key={ledger.supplierId} className="saranjam-supplier-block">
                   <div className="saranjam-supplier-block__head">
                     <strong className="font-meem">{ledger.supplier}</strong>
-                    <span className="font-yekan">مانده: {formatAmountRial(ledger.balanceRial)}</span>
+                    <span className="font-vazir">مانده: {formatJarianMoney(ledger.balanceRial, { withCurrency: true })}</span>
                   </div>
                   <ul className="saranjam-pay-list">
                     {ledger.payments.length === 0 ? (
@@ -1064,10 +1065,10 @@ export default function SaranjamTab({
                         .sort((a, b) => String(a.date).localeCompare(String(b.date), 'fa'))
                         .map((pay) => (
                           <li key={pay.id} className="saranjam-pay-row">
-                            <span className="font-yekan">{pay.date}</span>
-                            <span className="font-yekan">{formatAmountRial(pay.amountRial)}</span>
+                            <span className="font-vazir">{pay.date}</span>
+                            <span className="jarian-money font-vazir">{formatJarianMoney(pay.amountRial)}</span>
                             {pay.receiptFileName && (
-                              <span className="saranjam-file-name font-yekan">{pay.receiptFileName}</span>
+                              <span className="saranjam-file-name font-vazir">{pay.receiptFileName}</span>
                             )}
                           </li>
                         ))
@@ -1104,14 +1105,14 @@ export default function SaranjamTab({
           <div className="saranjam-postmortem__grid">
             <div className="saranjam-postmortem__cell">
               <span className="font-meem">زمان بسته‌شدن سفارش</span>
-              <strong className="font-yekan">
+              <strong className="font-vazir">
                 {closeDuration.days.toLocaleString('fa-IR')} روز، {closeDuration.hours.toLocaleString('fa-IR')} ساعت
               </strong>
             </div>
             <div className="saranjam-postmortem__cell">
               <span className="font-meem">سود خالص سفارش</span>
-              <strong className="font-yekan saranjam-postmortem__profit">
-                {formatAmountRial(profitRial)} ﷼
+              <strong className="font-vazir saranjam-postmortem__profit">
+                {formatJarianMoney(profitRial, { withCurrency: true })}
               </strong>
             </div>
           </div>

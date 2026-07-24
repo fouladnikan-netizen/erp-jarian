@@ -1091,7 +1091,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 .nabz-profile-items-table td {
   padding: 0.45rem 0.35rem;
   border-bottom: 1px solid var(--color-neutral-100);
-  text-align: right;
+  text-align: center;
 }
 
 .nabz-profile-items-table th {
@@ -1317,7 +1317,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 .nabz-items-table td {
   padding: 0.5rem 0.6rem;
   border-bottom: 1px solid var(--color-neutral-100);
-  text-align: right;
+  text-align: center;
   vertical-align: middle;
 }
 
@@ -1562,8 +1562,8 @@ html[data-theme='dark'] .nabz-excel-filter {
 .nabz-inquiries-table td {
   padding: 0.5rem 0.6rem;
   border-bottom: 1px solid var(--color-neutral-100);
-  text-align: right;
-  vertical-align: top;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .nabz-inquiries-table th {
@@ -1806,7 +1806,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 .nabz-quick-table td {
   padding: 0.55rem 0.5rem;
   border-bottom: 1px solid var(--color-neutral-100);
-  text-align: right;
+  text-align: center;
   vertical-align: middle;
 }
 
@@ -1831,11 +1831,11 @@ html[data-theme='dark'] .nabz-excel-filter {
 }
 
 .nabz-quick-table__row.is-active {
-  background: rgba(10, 209, 186, 0.06);
+  background: transparent;
 }
 
 .nabz-quick-table__row--master.is-expanded {
-  background: rgba(248, 250, 252, 0.85);
+  background: transparent;
 }
 
 .nabz-quick-table__expand {
@@ -2007,14 +2007,14 @@ html[data-theme='dark'] .nabz-excel-filter {
   flex-direction: row;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.45rem 0.55rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-neutral-200);
-  background: var(--bg-surface);
-  min-width: 8rem;
+  padding: 0.2rem 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  min-width: 0;
   flex-shrink: 0;
   cursor: default;
-  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  transition: color 0.18s ease;
 }
 
 .nabz-inquiry-compact.is-selectable {
@@ -2027,9 +2027,10 @@ html[data-theme='dark'] .nabz-excel-filter {
 }
 
 .nabz-inquiry-compact.is-target {
-  border-color: var(--border-strong, #94a3b8);
-  background: var(--color-neutral-50);
-  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.35);
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 700;
 }
 
 .nabz-inquiry-compact.is-flat {
@@ -4690,8 +4691,9 @@ html[data-theme='dark'] .nabz-excel-filter {
 }
 
 .order-profile-items__num {
-  direction: ltr;
+  direction: rtl;
   white-space: nowrap;
+  text-align: center;
 }
 
 .order-profile-items__summary {
@@ -6908,7 +6910,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 }
 
 .gateway-table__row--master.has-target .gateway-td--supply.gateway-table__num {
-  background: rgba(59, 130, 246, 0.04);
+  background: transparent;
 }
 
 .gateway-table__row--master .gateway-td--supply.gateway-table__text,
@@ -6921,21 +6923,16 @@ html[data-theme='dark'] .nabz-excel-filter {
   align-items: center;
   gap: 0.35rem;
   max-width: 100%;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.3;
   background: transparent;
+  color: var(--text-primary);
 }
 
-.gateway-master-target__supplier--is-official {
-  color: #15803d;
-}
-
-.gateway-master-target__supplier--is-discrepancy {
-  color: #ca8a04;
-}
-
+.gateway-master-target__supplier--is-official,
+.gateway-master-target__supplier--is-discrepancy,
 .gateway-master-target__supplier--is-unofficial {
-  color: #b91c1c;
+  color: var(--text-primary);
 }
 
 .gateway-master-target__tick {
@@ -6951,11 +6948,11 @@ html[data-theme='dark'] .nabz-excel-filter {
 }
 
 .gateway-td--supply {
-  background: rgba(59, 130, 246, 0.04);
+  background: transparent;
 }
 
 .gateway-td--sale {
-  background: rgba(22, 163, 74, 0.04);
+  background: transparent;
 }
 
 .gateway-table__text {
@@ -7044,7 +7041,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 }
 
 .gateway-table__row--expandable.is-expanded {
-  background: rgba(248, 250, 252, 0.9);
+  background: transparent;
 }
 
 .gateway-table__expand-cell {
@@ -8115,7 +8112,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 .tadarok-stage__table th,
 .tadarok-stage__table td {
   padding: 0.55rem 0.65rem;
-  text-align: right;
+  text-align: center;
   border-bottom: 1px solid #f3f4f6;
   vertical-align: middle;
 }
@@ -8661,7 +8658,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 .tajhiz-stage__table th,
 .tajhiz-stage__table td {
   padding: 0.5rem 0.6rem;
-  text-align: right;
+  text-align: center;
   border-bottom: 1px solid #f3f4f6;
   vertical-align: middle;
 }

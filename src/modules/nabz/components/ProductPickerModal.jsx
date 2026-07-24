@@ -143,7 +143,7 @@ export default function ProductPickerModal({ onClose, onConfirm }) {
         </header>
 
         <div className="nabz-picker-modal__table-wrap">
-          <table className="nabz-picker-table" dir="rtl">
+          <table className="nabz-picker-table jarian-table" dir="rtl">
             <thead>
               <tr>
                 <th className="nabz-picker-table__check-col font-meem">انتخاب</th>

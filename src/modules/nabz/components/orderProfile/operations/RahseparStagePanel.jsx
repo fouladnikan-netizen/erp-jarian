@@ -324,7 +324,7 @@ export default function RahseparStagePanel({
           </p>
         </div>
         <div className="rahsepar-stage__table-wrap">
-          <table className="rahsepar-stage__table">
+          <table className="rahsepar-stage__table jarian-table">
             <thead>
               <tr>
                 <th className="rahsepar-stage__col--select rahsepar-stage__no-print" scope="col">

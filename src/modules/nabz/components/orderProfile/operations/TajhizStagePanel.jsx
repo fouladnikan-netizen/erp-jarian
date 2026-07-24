@@ -19,11 +19,11 @@ import { advanceOperationalPhase, getOrderOperationalPhase } from '../../../phas
 import { printShippingVoucher } from '../../../shippingPrint';
 import QcDocumentModal from './QcDocumentModal';
 import ShippingModal from './ShippingModal';
+import { JarianProductCell } from '../../../../../components/jarian/JarianPresentation';
 
 const TAJHIZ_COLUMNS = [
   { key: 'row', label: 'ردیف', defaultWidth: 56, resizable: false },
-  { key: 'name', label: 'شرح کالا', defaultWidth: 140 },
-  { key: 'description', label: 'توضیحات کالا', defaultWidth: 160 },
+  { key: 'name', label: 'شرح کالا', defaultWidth: 220 },
   { key: 'qcStatus', label: 'وضعیت کیفی', defaultWidth: 120 },
   { key: 'qty', label: 'مقدار', defaultWidth: 72 },
   { key: 'unit', label: 'واحد', defaultWidth: 64 },
@@ -75,7 +75,7 @@ export default function TajhizStagePanel({
   const [shippingOpen, setShippingOpen] = useState(false);
   const [toast, setToast] = useState('');
   const toastTimerRef = useRef(null);
-  const { widths, startResize } = useResizableColumns('nabz-tajhiz-purchases-v2', TAJHIZ_COLUMNS);
+  const { widths, startResize } = useResizableColumns('nabz-tajhiz-purchases-v3', TAJHIZ_COLUMNS);
 
   const showToast = (message) => {
     setToast(message);
@@ -149,7 +149,7 @@ export default function TajhizStagePanel({
       </header>
 
       <div className="tajhiz-stage__table-wrap">
-        <table className="tajhiz-stage__table data-table--resizable">
+        <table className="tajhiz-stage__table jarian-table data-table--resizable">
           <ResizableColGroup columns={TAJHIZ_COLUMNS} widths={widths} />
           <thead>
             <tr>
@@ -179,8 +179,7 @@ export default function TajhizStagePanel({
                 return (
                   <tr key={getQcRowKey(row)}>
                     <td>{row.rowNumber.toLocaleString('fa-IR')}</td>
-                    <td>{row.name}</td>
-                    <td>{row.description}</td>
+                    <td className="jarian-td-product"><JarianProductCell name={row.name} description={row.description} /></td>
                     <td>
                       <QcStatusCell
                         record={qcRecord}

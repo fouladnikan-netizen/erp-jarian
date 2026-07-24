@@ -1,21 +1,14 @@
 import { useMemo } from 'react';
-import { formatAmountRial } from '../orderCode';
+import {
+  JarianMoney,
+  JarianMoneyFooter,
+  JarianProductCell,
+} from '../../../components/jarian/JarianPresentation';
 import { buildProformaViewModel } from '../proformaService';
 import { DEFAULT_PROFORMA_TERMS } from '../proformaConfig';
 
-function formatPriceLine(amount) {
-  return (
-    <span className="nabz-price-line">
-      <span className="nabz-price-line__value">{formatAmountRial(amount)}</span>
-      <span className="nabz-price-line__currency">ریال</span>
-    </span>
-  );
-}
-
 /**
  * محتوای خلاصه پیش‌فاکتور در نمایش سریع.
- * صدور / نمایش / به‌روزرسانی و چاپ/ارسال در هدر مودال و صفحهٔ پیش‌نمایش انجام می‌شود
- * (هم‌منطق با پروفایل سفارش). مشخصات خریدار در هدر مودال است نه اینجا.
  */
 export default function ProformaTab({
   order,
@@ -29,11 +22,11 @@ export default function ProformaTab({
   return (
     <div className="nabz-proforma-tab">
       <div className="nabz-proforma-table-wrap">
-        <table className="nabz-proforma-table">
+        <table className="nabz-proforma-table jarian-table">
           <thead>
             <tr>
               <th>ردیف</th>
-              <th>شرح کالا - توضیحات</th>
+              <th>شرح کالا</th>
               <th>مقدار</th>
               <th>واحد</th>
               <th>{viewModel.salePriceLabel}</th>
@@ -49,11 +42,13 @@ export default function ProformaTab({
               viewModel.lines.map((line) => (
                 <tr key={line.row}>
                   <td>{line.row.toLocaleString('fa-IR')}</td>
-                  <td>{line.description}</td>
+                  <td className="jarian-td-product">
+                    <JarianProductCell name={line.productName} description={line.productNote} />
+                  </td>
                   <td>{Number(line.qty).toLocaleString('fa-IR')}</td>
                   <td>{line.unit}</td>
-                  <td>{formatPriceLine(line.saleUnitPrice)}</td>
-                  <td><strong>{formatPriceLine(line.lineTotal)}</strong></td>
+                  <td className="jarian-td-money"><JarianMoney amount={line.saleUnitPrice} /></td>
+                  <td className="jarian-td-money"><JarianMoney amount={line.lineTotal} emphasis /></td>
                 </tr>
               ))
             )}
@@ -64,17 +59,17 @@ export default function ProformaTab({
       <section className="nabz-proforma-footer">
         <div className="nabz-proforma-footer__row">
           <span>جمع پیش‌فاکتور</span>
-          <strong>{formatPriceLine(viewModel.subtotal)}</strong>
+          <strong><JarianMoneyFooter amount={viewModel.subtotal} /></strong>
         </div>
         {(viewModel.showVatBreakdown ?? viewModel.isOfficial) && (
           <div className="nabz-proforma-footer__row">
             <span>جمع مالیات ارزش افزوده (۱۰٪)</span>
-            <strong>{formatPriceLine(viewModel.vatAmount)}</strong>
+            <strong><JarianMoneyFooter amount={viewModel.vatAmount} /></strong>
           </div>
         )}
         <div className="nabz-proforma-footer__row nabz-proforma-footer__row--grand">
           <span>جمع کل پیش‌فاکتور</span>
-          <strong>{formatPriceLine(viewModel.grandTotal)}</strong>
+          <strong><JarianMoneyFooter amount={viewModel.grandTotal} emphasis /></strong>
         </div>
       </section>
 

@@ -1,5 +1,9 @@
+import {
+  JarianMoney,
+  JarianMoneyFooter,
+  JarianProductCell,
+} from '../../../../components/jarian/JarianPresentation';
 import { calculateQuotingPreview } from '../../quotingService';
-import { formatAmountRial } from '../../orderCode';
 
 export default function OrderProfileItemsTab({ order }) {
   const preview = calculateQuotingPreview(order);
@@ -8,7 +12,7 @@ export default function OrderProfileItemsTab({ order }) {
   return (
     <div className="order-profile-card">
       <div className="order-profile-items__table-wrap">
-        <table className="order-profile-items__table">
+        <table className="order-profile-items__table jarian-table">
           <thead>
             <tr>
               <th>ردیف</th>
@@ -22,21 +26,20 @@ export default function OrderProfileItemsTab({ order }) {
           <tbody>
             {(order.items || []).map((item, index) => {
               const line = preview.lines[index] || {};
-              const productName = item.name || '—';
-              const productNote = item.description || '';
-              const description = productNote ? `${productName} — ${productNote}` : productName;
 
               return (
                 <tr key={`${item.name}-${index}`}>
                   <td>{index + 1}</td>
-                  <td className="order-profile-items__desc">{description}</td>
+                  <td className="order-profile-items__desc jarian-td-product">
+                    <JarianProductCell name={item.name} description={item.description} />
+                  </td>
                   <td>{line.qty ?? item.qty ?? '—'}</td>
                   <td>{item.unit || '—'}</td>
-                  <td className="order-profile-items__num">
-                    {line.hasTarget ? formatAmountRial(line.saleUnitPrice) : '—'}
+                  <td className="order-profile-items__num jarian-td-money">
+                    {line.hasTarget ? <JarianMoney amount={line.saleUnitPrice} /> : '—'}
                   </td>
-                  <td className="order-profile-items__num">
-                    {line.hasTarget ? formatAmountRial(line.lineTotal) : '—'}
+                  <td className="order-profile-items__num jarian-td-money">
+                    {line.hasTarget ? <JarianMoney amount={line.lineTotal} emphasis /> : '—'}
                   </td>
                 </tr>
               );
@@ -48,21 +51,21 @@ export default function OrderProfileItemsTab({ order }) {
       <div className="order-profile-items__summary">
         <div className="order-profile-items__summary-row">
           <span>جمع کل</span>
-          <strong>{formatAmountRial(preview.subtotal)} ریال</strong>
+          <strong><JarianMoneyFooter amount={preview.subtotal} /></strong>
         </div>
         {isOfficial && (
           <div className="order-profile-items__summary-row">
             <span>مالیات بر ارزش افزوده (۱۰٪)</span>
-            <strong>{formatAmountRial(preview.vatAmount)} ریال</strong>
+            <strong><JarianMoneyFooter amount={preview.vatAmount} /></strong>
           </div>
         )}
         <div className="order-profile-items__summary-row order-profile-items__summary-row--grand">
           <span>مبلغ قابل پرداخت</span>
-          <strong>{formatAmountRial(preview.orderTotal)} ریال</strong>
+          <strong><JarianMoneyFooter amount={preview.orderTotal} emphasis /></strong>
         </div>
         <div className="order-profile-items__summary-row order-profile-items__summary-row--profit">
           <span>سود کل سفارش</span>
-          <strong>{formatAmountRial(preview.totalProfit)} ریال</strong>
+          <strong><JarianMoneyFooter amount={preview.totalProfit} emphasis /></strong>
         </div>
       </div>
     </div>

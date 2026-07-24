@@ -6,8 +6,8 @@ import { useResizableColumns } from '../../../hooks/useResizableColumns';
 
 const CREATE_LINE_COLUMNS = [
   { key: 'drag', defaultWidth: 36, resizable: false },
-  { key: 'name', defaultWidth: 200 },
-  { key: 'description', defaultWidth: 220 },
+  { key: 'row', defaultWidth: 48, resizable: false },
+  { key: 'name', defaultWidth: 300 },
   { key: 'qty', defaultWidth: 88 },
   { key: 'unit', defaultWidth: 72, resizable: false },
   { key: 'remove', defaultWidth: 40, resizable: false },
@@ -15,8 +15,8 @@ const CREATE_LINE_COLUMNS = [
 
 const COLUMN_LABELS = {
   drag: '',
+  row: 'ردیف',
   name: 'شرح کالا',
-  description: 'توضیحات',
   qty: 'مقدار',
   unit: 'واحد',
   remove: '',
@@ -64,7 +64,7 @@ function reorderItems(items, fromIndex, toIndex) {
 export default function OrderLineItemsTable({ items, onChange, onRemove }) {
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
-  const { widths, startResize } = useResizableColumns('nabz-create-line-items-v3', CREATE_LINE_COLUMNS);
+  const { widths, startResize } = useResizableColumns('nabz-create-line-items-v5', CREATE_LINE_COLUMNS);
 
   const updateLine = (lineId, key, value) => {
     onChange(items.map((item) => (item.lineId === lineId ? { ...item, [key]: value } : item)));
@@ -103,7 +103,7 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
 
   return (
     <div className="nabz-create-table-wrap nabz-create-table-wrap--premium">
-      <table className="nabz-create-table data-table--resizable">
+      <table className="nabz-create-table jarian-table data-table--resizable">
         <ResizableColGroup columns={CREATE_LINE_COLUMNS} widths={widths} />
         <thead className="nabz-create-table__head">
           <tr>
@@ -138,24 +138,28 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
                   onDragEnd={handleDragEnd}
                 />
               </td>
-              <td className="nabz-create-table__name font-meem">
-                <TruncatedText text={item.name} empty="—" />
-              </td>
-              <td className="nabz-create-table__desc-cell">
-                <input
-                  type="text"
-                  className="nabz-create-table__input font-meem"
-                  value={item.description || ''}
-                  onChange={(e) => updateLine(item.lineId, 'description', e.target.value)}
-                  placeholder="توضیحات"
-                  title={item.description || undefined}
-                />
+              <td className="jarian-td-row">{(index + 1).toLocaleString('fa-IR')}</td>
+              <td className="nabz-create-table__name jarian-td-product">
+                <div className="jarian-product-cell">
+                  <span className="jarian-product-name">
+                    <TruncatedText text={item.name} empty="—" />
+                  </span>
+                  <input
+                    type="text"
+                    className="nabz-create-table__input jarian-product-desc"
+                    value={item.description || ''}
+                    onChange={(e) => updateLine(item.lineId, 'description', e.target.value)}
+                    placeholder="توضیحات"
+                    title={item.description || undefined}
+                    aria-label="توضیحات کالا"
+                  />
+                </div>
               </td>
               <td>
                 <input
                   type="number"
                   min="1"
-                  className="nabz-create-table__input nabz-create-table__input--qty font-yekan"
+                  className="nabz-create-table__input nabz-create-table__input--qty font-vazir"
                   value={item.qty}
                   onChange={(e) => updateLine(item.lineId, 'qty', Number(e.target.value))}
                 />

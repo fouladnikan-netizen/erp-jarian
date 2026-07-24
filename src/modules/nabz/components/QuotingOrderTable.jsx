@@ -1,20 +1,20 @@
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
 import { useResizableColumns } from '../../../hooks/useResizableColumns';
+import {
+  JarianMoney,
+  JarianProductCell,
+} from '../../../components/jarian/JarianPresentation';
 import { getTargetInquiry } from '../inquiryService';
-import { formatAmountRial } from '../orderCode';
 import {
   formatMarginCellValue,
-  formatPriceLine,
   SalePriceColumnHeader,
   InquiryCompact,
 } from './quickInquiryParts';
-import TruncatedText from './TruncatedText';
 
 export const QUOTING_ORDER_TABLE_COLUMNS = [
   { key: 'row', defaultWidth: 52, resizable: false },
-  { key: 'name', defaultWidth: 200 },
-  { key: 'description', defaultWidth: 220 },
+  { key: 'name', defaultWidth: 280 },
   { key: 'qty', defaultWidth: 72 },
   { key: 'unit', defaultWidth: 72 },
   { key: 'supply', defaultWidth: 260 },
@@ -26,7 +26,6 @@ export const QUOTING_ORDER_TABLE_COLUMNS = [
 const COLUMN_LABELS = {
   row: 'ردیف',
   name: 'شرح کالا',
-  description: 'توضیحات',
   qty: 'مقدار',
   unit: 'واحد',
   supply: 'استعلام هدف',
@@ -43,7 +42,7 @@ export default function QuotingOrderTable({
   lineMarginMode,
   showSupplier = true,
   saleType,
-  storageKey = 'nabz-quoting-order-table',
+  storageKey = 'nabz-quoting-order-table-v2',
   showVatToggle = false,
   vatToggleDisabled = false,
   onVatInclusiveChange,
@@ -55,7 +54,7 @@ export default function QuotingOrderTable({
 
   return (
     <div className="nabz-quick-table-wrap">
-      <table className="nabz-quick-table data-table--resizable">
+      <table className="nabz-quick-table data-table--resizable jarian-table">
         <ResizableColGroup columns={QUOTING_ORDER_TABLE_COLUMNS} widths={widths} />
         <thead>
           <tr>
@@ -94,11 +93,8 @@ export default function QuotingOrderTable({
               return (
                 <tr key={itemIndex} className="nabz-quick-table__row">
                   <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-                  <td className="nabz-quick-table__name">
-                    <TruncatedText text={item.name} empty="—" />
-                  </td>
-                  <td className="nabz-quick-table__desc">
-                    <TruncatedText text={item.description} empty="—" />
+                  <td className="nabz-quick-table__name jarian-td-product">
+                    <JarianProductCell name={item.name} description={item.description} />
                   </td>
                   <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
                   <td>{item.unit || '—'}</td>
@@ -121,20 +117,16 @@ export default function QuotingOrderTable({
                       {formatMarginCellValue(lineMarginMode, linePreview)}
                     </span>
                   </td>
-                  <td className="nabz-quick-table__final">
+                  <td className="nabz-quick-table__final jarian-td-money">
                     {linePreview?.hasTarget && linePreview.saleUnitPrice > 0 ? (
-                      <div className="nabz-price-line nabz-price-line--emphasis">
-                        <span className="nabz-price-line__value">{formatAmountRial(linePreview.saleUnitPrice)}</span>
-                      </div>
+                      <JarianMoney amount={linePreview.saleUnitPrice} emphasis />
                     ) : (
                       <span className="nabz-quick-table__muted">—</span>
                     )}
                   </td>
-                  <td className="nabz-quick-table__final">
+                  <td className="nabz-quick-table__final jarian-td-money">
                     {linePreview?.hasTarget && linePreview.lineTotal > 0 ? (
-                      <div className="nabz-price-line nabz-price-line--emphasis">
-                        {formatPriceLine(linePreview.lineTotal)}
-                      </div>
+                      <JarianMoney amount={linePreview.lineTotal} emphasis />
                     ) : (
                       <span className="nabz-quick-table__muted">—</span>
                     )}

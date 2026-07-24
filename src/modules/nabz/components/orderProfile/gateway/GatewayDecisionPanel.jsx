@@ -11,7 +11,7 @@ import {
   hasGatewayDecision,
   isGatewayDecisionEditable,
 } from '../../../gatewayDecisionService';
-import { formatAmountRial } from '../../../orderCode';
+import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { pickRandomSalesQuote } from '../../../salesMotivationalQuotes';
 import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
 import DealCelebrationModal from './DealCelebrationModal';
@@ -27,7 +27,7 @@ function formatPaymentTermsSummary(decision) {
     lines.push(`روز پس از تحویل: ${terms.daysAfterDelivery}`);
   }
   if (terms.partialAmount) {
-    lines.push(`مبلغ علی‌الحساب: ${formatAmountRial(terms.partialAmount)} ریال`);
+    lines.push(`مبلغ علی‌الحساب: ${formatJarianMoney(terms.partialAmount, { withCurrency: true })}`);
   }
   if (terms.document?.name) lines.push(`سند پیوست: ${terms.document.name}`);
   return lines;

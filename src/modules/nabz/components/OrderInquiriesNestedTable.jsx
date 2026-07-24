@@ -4,8 +4,12 @@ import {
   getEmptyInquiryDraft,
   validateInquiryDraft,
 } from '../inquiryService';
+import {
+  JarianMoney,
+  JarianProductName,
+  JarianSupplier,
+} from '../../../components/jarian/JarianPresentation';
 import { getSupplierName } from '../suppliers';
-import { formatAmountRial } from '../orderCode';
 import InquiryDraftForm from './InquiryDraftForm';
 
 function draftSlotKey(orderId, itemIndex, slotId) {
@@ -77,7 +81,7 @@ export default function OrderInquiriesNestedTable({ order, onAddInquiry, editabl
                 {(itemIndex + 1).toLocaleString('fa-IR')}
                 .
                 {' '}
-                {item.name}
+                <JarianProductName text={item.name} />
               </span>
               <span className="nabz-inquiries-nested__item-meta">
                 {item.qty?.toLocaleString('fa-IR') ?? '—'}
@@ -87,12 +91,13 @@ export default function OrderInquiriesNestedTable({ order, onAddInquiry, editabl
             </header>
 
             {inquiries.length > 0 ? (
-              <table className="nabz-inquiries-table">
+              <table className="nabz-inquiries-table jarian-table">
                 <thead>
                   <tr>
+                    <th>ردیف</th>
                     <th>نوع تامین</th>
                     <th>تامین‌کننده</th>
-                    <th>فی (ریال)</th>
+                    <th>فی</th>
                     <th>توضیحات</th>
                     <th>مغایرت</th>
                     <th>وضعیت</th>
@@ -100,11 +105,19 @@ export default function OrderInquiriesNestedTable({ order, onAddInquiry, editabl
                   </tr>
                 </thead>
                 <tbody>
-                  {inquiries.map((inquiry) => (
+                  {inquiries.map((inquiry, inquiryIndex) => (
                     <tr key={inquiry.id}>
+                      <td>{(inquiryIndex + 1).toLocaleString('fa-IR')}</td>
                       <td>{inquiry.supplyType}</td>
-                      <td>{getSupplierName(inquiry.supplierId)}</td>
-                      <td>{formatAmountRial(inquiry.unitPrice)}</td>
+                      <td>
+                        <JarianSupplier
+                          name={getSupplierName(inquiry.supplierId)}
+                          supplyType={inquiry.supplyType}
+                        />
+                      </td>
+                      <td className="jarian-td-money">
+                        <JarianMoney amount={inquiry.unitPrice} />
+                      </td>
                       <td>{inquiry.notes || '—'}</td>
                       <td>
                         {isDiscrepancySupplyType(inquiry.supplyType) ? (
@@ -117,7 +130,7 @@ export default function OrderInquiriesNestedTable({ order, onAddInquiry, editabl
                             {' · '}
                             فی:
                             {' '}
-                            {formatAmountRial(inquiry.discrepancyUnitPrice)}
+                            <JarianMoney amount={inquiry.discrepancyUnitPrice} />
                           </span>
                         ) : (
                           '—'

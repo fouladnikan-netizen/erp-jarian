@@ -1,6 +1,7 @@
 import { isDiscrepancySupplyType, INQUIRY_STATUS_LABEL } from '../inquiryConfig';
 import { getSupplierName } from '../suppliers';
-import { formatAmountRial } from '../orderCode';
+import { formatJarianMoney } from '../../../config/JarianUI.config';
+import { JarianSupplier } from '../../../components/jarian/JarianPresentation';
 
 export default function InquirySavedCard({ inquiry }) {
   const statusLabel = INQUIRY_STATUS_LABEL[inquiry.status] || 'پیش‌نویس';
@@ -8,9 +9,9 @@ export default function InquirySavedCard({ inquiry }) {
     <div className="nabz-inquiry-saved">
       <span className="nabz-inquiry-saved__badge">{inquiry.supplyType}</span>
       <span className="nabz-inquiry-saved__status">{statusLabel}</span>
-      <span>{getSupplierName(inquiry.supplierId)}</span>
+      <JarianSupplier name={getSupplierName(inquiry.supplierId)} supplyType={inquiry.supplyType} />
       <span className="nabz-inquiry-saved__sep">·</span>
-      <span>فی: {formatAmountRial(inquiry.unitPrice)} ریال</span>
+      <span className="jarian-money font-vazir">فی: {formatJarianMoney(inquiry.unitPrice)}</span>
       {inquiry.notes && (
         <>
           <span className="nabz-inquiry-saved__sep">·</span>
@@ -25,7 +26,7 @@ export default function InquirySavedCard({ inquiry }) {
           <span className="nabz-inquiry-saved__sep">·</span>
           <span>وزن: {inquiry.discrepancyWeight}</span>
           <span className="nabz-inquiry-saved__sep">·</span>
-          <span>فی مغایر: {formatAmountRial(inquiry.discrepancyUnitPrice)} ریال</span>
+          <span className="jarian-money font-vazir">فی مغایر: {formatJarianMoney(inquiry.discrepancyUnitPrice)}</span>
         </div>
       )}
       <span className="nabz-inquiry-saved__meta">

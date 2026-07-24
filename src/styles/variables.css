@@ -42,9 +42,9 @@
   --status-silent: #475569;
 
   --font-primary: 'Vazirmatn', Tahoma, sans-serif;
-  --font-numeric: 'Yekan Bakh', Tahoma, sans-serif;
+  --font-numeric: 'Vazirmatn', Tahoma, sans-serif;
   --font-secondary: 'Vazirmatn', Tahoma, sans-serif;
-  --font-body: var(--font-primary), var(--font-numeric), Tahoma, sans-serif;
+  --font-body: var(--font-primary), Tahoma, sans-serif;
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -139,7 +139,8 @@ select {
   font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
 }
 
-.font-yekan {
-  font-family: 'Yekan Bakh', var(--font-numeric), Tahoma, sans-serif !important;
+.font-yekan,
+.font-vazir {
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif !important;
   font-variant-numeric: tabular-nums;
 }

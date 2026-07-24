@@ -28,17 +28,14 @@ import {
 } from '../../../orderEditPermissions';
 import { getSupplierName, listSuppliers } from '../../../suppliers';
 import { SUPPLY_CHANNEL_TYPES } from '../../../inquiryConfig';
-import { formatAmountRial } from '../../../orderCode';
-import { formatMarginCellValue, LineMarginCell, QuotingMatrix, SalePriceColumnHeader } from '../../quickInquiryParts';
-import TruncatedText from '../../TruncatedText';
+import {
+  JarianMoney,
+  JarianProductCell,
+  JarianSupplier,
+} from '../../../../../components/jarian/JarianPresentation';
+import { formatMarginCellValue, LineMarginCell, QuotingMatrix, SalePriceColumnHeader, SUPPLY_TYPE_DOT_CLASS } from '../../quickInquiryParts';
 import MoneyInput from '../../MoneyInput';
 import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
-
-const SUPPLY_TYPE_DOT_CLASS = {
-  رسمی: 'is-official',
-  غیررسمی: 'is-unofficial',
-  مغایرت: 'is-discrepancy',
-};
 
 function PencilIcon() {
   return (
@@ -69,6 +66,7 @@ function PlusIcon() {
 function buildColumns(viewPhase, saleColumnLabel) {
   if (viewPhase === GATEWAY_PHASES.PISHKESH) {
     return [
+      { key: 'row', label: 'ردیف', group: 'base', defaultWidth: 56, resizable: false },
       { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 280 },
       { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 90 },
       { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 90 },
@@ -80,7 +78,7 @@ function buildColumns(viewPhase, saleColumnLabel) {
   if (viewPhase === GATEWAY_PHASES.MOZENE) {
     return [
       { key: 'row', label: 'ردیف', group: 'base', defaultWidth: 56, resizable: false },
-      { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 240 },
+      { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 260 },
       { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 80 },
       { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 80 },
       { key: 'buy', label: 'قیمت خرید', group: 'supply', defaultWidth: 140 },
@@ -92,7 +90,7 @@ function buildColumns(viewPhase, saleColumnLabel) {
   if (viewPhase === GATEWAY_PHASES.KAVOSH) {
     return [
       { key: 'row', label: 'ردیف', group: 'base', defaultWidth: 56, resizable: false },
-      { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 240 },
+      { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 260 },
       { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 80 },
       { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 80 },
       { key: 'supplier', label: 'تامین‌کننده', group: 'supply', defaultWidth: 180 },
@@ -103,7 +101,7 @@ function buildColumns(viewPhase, saleColumnLabel) {
 
   return [
     { key: 'row', label: 'ردیف', group: 'base', defaultWidth: 56, resizable: false },
-    { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 320 },
+    { key: 'name', label: 'شرح کالا', group: 'base', defaultWidth: 280 },
     { key: 'qty', label: 'مقدار', group: 'base', defaultWidth: 100 },
     { key: 'unit', label: 'واحد', group: 'base', defaultWidth: 100 },
   ];
@@ -223,8 +221,7 @@ function InquiryGridRow({
         ) : null}
         <span className="gateway-inquiry-grid__name" title={supplierLabel}>{supplierLabel}</span>
         <span className="gateway-inquiry-grid__price">
-          <strong>{formatAmountRial(inquiry.unitPrice)}</strong>
-          <span className="gateway-inquiry-grid__currency">ریال</span>
+          <JarianMoney amount={inquiry.unitPrice} />
         </span>
         {notes ? (
           <span className="gateway-inquiry-grid__notes">{notes}</span>
@@ -356,7 +353,7 @@ export default function GatewayMorphTable({
     () => buildColumns(viewPhase, saleColumnLabel),
     [viewPhase, saleColumnLabel],
   );
-  const { widths, startResize } = useResizableColumns(`gateway-${viewPhase}`, columns);
+  const { widths, startResize } = useResizableColumns(`gateway-${viewPhase}-v4`, columns);
   const totalCols = columns.length;
 
   const marginUnit = quoting.marginMode === MARGIN_MODES.ORDER_FIXED_PERCENT
@@ -492,6 +489,15 @@ export default function GatewayMorphTable({
               value={editDraft.name}
               onChange={(e) => setEditDraft((prev) => ({ ...prev, name: e.target.value }))}
               aria-label="شرح کالا"
+              placeholder="شرح کالا"
+            />
+            <input
+              className="gateway-table__inline-input"
+              style={{ marginTop: '0.35rem' }}
+              value={editDraft.description}
+              onChange={(e) => setEditDraft((prev) => ({ ...prev, description: e.target.value }))}
+              aria-label="توضیحات"
+              placeholder="توضیحات"
             />
           </td>
           <td>
@@ -523,12 +529,8 @@ export default function GatewayMorphTable({
     return (
       <tr key={itemIndex} className="gateway-table__row gateway-table__row--hoverable">
         <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-        <td className="gateway-table__text">
-          <TruncatedText text={item.name} empty="—" />
-        </td>
-        <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
-        <td className="gateway-table__cell-actions-host">
-          {item.unit || '—'}
+        <td className="gateway-table__text gateway-table__cell-actions-host">
+          <JarianProductCell name={item.name} description={item.description} />
           {live && allowLineFieldEdit && (
             <RowHoverActions>
               <button
@@ -552,6 +554,8 @@ export default function GatewayMorphTable({
             </RowHoverActions>
           )}
         </td>
+        <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
+        <td>{item.unit || '—'}</td>
       </tr>
     );
   };
@@ -577,28 +581,24 @@ export default function GatewayMorphTable({
           <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
           <td className="gateway-table__text">
             <LockedText>
-              <TruncatedText text={item.name} empty="—" />
+              <JarianProductCell name={item.name} description={item.description} />
             </LockedText>
           </td>
           <td><LockedText>{item.qty?.toLocaleString('fa-IR') ?? '—'}</LockedText></td>
           <td><LockedText>{item.unit || '—'}</LockedText></td>
           <td className="gateway-table__text gateway-td--supply">
             {target ? (
-              <span
-                className={`gateway-master-target__supplier gateway-master-target__supplier--${SUPPLY_TYPE_DOT_CLASS[target.supplyType] || 'is-official'}`}
-                title={target.supplyType}
-              >
-                {getInquirySupplierLabel(target, targetIndex, showSupplier)}
-              </span>
+              <JarianSupplier
+                name={getInquirySupplierLabel(target, targetIndex, showSupplier)}
+                supplyType={target.supplyType}
+              />
             ) : (
               <span className="gateway-table__muted">—</span>
             )}
           </td>
-          <td className="gateway-table__num gateway-td--supply gateway-table__cell-actions-host">
+          <td className="gateway-table__num gateway-td--supply gateway-table__cell-actions-host jarian-td-money">
             {target ? (
-              <strong className="gateway-master-target__price">
-                {formatAmountRial(target.unitPrice)}
-              </strong>
+              <JarianMoney amount={target.unitPrice} emphasis />
             ) : (
               <span className="gateway-table__muted">—</span>
             )}
@@ -761,15 +761,8 @@ export default function GatewayMorphTable({
         <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
         <td className="gateway-table__text gateway-table__cell-actions-host">
           <LockedText>
-            <TruncatedText text={item.name} empty="—" />
+            <JarianProductCell name={item.name} description={item.description} />
           </LockedText>
-          {item.description ? (
-            <TruncatedText
-              text={item.description}
-              className="gateway-table__desc-line"
-              empty=""
-            />
-          ) : null}
           {live && allowLineFieldEdit && (
             <RowHoverActions>
               <button
@@ -786,8 +779,8 @@ export default function GatewayMorphTable({
         </td>
         <td><LockedText>{item.qty?.toLocaleString('fa-IR') ?? '—'}</LockedText></td>
         <td><LockedText>{item.unit || '—'}</LockedText></td>
-        <td className="gateway-table__num gateway-td--supply">
-          {target ? formatAmountRial(target.unitPrice) : '—'}
+        <td className="gateway-table__num gateway-td--supply jarian-td-money">
+          {target ? <JarianMoney amount={target.unitPrice} /> : '—'}
         </td>
         <td className="gateway-td--sale">
           {isLineMarginEditable ? (
@@ -809,9 +802,9 @@ export default function GatewayMorphTable({
             </span>
           )}
         </td>
-        <td className="gateway-table__num gateway-td--sale">
+        <td className="gateway-table__num gateway-td--sale jarian-td-money">
           {linePreview.hasTarget && linePreview.saleUnitPrice > 0
-            ? formatAmountRial(linePreview.saleUnitPrice)
+            ? <JarianMoney amount={linePreview.saleUnitPrice} emphasis />
             : '—'}
         </td>
       </tr>
@@ -820,22 +813,20 @@ export default function GatewayMorphTable({
 
   const renderPishkeshRow = (item, itemIndex) => {
     const linePreview = preview.lines[itemIndex] || {};
-    const description = item.description
-      ? `${item.name} — ${item.description}`
-      : (item.name || '—');
 
     return (
       <tr key={itemIndex} className="gateway-table__row">
-        <td className="gateway-table__text gateway-table__desc">
-          <TruncatedText text={description} empty="—" />
+        <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
+        <td className="gateway-table__text">
+          <JarianProductCell name={item.name} description={item.description} />
         </td>
         <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
         <td>{item.unit || '—'}</td>
-        <td className="gateway-table__num gateway-td--sale">
-          {linePreview.hasTarget ? formatAmountRial(linePreview.saleUnitPrice) : '—'}
+        <td className="gateway-table__num gateway-td--sale jarian-td-money">
+          {linePreview.hasTarget ? <JarianMoney amount={linePreview.saleUnitPrice} /> : '—'}
         </td>
-        <td className="gateway-table__num gateway-td--sale">
-          {linePreview.hasTarget ? formatAmountRial(linePreview.lineTotal) : '—'}
+        <td className="gateway-table__num gateway-td--sale jarian-td-money">
+          {linePreview.hasTarget ? <JarianMoney amount={linePreview.lineTotal} emphasis /> : '—'}
         </td>
       </tr>
     );
@@ -870,7 +861,7 @@ export default function GatewayMorphTable({
       )}
 
       <div className="gateway-table-wrap">
-        <table className="gateway-table">
+        <table className="gateway-table jarian-table">
           <ResizableColGroup columns={columns} widths={widths} />
           <thead>{renderHeader()}</thead>
           <tbody>{renderBody()}</tbody>

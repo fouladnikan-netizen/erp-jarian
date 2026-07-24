@@ -1,13 +1,37 @@
 import StatusTag from './StatusTag';
 
-function TableRow({ row }) {
+function isMoneyColumn(columnLabel = '') {
+  return /ریال|مبلغ|ارزش|قیمت/.test(columnLabel);
+}
+
+/** سلول جدول: بدون پسوند ریال */
+function stripRialSuffix(value) {
+  const text = String(value ?? '').trim();
+  if (!text || text === '—') return text;
+  return text.replace(/\s*ریال\s*$/u, '').trim();
+}
+
+function TableRow({ row, columns, rowNumber }) {
   return (
     <tr data-id={row.id}>
-      {row.cells.map((cell, index) => (
-        <td key={index}>
-          {cell.startsWith('tag:') ? <StatusTag value={cell} /> : cell}
-        </td>
-      ))}
+      <td className="jarian-td-row">{rowNumber.toLocaleString('fa-IR')}</td>
+      {row.cells.map((cell, index) => {
+        const moneyCol = isMoneyColumn(columns[index]);
+        return (
+          <td
+            key={index}
+            className={moneyCol ? 'jarian-td-money' : undefined}
+          >
+            {cell.startsWith('tag:') ? (
+              <StatusTag value={cell} />
+            ) : moneyCol ? (
+              <span className="jarian-money font-vazir">{stripRialSuffix(cell)}</span>
+            ) : (
+              cell
+            )}
+          </td>
+        );
+      })}
       <td>
         <div className="data-table__actions">
           <button type="button">نمایش</button>
@@ -21,7 +45,7 @@ function TableRow({ row }) {
 function EmptyState({ data }) {
   return (
     <tr>
-      <td colSpan={data.columns.length + 1}>
+      <td colSpan={data.columns.length + 2}>
         <div className="empty-state">
           <div className="empty-state__icon">📋</div>
           <p>هنوز رکوردی ثبت نشده است.</p>
@@ -44,9 +68,10 @@ export default function DataTable({ data }) {
         </span>
       </div>
       <div className="data-table-wrap">
-        <table className="data-table">
+        <table className="data-table jarian-table">
           <thead>
             <tr>
+              <th>ردیف</th>
               {data.columns.map((column) => (
                 <th key={column}>{column}</th>
               ))}
@@ -55,8 +80,13 @@ export default function DataTable({ data }) {
           </thead>
           <tbody>
             {data.rows.length > 0
-              ? data.rows.map((row) => (
-                  <TableRow key={row.id} row={row} />
+              ? data.rows.map((row, index) => (
+                  <TableRow
+                    key={row.id}
+                    row={row}
+                    columns={data.columns}
+                    rowNumber={index + 1}
+                  />
                 ))
               : <EmptyState data={data} />}
           </tbody>

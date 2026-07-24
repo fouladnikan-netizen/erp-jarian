@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import headerBrand from '../../../assets/images/nikan-proforma-header.jpg';
-import { formatAmountRial } from '../orderCode';
+import { formatJarianMoney } from '../../../config/JarianUI.config';
 import { toPersianDigits, toPersianInvoiceText } from '../dateUtils';
 import {
   COMPANY_BRAND,
@@ -9,8 +9,8 @@ import {
 } from '../proformaConfig';
 import ProformaSeal from './ProformaSeal';
 
-function formatInvoiceNumber(amount) {
-  return formatAmountRial(amount);
+function formatInvoiceNumber(amount, { withCurrency = false } = {}) {
+  return formatJarianMoney(amount, { withCurrency });
 }
 
 function ProformaTermsBlock({ terms, termsCustom }) {
@@ -60,15 +60,12 @@ function ProformaTermsBlock({ terms, termsCustom }) {
 
 function ProductDescription({ name, note }) {
   return (
-    <span className="invoice-doc__product-desc">
-      <span className="invoice-doc__product-name">{name}</span>
+    <div className="jarian-product-cell invoice-doc__product-desc">
+      <span className="jarian-product-name invoice-doc__product-name">{name}</span>
       {note ? (
-        <>
-          {' '}
-          <span className="invoice-doc__product-note">{note}</span>
-        </>
+        <span className="jarian-product-desc invoice-doc__product-note">{note}</span>
       ) : null}
-    </span>
+    </div>
   );
 }
 
@@ -212,17 +209,17 @@ function TotalsBlock({ viewModel, measure = false }) {
       <div className="invoice-doc__totals">
         <div className="invoice-doc__totals-row">
           <span>جمع پیش فاکتور:</span>
-          <span>{formatInvoiceNumber(viewModel.subtotal)}</span>
+          <span>{formatInvoiceNumber(viewModel.subtotal, { withCurrency: true })}</span>
         </div>
         {(viewModel.showVatBreakdown ?? viewModel.isOfficial) && (
           <div className="invoice-doc__totals-row">
             <span>جمع مالیات بر ارزش افزوده:</span>
-            <span>{formatInvoiceNumber(viewModel.vatAmount)}</span>
+            <span>{formatInvoiceNumber(viewModel.vatAmount, { withCurrency: true })}</span>
           </div>
         )}
         <div className="invoice-doc__totals-row invoice-doc__totals-row--grand">
           <span>جمع کل پیش فاکتور:</span>
-          <span>{formatInvoiceNumber(viewModel.grandTotal)}</span>
+          <span>{formatInvoiceNumber(viewModel.grandTotal, { withCurrency: true })}</span>
         </div>
         <p className="invoice-doc__totals-words">
           <span className="invoice-doc__totals-words-label">مبلغ به حروف:</span>{' '}
