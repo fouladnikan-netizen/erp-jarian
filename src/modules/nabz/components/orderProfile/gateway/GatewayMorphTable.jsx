@@ -377,14 +377,14 @@ export default function GatewayMorphTable({
   }, [quoting.marginMode]);
 
   const openInquiryDraft = (itemIndex) => {
-    if (!allowInquiryEdit) return;
+    if (!allowInquiryEdit || order.status !== ORDER_TABS.CURRENT) return;
     setExpandedIndex(itemIndex);
     setDraftItemIndex(itemIndex);
     setEditingInquiryId(null);
   };
 
   const openInquiryEdit = (itemIndex, inquiryId) => {
-    if (!allowInquiryEdit) return;
+    if (!allowInquiryEdit || order.status !== ORDER_TABS.CURRENT) return;
     setExpandedIndex(itemIndex);
     setDraftItemIndex(itemIndex);
     setEditingInquiryId(inquiryId);
@@ -559,7 +559,9 @@ export default function GatewayMorphTable({
   const renderKavoshRows = (item, itemIndex) => {
     const target = getTargetInquiry(item);
     const inquiries = item.inquiries || [];
-    const canManage = allowInquiryEdit && (live || viewPhase === GATEWAY_PHASES.KAVOSH);
+    const canManage = allowInquiryEdit
+      && order.status === ORDER_TABS.CURRENT
+      && (live || viewPhase === GATEWAY_PHASES.KAVOSH);
     const isDraftOpen = draftItemIndex === itemIndex;
     const isExpanded = expandedIndex === itemIndex;
     const targetIndex = target

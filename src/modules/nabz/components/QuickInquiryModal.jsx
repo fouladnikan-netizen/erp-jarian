@@ -427,9 +427,9 @@ export default function QuickInquiryModal({
     && order.status === ORDER_TABS.CURRENT
     && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
   const showSupplier = canViewSupplierIdentity();
-  // ویرایش استعلام در کاوش حتی اگر سفارش جلوتر رفته و کاربر به تب کاوش برگشته
-  // (هم‌راستا با GatewayMorphTable: live || viewPhase === KAVOSH)
+  // ویرایش استعلام فقط برای سفارش جاری؛ سفارش‌های موفق صرفاً نمایشی‌اند
   const canManageInquiries = canEditInquiryPrices()
+    && order.status === ORDER_TABS.CURRENT
     && (showKavosh || (showQuoting && isLivePhase));
   const canManageQuoting = showQuotingEditable && canEditProfitMargin();
   const showDecisionPanel = showPishkesh && (
