@@ -148,6 +148,12 @@ function SupplyTypeDot({ supplyType, className = '' }) {
   );
 }
 
+/**
+ * کارت فشرده استعلام
+ * - سطر اصلی (showNotes=false): فقط نقطه رنگی + قیمت + نام تامین‌کننده
+ * - زیرسطر (showNotes=true): همان‌ها + توضیحات در همان سطر بعد از تامین‌کننده
+ * - بدون چک‌باکس؛ انتخاب با کلیک روی کارت
+ */
 export function InquiryCompact({
   inquiry,
   inquiryIndex = 0,
@@ -157,53 +163,64 @@ export function InquiryCompact({
   showSupplier,
   readOnly = false,
   flat = false,
+  showNotes = false,
   onEdit,
-  targetGroupName,
 }) {
   const amount = formatAmountRial(inquiry.unitPrice);
   const supplier = showSupplier
     ? getSupplierName(inquiry.supplierId)
     : `تامین‌کننده ${(inquiryIndex + 1).toLocaleString('fa-IR')}`;
+  const notes = inquiry.notes?.trim() || '';
   const hoverDetails = [
     inquiry.supplyType,
     supplier,
     `${amount} ریال`,
-    inquiry.notes?.trim() || null,
+    showNotes && notes ? notes : null,
   ].filter(Boolean).join(' — ');
+
+  const canSelect = Boolean(selectable && !readOnly && onSelectTarget);
+  const handleSelect = () => {
+    if (!canSelect || isTarget) return;
+    onSelectTarget(inquiry.id);
+  };
 
   return (
     <div
-      className={`nabz-inquiry-compact${isTarget ? ' is-target' : ''}${flat ? ' is-flat' : ''}${readOnly ? ' is-readonly' : ''}`}
+      className={`nabz-inquiry-compact${isTarget ? ' is-target' : ''}${flat ? ' is-flat' : ''}${readOnly ? ' is-readonly' : ''}${canSelect ? ' is-selectable' : ''}`}
       title={hoverDetails}
+      onClick={canSelect ? handleSelect : undefined}
+      onKeyDown={canSelect ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          handleSelect();
+        }
+      } : undefined}
+      role={canSelect ? 'button' : undefined}
+      tabIndex={canSelect ? 0 : undefined}
+      aria-pressed={canSelect ? isTarget : undefined}
+      aria-label={canSelect ? `استعلام ${supplier}${isTarget ? ' (منتخب)' : ''}` : undefined}
     >
-      {selectable && !readOnly && (
-        <input
-          type="radio"
-          name={targetGroupName || `nabz-inquiry-target-${inquiry.id}`}
-          className="nabz-inquiry-compact__target"
-          checked={isTarget}
-          onChange={() => {
-            if (!isTarget) onSelectTarget?.(inquiry.id);
-          }}
-          aria-label="انتخاب به عنوان استعلام منتخب"
-        />
-      )}
-      {!selectable && !readOnly && isTarget && (
-        <span className="nabz-inquiry-compact__target-badge" aria-label="استعلام منتخب">✓</span>
-      )}
       <div className="nabz-inquiry-compact__body nabz-inquiry-compact__body--single-line">
         <div className="nabz-inquiry-compact__amount">
           <SupplyTypeDot supplyType={inquiry.supplyType} />
           <span className="nabz-inquiry-compact__amount-value">{amount}</span>
           <span className="nabz-inquiry-compact__currency">ریال</span>
           <span className="nabz-inquiry-compact__supplier-inline">({supplier})</span>
+          {showNotes && notes ? (
+            <span className="nabz-inquiry-compact__notes" title={notes}>
+              {notes}
+            </span>
+          ) : null}
         </div>
       </div>
       {onEdit && !readOnly && (
         <button
           type="button"
           className="nabz-inquiry-compact__edit"
-          onClick={() => onEdit(inquiry.id)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onEdit(inquiry.id);
+          }}
           aria-label="ویرایش استعلام"
         >
           <PencilIcon />

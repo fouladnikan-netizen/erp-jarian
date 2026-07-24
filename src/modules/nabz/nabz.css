@@ -1987,19 +1987,6 @@ html[data-theme='dark'] .nabz-excel-filter {
   max-width: 100%;
 }
 
-.nabz-inquiry-compact__target-badge {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 0.95rem;
-  height: 0.95rem;
-  margin-top: 0.35rem;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--color-accent-dark);
-}
-
 .nabz-supply-strip {
   display: flex;
   flex-wrap: nowrap;
@@ -2020,7 +2007,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 .nabz-inquiry-compact {
   display: inline-flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.35rem;
   padding: 0.45rem 0.55rem;
   border-radius: var(--radius-sm);
@@ -2028,8 +2015,17 @@ html[data-theme='dark'] .nabz-excel-filter {
   background: var(--bg-surface);
   min-width: 8rem;
   flex-shrink: 0;
-  cursor: pointer;
+  cursor: default;
   transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.nabz-inquiry-compact.is-selectable {
+  cursor: pointer;
+}
+
+.nabz-inquiry-compact.is-selectable:focus-visible {
+  outline: 2px solid rgba(13, 148, 136, 0.45);
+  outline-offset: 2px;
 }
 
 .nabz-inquiry-compact.is-target {
@@ -2057,29 +2053,8 @@ html[data-theme='dark'] .nabz-excel-filter {
   color: var(--color-accent-dark);
 }
 
-.nabz-inquiry-compact.is-flat .nabz-inquiry-compact__target {
-  margin-top: 0;
-  align-self: center;
-  accent-color: var(--color-accent-dark);
-}
-
-.nabz-inquiry-compact.is-flat .nabz-inquiry-compact__target-badge {
-  margin-top: 0;
-  align-self: center;
-  color: var(--color-accent-dark);
-}
-
 .nabz-inquiry-compact.is-flat.is-readonly {
   cursor: default;
-}
-
-.nabz-inquiry-compact__target {
-  margin-top: 0.35rem;
-  flex-shrink: 0;
-  width: 0.95rem;
-  height: 0.95rem;
-  accent-color: var(--text-primary);
-  cursor: pointer;
 }
 
 .nabz-inquiry-compact__body {
@@ -2099,6 +2074,8 @@ html[data-theme='dark'] .nabz-excel-filter {
   direction: rtl;
   text-align: right;
   white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .nabz-inquiry-compact__amount-value {
@@ -2151,6 +2128,21 @@ html[data-theme='dark'] .nabz-excel-filter {
 
 .nabz-inquiry-compact__body--single-line {
   gap: 0;
+}
+
+.nabz-inquiry-compact__notes {
+  display: inline;
+  min-width: 0;
+  max-width: 14rem;
+  margin-inline-start: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
 }
 
 .nabz-inquiry-compact__amount .nabz-inquiry-compact__dot {
@@ -3874,20 +3866,6 @@ html[data-theme='dark'] .nabz-excel-filter {
   cursor: default;
 }
 
-.nabz-inquiry-compact__target-badge {
-  flex-shrink: 0;
-  width: 1rem;
-  height: 1rem;
-  margin-top: 0.3rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 3px;
-  background: #111;
-  color: var(--color-white-glossy);
-  font-size: 0.65rem;
-  font-weight: 800;
-}
 
 .nabz-quoting-readonly .nabz-quick-inquiry-modal__footer {
   border-top: none;

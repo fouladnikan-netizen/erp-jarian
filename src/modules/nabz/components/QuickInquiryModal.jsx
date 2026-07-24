@@ -340,7 +340,7 @@ function SupplyStrip({
                           onSelectTarget={onSelectTarget}
                           showSupplier={showSupplier}
                           flat
-                          targetGroupName={`nabz-inquiry-target-${itemIndex}`}
+                          showNotes
                           onEdit={canManage && !draftOpen
                             ? (inquiryId) => onEditInquiry(itemIndex, inquiryId)
                             : undefined}
