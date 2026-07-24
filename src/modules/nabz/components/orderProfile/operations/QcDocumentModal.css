@@ -166,6 +166,49 @@
   color: var(--text-secondary);
 }
 
+.qc-drawer__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.qc-drawer__voice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.qc-drawer__voice-btn:hover:not(:disabled) {
+  background: var(--bg-muted);
+}
+
+.qc-drawer__voice-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.qc-drawer__voice-btn.is-listening {
+  border-color: rgba(192, 57, 43, 0.45);
+  background: rgba(192, 57, 43, 0.1);
+  color: #C0392B;
+  animation: qc-voice-pulse 1.2s ease infinite;
+}
+
+@keyframes qc-voice-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.25); }
+  50% { box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.08); }
+}
+
 .qc-drawer__input,
 .qc-drawer__select,
 .qc-drawer__textarea {
@@ -314,6 +357,62 @@
 
 .qc-drawer__attach-name.is-empty {
   color: var(--text-secondary);
+}
+
+.qc-drawer__attach-list {
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.qc-drawer__attach-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  min-width: 0;
+}
+
+.qc-drawer__attach-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 0.3rem;
+  background: var(--bg-muted);
+}
+
+.qc-drawer__attach-item-name {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qc-drawer__attach-remove {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.qc-drawer__attach-remove:hover {
+  background: rgba(192, 57, 43, 0.9);
 }
 
 .qc-drawer__readonly-value {
