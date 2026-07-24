@@ -349,7 +349,6 @@ export default function GatewayMorphTable({
   const isLineMarginEditable = marginEditable && isLineMarginMode;
   const canToggleVatInclusive = allowMarginEdit
     && isOfficialSale
-    && order.status === ORDER_TABS.CURRENT
     && (viewPhase === GATEWAY_PHASES.MOZENE || viewPhase === GATEWAY_PHASES.PISHKESH)
     && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
 

@@ -24,8 +24,8 @@ export const OPERATIONAL_PHASE_ORDER = [
 
 export const OPERATIONAL_PHASE_META = {
   [OPERATIONAL_PHASES.PARVANE]: {
-    label: 'پروانه',
-    subtitle: 'صدور مجوز تأمین',
+    label: 'ماشه تأمین',
+    subtitle: 'تأیید و صدور دستور خرید',
     stageId: STAGE_PARVANE_ID,
   },
   [OPERATIONAL_PHASES.TADAROK]: {

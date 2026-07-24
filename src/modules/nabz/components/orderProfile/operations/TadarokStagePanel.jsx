@@ -2,8 +2,11 @@ import { useMemo, useState } from 'react';
 import ResizableColGroup from '../../../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../../../components/table/ResizableTh';
 import { useResizableColumns } from '../../../../../hooks/useResizableColumns';
+import { DEFAULT_SALE_TYPE } from '../../../constants';
 import { formatAmountRial } from '../../../orderCode';
+import { canEditProfitMargin } from '../../../orderEditPermissions';
 import { getOrderOperationalPhase } from '../../../phase2Service';
+import { calculateQuotingPreview, updateOrderQuoting } from '../../../quotingService';
 import { TADAROK_LINE_STATUS } from '../../../tadarokStageConfig';
 import {
   completeTadarokProcurement,
@@ -15,6 +18,7 @@ import {
   splitTadarokLine,
   updatePurchaseOrder,
 } from '../../../tadarokStageService';
+import { SalePriceColumnHeader } from '../../quickInquiryParts';
 import PurchaseOrderModal from './PurchaseOrderModal';
 import SplitLineModal from './SplitLineModal';
 
@@ -24,7 +28,8 @@ const TADAROK_COLUMNS = [
   { key: 'description', label: 'توضیحات کالا', defaultWidth: 180 },
   { key: 'qty', label: 'مقدار', defaultWidth: 80 },
   { key: 'unit', label: 'واحد', defaultWidth: 64 },
-  { key: 'estimatedPrice', label: 'قیمت تخمینی', defaultWidth: 140 },
+  { key: 'salePrice', label: 'قیمت فروش', defaultWidth: 160 },
+  { key: 'estimatedPrice', label: 'قیمت تأمین', defaultWidth: 160 },
   { key: 'status', label: 'وضعیت', defaultWidth: 120 },
   { key: 'actions', label: 'عملیات', defaultWidth: 96, resizable: false },
 ];
@@ -90,9 +95,10 @@ function ViewPurchaseOrderIcon() {
   );
 }
 
-function formatUnitPrice(amount) {
+function formatSupplyPrice(amount, supplierName) {
   if (!amount) return '—';
-  return `${formatAmountRial(amount)} ریال`;
+  const name = supplierName?.trim() || '—';
+  return `${formatAmountRial(amount)} ${name}`;
 }
 
 export default function TadarokStagePanel({
@@ -105,9 +111,19 @@ export default function TadarokStagePanel({
   const live = isTadarokStageLive(order, operationalViewPhase);
   const rows = useMemo(() => getTadarokProcurementRows(order), [order]);
   const progress = useMemo(() => getTadarokProgress(order), [order]);
+  const preview = useMemo(() => calculateQuotingPreview(order), [order]);
+  const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
+  const isOfficialSale = saleType === 'رسمی';
+  const vatInclusive = Boolean(preview.vatInclusive);
+  const canToggleVat = canEditProfitMargin() && isOfficialSale;
   const [splitLine, setSplitLine] = useState(null);
   const [poModal, setPoModal] = useState({ open: false, line: null, mode: 'create' });
-  const { widths, startResize } = useResizableColumns('nabz-tadarok-lines', TADAROK_COLUMNS);
+  const { widths, startResize } = useResizableColumns('nabz-tadarok-lines-v4', TADAROK_COLUMNS);
+
+  const handleVatInclusiveChange = (next) => {
+    if (!canToggleVat) return;
+    onUpdateOrder?.((current) => updateOrderQuoting(current, { vatInclusive: next }));
+  };
 
   const handleSplitSubmit = (quantities) => {
     const result = splitTadarokLine(order, splitLine.id, quantities);
@@ -136,7 +152,7 @@ export default function TadarokStagePanel({
       ? updatePurchaseOrder(order, poModal.line.id, draft)
       : issuePurchaseOrder(order, poModal.line.id, draft);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان ذخیره حواله وجود ندارد.');
+      window.alert(result.reason || 'امکان ذخیره سفارش خرید وجود ندارد.');
       return;
     }
     onUpdateOrder?.(() => result.order);
@@ -157,11 +173,11 @@ export default function TadarokStagePanel({
     <section className={`tadarok-stage${compact ? ' tadarok-stage--compact' : ''}`}>
       <header className="tadarok-stage__head">
         <div>
-          <h2 className="tadarok-stage__title">تدارک — مدیریت خرید و صدور حواله</h2>
-          <p className="tadarok-stage__subtitle">تفکیک اقلام و صدور حواله خرید برای کاشف</p>
+          <h2 className="tadarok-stage__title">تدارک — مدیریت خرید و صدور سفارش خرید</h2>
+          <p className="tadarok-stage__subtitle">تفکیک اقلام و صدور سفارش خرید برای کاشف</p>
         </div>
         <div className="tadarok-stage__progress">
-          <span className="tadarok-stage__progress-label">پیشرفت حواله‌ها</span>
+          <span className="tadarok-stage__progress-label">پیشرفت سفارش‌های خرید</span>
           <strong>
             {progress.issued.toLocaleString('fa-IR')}
             /
@@ -189,7 +205,17 @@ export default function TadarokStagePanel({
                   resizable={col.resizable !== false}
                   onResizeStart={startResize}
                 >
-                  {col.label}
+                  {col.key === 'salePrice' ? (
+                    <SalePriceColumnHeader
+                      saleType={saleType}
+                      vatInclusive={vatInclusive}
+                      showToggle={isOfficialSale}
+                      disabled={!canToggleVat}
+                      onChange={handleVatInclusiveChange}
+                    />
+                  ) : (
+                    col.label
+                  )}
                 </ResizableTh>
               ))}
             </tr>
@@ -212,24 +238,22 @@ export default function TadarokStagePanel({
                   <td>{row.description || '—'}</td>
                   <td>{row.qty.toLocaleString('fa-IR')}</td>
                   <td>{row.unit}</td>
-                  <td>{formatUnitPrice(row.estimatedUnitPriceRial)}</td>
                   <td>
-                    {row.status === TADAROK_LINE_STATUS.PO_ISSUED ? (
-                      <button
-                        type="button"
-                        className="tadarok-stage__badge tadarok-stage__badge--success tadarok-stage__badge--clickable"
-                        onClick={() => openViewPo(row)}
-                        title="مشاهده جزئیات حواله"
-                      >
-                        {row.statusLabel}
-                      </button>
-                    ) : (
-                      <span className="tadarok-stage__badge tadarok-stage__badge--pending">
-                        {row.statusLabel}
-                      </span>
-                    )}
+                    {row.saleUnitPriceRial
+                      ? formatAmountRial(row.saleUnitPriceRial)
+                      : '—'}
                   </td>
-                  <td className="nabz-table__actions-cell">
+                  <td>{formatSupplyPrice(row.supplyUnitPriceRial, row.supplySupplierName)}</td>
+                  <td>
+                    <span
+                      className={`tadarok-stage__badge tadarok-stage__badge--${
+                        row.status === TADAROK_LINE_STATUS.PO_ISSUED ? 'success' : 'pending'
+                      }`}
+                    >
+                      {row.statusLabel}
+                    </span>
+                  </td>
+                  <td className="nabz-table__actions-cell tadarok-stage__cell--center">
                     <div className="nabz-table__actions">
                       {live && row.canSplit && (
                         <button
@@ -247,8 +271,8 @@ export default function TadarokStagePanel({
                           type="button"
                           className="nabz-table__action-btn nabz-table__action-btn--po"
                           onClick={() => openCreatePo(row)}
-                          aria-label="صدور حواله خرید"
-                          title="صدور حواله خرید"
+                          aria-label="صدور سفارش خرید"
+                          title="صدور سفارش خرید"
                         >
                           <PurchaseOrderIcon />
                         </button>
@@ -258,8 +282,8 @@ export default function TadarokStagePanel({
                           type="button"
                           className="nabz-table__action-btn nabz-table__action-btn--view-po"
                           onClick={() => openViewPo(row)}
-                          aria-label="مشاهده و ویرایش حواله خرید"
-                          title="مشاهده / ویرایش حواله"
+                          title="مشاهده / ویرایش سفارش خرید"
+                          aria-label="مشاهده و ویرایش سفارش خرید"
                         >
                           <ViewPurchaseOrderIcon />
                         </button>
@@ -287,7 +311,7 @@ export default function TadarokStagePanel({
 
       {!live && (
         <p className="tadarok-stage__readonly-hint">
-          نمایش تاریخچه مرحله تدارک — صدور حواله جدید فقط در مرحله فعال جاری مجاز است.
+          نمایش تاریخچه مرحله تدارک — صدور سفارش خرید جدید فقط در مرحله فعال جاری مجاز است.
         </p>
       )}
 

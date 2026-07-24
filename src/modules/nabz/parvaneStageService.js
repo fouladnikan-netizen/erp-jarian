@@ -53,6 +53,11 @@ export function getParvaneOrderTotal(order) {
   return preview.orderTotal;
 }
 
+export function getParvanePredictedProfit(order) {
+  const preview = calculateQuotingPreview(order);
+  return preview.totalProfit || 0;
+}
+
 export function getParvaneItemsRows(order) {
   return (order.items || []).map((item, index) => {
     const target = getTargetInquiry(item);
@@ -82,8 +87,8 @@ export function issueParvaneSupplyPermit(order, driverNotes = '') {
         at: `${getTodayJalali()} · ${getNowTimeFa()}`,
         by: CURRENT_USER,
         summary: trimmed
-          ? `صدور پروانه تأمین — ${trimmed}`
-          : 'صدور پروانه تأمین و ارجاع به کاشف',
+          ? `تأیید و صدور دستور خرید — ${trimmed}`
+          : 'تأیید و صدور دستور خرید — ارجاع به تدارک',
       },
     ],
   };
@@ -107,8 +112,8 @@ export function returnParvaneToPishkesh(order, driverNotes = '') {
           at,
           by: CURRENT_USER,
           summary: trimmed
-            ? `عودت از پروانه به پیش‌کش — ${trimmed}`
-            : 'عدم تایید پروانه — عودت به پیش‌کش',
+            ? `عودت از ماشه تأمین به پیش‌کش — ${trimmed}`
+            : 'عدم تایید ماشه تأمین — عودت به پیش‌کش',
         },
       ],
     },

@@ -45,7 +45,11 @@ export function getOrderDecisionLabel(order) {
   return null;
 }
 
-export function markGatewayDecisionSuccess(order, { paymentType, financeNotes }) {
+export function markGatewayDecisionSuccess(order, {
+  paymentType,
+  financeNotes,
+  paymentTerms,
+}) {
   const decidedAt = formatDecisionTimestamp();
   const withDecision = {
     ...order,
@@ -53,6 +57,15 @@ export function markGatewayDecisionSuccess(order, { paymentType, financeNotes })
       outcome: GATEWAY_DECISION_OUTCOMES.SUCCESS,
       paymentType,
       financeNotes: financeNotes?.trim() || '',
+      paymentTerms: paymentTerms
+        ? {
+          dueDate: paymentTerms.dueDate || '',
+          lcMonths: paymentTerms.lcMonths || '',
+          daysAfterDelivery: paymentTerms.daysAfterDelivery || '',
+          partialAmount: paymentTerms.partialAmount || '',
+          document: paymentTerms.document || null,
+        }
+        : null,
       decidedAt,
       decidedBy: CURRENT_USER,
     },

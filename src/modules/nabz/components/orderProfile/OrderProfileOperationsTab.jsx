@@ -186,7 +186,7 @@ export default function OrderProfileOperationsTab({
 
       <SectionCard
         title="پیوست‌های اسنادی / مجوز تأمین"
-        description="اسناد پروانه، مجوز خرید و معرفی‌نامه‌های انبار"
+        description="اسناد ماشه تأمین، مجوز خرید و معرفی‌نامه‌های انبار"
       >
         <ul className="ops-records">
           {supplyDocs.map((doc) => (

@@ -18,7 +18,7 @@ export const PHASE1_STAGES = [
 ];
 
 export const PHASE2_STAGES = [
-  { id: 4, key: 'parvane', label: 'پروانه' },
+  { id: 4, key: 'parvane', label: 'ماشه تأمین' },
   { id: 5, key: 'tadarok', label: 'تدارک' },
   { id: 6, key: 'tajhiz', label: 'تجهیز' },
   { id: 7, key: 'rahespar', label: 'رهسپار' },

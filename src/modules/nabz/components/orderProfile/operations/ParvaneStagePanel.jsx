@@ -1,25 +1,59 @@
-import { useState } from 'react';
-import ResizableColGroup from '../../../../../components/table/ResizableColGroup';
-import ResizableTh from '../../../../../components/table/ResizableTh';
-import { useResizableColumns } from '../../../../../hooks/useResizableColumns';
+import { useMemo, useState } from 'react';
 import { formatAmountRial } from '../../../orderCode';
+import { calculateQuotingPreview, getOrderQuoting, updateOrderQuoting } from '../../../inquiryService';
+import { canViewSupplierIdentity, DEFAULT_SALE_TYPE } from '../../../constants';
+import { canEditProfitMargin } from '../../../orderEditPermissions';
+import { getGatewayDecision } from '../../../gatewayDecisionService';
 import { getOrderOperationalPhase } from '../../../phase2Service';
 import {
-  getParvaneCreditStatus,
-  getParvaneItemsRows,
   getParvaneOrderTotal,
-  getParvanePaymentBadge,
+  getParvanePredictedProfit,
   isParvaneStageLive,
   issueParvaneSupplyPermit,
   returnParvaneToPishkesh,
 } from '../../../parvaneStageService';
+import QuotingOrderTable from '../../QuotingOrderTable';
 
-const PARVANE_COLUMNS = [
-  { key: 'name', label: 'نام مقطع فولادی', defaultWidth: 180 },
-  { key: 'specs', label: 'مشخصات فنی', defaultWidth: 200 },
-  { key: 'qty', label: 'مقدار', defaultWidth: 100 },
-  { key: 'supplier', label: 'تامین‌کننده پیشنهادی', defaultWidth: 160 },
-];
+function formatProfitPercent(profit, total) {
+  if (!total || total <= 0) return '۰';
+  const pct = (profit / total) * 100;
+  return pct.toLocaleString('fa-IR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  });
+}
+
+function buildPaymentTermsRows(decision) {
+  if (!decision?.paymentType) return [];
+  const terms = decision.paymentTerms || {};
+  const rows = [
+    { label: 'نوع پرداخت', value: decision.paymentType },
+  ];
+  if (terms.dueDate) rows.push({ label: 'تاریخ سررسید', value: terms.dueDate });
+  if (terms.lcMonths) rows.push({ label: 'تعداد ماه LC', value: terms.lcMonths });
+  if (terms.daysAfterDelivery != null && terms.daysAfterDelivery !== '') {
+    rows.push({ label: 'روز پس از تحویل', value: String(terms.daysAfterDelivery) });
+  }
+  if (terms.partialAmount) {
+    rows.push({
+      label: 'مبلغ علی‌الحساب',
+      value: `${formatAmountRial(terms.partialAmount)} ریال`,
+    });
+  }
+  if (terms.document?.name) {
+    rows.push({ label: 'سند پیوست', value: terms.document.name });
+  }
+  if (decision.financeNotes?.trim()) {
+    rows.push({ label: 'توضیحات مالی', value: decision.financeNotes.trim() });
+  }
+  if (decision.decidedAt) {
+    rows.push({ label: 'زمان ثبت', value: decision.decidedAt });
+  }
+  if (decision.decidedBy) {
+    rows.push({ label: 'ثبت‌کننده', value: decision.decidedBy });
+  }
+  return rows;
+}
 
 export default function ParvaneStagePanel({
   order,
@@ -31,16 +65,28 @@ export default function ParvaneStagePanel({
 }) {
   const [driverNotes, setDriverNotes] = useState(order.parvaneDriverNotes || '');
   const live = isParvaneStageLive(order, operationalViewPhase);
-  const paymentBadge = getParvanePaymentBadge(order);
-  const creditStatus = getParvaneCreditStatus(order);
   const orderTotal = getParvaneOrderTotal(order);
-  const items = getParvaneItemsRows(order);
-  const { widths, startResize } = useResizableColumns('nabz-parvane-items', PARVANE_COLUMNS);
+  const predictedProfit = getParvanePredictedProfit(order);
+  const profitPercentLabel = formatProfitPercent(predictedProfit, orderTotal);
+  const preview = useMemo(() => calculateQuotingPreview(order), [order]);
+  const quoting = getOrderQuoting(order);
+  const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
+  const showSupplier = canViewSupplierIdentity();
+  const isOfficialSale = saleType === 'رسمی';
+  const canToggleVat = canEditProfitMargin() && isOfficialSale;
+  const statusLabel = live ? 'آماده تأمین' : 'تأمین صادر شده';
+  const decision = getGatewayDecision(order);
+  const paymentRows = useMemo(() => buildPaymentTermsRows(decision), [decision]);
+
+  const handleVatInclusiveChange = (next) => {
+    if (!canToggleVat) return;
+    onUpdateOrder?.((current) => updateOrderQuoting(current, { vatInclusive: next }));
+  };
 
   const handleIssuePermit = () => {
     const result = issueParvaneSupplyPermit(order, driverNotes);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان صدور پروانه وجود ندارد.');
+      window.alert(result.reason || 'امکان صدور دستور خرید وجود ندارد.');
       return;
     }
     onUpdateOrder?.(() => result.order);
@@ -58,66 +104,74 @@ export default function ParvaneStagePanel({
   return (
     <section className={`parvane-stage${compact ? ' parvane-stage--compact' : ''}`}>
       <header className="parvane-stage__head">
-        <h2 className="parvane-stage__title">پروانه — بررسی و صدور مجوز تأمین</h2>
-        <p className="parvane-stage__subtitle">خلاصه وضعیت برای تصمیم راهبر</p>
+        <h2 className="parvane-stage__title">ماشه تأمین</h2>
       </header>
 
-      <div className="parvane-stage__summary">
-        <div className="parvane-stage__summary-main">
-          <span className="parvane-stage__summary-label">مبلغ کل سفارش</span>
-          <strong className="parvane-stage__summary-amount">
-            {formatAmountRial(orderTotal)}
+      <div className="parvane-stage__ribbon" role="region" aria-label="خلاصه مالی ماشه تأمین">
+        <div className="parvane-stage__ribbon-start">
+          <span className={`parvane-stage__status${live ? ' is-ready' : ' is-done'}`}>
+            وضعیت: {statusLabel}
+          </span>
+          <span className="parvane-stage__ribbon-divider" aria-hidden="true" />
+          <div className="parvane-stage__ribbon-total">
+            <span className="parvane-stage__summary-label">مبلغ کل سفارش</span>
+            <strong className="parvane-stage__summary-amount">
+              {formatAmountRial(orderTotal)}
+              {' '}
+              <span>ریال</span>
+            </strong>
+          </div>
+        </div>
+
+        <div className="parvane-stage__profit-chip">
+          <span className="parvane-stage__profit-label">سود پیش‌بینی‌شده:</span>
+          <strong className="parvane-stage__profit-value">
+            {formatAmountRial(predictedProfit)}
             {' '}
-            <span>ریال</span>
+            ریال
+            {' '}
+            <span className="parvane-stage__profit-pct">({profitPercentLabel}٪)</span>
           </strong>
         </div>
-        <div className="parvane-stage__summary-badges">
-          <span className={`parvane-stage__badge parvane-stage__badge--${paymentBadge.kind}`}>
-            {paymentBadge.label}
-          </span>
-          <span className={`parvane-stage__badge parvane-stage__badge--${creditStatus.kind}`}>
-            {creditStatus.label}
-          </span>
-        </div>
+
+        {live ? (
+          <button
+            type="button"
+            className="btn btn--primary nabz-cta parvane-stage__ribbon-cta"
+            onClick={handleIssuePermit}
+          >
+            تأیید و صدور دستور خرید
+          </button>
+        ) : (
+          <span className="parvane-stage__ribbon-spacer" aria-hidden="true" />
+        )}
       </div>
 
-      <div className="parvane-stage__table-wrap">
-        <table className="parvane-stage__table data-table--resizable">
-          <ResizableColGroup columns={PARVANE_COLUMNS} widths={widths} />
-          <thead>
-            <tr>
-              {PARVANE_COLUMNS.map((col) => (
-                <ResizableTh
-                  key={col.key}
-                  columnKey={col.key}
-                  resizable={col.resizable !== false}
-                  onResizeStart={startResize}
-                >
-                  {col.label}
-                </ResizableTh>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={PARVANE_COLUMNS.length} className="parvane-stage__empty">
-                  قلمی ثبت نشده است.
-                </td>
-              </tr>
-            ) : (
-              items.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.name}</td>
-                  <td>{row.specs}</td>
-                  <td>{row.qty}</td>
-                  <td>{row.supplier}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <QuotingOrderTable
+        order={order}
+        preview={preview}
+        lineMarginMode={quoting.marginMode}
+        showSupplier={showSupplier}
+        saleType={saleType}
+        storageKey="nabz-parvane-quoting-table"
+        showVatToggle={isOfficialSale}
+        vatToggleDisabled={!canToggleVat}
+        onVatInclusiveChange={handleVatInclusiveChange}
+      />
+
+      {paymentRows.length > 0 && (
+        <section className="parvane-stage__payment-terms" aria-label="شرایط پرداخت ثبت‌شده">
+          <h3 className="parvane-stage__payment-terms-title">شرایط پرداخت (ثبت هنگام تأیید سفارش)</h3>
+          <dl className="parvane-stage__payment-terms-list">
+            {paymentRows.map((row) => (
+              <div key={row.label} className="parvane-stage__payment-terms-row">
+                <dt>{row.label}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       {live ? (
         <footer className="parvane-stage__actions">
@@ -128,17 +182,10 @@ export default function ParvaneStagePanel({
               rows={2}
               value={driverNotes}
               onChange={(e) => setDriverNotes(e.target.value)}
-              placeholder="توضیح کوتاه برای کاشف (اختیاری)..."
+              placeholder="توضیح کوتاه برای تدارک (اختیاری)..."
             />
           </label>
           <div className="parvane-stage__buttons">
-            <button
-              type="button"
-              className="btn btn--primary parvane-stage__btn-primary"
-              onClick={handleIssuePermit}
-            >
-              صدور پروانه تأمین و ارجاع به کاشف
-            </button>
             <button
               type="button"
               className="btn btn--outline parvane-stage__btn-secondary"
@@ -150,7 +197,7 @@ export default function ParvaneStagePanel({
         </footer>
       ) : (
         <p className="parvane-stage__readonly-hint">
-          نمایش تاریخچه مرحله پروانه — اقدام فقط در مرحله فعال جاری مجاز است.
+          نمایش تاریخچه ماشه تأمین — اقدام فقط در مرحله فعال جاری مجاز است.
         </p>
       )}
     </section>

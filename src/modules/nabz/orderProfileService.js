@@ -252,16 +252,18 @@ export function buildOrderActivityTimeline(order) {
 }
 
 export function shouldShowPrintProforma(order) {
-  // صدور/چاپ پیش‌فاکتور فقط در مرحله پیش‌کش (مظنه قبلاً تکمیل شده)
-  return order.stageId >= STAGE_PISHKESH_ID;
+  // صدور/چاپ پیش‌فاکتور فقط در مرحله پیش‌کش و تا قبل از تعیین تکلیف نهایی
+  return order.status === ORDER_TABS.CURRENT && order.stageId >= STAGE_PISHKESH_ID;
 }
 
 export function shouldShowIssueProforma(order) {
+  if (order.status !== ORDER_TABS.CURRENT) return false;
   return order.stageId >= STAGE_PISHKESH_ID;
 }
 
 /** تعیین تکلیف فقط بعد از صدور و مهر/امضای پیش‌فاکتور */
 export function shouldShowGatewayDecisionAction(order) {
+  if (order.status !== ORDER_TABS.CURRENT) return false;
   return shouldShowIssueProforma(order) && Boolean(order.proforma?.signed);
 }
 
@@ -271,6 +273,7 @@ export function shouldShowGatewayDecisionAction(order) {
  * - صادر + امضا + بدون تغییر محتوا → به‌روزرسانی + نمایش
  * - هر تغییر در سفارش/قیمت/حاشیه → به‌جای نمایش، دوباره صدور
  * - صادر شده ولی هنوز امضا نشده و محتوا جاری → فقط نمایش
+ * - پس از تایید/رد معامله (سفارش موفق یا ناموفق) هیچ‌کدام نمایش داده نمی‌شوند
  */
 export function getProformaHeaderActions(order) {
   const empty = { showIssue: false, showView: false, showUpdate: false };

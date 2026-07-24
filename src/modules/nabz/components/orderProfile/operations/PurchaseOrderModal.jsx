@@ -45,18 +45,12 @@ function PaymentTermsFields({ paymentTerms, onChange, readOnly = false }) {
 
   if (paymentTerms.type === PAYMENT_TERM_TYPES.ON_DELIVERY) {
     return (
-      <label className="tadarok-form__field tadarok-form__field--full">
-        <span>زمان تحویل</span>
-        <input
-          type="text"
-          className="tadarok-form__input"
-          value={paymentTerms.deliveryTime}
-          onChange={(e) => update({ deliveryTime: e.target.value })}
-          placeholder="مثلاً: ۳ روز کاری پس از صدور حواله"
-          readOnly={readOnly}
-          disabled={readOnly}
-        />
-      </label>
+      <JalaliDatePicker
+        label="تاریخ تحویل"
+        value={paymentTerms.deliveryTime}
+        onChange={(deliveryTime) => update({ deliveryTime })}
+        disabled={readOnly}
+      />
     );
   }
 
@@ -175,7 +169,13 @@ export default function PurchaseOrderModal({
     const base = getEmptyPurchaseOrderDraft(line);
     setDraft({
       ...base,
-      supplierId: defaultSupplierId ? String(defaultSupplierId) : '',
+      supplierId: defaultSupplierId
+        ? String(defaultSupplierId)
+        : (base.supplierId || ''),
+      supplyType: line.kavoshSupplyType || base.supplyType,
+      agreedUnitPriceRial: line.inquiryUnitPriceRial != null && line.inquiryUnitPriceRial !== ''
+        ? String(line.inquiryUnitPriceRial)
+        : base.agreedUnitPriceRial,
       purchaseQty: line.qty != null ? String(line.qty) : base.purchaseQty,
     });
     setEditing(true);
@@ -217,9 +217,9 @@ export default function PurchaseOrderModal({
   };
 
   const title = isEdit
-    ? (editing ? 'ویرایش حواله خرید' : 'جزئیات حواله خرید')
-    : 'صدور حواله خرید';
-  const submitLabel = isEdit ? 'ذخیره تغییرات' : 'صدور حواله خرید';
+    ? (editing ? 'ویرایش سفارش خرید' : 'جزئیات سفارش خرید')
+    : 'صدور سفارش خرید';
+  const submitLabel = isEdit ? 'ذخیره تغییرات' : 'صدور سفارش خرید';
 
   return (
     <div className="tadarok-modal" role="presentation">
@@ -381,7 +381,7 @@ export default function PurchaseOrderModal({
             </button>
             {isEdit && readOnly && (
               <button type="button" className="btn btn--primary" onClick={() => setEditing(true)}>
-                ویرایش حواله
+                ویرایش سفارش خرید
               </button>
             )}
             {!readOnly && (

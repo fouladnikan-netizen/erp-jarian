@@ -12,8 +12,6 @@ import {
   TADAROK_LINE_STATUS_LABEL,
 } from './tadarokStageConfig';
 
-const ESTIMATED_PRICE_FACTOR = 1.10;
-
 export function isTadarokStageLive(order, operationalViewPhase) {
   return order.status === ORDER_TABS.SUCCESS
     && order.stageId === STAGE_TADAROK_ID
@@ -21,12 +19,24 @@ export function isTadarokStageLive(order, operationalViewPhase) {
     && operationalViewPhase === OPERATIONAL_PHASES.TADAROK;
 }
 
+function getLineKavoshContext(order, line, preview) {
+  const item = order.items?.[line.sourceItemIndex];
+  const target = item ? getTargetInquiry(item) : null;
+  const previewLine = preview?.lines?.[line.sourceItemIndex];
+  const kavoshSupplierId = target?.supplierId || '';
+  return {
+    inquiryUnitPriceRial: Number(target?.unitPrice) || 0,
+    kavoshSupplierId,
+    kavoshSupplierName: kavoshSupplierId ? getSupplierName(kavoshSupplierId) : '',
+    kavoshSupplyType: target?.supplyType || 'رسمی',
+    saleUnitPriceRial: previewLine?.saleUnitPrice || 0,
+  };
+}
+
 function buildInitialTadarokLines(order) {
-  const preview = calculateQuotingPreview(order);
   return (order.items || []).map((item, index) => {
     const target = getTargetInquiry(item);
-    const previewLine = preview.lines[index];
-    const invoicePrice = previewLine?.saleUnitPrice || target?.unitPrice || 0;
+    const inquiryPrice = Number(target?.unitPrice) || 0;
     return {
       id: `tl-${order.id}-${index}`,
       sourceItemIndex: index,
@@ -35,7 +45,7 @@ function buildInitialTadarokLines(order) {
       description: item.description || '',
       qty: Number(item.qty) || 0,
       unit: item.unit || 'تن',
-      estimatedUnitPriceRial: Math.round(invoicePrice * ESTIMATED_PRICE_FACTOR),
+      estimatedUnitPriceRial: Math.round(inquiryPrice),
       status: TADAROK_LINE_STATUS.PENDING,
       purchaseOrder: null,
     };
@@ -48,18 +58,40 @@ export function getTadarokLines(order) {
 }
 
 export function getTadarokProcurementRows(order) {
+  const preview = calculateQuotingPreview(order);
   const lines = getTadarokLines(order);
-  return lines.map((line, index) => ({
-    ...line,
-    rowNumber: index + 1,
-    statusLabel: TADAROK_LINE_STATUS_LABEL[line.status] || '—',
-    isSplitChild: Boolean(line.splitParentId),
-    canSplit: line.status === TADAROK_LINE_STATUS.PENDING && !line.splitParentId,
-    canIssuePo: line.status === TADAROK_LINE_STATUS.PENDING,
-    supplierLabel: line.purchaseOrder?.supplierId
-      ? getSupplierName(line.purchaseOrder.supplierId)
-      : '—',
-  }));
+  return lines.map((line, index) => {
+    const kavosh = getLineKavoshContext(order, line, preview);
+    const finalPurchasePrice = line.purchaseOrder?.agreedUnitPriceRial;
+    const hasFinalPurchase = line.status === TADAROK_LINE_STATUS.PO_ISSUED
+      && finalPurchasePrice != null
+      && finalPurchasePrice !== '';
+    const finalProfitRial = hasFinalPurchase
+      ? kavosh.saleUnitPriceRial - Number(finalPurchasePrice)
+      : null;
+    const po = line.purchaseOrder;
+    const supplyUnitPriceRial = hasFinalPurchase
+      ? Number(finalPurchasePrice)
+      : kavosh.inquiryUnitPriceRial;
+    const supplySupplierName = hasFinalPurchase && po?.supplierId
+      ? getSupplierName(po.supplierId)
+      : (kavosh.kavoshSupplierName || '');
+
+    return {
+      ...line,
+      ...kavosh,
+      estimatedUnitPriceRial: kavosh.inquiryUnitPriceRial,
+      supplyUnitPriceRial,
+      supplySupplierName,
+      rowNumber: index + 1,
+      statusLabel: TADAROK_LINE_STATUS_LABEL[line.status] || '—',
+      isSplitChild: Boolean(line.splitParentId),
+      canSplit: line.status === TADAROK_LINE_STATUS.PENDING,
+      canIssuePo: line.status === TADAROK_LINE_STATUS.PENDING,
+      finalProfitRial,
+      supplierLabel: supplySupplierName || '—',
+    };
+  });
 }
 
 export function getTadarokProgress(order) {
@@ -84,7 +116,7 @@ function validatePaymentTerms(paymentTerms) {
   }
 
   if (type === PAYMENT_TERM_TYPES.ON_DELIVERY) {
-    if (!paymentTerms.deliveryTime?.trim()) return 'زمان تحویل را وارد کنید.';
+    if (!isValidJalaliDate(paymentTerms.deliveryTime)) return 'تاریخ تحویل معتبر نیست.';
   }
 
   if (type === PAYMENT_TERM_TYPES.DEFERRED) {
@@ -125,10 +157,7 @@ export function splitTadarokLine(order, lineId, quantities) {
   const line = lines.find((entry) => entry.id === lineId);
   if (!line) return { accepted: false, reason: 'سطر یافت نشد.' };
   if (line.status === TADAROK_LINE_STATUS.PO_ISSUED) {
-    return { accepted: false, reason: 'برای سطر دارای حواله امکان تفکیک وجود ندارد.' };
-  }
-  if (line.splitParentId) {
-    return { accepted: false, reason: 'زیرسطر قابل تفکیک مجدد نیست.' };
+    return { accepted: false, reason: 'برای سطر دارای سفارش خرید امکان تفکیک وجود ندارد.' };
   }
 
   const normalized = quantities.map((qty) => Number(qty)).filter((qty) => qty > 0);
@@ -145,6 +174,7 @@ export function splitTadarokLine(order, lineId, quantities) {
   }
 
   const parentId = line.id;
+  const lineIndex = lines.findIndex((entry) => entry.id === lineId);
   const children = normalized.map((qty, index) => ({
     ...line,
     id: `${parentId}-s${index + 1}`,
@@ -154,7 +184,11 @@ export function splitTadarokLine(order, lineId, quantities) {
     purchaseOrder: null,
   }));
 
-  const nextLines = lines.filter((entry) => entry.id !== lineId).concat(children);
+  const nextLines = [
+    ...lines.slice(0, lineIndex),
+    ...children,
+    ...lines.slice(lineIndex + 1),
+  ];
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
 
   return {
@@ -196,7 +230,7 @@ export function issuePurchaseOrder(order, lineId, draft) {
 
   const line = lines[lineIndex];
   if (line.status === TADAROK_LINE_STATUS.PO_ISSUED) {
-    return { accepted: false, reason: 'حواله این سطر قبلاً صادر شده است.' };
+    return { accepted: false, reason: 'سفارش خرید این سطر قبلاً صادر شده است.' };
   }
 
   const validationError = validatePurchaseOrderDraft(draft, line);
@@ -230,7 +264,7 @@ export function issuePurchaseOrder(order, lineId, draft) {
           type: 'purchase_order_issued',
           at,
           by: CURRENT_USER,
-          summary: `صدور حواله خرید ${poNumber} — ${line.name} — ${supplierName}`,
+          summary: `صدور سفارش خرید ${poNumber} — ${line.name} — ${supplierName}`,
         },
       ],
     },
@@ -244,7 +278,7 @@ export function updatePurchaseOrder(order, lineId, draft) {
 
   const line = lines[lineIndex];
   if (line.status !== TADAROK_LINE_STATUS.PO_ISSUED || !line.purchaseOrder) {
-    return { accepted: false, reason: 'حواله‌ای برای ویرایش یافت نشد.' };
+    return { accepted: false, reason: 'سفارش خریدی برای ویرایش یافت نشد.' };
   }
 
   const validationError = validatePurchaseOrderDraft(draft, line);
@@ -275,7 +309,7 @@ export function updatePurchaseOrder(order, lineId, draft) {
           type: 'purchase_order_updated',
           at,
           by: CURRENT_USER,
-          summary: `ویرایش حواله خرید ${purchaseOrder.poNumber || ''} — ${line.name} — ${supplierName}`.trim(),
+          summary: `ویرایش سفارش خرید ${purchaseOrder.poNumber || ''} — ${line.name} — ${supplierName}`.trim(),
         },
       ],
     },
@@ -287,7 +321,7 @@ export function completeTadarokProcurement(order) {
   if (!progress.allIssued) {
     return {
       accepted: false,
-      reason: 'برای تکمیل تدارک، حواله خرید همه سطرها باید صادر شود.',
+      reason: 'برای تکمیل تدارک، سفارش خرید همه سطرها باید صادر شود.',
     };
   }
   return advanceOperationalPhase(order, OPERATIONAL_PHASES.TAJHIZ);

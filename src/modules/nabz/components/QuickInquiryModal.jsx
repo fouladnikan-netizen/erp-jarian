@@ -485,7 +485,6 @@ export default function QuickInquiryModal({
     : 'قیمت فروش';
   const canToggleVatInclusive = canEditProfitMargin()
     && isOfficialSale
-    && order.status === ORDER_TABS.CURRENT
     && (showQuoting || showPishkesh)
     && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
   const showPrimaryAction = isGatewayView && isLivePhase && !showPishkesh;
@@ -863,7 +862,7 @@ export default function QuickInquiryModal({
                       <SalePriceColumnHeader
                         saleType={saleType}
                         vatInclusive={vatInclusive}
-                        showToggle={showQuoting}
+                        showToggle={showQuoting || showPishkesh}
                         disabled={!canToggleVatInclusive}
                         onChange={handleVatInclusiveChange}
                       />

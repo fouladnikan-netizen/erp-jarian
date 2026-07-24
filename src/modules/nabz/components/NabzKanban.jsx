@@ -99,7 +99,7 @@ export default function NabzKanban({
       {isPhase2Only && (
         <div className="nabz-kanban-phases nabz-kanban-phases--single" aria-hidden="true">
           <span className="nabz-kanban-phases__label nabz-kanban-phases__label--p2">
-            فاز دوم — تحقق و عملیات (پروانه تا سرانجام)
+            فاز دوم — تحقق و عملیات (ماشه تأمین تا سرانجام)
           </span>
         </div>
       )}
