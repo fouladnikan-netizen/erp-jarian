@@ -19,6 +19,57 @@ export function formatPriceLine(amount) {
   );
 }
 
+export function getSalePriceColumnLabel(saleType, vatInclusive = false) {
+  if (saleType !== 'رسمی') return 'قیمت فروش';
+  return vatInclusive ? 'قیمت با مالیات' : 'قیمت قبل از مالیات';
+}
+
+/** سوئیچ روز/شب برای نمایش قیمت با/بدون ارزش افزوده */
+export function VatInclusiveToggle({ checked = false, disabled = false, onChange }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      className={`nabz-vat-toggle${checked ? ' is-on' : ''}`}
+      title={checked ? 'قیمت با مالیات ارزش افزوده' : 'قیمت قبل از مالیات ارزش افزوده'}
+      aria-label={checked ? 'قیمت با مالیات ارزش افزوده' : 'قیمت قبل از مالیات ارزش افزوده'}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!disabled) onChange?.(!checked);
+      }}
+    >
+      <span className="nabz-vat-toggle__track" aria-hidden="true">
+        <span className="nabz-vat-toggle__knob" />
+      </span>
+    </button>
+  );
+}
+
+export function SalePriceColumnHeader({
+  saleType,
+  vatInclusive = false,
+  showToggle = false,
+  disabled = false,
+  onChange,
+}) {
+  const label = getSalePriceColumnLabel(saleType, vatInclusive);
+  return (
+    <span className="nabz-sale-col-head">
+      <span className="nabz-sale-col-head__label">{label}</span>
+      {showToggle ? (
+        <VatInclusiveToggle
+          checked={vatInclusive}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      ) : null}
+    </span>
+  );
+}
+
 export function formatMarginCellValue(mode, linePreview) {
   if (!linePreview) return '—';
   if (mode === MARGIN_MODES.ORDER_FIXED_PERCENT || mode === MARGIN_MODES.ORDER_FIXED_RIAL) {

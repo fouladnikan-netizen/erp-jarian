@@ -29,7 +29,7 @@ import {
 import { getSupplierName, listSuppliers } from '../../../suppliers';
 import { SUPPLY_CHANNEL_TYPES } from '../../../inquiryConfig';
 import { formatAmountRial } from '../../../orderCode';
-import { formatPriceLine, formatMarginCellValue, LineMarginCell, QuotingMatrix } from '../../quickInquiryParts';
+import { formatMarginCellValue, LineMarginCell, QuotingMatrix, SalePriceColumnHeader } from '../../quickInquiryParts';
 import TruncatedText from '../../TruncatedText';
 import MoneyInput from '../../MoneyInput';
 import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
@@ -328,7 +328,11 @@ export default function GatewayMorphTable({
   const quoting = getOrderQuoting(order);
   const preview = useMemo(() => calculateQuotingPreview(order), [order]);
   const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
-  const saleColumnLabel = saleType === 'رسمی' ? 'قیمت قبل از مالیات' : 'قیمت فروش';
+  const isOfficialSale = saleType === 'رسمی';
+  const vatInclusive = Boolean(preview.vatInclusive);
+  const saleColumnLabel = isOfficialSale
+    ? (vatInclusive ? 'قیمت با مالیات' : 'قیمت قبل از مالیات')
+    : 'قیمت فروش';
   const showSupplier = canViewSupplierIdentity();
   const live = isGatewayLivePhase(orderPhase, viewPhase);
   const isReadOnly = isGatewayPhaseReadOnly(orderPhase, viewPhase);
@@ -343,6 +347,11 @@ export default function GatewayMorphTable({
   const isLineMarginMode = quoting.marginMode === MARGIN_MODES.LINE_FIXED_RIAL
     || quoting.marginMode === MARGIN_MODES.LINE_FIXED_PERCENT;
   const isLineMarginEditable = marginEditable && isLineMarginMode;
+  const canToggleVatInclusive = allowMarginEdit
+    && isOfficialSale
+    && order.status === ORDER_TABS.CURRENT
+    && (viewPhase === GATEWAY_PHASES.MOZENE || viewPhase === GATEWAY_PHASES.PISHKESH)
+    && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
 
   const columns = useMemo(
     () => buildColumns(viewPhase, saleColumnLabel),
@@ -455,7 +464,17 @@ export default function GatewayMorphTable({
           onResizeStart={startResize}
           className={`gateway-th gateway-th--${col.group}`}
         >
-          {col.label}
+          {col.key === 'sale' && isOfficialSale ? (
+            <SalePriceColumnHeader
+              saleType={saleType}
+              vatInclusive={vatInclusive}
+              showToggle
+              disabled={!canToggleVatInclusive}
+              onChange={(next) => onUpdateQuoting?.({ vatInclusive: next })}
+            />
+          ) : (
+            col.label
+          )}
         </ResizableTh>
       ))}
     </tr>
@@ -564,10 +583,10 @@ export default function GatewayMorphTable({
           <td><LockedText>{item.unit || '—'}</LockedText></td>
           <td className="gateway-table__text gateway-td--supply">
             {target ? (
-              <span className="gateway-master-target__supplier">
-                <span className="gateway-master-target__tick" aria-hidden="true">
-                  <CheckIcon size={11} />
-                </span>
+              <span
+                className={`gateway-master-target__supplier gateway-master-target__supplier--${SUPPLY_TYPE_DOT_CLASS[target.supplyType] || 'is-official'}`}
+                title={target.supplyType}
+              >
                 {getInquirySupplierLabel(target, targetIndex, showSupplier)}
               </span>
             ) : (
@@ -791,7 +810,7 @@ export default function GatewayMorphTable({
         </td>
         <td className="gateway-table__num gateway-td--sale">
           {linePreview.hasTarget && linePreview.saleUnitPrice > 0
-            ? formatPriceLine(linePreview.saleUnitPrice)
+            ? formatAmountRial(linePreview.saleUnitPrice)
             : '—'}
         </td>
       </tr>

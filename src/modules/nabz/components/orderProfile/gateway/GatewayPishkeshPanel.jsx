@@ -1,4 +1,3 @@
-import { DEFAULT_SALE_TYPE } from '../../../constants';
 import { GATEWAY_PHASES } from '../../../gatewayConfig';
 import { formatAmountRialWords } from '../../../numberToPersianWords';
 import { formatPriceLine } from '../../quickInquiryParts';
@@ -12,7 +11,7 @@ export default function GatewayPishkeshPanel({
 
   if (!showPanel) return null;
 
-  const isOfficial = (saleType || DEFAULT_SALE_TYPE) === 'رسمی';
+  const showVat = Boolean(preview?.showVatBreakdown);
 
   return (
     <section className="gateway-pishkesh-panel">
@@ -23,7 +22,7 @@ export default function GatewayPishkeshPanel({
             <span>جمع کل اقلام</span>
             <strong className="nabz-price-line">{formatPriceLine(preview.subtotal)}</strong>
           </div>
-          {isOfficial && (
+          {showVat && (
             <div className="gateway-pishkesh-panel__row">
               <span>مالیات بر ارزش افزوده (۱۰٪)</span>
               <strong className="nabz-price-line">{formatPriceLine(preview.vatAmount)}</strong>

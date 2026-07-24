@@ -214,7 +214,7 @@ function TotalsBlock({ viewModel, measure = false }) {
           <span>جمع پیش فاکتور:</span>
           <span>{formatInvoiceNumber(viewModel.subtotal)}</span>
         </div>
-        {viewModel.isOfficial && (
+        {(viewModel.showVatBreakdown ?? viewModel.isOfficial) && (
           <div className="invoice-doc__totals-row">
             <span>جمع مالیات بر ارزش افزوده:</span>
             <span>{formatInvoiceNumber(viewModel.vatAmount)}</span>

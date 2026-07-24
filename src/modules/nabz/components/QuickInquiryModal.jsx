@@ -55,7 +55,7 @@ import {
   canViewSupplierIdentity,
   DEFAULT_SALE_TYPE,
 } from '../constants';
-import { toDisplayOrderCode } from '../orderCode';
+import { toDisplayOrderCode, formatAmountRial } from '../orderCode';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../orderStageService';
 import { getCustomerById } from '../customers';
 import ProformaTab from './ProformaTab';
@@ -67,6 +67,7 @@ import {
   InquiryCompact,
   LineMarginCell,
   QuotingMatrix,
+  SalePriceColumnHeader,
 } from './quickInquiryParts';
 import MoneyInput from './MoneyInput';
 import TruncatedText from './TruncatedText';
@@ -297,7 +298,7 @@ function SupplyStrip({
             <td className="nabz-quick-table__final">
               {linePreview?.hasTarget && linePreview.saleUnitPrice > 0 ? (
                 <div className="nabz-price-line nabz-price-line--emphasis">
-                  {formatPriceLine(linePreview.saleUnitPrice)}
+                  <span className="nabz-price-line__value">{formatAmountRial(linePreview.saleUnitPrice)}</span>
                 </div>
               ) : (
                 <span className="nabz-quick-table__muted">—</span>
@@ -477,7 +478,16 @@ export default function QuickInquiryModal({
   }, [lineMarginMode]);
 
   const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
-  const saleColumnLabel = saleType === 'رسمی' ? 'قیمت قبل از مالیات' : 'قیمت فروش';
+  const isOfficialSale = saleType === 'رسمی';
+  const vatInclusive = Boolean(preview.vatInclusive);
+  const saleColumnLabel = isOfficialSale
+    ? (vatInclusive ? 'قیمت با مالیات' : 'قیمت قبل از مالیات')
+    : 'قیمت فروش';
+  const canToggleVatInclusive = canEditProfitMargin()
+    && isOfficialSale
+    && order.status === ORDER_TABS.CURRENT
+    && (showQuoting || showPishkesh)
+    && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);
   const showPrimaryAction = isGatewayView && isLivePhase && !showPishkesh;
   const primaryActionLabel = showQuoting ? 'تکمیل مظنه' : 'تکمیل کاوش';
   const primaryActionDisabled = showQuoting ? !canCompleteQuote : !canCompleteInquiry;
@@ -583,6 +593,12 @@ export default function QuickInquiryModal({
     }
     setWarning('');
     onUpdateQuoting(order.id, patch);
+  };
+
+  const handleVatInclusiveChange = (next) => {
+    if (!canToggleVatInclusive) return;
+    setWarning('');
+    onUpdateQuoting(order.id, { vatInclusive: next });
   };
 
   const openDraft = (itemIndex) => {
@@ -843,7 +859,17 @@ export default function QuickInquiryModal({
                         : undefined
                     }
                   >
-                    {col.key === 'sale' ? saleColumnLabel : COLUMN_LABELS[col.key]}
+                    {col.key === 'sale' && isOfficialSale ? (
+                      <SalePriceColumnHeader
+                        saleType={saleType}
+                        vatInclusive={vatInclusive}
+                        showToggle={showQuoting}
+                        disabled={!canToggleVatInclusive}
+                        onChange={handleVatInclusiveChange}
+                      />
+                    ) : (
+                      col.key === 'sale' ? saleColumnLabel : COLUMN_LABELS[col.key]
+                    )}
                   </ResizableTh>
                 ))}
               </tr>
@@ -911,7 +937,7 @@ export default function QuickInquiryModal({
                     <span>جمع سفارش</span>
                     <strong className="nabz-price-line">{formatPriceLine(preview.subtotal)}</strong>
                   </div>
-                  {saleType === 'رسمی' && (
+                  {preview.showVatBreakdown && (
                     <div className="nabz-quoting-footer__row">
                       <span>مالیات ارزش افزوده</span>
                       <strong className="nabz-price-line">{formatPriceLine(preview.vatAmount)}</strong>

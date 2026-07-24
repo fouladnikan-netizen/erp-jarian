@@ -1,8 +1,7 @@
-import { DEFAULT_SALE_TYPE } from '../../../constants';
 import { formatPriceLine } from '../../quickInquiryParts';
 
-export default function GatewayFinancialSummary({ preview, saleType }) {
-  const isOfficial = (saleType || DEFAULT_SALE_TYPE) === 'رسمی';
+export default function GatewayFinancialSummary({ preview }) {
+  const showVat = Boolean(preview?.showVatBreakdown);
 
   return (
     <footer className="gateway-summary">
@@ -12,7 +11,7 @@ export default function GatewayFinancialSummary({ preview, saleType }) {
             <span>جمع سفارش</span>
             <strong className="nabz-price-line">{formatPriceLine(preview.subtotal)}</strong>
           </div>
-          {isOfficial && (
+          {showVat && (
             <div className="gateway-summary__row">
               <span>مالیات ارزش افزوده</span>
               <strong className="nabz-price-line">{formatPriceLine(preview.vatAmount)}</strong>

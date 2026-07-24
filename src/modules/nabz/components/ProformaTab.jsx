@@ -66,7 +66,7 @@ export default function ProformaTab({
           <span>جمع پیش‌فاکتور</span>
           <strong>{formatPriceLine(viewModel.subtotal)}</strong>
         </div>
-        {viewModel.isOfficial && (
+        {(viewModel.showVatBreakdown ?? viewModel.isOfficial) && (
           <div className="nabz-proforma-footer__row">
             <span>جمع مالیات ارزش افزوده (۱۰٪)</span>
             <strong>{formatPriceLine(viewModel.vatAmount)}</strong>

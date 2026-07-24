@@ -78,14 +78,17 @@ export function getLatestProformaVersion(order) {
 
 /** اثرانگشت محتوا برای تشخیص تغییر نسبت به آخرین نسخه بایگانی‌شده */
 export function buildProformaFingerprint(order) {
-  const preview = calculateQuotingPreview(order);
+  // پیش‌فاکتور همیشه قیمت قبل از مالیات رسمی را مبنا می‌گیرد (مستقل از سوئیچ نمایش مظنه/پیش‌کش)
+  const preview = calculateQuotingPreview(order, { forceVatExclusive: true });
   const terms = getProformaTerms(order);
+  const quoting = order.quoting ? { ...order.quoting } : null;
+  if (quoting) delete quoting.vatInclusive;
   return JSON.stringify({
     customerId: order.customerId,
     customer: order.customer,
     saleType: preview.saleType || order.saleType || 'رسمی',
     terms,
-    quoting: order.quoting || null,
+    quoting,
     subtotal: preview.subtotal,
     vatAmount: preview.vatAmount,
     orderTotal: preview.orderTotal,
@@ -106,7 +109,9 @@ export function buildProformaFingerprint(order) {
 }
 
 export function buildProformaViewModel(order, options = {}) {
-  const preview = calculateQuotingPreview(order);
+  // پیش‌نمایش/سند پیش‌فاکتور برای فروش رسمی همیشه قیمت قبل از مالیات است
+  // (مستقل از سوئیچ نمایش در مظنه و پیش‌کش)
+  const preview = calculateQuotingPreview(order, { forceVatExclusive: true });
   const customer = getCustomerById(order.customerId);
   const saleType = preview.saleType || order.saleType || 'رسمی';
   const isOfficial = saleType === 'رسمی';
@@ -147,6 +152,8 @@ export function buildProformaViewModel(order, options = {}) {
     assigneeMobile: resolveAssigneeMobile(order.assignee),
     saleType,
     isOfficial,
+    vatInclusive: false,
+    showVatBreakdown: isOfficial,
     salePriceLabel: isOfficial ? 'قیمت قبل از مالیات' : 'قیمت فروش',
     lines,
     subtotal: preview.subtotal,

@@ -17,5 +17,6 @@ export function getDefaultQuoting() {
     marginMode: MARGIN_MODES.ORDER_FIXED_PERCENT,
     orderMarginValue: '',
     lineMargins: {},
+    vatInclusive: false,
   };
 }

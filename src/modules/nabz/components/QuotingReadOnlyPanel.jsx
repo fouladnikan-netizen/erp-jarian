@@ -2,10 +2,11 @@ import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
 import { useResizableColumns } from '../../../hooks/useResizableColumns';
 import { getTargetInquiry } from '../inquiryService';
-import { DEFAULT_SALE_TYPE } from '../constants';
+import { formatAmountRial } from '../orderCode';
 import {
   formatMarginCellValue,
   formatPriceLine,
+  getSalePriceColumnLabel,
   InquiryCompact,
   QuotingMatrix,
 } from './quickInquiryParts';
@@ -42,7 +43,7 @@ export default function QuotingReadOnlyPanel({
   showSupplier,
   saleType,
 }) {
-  const saleColumnLabel = saleType === 'رسمی' ? 'قیمت قبل از مالیات' : 'قیمت فروش';
+  const saleColumnLabel = getSalePriceColumnLabel(saleType, preview?.vatInclusive);
   const items = order.items || [];
   const { widths, startResize } = useResizableColumns('nabz-quick-inquiry-readonly', QUOTING_READONLY_COLUMNS);
 
@@ -110,7 +111,7 @@ export default function QuotingReadOnlyPanel({
                   <td className="nabz-quick-table__final">
                     {linePreview?.hasTarget && linePreview.saleUnitPrice > 0 ? (
                       <div className="nabz-price-line nabz-price-line--emphasis">
-                        {formatPriceLine(linePreview.saleUnitPrice)}
+                        <span className="nabz-price-line__value">{formatAmountRial(linePreview.saleUnitPrice)}</span>
                       </div>
                     ) : (
                       <span className="nabz-quick-table__muted">—</span>
@@ -141,7 +142,7 @@ export default function QuotingReadOnlyPanel({
                 <span>جمع سفارش</span>
                 <strong className="nabz-price-line">{formatPriceLine(preview.subtotal)}</strong>
               </div>
-              {(saleType || DEFAULT_SALE_TYPE) === 'رسمی' && (
+              {preview.showVatBreakdown && (
                 <div className="nabz-quoting-footer__row">
                   <span>مالیات ارزش افزوده</span>
                   <strong className="nabz-price-line">{formatPriceLine(preview.vatAmount)}</strong>
