@@ -100,6 +100,7 @@ export function getDeliveryRecipientForShipping(order) {
   if (info?.needsShipping) {
     const customer = getCustomerById(order.customerId);
     return {
+      companyName: customer?.companyName || customer?.personName || order.customer || '—',
       name: info.recipientName || customer?.companyName || customer?.personName || order.customer || '—',
       nationalId: customer?.nationalId || '—',
       phone: info.recipientPhone || '—',

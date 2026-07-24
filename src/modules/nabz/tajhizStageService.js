@@ -12,6 +12,8 @@ import { getTadarokLines } from './tadarokStageService';
 import { TADAROK_LINE_STATUS } from './tadarokStageConfig';
 import { getCarrierById } from './carriers';
 import { getWarehouseById } from './warehouses';
+import { resolveAssigneeMobile } from './proformaService';
+import { SHIPPING_FORM_NUMBER } from './tajhizStageConfig';
 
 export function isTajhizStageLive(order, operationalViewPhase) {
   return order.status === ORDER_TABS.SUCCESS
@@ -22,7 +24,10 @@ export function isTajhizStageLive(order, operationalViewPhase) {
 
 function buildFallbackPurchaseRow(order, item, index, previewLine, target) {
   const warehouse = getWarehouseById('wh-tehran');
+  const shippingRowKey = `item-${index}`;
   return {
+    id: shippingRowKey,
+    shippingRowKey,
     rowNumber: index + 1,
     name: item.name || '—',
     description: item.description || '—',
@@ -42,7 +47,10 @@ function buildRowFromPurchaseLine(order, line, index, preview) {
   const po = line.purchaseOrder || {};
   const previewLine = preview.lines[line.sourceItemIndex];
   const warehouse = getWarehouseById(po.warehouseId);
+  const shippingRowKey = line.id || `line-${index}`;
   return {
+    id: shippingRowKey,
+    shippingRowKey,
     rowNumber: index + 1,
     name: line.name,
     description: line.description || '—',
@@ -82,9 +90,16 @@ export function getTajhizExpertNotes(order) {
 }
 
 export function getShippingRecipient(order) {
+  const customer = getCustomerById(order.customerId);
+  const companyName = customer?.companyName
+    || customer?.personName
+    || order.customer
+    || '—';
+
   const fromDelivery = getDeliveryRecipientForShipping(order);
   if (fromDelivery) {
     return {
+      companyName: fromDelivery.companyName || companyName,
       name: fromDelivery.name,
       nationalId: fromDelivery.nationalId,
       phone: fromDelivery.phone,
@@ -94,9 +109,9 @@ export function getShippingRecipient(order) {
     };
   }
 
-  const customer = getCustomerById(order.customerId);
   if (!customer) {
     return {
+      companyName: order.customer || '—',
       name: order.customer || '—',
       nationalId: '—',
       phone: '—',
@@ -107,7 +122,8 @@ export function getShippingRecipient(order) {
 
   const primaryPerson = customer.relatedPersons?.[0];
   return {
-    name: primaryPerson?.name || customer.companyName || customer.personName || order.customer,
+    companyName,
+    name: primaryPerson?.name || companyName,
     nationalId: customer.nationalId || '—',
     phone: primaryPerson?.mobile || customer.mobile || customer.officialSpecs?.phone || '—',
     postalCode: customer.officialSpecs?.postalCode || '—',
@@ -115,10 +131,17 @@ export function getShippingRecipient(order) {
   };
 }
 
-export function buildShippingDocumentViewModel(order, carrierId) {
-  const carrier = getCarrierById(carrierId);
-  const items = getFulfilledPurchaseRows(order).map((row) => ({
-    rowNumber: row.rowNumber,
+export function buildShippingDocumentViewModel(order, carrierId, selectedRowKeys = null) {
+  const allRows = getFulfilledPurchaseRows(order);
+  const selectedSet = Array.isArray(selectedRowKeys) && selectedRowKeys.length > 0
+    ? new Set(selectedRowKeys)
+    : null;
+  const sourceRows = selectedSet
+    ? allRows.filter((row) => selectedSet.has(row.shippingRowKey))
+    : allRows;
+
+  const items = sourceRows.map((row, index) => ({
+    rowNumber: index + 1,
     name: row.name,
     description: row.description,
     qty: row.qty,
@@ -126,21 +149,34 @@ export function buildShippingDocumentViewModel(order, carrierId) {
     warehouseName: row.warehouseName,
     warehouseAddress: row.warehouseAddress,
     warehouseVoucherCode: row.warehouseVoucherCode,
+    shippingRowKey: row.shippingRowKey,
   }));
+
+  const carrier = getCarrierById(carrierId) || { name: '—', phone: '—', address: '—' };
 
   return {
     orderCode: order.code,
+    formNumber: SHIPPING_FORM_NUMBER,
+    documentNumberLabel: 'شماره فرم:',
+    documentNumber: SHIPPING_FORM_NUMBER,
     issueDate: order.tajhizShipping?.issuedAt?.split(' · ')[0] || getTodayJalali(),
-    carrier: carrier || { name: '—', phone: '—', address: '—' },
+    carrier,
+    sender: {
+      salesExpertName: order.assignee || '—',
+      salesExpertMobile: resolveAssigneeMobile(order.assignee),
+      salesOrderCode: order.code || '—',
+      carrierName: carrier.name || '—',
+    },
     recipient: getShippingRecipient(order),
     items,
     expertNotes: getTajhizExpertNotes(order),
     voucherNumber: order.tajhizShipping?.voucherNumber
       || `BB-${order.code.slice(-6)}-${Date.now().toString().slice(-4)}`,
+    selectedRowKeys: items.map((row) => row.shippingRowKey),
   };
 }
 
-export function issueShippingVoucher(order, carrierId) {
+export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
   if (!carrierId) {
     return { accepted: false, reason: 'باربری را انتخاب کنید.' };
   }
@@ -150,7 +186,18 @@ export function issueShippingVoucher(order, carrierId) {
     return { accepted: false, reason: 'باربری انتخاب‌شده معتبر نیست.' };
   }
 
-  const viewModel = buildShippingDocumentViewModel(order, carrierId);
+  const keys = Array.isArray(selectedRowKeys)
+    ? selectedRowKeys.filter(Boolean)
+    : [];
+  if (keys.length === 0) {
+    return { accepted: false, reason: 'حداقل یک ردیف کالا را برای باربری انتخاب کنید.' };
+  }
+
+  const viewModel = buildShippingDocumentViewModel(order, carrierId, keys);
+  if (viewModel.items.length === 0) {
+    return { accepted: false, reason: 'ردیفی برای صدور حواله یافت نشد.' };
+  }
+
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
 
   return {
@@ -163,6 +210,8 @@ export function issueShippingVoucher(order, carrierId) {
         voucherNumber: viewModel.voucherNumber,
         issuedAt: at,
         issuedBy: CURRENT_USER,
+        selectedRowKeys: keys,
+        itemCount: viewModel.items.length,
       },
       events: [
         ...(order.events || []),
@@ -171,7 +220,7 @@ export function issueShippingVoucher(order, carrierId) {
           type: 'shipping_voucher_issued',
           at,
           by: CURRENT_USER,
-          summary: `صدور حواله باربری ${viewModel.voucherNumber} — ${carrier.name}`,
+          summary: `صدور حواله باربری ${viewModel.voucherNumber} — ${carrier.name} (${viewModel.items.length} قلم)`,
         },
       ],
     },

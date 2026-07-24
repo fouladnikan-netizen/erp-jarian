@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ResizableColGroup from '../../../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../../../components/table/ResizableTh';
 import { useResizableColumns } from '../../../../../hooks/useResizableColumns';
@@ -22,15 +22,14 @@ import ShippingModal from './ShippingModal';
 import { JarianProductCell } from '../../../../../components/jarian/JarianPresentation';
 
 const TAJHIZ_COLUMNS = [
+  { key: 'select', label: '', defaultWidth: 44, resizable: false },
   { key: 'row', label: 'ردیف', defaultWidth: 56, resizable: false },
   { key: 'name', label: 'شرح کالا', defaultWidth: 220 },
   { key: 'qcStatus', label: 'وضعیت کیفی', defaultWidth: 120 },
   { key: 'qty', label: 'مقدار', defaultWidth: 72 },
   { key: 'unit', label: 'واحد', defaultWidth: 64 },
-  { key: 'supplyType', label: 'نوع تامین', defaultWidth: 90 },
-  { key: 'supplier', label: 'نام تامین‌کننده', defaultWidth: 140 },
   { key: 'warehouseVoucher', label: 'حواله انبار', defaultWidth: 120 },
-  { key: 'warehouseAddress', label: 'آدرس انبار', defaultWidth: 180 },
+  { key: 'warehouseName', label: 'نام انبار', defaultWidth: 140 },
 ];
 
 const QC_SOFT_GATE_MESSAGE = '⚠️ بازرسی کیفی تکمیل نشده است. عملیات بارگیری هم‌زمان آغاز شد.';
@@ -66,8 +65,13 @@ export default function TajhizStagePanel({
 }) {
   const live = isTajhizStageLive(order, operationalViewPhase);
   const rows = useMemo(() => getFulfilledPurchaseRows(order), [order]);
+  const rowKeys = useMemo(
+    () => rows.map((row) => row.shippingRowKey || getQcRowKey(row)),
+    [rows],
+  );
   const expertNotes = useMemo(() => getTajhizExpertNotes(order), [order]);
   const isQcComplete = useMemo(() => isOrderQcComplete(order, rows), [order, rows]);
+  const [selectedKeys, setSelectedKeys] = useState([]);
   const [qcOpen, setQcOpen] = useState(false);
   const [qcMode, setQcMode] = useState('inspect');
   const [qcFocusRowKey, setQcFocusRowKey] = useState(null);
@@ -75,12 +79,35 @@ export default function TajhizStagePanel({
   const [shippingOpen, setShippingOpen] = useState(false);
   const [toast, setToast] = useState('');
   const toastTimerRef = useRef(null);
-  const { widths, startResize } = useResizableColumns('nabz-tajhiz-purchases-v3', TAJHIZ_COLUMNS);
+  const { widths, startResize } = useResizableColumns('nabz-tajhiz-purchases-v7', TAJHIZ_COLUMNS);
+
+  useEffect(() => {
+    setSelectedKeys((prev) => prev.filter((key) => rowKeys.includes(key)));
+  }, [rowKeys]);
+
+  const allSelected = rowKeys.length > 0 && selectedKeys.length === rowKeys.length;
+  const someSelected = selectedKeys.length > 0 && selectedKeys.length < rowKeys.length;
+  const selectedRows = useMemo(
+    () => rows.filter((row) => selectedKeys.includes(row.shippingRowKey || getQcRowKey(row))),
+    [rows, selectedKeys],
+  );
 
   const showToast = (message) => {
     setToast(message);
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
     toastTimerRef.current = window.setTimeout(() => setToast(''), 3200);
+  };
+
+  const toggleRow = (key) => {
+    setSelectedKeys((prev) => (
+      prev.includes(key)
+        ? prev.filter((item) => item !== key)
+        : [...prev, key]
+    ));
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedKeys(allSelected ? [] : [...rowKeys]);
   };
 
   const openInspectDrawer = () => {
@@ -106,15 +133,24 @@ export default function TajhizStagePanel({
     setQcInitialRecord(null);
   };
 
+  const openShippingModal = () => {
+    if (selectedKeys.length === 0) {
+      window.alert('حداقل یک ردیف کالا را برای باربری انتخاب کنید.');
+      return;
+    }
+    setShippingOpen(true);
+  };
+
   const handleGenerateShipping = (carrierId) => {
-    const result = issueShippingVoucher(order, carrierId);
+    const result = issueShippingVoucher(order, carrierId, selectedKeys);
     if (!result.accepted) {
       window.alert(result.reason || 'امکان صدور حواله باربری وجود ندارد.');
       return;
     }
     onUpdateOrder?.(() => result.order);
     setShippingOpen(false);
-    printShippingVoucher(result.order, carrierId);
+    printShippingVoucher(result.order, carrierId, selectedKeys);
+    setSelectedKeys([]);
   };
 
   /** Soft gate: always advances to رهسپار; warns if QC incomplete, then continues. */
@@ -161,7 +197,20 @@ export default function TajhizStagePanel({
                   onResizeStart={startResize}
                   style={{ width: widths[col.key] }}
                 >
-                  {col.label}
+                  {col.key === 'select' ? (
+                    <input
+                      type="checkbox"
+                      className="tajhiz-stage__row-check"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                      }}
+                      onChange={toggleSelectAll}
+                      disabled={rowKeys.length === 0}
+                      aria-label="انتخاب همه ردیف‌ها"
+                      title="انتخاب همه"
+                    />
+                  ) : col.label}
                 </ResizableTh>
               ))}
             </tr>
@@ -175,9 +224,20 @@ export default function TajhizStagePanel({
               </tr>
             ) : (
               rows.map((row) => {
+                const rowKey = row.shippingRowKey || getQcRowKey(row);
                 const qcRecord = getQcInspectionForRow(order, row);
+                const checked = selectedKeys.includes(rowKey);
                 return (
-                  <tr key={getQcRowKey(row)}>
+                  <tr key={rowKey} className={checked ? 'is-selected' : undefined}>
+                    <td className="tajhiz-stage__check-cell">
+                      <input
+                        type="checkbox"
+                        className="tajhiz-stage__row-check"
+                        checked={checked}
+                        onChange={() => toggleRow(rowKey)}
+                        aria-label={`انتخاب ردیف ${row.rowNumber}`}
+                      />
+                    </td>
                     <td>{row.rowNumber.toLocaleString('fa-IR')}</td>
                     <td className="jarian-td-product"><JarianProductCell name={row.name} description={row.description} /></td>
                     <td>
@@ -188,10 +248,8 @@ export default function TajhizStagePanel({
                     </td>
                     <td>{row.qty.toLocaleString('fa-IR')}</td>
                     <td>{row.unit}</td>
-                    <td>{row.supplyType}</td>
-                    <td>{row.supplierName}</td>
                     <td>{row.warehouseVoucherCode}</td>
-                    <td>{row.warehouseAddress}</td>
+                    <td>{row.warehouseName}</td>
                   </tr>
                 );
               })
@@ -216,10 +274,11 @@ export default function TajhizStagePanel({
         <button
           type="button"
           className="btn btn--primary"
-          onClick={() => setShippingOpen(true)}
+          onClick={openShippingModal}
           disabled={!live}
         >
           حواله باربری
+          {selectedKeys.length > 0 ? ` (${selectedKeys.length.toLocaleString('fa-IR')})` : ''}
         </button>
       </footer>
 
@@ -257,6 +316,7 @@ export default function TajhizStagePanel({
       <ShippingModal
         open={shippingOpen}
         order={order}
+        selectedRows={selectedRows}
         onClose={() => setShippingOpen(false)}
         onGenerate={handleGenerateShipping}
       />

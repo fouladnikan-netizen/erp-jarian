@@ -8680,6 +8680,21 @@ html[data-theme='dark'] .nabz-excel-filter {
   vertical-align: middle;
 }
 
+.tajhiz-stage__check-cell {
+  width: 2.75rem;
+}
+
+.tajhiz-stage__row-check {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #0f766e;
+  cursor: pointer;
+}
+
+.tajhiz-stage__table tbody tr.is-selected td {
+  background: rgba(236, 253, 245, 0.7);
+}
+
 .tajhiz-stage__table th {
   background: #f9fafb;
   font-weight: 700;

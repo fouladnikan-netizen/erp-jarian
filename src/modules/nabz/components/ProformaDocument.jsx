@@ -1,12 +1,11 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import headerBrand from '../../../assets/images/nikan-proforma-header.jpg';
 import { formatJarianMoney } from '../../../config/JarianUI.config';
 import { toPersianDigits, toPersianInvoiceText } from '../dateUtils';
 import {
-  COMPANY_BRAND,
   PROFORMA_BANK_ACCOUNTS,
   PROFORMA_TERMS_ITEMS,
 } from '../proformaConfig';
+import { InvoiceDocBrandHeader, InvoiceDocFooter } from './InvoiceDocChrome';
 import ProformaSeal from './ProformaSeal';
 
 function formatInvoiceNumber(amount, { withCurrency = false } = {}) {
@@ -72,32 +71,7 @@ function ProductDescription({ name, note }) {
 function ProformaDocHeader({ viewModel }) {
   return (
     <>
-      <header className="invoice-doc__header">
-        <div className="invoice-doc__header-brand">
-          <div className="invoice-doc__brand-mark">
-            <img
-              src={headerBrand}
-              alt=""
-              className="invoice-doc__brand-mark-img"
-            />
-          </div>
-          <p className="invoice-doc__tagline">{COMPANY_BRAND.tagline}</p>
-          <div className="invoice-doc__company-ids">
-            <span>شناسه ملی: {toPersianInvoiceText(COMPANY_BRAND.nationalId)}</span>
-            <span>شماره ثبت: {toPersianInvoiceText(COMPANY_BRAND.registrationNumber)}</span>
-          </div>
-        </div>
-        <div className="invoice-doc__header-meta">
-          <div className="invoice-doc__meta-grid">
-            <span className="invoice-doc__meta-label">شماره:</span>
-            <span className="invoice-doc__meta-value invoice-doc__meta-value--number">
-              {toPersianDigits(viewModel.orderCode)}
-            </span>
-            <span className="invoice-doc__meta-label">تاریخ صدور:</span>
-            <span className="invoice-doc__meta-value">{toPersianInvoiceText(viewModel.issueDate)}</span>
-          </div>
-        </div>
-      </header>
+      <InvoiceDocBrandHeader viewModel={viewModel} />
 
       <section className="invoice-doc__buyer">
         <div className="invoice-doc__buyer-row">
@@ -245,27 +219,7 @@ function TermsFootBlock({ terms, termsCustom, sealState, measure = false }) {
 }
 
 function DocFooter({ measure = false }) {
-  return (
-    <footer className="invoice-doc__footer" data-measure={measure ? 'footer' : undefined}>
-      <div className="invoice-doc__footer-inner">
-        <div>
-          <span className="invoice-doc__footer-label">دفتر مرکزی:</span>{' '}
-          {COMPANY_BRAND.address}
-        </div>
-        <div className="invoice-doc__footer-contacts">
-          <div>
-            <span className="invoice-doc__footer-label">تلفن:</span>{' '}
-            <span className="invoice-doc__footer-phone">{toPersianDigits(COMPANY_BRAND.phone)}</span>
-          </div>
-          <div>
-            <span className="invoice-doc__footer-label">کد پستی:</span>{' '}
-            {toPersianInvoiceText(COMPANY_BRAND.postalCode)}
-          </div>
-        </div>
-        <div className="invoice-doc__footer-website">{COMPANY_BRAND.website}</div>
-      </div>
-    </footer>
-  );
+  return <InvoiceDocFooter measure={measure} />;
 }
 
 /**

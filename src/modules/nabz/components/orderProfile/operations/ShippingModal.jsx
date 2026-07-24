@@ -5,6 +5,7 @@ import GatewaySelect from '../gateway/GatewaySelect';
 export default function ShippingModal({
   open,
   order,
+  selectedRows = [],
   onClose,
   onGenerate,
 }) {
@@ -24,6 +25,10 @@ export default function ShippingModal({
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    if (!selectedRows.length) {
+      window.alert('حداقل یک ردیف کالا را برای باربری انتخاب کنید.');
+      return;
+    }
     if (!carrierId) {
       window.alert('باربری را انتخاب کنید.');
       return;
@@ -42,6 +47,10 @@ export default function ShippingModal({
               سفارش
               {' '}
               {order?.code}
+              {' · '}
+              {selectedRows.length.toLocaleString('fa-IR')}
+              {' '}
+              قلم انتخاب‌شده
             </p>
           </div>
           <button type="button" className="tadarok-modal__close" onClick={onClose} aria-label="بستن">×</button>

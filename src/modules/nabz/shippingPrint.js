@@ -9,13 +9,14 @@ function writePreviewPayload(previewId, payload) {
   localStorage.setItem(`${SHIPPING_PREVIEW_STORAGE_KEY}:${previewId}`, serialized);
 }
 
-export function storeShippingPreviewPayload(order, carrierId) {
-  const viewModel = buildShippingDocumentViewModel(order, carrierId);
+export function storeShippingPreviewPayload(order, carrierId, selectedRowKeys = null) {
+  const viewModel = buildShippingDocumentViewModel(order, carrierId, selectedRowKeys);
   const previewId = `${Date.now()}`;
   writePreviewPayload(previewId, {
     viewModel,
     orderCode: order.code,
     carrierId,
+    selectedRowKeys: selectedRowKeys || null,
   });
   return { previewId, viewModel };
 }
@@ -28,19 +29,21 @@ function openShippingWindow(path) {
   }
 }
 
-export function openShippingPreview(order, carrierId) {
-  const { previewId } = storeShippingPreviewPayload(order, carrierId);
+export function openShippingPreview(order, carrierId, selectedRowKeys = null) {
+  const { previewId } = storeShippingPreviewPayload(order, carrierId, selectedRowKeys);
   openShippingWindow(`${PREVIEW_PATH}?id=${encodeURIComponent(previewId)}`);
 }
 
-export function printShippingVoucher(order, carrierId) {
+export function printShippingVoucher(order, carrierId, selectedRowKeys = null) {
   // Prefer the order snapshot so voucherNumber/date match what was just issued.
-  const viewModel = buildShippingDocumentViewModel(order, carrierId);
+  const keys = selectedRowKeys || order?.tajhizShipping?.selectedRowKeys || null;
+  const viewModel = buildShippingDocumentViewModel(order, carrierId, keys);
   const previewId = `${Date.now()}`;
   writePreviewPayload(previewId, {
     viewModel,
     orderCode: order.code,
     carrierId,
+    selectedRowKeys: keys,
   });
   openShippingWindow(`${PREVIEW_PATH}?print=1&id=${encodeURIComponent(previewId)}`);
 }
