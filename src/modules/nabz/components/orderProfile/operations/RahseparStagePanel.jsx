@@ -33,6 +33,7 @@ const PRODUCT_ROW_STYLE = [
   'white-space: nowrap !important',
   'width: 100% !important',
   'min-width: 0 !important',
+  'background: transparent !important',
 ].join('; ');
 
 const PRODUCT_NAME_STYLE = [
@@ -56,15 +57,6 @@ const PRODUCT_DESC_STYLE = [
   'overflow: hidden !important',
   'text-overflow: ellipsis !important',
   'min-width: 0 !important',
-].join('; ');
-
-const PRODUCT_TD_STYLE = [
-  'display: flex !important',
-  'align-items: center !important',
-  'justify-content: flex-start !important',
-  'text-align: right !important',
-  'vertical-align: middle !important',
-  'white-space: nowrap !important',
 ].join('; ');
 
 function applyForcedStyle(node, cssText) {
@@ -451,7 +443,6 @@ export default function RahseparStagePanel({
               <th scope="col">شرح کالا</th>
               <th scope="col">مقدار</th>
               <th scope="col">واحد</th>
-              <th scope="col">وزن پیش‌فاکتور</th>
               <th scope="col">وزن باسکول</th>
               <th scope="col">وضعیت</th>
               <th scope="col">سوابق</th>
@@ -460,7 +451,7 @@ export default function RahseparStagePanel({
           <tbody>
             {loadItems.length === 0 ? (
               <tr>
-                <td colSpan={9} className="rahsepar-stage__empty">
+                <td colSpan={8} className="rahsepar-stage__empty">
                   قلم خریدشده‌ای برای بارگیری وجود ندارد.
                 </td>
               </tr>
@@ -472,9 +463,11 @@ export default function RahseparStagePanel({
                 const dispatch = item.dispatch;
 
                 return (
-                  <Fragment key={item.id}>
+                  <Fragment key={item.id || `rahsepar-row-${index}`}>
                     <tr
                       className={[
+                        'rahsepar-stage__data-row',
+                        index % 2 === 0 ? 'is-zebra-odd' : 'is-zebra-even',
                         isPending ? 'is-pending' : 'is-dispatched',
                         checked ? 'is-selected' : '',
                       ].filter(Boolean).join(' ')}
@@ -493,17 +486,11 @@ export default function RahseparStagePanel({
                         )}
                       </td>
                       <td>{(index + 1).toLocaleString('fa-IR')}</td>
-                      <td
-                        className="jarian-td-product"
-                        ref={(node) => applyForcedStyle(node, PRODUCT_TD_STYLE)}
-                      >
+                      <td className="jarian-td-product">
                         <RahseparProductInline name={item.name} description={item.description} />
                       </td>
                       <td>{formatFaNumber(item.qty)}</td>
                       <td>{item.unit}</td>
-                      <td>
-                        <span className="font-yekan">{formatFaNumber(item.preInvoiceWeightKg)}</span>
-                      </td>
                       <td>
                         {isPending ? (
                           <input
@@ -541,7 +528,7 @@ export default function RahseparStagePanel({
                     </tr>
                     {!isPending && expanded && dispatch ? (
                       <tr className="rahsepar-stage__history-row is-dispatched">
-                        <td colSpan={9}>
+                        <td colSpan={8}>
                           <div className="rahsepar-stage__history-detail">
                             <div>
                               <span className="rahsepar-stage__history-label">تاریخ</span>

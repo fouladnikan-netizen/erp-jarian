@@ -120,21 +120,43 @@
   color: var(--text-primary);
 }
 
+/* Keep product cell as normal table-cell so row zebra/selection backgrounds paint evenly */
 .rahsepar-stage__table td.jarian-td-product {
-  /* layout forced via attribute style with !important in JSX */
+  display: table-cell !important;
+  text-align: right !important;
+  vertical-align: middle !important;
   max-width: 24rem;
+  background-color: transparent;
 }
 
-.rahsepar-stage__table tbody tr.is-selected td {
-  background: rgba(236, 253, 245, 0.7);
+.rahsepar-stage__table tbody tr.is-zebra-odd > td {
+  background-color: #ffffff !important;
+}
+
+.rahsepar-stage__table tbody tr.is-zebra-even > td {
+  background-color: rgba(243, 244, 246, 0.85) !important;
+}
+
+.rahsepar-stage__table tbody tr.is-selected > td {
+  background-color: rgba(236, 253, 245, 0.7) !important;
 }
 
 .rahsepar-stage__table tbody tr.is-dispatched {
   opacity: 0.6;
 }
 
-.rahsepar-stage__table tbody tr.is-dispatched td {
-  background: rgba(243, 244, 246, 0.55);
+.rahsepar-stage__table tbody tr.is-dispatched > td {
+  background-color: rgba(243, 244, 246, 0.55) !important;
+}
+
+.rahsepar-stage__table tbody tr.is-dispatched.is-zebra-odd > td {
+  background-color: rgba(255, 255, 255, 0.55) !important;
+}
+
+.rahsepar-stage__table tbody tr.rahsepar-stage__history-row > td {
+  padding: 0 !important;
+  background-color: #f8fafc !important;
+  opacity: 1 !important;
 }
 
 .rahsepar-stage__col--select {
@@ -221,12 +243,6 @@
 .rahsepar-stage__history-btn:hover {
   border-color: #0d9488;
   background: #f0fdfa;
-}
-
-.rahsepar-stage__history-row td {
-  padding: 0 !important;
-  background: #f8fafc !important;
-  opacity: 1 !important;
 }
 
 .rahsepar-stage__history-detail {

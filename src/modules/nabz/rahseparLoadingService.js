@@ -1,7 +1,7 @@
 import { CURRENT_USER } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { getFulfilledPurchaseRows } from './shippingService';
-import { getQcInspectionForRow, getQcRowKey } from './qcInspectionConfig';
+import { getQcInspectionForRow } from './qcInspectionConfig';
 import { advanceOperationalPhase } from './phase2Service';
 import { OPERATIONAL_PHASES } from './phase2Config';
 
@@ -77,13 +77,26 @@ export function getDispatchSessionByItemId(order) {
   return map;
 }
 
-function buildItemFromPurchaseRow(order, row) {
+function resolveLoadItemId(row, index) {
+  // Prefer stable unique line ids — never warehouseVoucherCode alone
+  // (empty vouchers all become "—" and collapse every row into one key).
+  if (row?.shippingRowKey) return String(row.shippingRowKey);
+  if (row?.id) return String(row.id);
+  if (row?.qcKey) return String(row.qcKey);
+  const voucher = String(row?.warehouseVoucherCode || '').trim();
+  if (voucher && voucher !== '—') {
+    return `voucher-${voucher}-${row.rowNumber ?? index + 1}`;
+  }
+  return `load-${row?.rowNumber ?? index + 1}`;
+}
+
+function buildItemFromPurchaseRow(order, row, index) {
   const qc = getQcInspectionForRow(order, row);
   const thickness = qc?.thickness || '';
   const dimensions = qc?.dimensions || '';
   const thicknessDims = [thickness, dimensions].filter(Boolean).join(' / ') || '';
   return {
-    id: getQcRowKey(row),
+    id: resolveLoadItemId(row, index),
     name: row.name,
     description: row.description || thicknessDims || '',
     unit: row.unit || 'کیلوگرم',
@@ -95,8 +108,8 @@ function buildItemFromPurchaseRow(order, row) {
 /** همه اقلام سفارش با وضعیت pending / dispatched + جزئیات بارگیری */
 export function getAllLoadItems(order) {
   const dispatchMap = getDispatchSessionByItemId(order);
-  return getFulfilledPurchaseRows(order).map((row) => {
-    const base = buildItemFromPurchaseRow(order, row);
+  return getFulfilledPurchaseRows(order).map((row, index) => {
+    const base = buildItemFromPurchaseRow(order, row, index);
     const hit = dispatchMap.get(base.id);
     if (!hit) {
       return {
