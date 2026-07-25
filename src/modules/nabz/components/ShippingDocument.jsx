@@ -36,7 +36,7 @@ export default function ShippingDocument({ viewModel }) {
           />
         </div>
 
-        <h2 className="shipping-doc__doc-title">حواله باربری و دستور بارگیری</h2>
+        <h2 className="shipping-doc__doc-title">فرم سفارش ارسال بار</h2>
 
         <div className="shipping-doc__parties">
           <section className="shipping-doc__section shipping-doc__party">
