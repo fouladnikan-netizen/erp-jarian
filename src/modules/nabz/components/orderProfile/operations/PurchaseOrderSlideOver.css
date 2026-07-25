@@ -1,0 +1,191 @@
+/* Purchase Order — left slide-over (Apple-style) */
+
+.po-slideover {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.po-slideover.is-open {
+  pointer-events: auto;
+}
+
+.po-slideover__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  opacity: 0;
+  transition: opacity 0.35s ease-in-out;
+}
+
+.po-slideover.is-open .po-slideover__backdrop {
+  opacity: 1;
+}
+
+.po-slideover__panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(42rem, calc(100vw - 1.5rem));
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-right: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 0 1.5rem 1.5rem 0;
+  box-shadow:
+    8px 0 40px rgba(15, 23, 42, 0.12),
+    2px 0 8px rgba(15, 23, 42, 0.04);
+  direction: rtl;
+  transform: translateX(-104%);
+  opacity: 0;
+  transition:
+    transform 0.4s ease-in-out,
+    opacity 0.35s ease-in-out;
+  overflow: hidden;
+}
+
+.po-slideover.is-open .po-slideover__panel {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.po-slideover__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  padding: 1.25rem 1.35rem 1rem;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.85);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.po-slideover__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #111827);
+}
+
+.po-slideover__heading {
+  min-width: 0;
+  flex: 1;
+}
+
+.po-slideover__product {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: right;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
+}
+
+.po-slideover__product-name {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000000;
+  line-height: 1.4;
+}
+
+.po-slideover__product-sep {
+  flex-shrink: 0;
+  color: #B8BFCA;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.po-slideover__product-desc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666666;
+  line-height: 1.4;
+}
+
+.po-slideover__close {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(243, 244, 246, 0.9);
+  color: var(--text-secondary, #6b7280);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.po-slideover__close:hover {
+  background: rgba(229, 231, 235, 1);
+  color: #111827;
+}
+
+.po-slideover__form {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1.15rem 1.35rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.po-slideover__form.is-readonly .tadarok-form__input:disabled,
+.po-slideover__form.is-readonly .tadarok-form__textarea:disabled {
+  opacity: 0.85;
+}
+
+.po-slideover__footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(229, 231, 235, 0.85);
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.96));
+  backdrop-filter: blur(8px);
+}
+
+.po-slideover__submit {
+  min-width: 9rem;
+}
+
+@media (max-width: 640px) {
+  .po-slideover__panel {
+    width: 100%;
+    border-radius: 0;
+  }
+
+  .po-slideover__header,
+  .po-slideover__form {
+    padding-inline: 1rem;
+  }
+}

@@ -71,6 +71,11 @@ export default function PrintableSooratBar({
 
         <div className="printable-sooratbar__meta">
           <p>
+            <span className="font-meem">شناسه مانیفست:</span>
+            {' '}
+            <span className="font-yekan">{meta.manifestId || serial}</span>
+          </p>
+          <p>
             <span className="font-meem">شماره سریال:</span>
             {' '}
             <span className="font-yekan">{serial}</span>
@@ -142,7 +147,7 @@ export default function PrintableSooratBar({
             <tr>
               <th className="font-meem" scope="col">ردیف</th>
               <th className="font-meem" scope="col">شرح کالا</th>
-              <th className="font-meem" scope="col">توضیحات (تعداد/ابعاد)</th>
+              <th className="font-meem" scope="col">توضیحات</th>
               <th className="font-meem" scope="col">واحد</th>
               <th className="font-meem" scope="col">وزن قطعی باسکول</th>
             </tr>

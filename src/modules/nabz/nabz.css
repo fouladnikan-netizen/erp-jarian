@@ -8309,8 +8309,8 @@ html[data-theme='dark'] .nabz-excel-filter {
 }
 
 .delivery-order-modal__panel {
-  max-width: 44rem;
-  width: min(94vw, 44rem);
+  max-width: 62rem;
+  width: min(96vw, 62rem);
 }
 
 .delivery-order-modal__table-wrap {

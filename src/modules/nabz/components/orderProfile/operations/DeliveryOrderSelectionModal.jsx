@@ -108,13 +108,15 @@ export default function DeliveryOrderSelectionModal({
                   <th scope="col">شرح کالا</th>
                   <th scope="col">مقدار</th>
                   <th scope="col">واحد</th>
+                  <th scope="col">نام انبار</th>
+                  <th scope="col">آدرس انبار</th>
                   <th scope="col">حواله انبار</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="tadarok-stage__empty">
+                    <td colSpan={8} className="tadarok-stage__empty">
                       قلم خریدشده‌ای برای ارسال وجود ندارد. ابتدا در تدارک حداقل یک سفارش خرید صادر کنید.
                     </td>
                   </tr>
@@ -139,6 +141,8 @@ export default function DeliveryOrderSelectionModal({
                         </td>
                         <td>{row.qty.toLocaleString('fa-IR')}</td>
                         <td>{row.unit}</td>
+                        <td>{row.warehouseName}</td>
+                        <td>{row.warehouseAddress}</td>
                         <td>{row.warehouseVoucherCode}</td>
                       </tr>
                     );
