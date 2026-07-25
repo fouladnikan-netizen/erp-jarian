@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import { getFulfilledPurchaseRows } from '../../../tajhizStageService';
+import { getFulfilledPurchaseRows } from '../../../shippingService';
 import {
+  getQcInspectionByKey,
   getQcInspectionForRow,
   getQcRowKey,
   isOrderQcComplete,
@@ -9,6 +10,8 @@ import { getTodayJalali, getNowTimeFa } from '../../../dateUtils';
 import { advanceOperationalPhase, getOrderOperationalPhase } from '../../../phase2Service';
 import { OPERATIONAL_PHASES } from '../../../phase2Config';
 import PrintableSooratBar, { buildSerial } from './PrintableSooratBar';
+import QcDocumentModal from './QcDocumentModal';
+import QcStatusChip from './QcStatusChip';
 import './RahseparStagePanel.css';
 
 const MOCK_LOAD_LINES = [
@@ -114,6 +117,10 @@ export default function RahseparStagePanel({
   const [toast, setToast] = useState('');
   const toastTimerRef = useRef(null);
   const [printMeta, setPrintMeta] = useState(null);
+  const [qcOpen, setQcOpen] = useState(false);
+  const [qcMode, setQcMode] = useState('inspect');
+  const [qcFocusRowKey, setQcFocusRowKey] = useState(null);
+  const [qcInitialRecord, setQcInitialRecord] = useState(null);
   const [loadLines, setLoadLines] = useState(() => {
     const saved = order?.rahsepar?.loadLines;
     if (Array.isArray(saved) && saved.length) {
@@ -157,6 +164,28 @@ export default function RahseparStagePanel({
         ...(selected ? {} : { scaleWeight: '', warehouseFee: '', notes: '' }),
       };
     }));
+  };
+
+  const openQcFromLine = (line) => {
+    const record = getQcInspectionByKey(order, line.id);
+    if (record?.itemStatus) {
+      setQcMode('readonly');
+      setQcFocusRowKey(line.id);
+      setQcInitialRecord(record);
+      setQcOpen(true);
+      return;
+    }
+    setQcMode('inspect');
+    setQcFocusRowKey(line.id);
+    setQcInitialRecord(null);
+    setQcOpen(true);
+  };
+
+  const closeQcDrawer = () => {
+    setQcOpen(false);
+    setQcMode('inspect');
+    setQcFocusRowKey(null);
+    setQcInitialRecord(null);
   };
 
   const persistLogistics = (patch) => {
@@ -331,6 +360,7 @@ export default function RahseparStagePanel({
                   <span className="rahsepar-stage__sr-only">انتخاب</span>
                 </th>
                 <th scope="col">ردیف</th>
+                <th scope="col">وضعیت کیفی</th>
                 <th scope="col">شرح کالا</th>
                 <th scope="col">توضیحات (تعداد/ابعاد)</th>
                 <th scope="col">ضخامت و ابعاد</th>
@@ -347,6 +377,7 @@ export default function RahseparStagePanel({
             <tbody>
               {loadLines.map((line, index) => {
                 const selected = Boolean(line.selected);
+                const qcRecord = getQcInspectionByKey(order, line.id);
                 return (
                   <tr
                     key={line.id}
@@ -364,6 +395,12 @@ export default function RahseparStagePanel({
                     </td>
                     <td>
                       <span className="font-yekan">{(index + 1).toLocaleString('fa-IR')}</span>
+                    </td>
+                    <td className="jarian-td-qc rahsepar-stage__no-print">
+                      <QcStatusChip
+                        record={qcRecord}
+                        onClick={() => openQcFromLine(line)}
+                      />
                     </td>
                     <td className="font-meem">{line.name}</td>
                     <td>
@@ -479,6 +516,16 @@ export default function RahseparStagePanel({
           carrierName,
         }}
         meta={printMeta || order?.rahsepar?.lastPrintMeta || {}}
+      />
+
+      <QcDocumentModal
+        open={qcOpen}
+        order={order}
+        onClose={closeQcDrawer}
+        onUpdateOrder={onUpdateOrder}
+        mode={qcMode}
+        focusRowKey={qcFocusRowKey}
+        initialRecord={qcInitialRecord}
       />
     </section>
   );

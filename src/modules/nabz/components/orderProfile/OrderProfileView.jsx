@@ -27,7 +27,12 @@ import {
 } from '../../gatewayDecisionService';
 import QuickActivityModal from '../QuickActivityModal';
 import DeliveryLocationModal from '../DeliveryLocationModal';
-import { canShowDeliveryLocationAction } from '../../deliveryInfoService';
+import {
+  canShowDeliveryLocationAction,
+  canEnableDeliveryOrderAction,
+} from '../../deliveryInfoService';
+import { issueShippingVoucher } from '../../shippingService';
+import { printShippingVoucher } from '../../shippingPrint';
 import CreateOrderDrawer from '../CreateOrderDrawer';
 import OrderProfileChrome from './OrderProfileChrome';
 import OrderProfileGatewayTab from './OrderProfileGatewayTab';
@@ -35,6 +40,7 @@ import OrderProfileCrmTab from './OrderProfileCrmTab';
 import OrderProfileTimelineTab from './OrderProfileTimelineTab';
 import OrderProfileAttachmentsTab from './OrderProfileAttachmentsTab';
 import OrderActionDrawer from './OrderActionDrawer';
+import DeliveryOrderSelectionModal from './operations/DeliveryOrderSelectionModal';
 import { GATEWAY_PHASES } from '../../gatewayConfig';
 
 export default function OrderProfileView({
@@ -56,6 +62,7 @@ export default function OrderProfileView({
   );
   const [activityModal, setActivityModal] = useState({ open: false, editActivity: null });
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [deliveryOrderModalOpen, setDeliveryOrderModalOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [decisionDrawerOpen, setDecisionDrawerOpen] = useState(false);
 
@@ -241,6 +248,7 @@ export default function OrderProfileView({
           }}
           onNextAction={handleNextAction}
           onOpenActivityModal={() => openActivityModal()}
+          onOpenDeliveryOrderModal={() => setDeliveryOrderModalOpen(true)}
           onOpenDeliveryModal={() => setDeliveryModalOpen(true)}
           onIssueProforma={handleIssueProforma}
           onViewProforma={handleViewProforma}
@@ -287,6 +295,22 @@ export default function OrderProfileView({
         onClose={() => setDeliveryModalOpen(false)}
         onSave={(nextOrder) => {
           updateOrder(() => nextOrder);
+        }}
+      />
+
+      <DeliveryOrderSelectionModal
+        open={deliveryOrderModalOpen && canEnableDeliveryOrderAction(order)}
+        order={order}
+        onClose={() => setDeliveryOrderModalOpen(false)}
+        onConfirm={(carrierId, selectedKeys) => {
+          const result = issueShippingVoucher(order, carrierId, selectedKeys);
+          if (!result.accepted) {
+            window.alert(result.reason || 'امکان صدور سفارش ارسال وجود ندارد.');
+            return;
+          }
+          updateOrder(() => result.order);
+          setDeliveryOrderModalOpen(false);
+          printShippingVoucher(result.order, carrierId, selectedKeys);
         }}
       />
 

@@ -44,7 +44,7 @@ export default function ShippingPreviewPage() {
   if (!payload) {
     return (
       <div className="shipping-preview-page shipping-preview-page--empty">
-        <p>داده حواله باربری یافت نشد. لطفاً از مرحله تجهیز اقدام کنید.</p>
+        <p>داده حواله باربری یافت نشد. لطفاً از دکمه «سفارش ارسال» در پروفایل سفارش اقدام کنید.</p>
       </div>
     );
   }

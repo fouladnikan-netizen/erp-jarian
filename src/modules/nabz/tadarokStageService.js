@@ -324,5 +324,6 @@ export function completeTadarokProcurement(order) {
       reason: 'برای تکمیل تدارک، سفارش خرید همه سطرها باید صادر شود.',
     };
   }
-  return advanceOperationalPhase(order, OPERATIONAL_PHASES.TAJHIZ);
+  // پس از تکمیل خرید مستقیم به رهسپار می‌رویم (تجهیز حذف شده است).
+  return advanceOperationalPhase(order, OPERATIONAL_PHASES.RAHESPAR);
 }

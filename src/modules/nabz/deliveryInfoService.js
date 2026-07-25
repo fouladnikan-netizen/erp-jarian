@@ -10,6 +10,8 @@ import {
 } from './customers';
 import { GATEWAY_DECISION_OUTCOMES } from './gatewayDecisionConfig';
 import { ORDER_TABS, isPhase2Stage } from './config';
+import { TADAROK_LINE_STATUS } from './tadarokStageConfig';
+import { getTadarokLines } from './tadarokStageService';
 
 export {
   getEmptyDeliveryInfo,
@@ -27,6 +29,21 @@ export function canShowDeliveryLocationAction(order) {
   if (order.gatewayDecision?.outcome === GATEWAY_DECISION_OUTCOMES.SUCCESS) return true;
   if (order.status === ORDER_TABS.SUCCESS && isPhase2Stage(order.stageId)) return true;
   return false;
+}
+
+/**
+ * دکمه «سفارش ارسال» پس از تأیید سفارش دیده می‌شود،
+ * ولی فقط وقتی حداقل یک قلم خرید شده باشد فعال است.
+ */
+export function canShowDeliveryOrderAction(order) {
+  return canShowDeliveryLocationAction(order);
+}
+
+export function canEnableDeliveryOrderAction(order) {
+  if (!canShowDeliveryOrderAction(order)) return false;
+  return getTadarokLines(order).some(
+    (line) => line.status === TADAROK_LINE_STATUS.PO_ISSUED,
+  );
 }
 
 /**

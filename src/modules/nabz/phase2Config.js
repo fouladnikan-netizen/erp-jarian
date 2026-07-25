@@ -3,21 +3,19 @@ import {
   STAGE_RAHESPAR_ID,
   STAGE_SARANJAM_ID,
   STAGE_TADAROK_ID,
-  STAGE_TAJHIZ_ID,
 } from './config';
 
 export const OPERATIONAL_PHASES = {
   PARVANE: 'parvane',
   TADAROK: 'tadarok',
-  TAJHIZ: 'tajhiz',
   RAHESPAR: 'rahespar',
   SARANJAM: 'saranjam',
 };
 
+/** جریان عملیاتی: تدارک → رهسپار → سرانجام (پس از ماشه تأمین) */
 export const OPERATIONAL_PHASE_ORDER = [
   OPERATIONAL_PHASES.PARVANE,
   OPERATIONAL_PHASES.TADAROK,
-  OPERATIONAL_PHASES.TAJHIZ,
   OPERATIONAL_PHASES.RAHESPAR,
   OPERATIONAL_PHASES.SARANJAM,
 ];
@@ -30,17 +28,12 @@ export const OPERATIONAL_PHASE_META = {
   },
   [OPERATIONAL_PHASES.TADAROK]: {
     label: 'تدارک',
-    subtitle: 'در حال تأمین قطعی',
+    subtitle: 'خرید، کنترل کیفیت و سفارش ارسال',
     stageId: STAGE_TADAROK_ID,
-  },
-  [OPERATIONAL_PHASES.TAJHIZ]: {
-    label: 'تجهیز',
-    subtitle: 'در حال آماده‌سازی',
-    stageId: STAGE_TAJHIZ_ID,
   },
   [OPERATIONAL_PHASES.RAHESPAR]: {
     label: 'رهسپار',
-    subtitle: 'آماده تحویل و لجستیک',
+    subtitle: 'بارگیری و لجستیک تحویل',
     stageId: STAGE_RAHESPAR_ID,
   },
   [OPERATIONAL_PHASES.SARANJAM]: {

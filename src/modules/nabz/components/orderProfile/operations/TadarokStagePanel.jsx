@@ -23,7 +23,15 @@ import {
   updatePurchaseOrder,
 } from '../../../tadarokStageService';
 import { SalePriceColumnHeader } from '../../quickInquiryParts';
+import {
+  getFulfilledPurchaseRows,
+} from '../../../shippingService';
+import {
+  getQcInspectionForRow,
+  getQcRowKey,
+} from '../../../qcInspectionConfig';
 import PurchaseOrderModal from './PurchaseOrderModal';
+import QcDocumentModal from './QcDocumentModal';
 import SplitLineModal from './SplitLineModal';
 
 const TADAROK_COLUMNS = [
@@ -34,7 +42,7 @@ const TADAROK_COLUMNS = [
   { key: 'salePrice', label: 'قیمت فروش', defaultWidth: 160 },
   { key: 'estimatedPrice', label: 'قیمت تأمین', defaultWidth: 200 },
   { key: 'status', label: 'وضعیت', defaultWidth: 120 },
-  { key: 'actions', label: 'عملیات', defaultWidth: 96, resizable: false },
+  { key: 'actions', label: 'عملیات', defaultWidth: 120, resizable: false },
 ];
 
 function SplitRowIcon() {
@@ -98,6 +106,30 @@ function ViewPurchaseOrderIcon() {
   );
 }
 
+function QcControlIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="nabz-action-icon"
+      aria-hidden="true"
+    >
+      <path d="M9 11l3 3L22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
+  );
+}
+
+function resolvePurchaseRowForTadarokLine(order, line) {
+  return getFulfilledPurchaseRows(order).find(
+    (row) => row.shippingRowKey === line.id || row.id === line.id,
+  ) || null;
+}
+
 function SupplyPriceCell({ amount, supplierName, supplyType }) {
   if (!amount) return '—';
   return (
@@ -125,7 +157,11 @@ export default function TadarokStagePanel({
   const canToggleVat = canEditProfitMargin() && isOfficialSale;
   const [splitLine, setSplitLine] = useState(null);
   const [poModal, setPoModal] = useState({ open: false, line: null, mode: 'create' });
-  const { widths, startResize } = useResizableColumns('nabz-tadarok-lines-v6', TADAROK_COLUMNS);
+  const [qcOpen, setQcOpen] = useState(false);
+  const [qcMode, setQcMode] = useState('inspect');
+  const [qcFocusRowKey, setQcFocusRowKey] = useState(null);
+  const [qcInitialRecord, setQcInitialRecord] = useState(null);
+  const { widths, startResize } = useResizableColumns('nabz-tadarok-lines-v7', TADAROK_COLUMNS);
 
   const handleVatInclusiveChange = (next) => {
     if (!canToggleVat) return;
@@ -152,6 +188,28 @@ export default function TadarokStagePanel({
 
   const closePoModal = () => {
     setPoModal({ open: false, line: null, mode: 'create' });
+  };
+
+  const openQcForRow = (row) => {
+    const purchaseRow = resolvePurchaseRowForTadarokLine(order, row);
+    if (!purchaseRow) {
+      window.alert('برای این سطر هنوز سفارش خرید صادر نشده است.');
+      return;
+    }
+    const record = getQcInspectionForRow(order, purchaseRow);
+    const rowKey = getQcRowKey(purchaseRow);
+    // از تدارک همیشه در حالت مدیریت (inspect) باز می‌شود تا ثبت/به‌روزرسانی QC ممکن باشد.
+    setQcMode('inspect');
+    setQcFocusRowKey(rowKey);
+    setQcInitialRecord(record);
+    setQcOpen(true);
+  };
+
+  const closeQcDrawer = () => {
+    setQcOpen(false);
+    setQcMode('inspect');
+    setQcFocusRowKey(null);
+    setQcInitialRecord(null);
   };
 
   const handlePoSubmit = (draft) => {
@@ -290,15 +348,26 @@ export default function TadarokStagePanel({
                         </button>
                       )}
                       {row.status === TADAROK_LINE_STATUS.PO_ISSUED && (
-                        <button
-                          type="button"
-                          className="nabz-table__action-btn nabz-table__action-btn--view-po"
-                          onClick={() => openViewPo(row)}
-                          title="مشاهده / ویرایش سفارش خرید"
-                          aria-label="مشاهده و ویرایش سفارش خرید"
-                        >
-                          <ViewPurchaseOrderIcon />
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="nabz-table__action-btn nabz-table__action-btn--view-po"
+                            onClick={() => openViewPo(row)}
+                            title="مشاهده / ویرایش سفارش خرید"
+                            aria-label="مشاهده و ویرایش سفارش خرید"
+                          >
+                            <ViewPurchaseOrderIcon />
+                          </button>
+                          <button
+                            type="button"
+                            className="nabz-table__action-btn nabz-table__action-btn--qc"
+                            onClick={() => openQcForRow(row)}
+                            title="کنترل کیفیت"
+                            aria-label="کنترل کیفیت"
+                          >
+                            <QcControlIcon />
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
@@ -316,7 +385,7 @@ export default function TadarokStagePanel({
             className="btn btn--primary tadarok-stage__btn-complete"
             onClick={handleComplete}
           >
-            تکمیل تدارک و ارجاع به تجهیز
+            تکمیل تدارک و ارجاع به رهسپار
           </button>
         </footer>
       )}
@@ -324,6 +393,7 @@ export default function TadarokStagePanel({
       {!live && (
         <p className="tadarok-stage__readonly-hint">
           نمایش تاریخچه مرحله تدارک — صدور سفارش خرید جدید فقط در مرحله فعال جاری مجاز است.
+          کنترل کیفیت از دکمه QC در ستون عملیات قابل دسترسی است.
         </p>
       )}
 
@@ -346,6 +416,16 @@ export default function TadarokStagePanel({
         }
         onClose={closePoModal}
         onSubmit={handlePoSubmit}
+      />
+
+      <QcDocumentModal
+        open={qcOpen}
+        order={order}
+        onClose={closeQcDrawer}
+        onUpdateOrder={onUpdateOrder}
+        mode={qcMode}
+        focusRowKey={qcFocusRowKey}
+        initialRecord={qcInitialRecord}
       />
     </section>
   );

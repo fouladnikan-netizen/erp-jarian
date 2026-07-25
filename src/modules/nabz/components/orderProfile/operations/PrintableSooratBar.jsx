@@ -1,6 +1,6 @@
 import logo from '../../../../../assets/images/nikan2.jpg';
 import { COMPANY_BRAND } from '../../../proformaConfig';
-import { getShippingRecipient } from '../../../tajhizStageService';
+import { getShippingRecipient } from '../../../shippingService';
 import { getTodayJalali, getNowTimeFa } from '../../../dateUtils';
 import { toDisplayOrderCode } from '../../../orderCode';
 import './PrintableSooratBar.css';

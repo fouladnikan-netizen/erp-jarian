@@ -5418,6 +5418,11 @@ html[data-theme='dark'] .nabz-excel-filter {
   font-size: 0.76rem;
 }
 
+.order-profile-activity-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .order-profile-stage-btn.is-ready {
   border-color: var(--color-accent-dark);
   color: var(--color-accent-dark);
@@ -8232,6 +8237,11 @@ html[data-theme='dark'] .nabz-excel-filter {
   background: #eff6ff;
 }
 
+.nabz-table__action-btn--qc:hover {
+  color: #0f766e;
+  background: #f0fdfa;
+}
+
 .tadarok-stage__issued-meta {
   font-size: 0.72rem;
   color: var(--text-secondary);
@@ -8296,6 +8306,61 @@ html[data-theme='dark'] .nabz-excel-filter {
 
 .tadarok-modal__panel--narrow {
   width: min(28rem, 100%);
+}
+
+.delivery-order-modal__panel {
+  max-width: 44rem;
+  width: min(94vw, 44rem);
+}
+
+.delivery-order-modal__table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-md);
+}
+
+.delivery-order-modal__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+}
+
+.delivery-order-modal__table th,
+.delivery-order-modal__table td {
+  padding: 0.5rem 0.55rem;
+  text-align: center;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.delivery-order-modal__table th {
+  background: #E8FAF7;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.delivery-order-modal__table td.jarian-td-product {
+  text-align: right;
+}
+
+.delivery-order-modal__table tbody tr.is-selected td {
+  background: rgba(236, 253, 245, 0.65);
+}
+
+.delivery-order-modal__check-col {
+  width: 2.5rem;
+}
+
+.delivery-order-modal__check-cell {
+  text-align: center;
+}
+
+.delivery-order-modal__row-check {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: #0d9488;
 }
 
 .tadarok-modal__header {
@@ -8613,182 +8678,102 @@ html[data-theme='dark'] .nabz-excel-filter {
   padding: 0.25rem 0.45rem;
 }
 
-/* ——— Tajhiz stage (phase 2 — step 6) ——— */
-.tajhiz-stage {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  direction: rtl;
-}
-
-.tajhiz-stage--compact {
-  gap: 0.75rem;
-}
-
-.tajhiz-stage__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
-}
-
-.tajhiz-stage__title {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.tajhiz-stage__subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-}
-
-.tajhiz-stage__issued-badge {
+/* QC status chips — الگوی واحد جداول عملیاتی (Glossy) */
+.qc-status-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.35rem 0.7rem;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 1.7rem;
+  padding: 0.22rem 0.65rem;
+  border: 1px solid transparent;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: #ecfdf5;
-  color: #047857;
-  border: 1px solid #a7f3d0;
-}
-
-.tajhiz-stage__table-wrap {
-  overflow-x: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: var(--radius-md);
-}
-
-.tajhiz-stage__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-  table-layout: fixed;
-  min-width: 48rem;
-}
-
-.tajhiz-stage__table th,
-.tajhiz-stage__table td {
-  padding: 0.5rem 0.6rem;
-  text-align: center;
-  border-bottom: 1px solid #f3f4f6;
-  vertical-align: middle;
-}
-
-.tajhiz-stage__check-cell {
-  width: 2.75rem;
-}
-
-.tajhiz-stage__row-check {
-  width: 1rem;
-  height: 1rem;
-  accent-color: #0f766e;
-  cursor: pointer;
-}
-
-.tajhiz-stage__table tbody tr.is-selected td {
-  background: rgba(236, 253, 245, 0.7);
-}
-
-.tajhiz-stage__table th {
-  background: #f9fafb;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  line-height: 1.3;
+  cursor: pointer;
   white-space: nowrap;
+  vertical-align: middle;
+  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
-.tajhiz-stage__table tbody tr:last-child td {
-  border-bottom: none;
+.qc-status-chip:disabled {
+  cursor: default;
+  opacity: 0.85;
 }
 
-.tajhiz-stage__empty {
-  text-align: center;
-  color: var(--text-secondary);
-  padding: 1.25rem !important;
+.qc-status-chip:not(:disabled):hover {
+  filter: brightness(0.98);
+  transform: translateY(-0.5px);
 }
 
-.tajhiz-stage__expert-notes {
-  padding: 0.85rem 1rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: var(--radius-md);
+.qc-status-chip:not(:disabled):active {
+  transform: translateY(0);
 }
 
-.tajhiz-stage__expert-label {
-  display: block;
-  margin-bottom: 0.35rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-secondary);
+.qc-status-chip__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
-.tajhiz-stage__expert-notes p {
-  margin: 0;
-  font-size: 0.88rem;
-  color: var(--text-primary);
-  line-height: 1.6;
+.qc-status-chip__label {
+  font-family: inherit;
 }
 
-.tajhiz-stage__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  justify-content: flex-end;
-  padding-top: 0.15rem;
-}
-
-.tajhiz-stage__transition {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 0.35rem;
-}
-
-.tajhiz-stage__advance-btn {
-  padding: 0.7rem 1.15rem;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(145deg, #ff4d4d 0%, #dc2626 50%, #991b1b 100%);
-  color: var(--color-white-glossy);
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
+.qc-status-chip--pending {
+  color: #8a5a00;
+  background: linear-gradient(180deg, #fff8e8 0%, #ffefc7 100%);
+  border-color: rgba(255, 179, 0, 0.45);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 1px 2px rgba(0, 0, 0, 0.15);
-  transition: filter 0.3s ease;
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 1px 3px rgba(255, 179, 0, 0.22);
 }
 
-.tajhiz-stage__advance-btn:hover {
-  filter: brightness(1.1);
+.qc-status-chip--pending .qc-status-chip__dot {
+  background: #FFB300;
 }
 
-.tajhiz-stage__toast {
-  padding: 0.7rem 0.85rem;
-  background: var(--text-primary);
-  color: var(--color-white-glossy);
-  border-radius: var(--radius-sm);
-  font-size: 0.82rem;
+.qc-status-chip--approved {
+  color: #1b5e20;
+  background: linear-gradient(180deg, #eef9ee 0%, #d8f0d9 100%);
+  border-color: rgba(76, 175, 80, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 1px 3px rgba(76, 175, 80, 0.22);
+}
+
+.qc-status-chip--approved .qc-status-chip__dot {
+  background: #4CAF50;
+}
+
+.qc-status-chip--rejected {
+  color: #8e1c18;
+  background: linear-gradient(180deg, #fdecec 0%, #f8d4d3 100%);
+  border-color: rgba(229, 57, 53, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 1px 3px rgba(229, 57, 53, 0.2);
+}
+
+.qc-status-chip--rejected .qc-status-chip__dot {
+  background: #E53935;
+}
+
+td.jarian-td-qc,
+.jarian-table td.jarian-td-qc {
   text-align: center;
-  animation: tajhiz-toast-in 180ms ease;
+  vertical-align: middle;
+  border-left: none !important;
+  border-right: none !important;
 }
 
-@keyframes tajhiz-toast-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.tajhiz-stage__actions .btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-/* QC status in Tajhiz table */
+/* legacy aliases kept for any residual markup */
 .qc-status {
   font-size: 0.78rem;
   font-weight: 500;
@@ -8804,13 +8789,12 @@ html[data-theme='dark'] .nabz-excel-filter {
   justify-content: center;
   padding: 0.2rem 0.55rem;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   font: inherit;
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.4;
   cursor: pointer;
-  box-shadow: none;
   white-space: nowrap;
 }
 
@@ -8831,22 +8815,6 @@ html[data-theme='dark'] .nabz-excel-filter {
 
 .qc-status-badge:hover {
   filter: brightness(0.97);
-}
-
-.tajhiz-stage__readonly-hint {
-  margin: 0;
-  padding: 0.65rem 0.75rem;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  background: #f9fafb;
-  border: 1px dashed #e5e7eb;
-  border-radius: var(--radius-sm);
-}
-
-.tajhiz-stage--compact .tajhiz-stage__table th,
-.tajhiz-stage--compact .tajhiz-stage__table td {
-  padding: 0.4rem 0.5rem;
-  font-size: 0.76rem;
 }
 
 /* ——— Phase 2 operations profile ——— */

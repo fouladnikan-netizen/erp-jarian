@@ -2,11 +2,12 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import JalaliDatePicker from '../../JalaliDatePicker';
 import { getTodayJalali, getNowTimeFa } from '../../../dateUtils';
-import { getFulfilledPurchaseRows } from '../../../tajhizStageService';
+import { getFulfilledPurchaseRows } from '../../../shippingService';
 import {
   QC_FINAL_STATUS,
   QC_VISUAL_HEALTH,
   buildQcItemFromPurchaseRow,
+  getQcInspectionByKey,
   getQcVisualLabel,
   saveQcInspection,
 } from '../../../qcInspectionConfig';
@@ -139,11 +140,21 @@ export default function QcDocumentModal({
       return undefined;
     }
 
-    setInspectorName('');
-    setInspectDate(getTodayJalali());
-    setInspectTime(getNowTimeFa());
+    const existing = initialRecord
+      || (focusRowKey ? getQcInspectionByKey(order, focusRowKey) : null);
+
+    setInspectorName(existing?.inspectorName || '');
+    setInspectDate(existing?.inspectDate || getTodayJalali());
+    setInspectTime(existing?.inspectTime || getNowTimeFa());
     setSelectedItemId(focusRowKey || '');
-    setInspection(EMPTY_INSPECTION);
+    setInspection(existing ? {
+      thickness: existing.thickness || '',
+      dimensions: existing.dimensions || '',
+      visualHealth: existing.visualHealth || 'black-healthy',
+      manufacturerBrand: existing.manufacturerBrand || '',
+      notes: existing.notes || '',
+      itemStatus: existing.itemStatus || '',
+    } : EMPTY_INSPECTION);
     setAttachments((prev) => {
       revokeAttachmentUrls(prev);
       return [];

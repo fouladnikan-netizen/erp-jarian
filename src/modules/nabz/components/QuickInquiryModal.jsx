@@ -8,7 +8,6 @@ import GatewayHorizontalStepper from './orderProfile/gateway/GatewayHorizontalSt
 import GatewayDecisionPanel from './orderProfile/gateway/GatewayDecisionPanel';
 import ParvaneStagePanel from './orderProfile/operations/ParvaneStagePanel';
 import TadarokStagePanel from './orderProfile/operations/TadarokStagePanel';
-import TajhizStagePanel from './orderProfile/operations/TajhizStagePanel';
 import RahseparStagePanel from './orderProfile/operations/RahseparStagePanel';
 import SaranjamStagePanel from './orderProfile/operations/SaranjamStagePanel';
 import { GATEWAY_PHASES } from '../gatewayConfig';
@@ -438,9 +437,6 @@ export default function QuickInquiryModal({
   const showTadarokPanel = order.status === ORDER_TABS.SUCCESS
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.TADAROK;
-  const showTajhizPanel = order.status === ORDER_TABS.SUCCESS
-    && pipeline.viewMode === 'operations'
-    && activeOperationalPhase === OPERATIONAL_PHASES.TAJHIZ;
   const showRahseparPanel = order.status === ORDER_TABS.SUCCESS
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.RAHESPAR;
@@ -761,14 +757,6 @@ export default function QuickInquiryModal({
             />
           ) : showTadarokPanel ? (
             <TadarokStagePanel
-              order={order}
-              operationalViewPhase={activeOperationalPhase}
-              compact
-              onUpdateOrder={updateModalOrder}
-              onOperationalPhaseChange={pipeline.handleOperationalPhaseChange}
-            />
-          ) : showTajhizPanel ? (
-            <TajhizStagePanel
               order={order}
               operationalViewPhase={activeOperationalPhase}
               compact

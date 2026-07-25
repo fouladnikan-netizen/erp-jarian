@@ -16,7 +16,8 @@ import {
   getOrderProfileTabOrder,
   ORDER_PROFILE_TABS,
 } from '../../orderProfileConfig';
-import { canShowDeliveryLocationAction } from '../../deliveryInfoService';
+import { canShowDeliveryLocationAction, canShowDeliveryOrderAction, canEnableDeliveryOrderAction } from '../../deliveryInfoService';
+import { getOrderShippingRecord } from '../../shippingService';
 import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
 import OrderProfileCancelDialog from './OrderProfileCancelDialog';
 import ProformaHeaderActions from '../ProformaHeaderActions';
@@ -63,6 +64,7 @@ export default function OrderProfileChrome({
   onEditOrder,
   onNextAction,
   onOpenActivityModal,
+  onOpenDeliveryOrderModal,
   onOpenDeliveryModal,
   onIssueProforma,
   onViewProforma,
@@ -94,6 +96,9 @@ export default function OrderProfileChrome({
   const canCancel = order.status !== ORDER_TABS.FAILED;
   const hasOverflowItems = canEdit || canCancel;
   const showDeliveryLocation = canShowDeliveryLocationAction(order);
+  const showDeliveryOrder = canShowDeliveryOrderAction(order);
+  const deliveryOrderEnabled = canEnableDeliveryOrderAction(order);
+  const shippingRecord = getOrderShippingRecord(order);
 
   useEffect(() => {
     if (!detailsOpen && !moreOpen) return undefined;
@@ -192,6 +197,24 @@ export default function OrderProfileChrome({
             <ActivityBellIcon />
             فعالیت
           </button>
+
+          {showDeliveryOrder && (
+            <button
+              type="button"
+              className={`btn btn--outline order-profile-activity-btn${shippingRecord?.voucherNumber ? ' is-ready' : ''}`}
+              onClick={() => onOpenDeliveryOrderModal?.()}
+              disabled={!deliveryOrderEnabled}
+              title={
+                !deliveryOrderEnabled
+                  ? 'پس از خرید حداقل یک قلم در تدارک فعال می‌شود'
+                  : shippingRecord?.voucherNumber
+                    ? 'صدور / مشاهده سفارش ارسال'
+                    : 'صدور سفارش ارسال'
+              }
+            >
+              سفارش ارسال
+            </button>
+          )}
 
           {showDeliveryLocation && (
             <button

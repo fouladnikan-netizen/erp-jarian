@@ -23,7 +23,6 @@ import {
 import { OPERATIONAL_PHASES } from '../../phase2Config';
 import ParvaneStagePanel from './operations/ParvaneStagePanel';
 import TadarokStagePanel from './operations/TadarokStagePanel';
-import TajhizStagePanel from './operations/TajhizStagePanel';
 import RahseparStagePanel from './operations/RahseparStagePanel';
 import SaranjamStagePanel from './operations/SaranjamStagePanel';
 
@@ -106,18 +105,6 @@ export default function OrderProfileOperationsTab({
   if (activePhase === OPERATIONAL_PHASES.TADAROK) {
     return (
       <TadarokStagePanel
-        order={order}
-        operationalViewPhase={activePhase}
-        onUpdateOrder={onUpdateOrder}
-        onOperationalPhaseChange={onOperationalPhaseChange}
-        compact={false}
-      />
-    );
-  }
-
-  if (activePhase === OPERATIONAL_PHASES.TAJHIZ) {
-    return (
-      <TajhizStagePanel
         order={order}
         operationalViewPhase={activePhase}
         onUpdateOrder={onUpdateOrder}

@@ -2,9 +2,12 @@ import { CURRENT_USER } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import {
   PHASE1_STAGES,
+  ALL_STAGES,
   STAGE_KAVOSH_ID,
   STAGE_MOZENE_ID,
   STAGE_PISHKESH_ID,
+  STAGE_RAHESPAR_ID,
+  LEGACY_STAGE_TAJHIZ_ID,
   ORDER_TABS,
   getStageLabel,
   isPhase1Stage,
@@ -52,6 +55,10 @@ export function isMozeneEarned(order) {
 export function getEffectiveStageId(order) {
   if (order.stageId === STAGE_MOZENE_ID && !canEnterMozeneStage(order)) {
     return STAGE_KAVOSH_ID;
+  }
+  // تجهیز حذف شد؛ سفارش‌های قدیمی به رهسپار نگاشت می‌شوند
+  if (order.stageId === LEGACY_STAGE_TAJHIZ_ID) {
+    return STAGE_RAHESPAR_ID;
   }
   return order.stageId;
 }
@@ -195,19 +202,24 @@ export function getManualStageOptions(order) {
 }
 
 export function buildStatusHistory(order) {
-  if (order.statusHistory?.length) return order.statusHistory;
+  if (order.statusHistory?.length) {
+    return order.statusHistory.filter(
+      (entry) => entry.stageId !== LEGACY_STAGE_TAJHIZ_ID,
+    );
+  }
 
   const effectiveStageId = getEffectiveStageId(order);
+  const stages = ALL_STAGES.filter((stage) => stage.id <= effectiveStageId);
   const entries = [];
 
-  for (let id = 1; id <= effectiveStageId; id += 1) {
-    const isCurrent = id === effectiveStageId;
-    const offset = effectiveStageId - id;
+  stages.forEach((stage, index) => {
+    const isCurrent = stage.id === effectiveStageId;
+    const offset = stages.length - 1 - index;
     entries.push({
-      stageId: id,
-      stageLabel: id === effectiveStageId
+      stageId: stage.id,
+      stageLabel: isCurrent
         ? getOrderDisplayStatus(order)
-        : getStageLabel(id),
+        : stage.label,
       at: isCurrent
         ? `${order.registeredDate} · ${order.registeredTime}`
         : offset === 1
@@ -215,7 +227,7 @@ export function buildStatusHistory(order) {
           : `${offset} مرحله قبل`,
       isCurrent,
     });
-  }
+  });
 
   return entries;
 }

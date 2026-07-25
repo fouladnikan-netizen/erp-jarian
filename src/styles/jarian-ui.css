@@ -129,8 +129,8 @@ td.jarian-td-row,
 .nabz-profile-items-table td,
 .data-table th,
 .data-table td,
-.tajhiz-stage__table th,
-.tajhiz-stage__table td,
+.delivery-order-modal__table th,
+.delivery-order-modal__table td,
 .jarian-td-money,
 td.jarian-td-money,
 .order-profile-items__num {
@@ -151,7 +151,6 @@ td:has(.jarian-product-cell),
 .nabz-proforma-table tbody td:nth-child(2),
 .order-profile-items__table tbody td:nth-child(2),
 .tadarok-stage__table tbody td:nth-child(2),
-.tajhiz-stage__table tbody td:nth-child(2),
 .gateway-table tbody td:has(.jarian-product-cell),
 .nabz-quick-table tbody td:has(.jarian-product-cell),
 .nabz-create-table tbody td:has(.jarian-product-cell) {
@@ -187,8 +186,8 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .nabz-inquiries-table td,
 .data-table th,
 .data-table td,
-.tajhiz-stage__table th,
-.tajhiz-stage__table td {
+.delivery-order-modal__table th,
+.delivery-order-modal__table td {
   border-left: none !important;
   border-right: none !important;
   border-top: none !important;
@@ -201,7 +200,7 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .order-profile-items__table th,
 .nabz-proforma-table th,
 .data-table th,
-.tajhiz-stage__table th {
+.delivery-order-modal__table th {
   border-bottom-color: var(--border-default, #d1d5db);
 }
 
@@ -235,8 +234,6 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .rahsepar-stage__table th,
 .data-table thead th,
 .data-table th,
-.tajhiz-stage__table thead th,
-.tajhiz-stage__table th,
 .gateway-th--supply,
 .gateway-th--sale {
   background: #E8FAF7 !important;
@@ -249,8 +246,7 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .tadarok-stage__table tbody tr:last-child td,
 .order-profile-items__table tbody tr:last-child td,
 .nabz-proforma-table tbody tr:last-child td,
-.data-table tbody tr:last-child td,
-.tajhiz-stage__table tbody tr:last-child td {
+.data-table tbody tr:last-child td {
   border-bottom-color: transparent;
 }
 
@@ -270,7 +266,6 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .nabz-items-table tbody tr:nth-child(odd) > td,
 .nabz-profile-items-table tbody tr:nth-child(odd) > td,
 .data-table tbody tr:nth-child(odd) > td,
-.tajhiz-stage__table tbody tr:nth-child(odd) > td,
 .gateway-table tbody tr:nth-child(odd) > td.gateway-td--supply,
 .gateway-table tbody tr:nth-child(odd) > td.gateway-td--sale,
 .nabz-quick-table tbody tr:nth-child(odd).is-active > td,
@@ -291,7 +286,6 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .nabz-items-table tbody tr:nth-child(even) > td,
 .nabz-profile-items-table tbody tr:nth-child(even) > td,
 .data-table tbody tr:nth-child(even) > td,
-.tajhiz-stage__table tbody tr:nth-child(even) > td,
 .gateway-table tbody tr:nth-child(even) > td.gateway-td--supply,
 .gateway-table tbody tr:nth-child(even) > td.gateway-td--sale,
 .nabz-quick-table tbody tr:nth-child(even).is-active > td,

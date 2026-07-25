@@ -1,5 +1,5 @@
-import { SHIPPING_PREVIEW_STORAGE_KEY } from './tajhizStageConfig';
-import { buildShippingDocumentViewModel } from './tajhizStageService';
+import { SHIPPING_PREVIEW_STORAGE_KEY } from './shippingConfig';
+import { buildShippingDocumentViewModel, getOrderShippingRecord } from './shippingService';
 
 const PREVIEW_PATH = '/nabz/shipping/preview';
 
@@ -35,8 +35,8 @@ export function openShippingPreview(order, carrierId, selectedRowKeys = null) {
 }
 
 export function printShippingVoucher(order, carrierId, selectedRowKeys = null) {
-  // Prefer the order snapshot so voucherNumber/date match what was just issued.
-  const keys = selectedRowKeys || order?.tajhizShipping?.selectedRowKeys || null;
+  const shipping = getOrderShippingRecord(order);
+  const keys = selectedRowKeys || shipping?.selectedRowKeys || null;
   const viewModel = buildShippingDocumentViewModel(order, carrierId, keys);
   const previewId = `${Date.now()}`;
   writePreviewPayload(previewId, {

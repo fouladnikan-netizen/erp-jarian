@@ -1,47 +1,15 @@
 import { CURRENT_USER } from './constants';
-import { ORDER_TABS, STAGE_TAJHIZ_ID } from './config';
 import { getCustomerById } from './customers';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { getDeliveryRecipientForShipping } from './deliveryInfoService';
-import { OPERATIONAL_PHASES } from './phase2Config';
-import { getOrderOperationalPhase } from './phase2Service';
-import { formatAmountRial } from './orderCode';
-import { calculateQuotingPreview, getTargetInquiry } from './quotingService';
+import { calculateQuotingPreview } from './quotingService';
 import { getSupplierName } from './suppliers';
 import { getTadarokLines } from './tadarokStageService';
 import { TADAROK_LINE_STATUS } from './tadarokStageConfig';
 import { getCarrierById } from './carriers';
 import { getWarehouseById } from './warehouses';
 import { resolveAssigneeMobile } from './proformaService';
-import { SHIPPING_FORM_NUMBER } from './tajhizStageConfig';
-
-export function isTajhizStageLive(order, operationalViewPhase) {
-  return order.status === ORDER_TABS.SUCCESS
-    && order.stageId === STAGE_TAJHIZ_ID
-    && getOrderOperationalPhase(order) === OPERATIONAL_PHASES.TAJHIZ
-    && operationalViewPhase === OPERATIONAL_PHASES.TAJHIZ;
-}
-
-function buildFallbackPurchaseRow(order, item, index, previewLine, target) {
-  const warehouse = getWarehouseById('wh-tehran');
-  const shippingRowKey = `item-${index}`;
-  return {
-    id: shippingRowKey,
-    shippingRowKey,
-    rowNumber: index + 1,
-    name: item.name || '—',
-    description: item.description || '—',
-    qty: Number(item.qty) || 0,
-    unit: item.unit || 'تن',
-    saleUnitPriceRial: previewLine?.saleUnitPrice || 0,
-    supplyType: target?.supplyType || 'رسمی',
-    supplierName: target ? getSupplierName(target.supplierId) : '—',
-    purchaseUnitPriceRial: target?.unitPrice || 0,
-    warehouseVoucherCode: `HV-${order.code.slice(-4)}-${index + 1}`,
-    warehouseName: warehouse?.name || 'انبار مرکزی تهران',
-    warehouseAddress: warehouse?.address || '—',
-  };
-}
+import { SHIPPING_FORM_NUMBER } from './shippingConfig';
 
 function buildRowFromPurchaseLine(order, line, index, preview) {
   const po = line.purchaseOrder || {};
@@ -66,27 +34,29 @@ function buildRowFromPurchaseLine(order, line, index, preview) {
   };
 }
 
+/** فقط اقلامی که سفارش خرید برایشان صادر شده (خرید شده) */
 export function getFulfilledPurchaseRows(order) {
   const preview = calculateQuotingPreview(order);
-  const issuedLines = getTadarokLines(order).filter(
-    (line) => line.status === TADAROK_LINE_STATUS.PO_ISSUED,
-  );
-
-  if (issuedLines.length > 0) {
-    return issuedLines.map((line, index) => buildRowFromPurchaseLine(order, line, index, preview));
-  }
-
-  return (order.items || []).map((item, index) => {
-    const target = getTargetInquiry(item);
-    return buildFallbackPurchaseRow(order, item, index, preview.lines[index], target);
-  });
+  return getTadarokLines(order)
+    .filter((line) => line.status === TADAROK_LINE_STATUS.PO_ISSUED)
+    .map((line, index) => buildRowFromPurchaseLine(order, line, index, preview));
 }
 
-export function getTajhizExpertNotes(order) {
-  return order.tajhizExpertNotes
+export function hasPurchasedItemsForShipping(order) {
+  return getFulfilledPurchaseRows(order).length > 0;
+}
+
+/** یادداشت کارشناس برای حواله / سفارش ارسال (سازگار با فیلدهای قدیمی) */
+export function getShippingExpertNotes(order) {
+  return order.shippingExpertNotes
+    || order.tajhizExpertNotes
     || order.parvaneDriverNotes
     || order.generalNotes
     || '';
+}
+
+export function getOrderShippingRecord(order) {
+  return order?.shippingVoucher || order?.tajhizShipping || null;
 }
 
 export function getShippingRecipient(order) {
@@ -153,13 +123,14 @@ export function buildShippingDocumentViewModel(order, carrierId, selectedRowKeys
   }));
 
   const carrier = getCarrierById(carrierId) || { name: '—', phone: '—', address: '—' };
+  const shipping = getOrderShippingRecord(order);
 
   return {
     orderCode: order.code,
     formNumber: SHIPPING_FORM_NUMBER,
     documentNumberLabel: 'شماره فرم:',
     documentNumber: SHIPPING_FORM_NUMBER,
-    issueDate: order.tajhizShipping?.issuedAt?.split(' · ')[0] || getTodayJalali(),
+    issueDate: shipping?.issuedAt?.split(' · ')[0] || getTodayJalali(),
     carrier,
     sender: {
       salesExpertName: order.assignee || '—',
@@ -169,8 +140,8 @@ export function buildShippingDocumentViewModel(order, carrierId, selectedRowKeys
     },
     recipient: getShippingRecipient(order),
     items,
-    expertNotes: getTajhizExpertNotes(order),
-    voucherNumber: order.tajhizShipping?.voucherNumber
+    expertNotes: getShippingExpertNotes(order),
+    voucherNumber: shipping?.voucherNumber
       || `BB-${order.code.slice(-6)}-${Date.now().toString().slice(-4)}`,
     selectedRowKeys: items.map((row) => row.shippingRowKey),
   };
@@ -199,20 +170,23 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
   }
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
+  const shippingVoucher = {
+    carrierId,
+    voucherNumber: viewModel.voucherNumber,
+    issuedAt: at,
+    issuedBy: CURRENT_USER,
+    selectedRowKeys: keys,
+    itemCount: viewModel.items.length,
+  };
 
   return {
     accepted: true,
     viewModel,
     order: {
       ...order,
-      tajhizShipping: {
-        carrierId,
-        voucherNumber: viewModel.voucherNumber,
-        issuedAt: at,
-        issuedBy: CURRENT_USER,
-        selectedRowKeys: keys,
-        itemCount: viewModel.items.length,
-      },
+      shippingVoucher,
+      // سازگاری با داده‌های قدیمی تا مهاجرت کامل
+      tajhizShipping: shippingVoucher,
       events: [
         ...(order.events || []),
         {
@@ -220,14 +194,9 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
           type: 'shipping_voucher_issued',
           at,
           by: CURRENT_USER,
-          summary: `صدور حواله باربری ${viewModel.voucherNumber} — ${carrier.name} (${viewModel.items.length} قلم)`,
+          summary: `صدور سفارش ارسال ${viewModel.voucherNumber} — ${carrier.name} (${viewModel.items.length} قلم)`,
         },
       ],
     },
   };
-}
-
-export function formatTajhizPrice(amount) {
-  if (!amount) return '—';
-  return `${formatAmountRial(amount)} ریال`;
 }
