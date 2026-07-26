@@ -18,6 +18,7 @@ import {
 } from '../../orderProfileConfig';
 import { canShowDeliveryLocationAction, canShowDeliveryOrderAction, canEnableDeliveryOrderAction } from '../../deliveryInfoService';
 import { getOrderShippingRecord } from '../../shippingService';
+import { isOrderArchived } from '../../saranjamSettlementService';
 import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
 import OrderProfileCancelDialog from './OrderProfileCancelDialog';
 import ProformaHeaderActions from '../ProformaHeaderActions';
@@ -92,8 +93,9 @@ export default function OrderProfileChrome({
   const knightName = order.assignee || '—';
   const displayCode = toDisplayOrderCode(order.code);
   const registeredAt = [order.registeredDate, order.registeredTime].filter(Boolean).join(' · ');
-  const canEdit = canEditWholeOrder();
-  const canCancel = order.status !== ORDER_TABS.FAILED;
+  const archived = isOrderArchived(order);
+  const canEdit = canEditWholeOrder() && !archived;
+  const canCancel = order.status !== ORDER_TABS.FAILED && !archived;
   const hasOverflowItems = canEdit || canCancel;
   const showDeliveryLocation = canShowDeliveryLocationAction(order);
   const showDeliveryOrder = canShowDeliveryOrderAction(order);
@@ -153,6 +155,16 @@ export default function OrderProfileChrome({
           <span className={`order-profile-smart-badge order-profile-smart-badge--${statusKind}`}>
             {statusLabel}
           </span>
+
+          {archived && (
+            <span
+              className="order-profile-archived-overlay"
+              title="ARCHIVED"
+              aria-label="بایگانی‌شده"
+            >
+              🔒 بایگانی‌شده
+            </span>
+          )}
 
           <div className="order-profile-slim-header__details" ref={detailsRef}>
             <button

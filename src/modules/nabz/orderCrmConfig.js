@@ -3,6 +3,7 @@ export const CRM_ACTIVITY_TYPES = {
   NOTE: 'note',
   MESSAGE: 'message',
   MEETING: 'meeting',
+  PAYMENT: 'payment',
 };
 
 export const CRM_ACTIVITY_META = {
@@ -10,6 +11,7 @@ export const CRM_ACTIVITY_META = {
   [CRM_ACTIVITY_TYPES.NOTE]: { label: 'یادداشت', icon: '📝' },
   [CRM_ACTIVITY_TYPES.MESSAGE]: { label: 'پیام', icon: '💬' },
   [CRM_ACTIVITY_TYPES.MEETING]: { label: 'جلسه', icon: '📅' },
+  [CRM_ACTIVITY_TYPES.PAYMENT]: { label: 'دریافت وجه', icon: '💰' },
 };
 
 export const CRM_ACTIVITY_ORDER = [
@@ -17,6 +19,7 @@ export const CRM_ACTIVITY_ORDER = [
   CRM_ACTIVITY_TYPES.NOTE,
   CRM_ACTIVITY_TYPES.MESSAGE,
   CRM_ACTIVITY_TYPES.MEETING,
+  CRM_ACTIVITY_TYPES.PAYMENT,
 ];
 
 export const CRM_TIMELINE_FILTERS = {

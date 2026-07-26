@@ -31,6 +31,7 @@ function buildRowFromPurchaseLine(order, line, index, preview) {
     warehouseVoucherCode: po.warehouseVoucherCode || '—',
     warehouseName: warehouse?.name || '—',
     warehouseAddress: po.warehouseAddress || warehouse?.address || '—',
+    cargoDeliveryTime: po.cargoDeliveryTime || '',
   };
 }
 

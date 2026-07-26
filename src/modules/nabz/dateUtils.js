@@ -78,6 +78,21 @@ export function parseJalaliDate(dateStr) {
   return { year, month, day };
 }
 
+/** منفی: a قبل از b — صفر: برابر — مثبت: a بعد از b */
+export function compareJalaliDates(a, b) {
+  const left = parseJalaliDate(a);
+  const right = parseJalaliDate(b);
+  if (left.year !== right.year) return left.year - right.year;
+  if (left.month !== right.month) return left.month - right.month;
+  return left.day - right.day;
+}
+
+/** آیا تاریخ جلالی فرا رسیده یا گذشته است؟ */
+export function isJalaliDateReached(dateStr, today = getTodayJalali()) {
+  if (!isValidJalaliDate(dateStr) || !isValidJalaliDate(today)) return false;
+  return compareJalaliDates(today, dateStr) >= 0;
+}
+
 export function getJalaliMonthLength(year, month) {
   if (month >= 1 && month <= 6) return 31;
   if (month >= 7 && month <= 11) return 30;

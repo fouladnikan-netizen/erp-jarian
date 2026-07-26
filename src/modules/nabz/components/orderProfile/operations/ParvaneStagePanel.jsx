@@ -63,9 +63,10 @@ export default function ParvaneStagePanel({
   onOperationalPhaseChange,
   onReturnToGateway,
   compact = false,
+  readOnly = false,
 }) {
   const [driverNotes, setDriverNotes] = useState(order.parvaneDriverNotes || '');
-  const live = isParvaneStageLive(order, operationalViewPhase);
+  const live = isParvaneStageLive(order, operationalViewPhase) && !readOnly;
   const orderTotal = getParvaneOrderTotal(order);
   const predictedProfit = getParvanePredictedProfit(order);
   const profitPercentLabel = formatProfitPercent(predictedProfit, orderTotal);
@@ -80,11 +81,12 @@ export default function ParvaneStagePanel({
   const paymentRows = useMemo(() => buildPaymentTermsRows(decision), [decision]);
 
   const handleVatInclusiveChange = (next) => {
-    if (!canToggleVat) return;
+    if (readOnly || !canToggleVat) return;
     onUpdateOrder?.((current) => updateOrderQuoting(current, { vatInclusive: next }));
   };
 
   const handleIssuePermit = () => {
+    if (readOnly) return;
     const result = issueParvaneSupplyPermit(order, driverNotes);
     if (!result.accepted) {
       window.alert(result.reason || 'امکان صدور دستور خرید وجود ندارد.');
@@ -95,6 +97,7 @@ export default function ParvaneStagePanel({
   };
 
   const handleReturn = () => {
+    if (readOnly) return;
     if (!window.confirm('سفارش به مرحله پیش‌کش بازگردانده شود؟')) return;
     const result = returnParvaneToPishkesh(order, driverNotes);
     if (!result.accepted) return;
@@ -103,9 +106,14 @@ export default function ParvaneStagePanel({
   };
 
   return (
-    <section className={`parvane-stage${compact ? ' parvane-stage--compact' : ''}`}>
+    <section className={`parvane-stage${compact ? ' parvane-stage--compact' : ''}${readOnly ? ' is-readonly' : ''}`}>
       <header className="parvane-stage__head">
         <h2 className="parvane-stage__title">ماشه تأمین</h2>
+        {readOnly ? (
+          <p className="parvane-stage__readonly-hint" role="status">
+            🔒 سفارش بایگانی شده — فقط خواندنی
+          </p>
+        ) : null}
       </header>
 
       <div className="parvane-stage__ribbon" role="region" aria-label="خلاصه مالی ماشه تأمین">

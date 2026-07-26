@@ -146,8 +146,9 @@ export default function TadarokStagePanel({
   onUpdateOrder,
   onOperationalPhaseChange,
   compact = false,
+  readOnly = false,
 }) {
-  const live = isTadarokStageLive(order, operationalViewPhase);
+  const live = isTadarokStageLive(order, operationalViewPhase) && !readOnly;
   const rows = useMemo(() => getTadarokProcurementRows(order), [order]);
   const progress = useMemo(() => getTadarokProgress(order), [order]);
   const preview = useMemo(() => calculateQuotingPreview(order), [order]);
@@ -164,11 +165,12 @@ export default function TadarokStagePanel({
   const { widths, startResize } = useResizableColumns('nabz-tadarok-lines-v7', TADAROK_COLUMNS);
 
   const handleVatInclusiveChange = (next) => {
-    if (!canToggleVat) return;
+    if (readOnly || !canToggleVat) return;
     onUpdateOrder?.((current) => updateOrderQuoting(current, { vatInclusive: next }));
   };
 
   const handleSplitSubmit = (quantities) => {
+    if (readOnly) return;
     const result = splitTadarokLine(order, splitLine.id, quantities);
     if (!result.accepted) {
       window.alert(result.reason || 'امکان تفکیک وجود ندارد.');
@@ -213,6 +215,7 @@ export default function TadarokStagePanel({
   };
 
   const handlePoSubmit = (draft) => {
+    if (readOnly) return;
     const result = poModal.mode === 'edit'
       ? updatePurchaseOrder(order, poModal.line.id, draft)
       : issuePurchaseOrder(order, poModal.line.id, draft);
@@ -225,6 +228,7 @@ export default function TadarokStagePanel({
   };
 
   const handleComplete = () => {
+    if (readOnly) return;
     const result = completeTadarokProcurement(order);
     if (!result.accepted) {
       window.alert(result.reason || 'امکان تکمیل تدارک وجود ندارد.');
@@ -235,11 +239,16 @@ export default function TadarokStagePanel({
   };
 
   return (
-    <section className={`tadarok-stage${compact ? ' tadarok-stage--compact' : ''}`}>
+    <section className={`tadarok-stage${compact ? ' tadarok-stage--compact' : ''}${readOnly ? ' is-readonly' : ''}`}>
       <header className="tadarok-stage__head">
         <div>
           <h2 className="tadarok-stage__title">تدارک — مدیریت خرید و صدور سفارش خرید</h2>
           <p className="tadarok-stage__subtitle">تفکیک اقلام و صدور سفارش خرید برای کاشف</p>
+          {readOnly ? (
+            <p className="tadarok-stage__readonly-hint" role="status">
+              🔒 سفارش بایگانی شده — فقط خواندنی
+            </p>
+          ) : null}
         </div>
         <div className="tadarok-stage__progress">
           <span className="tadarok-stage__progress-label">پیشرفت سفارش‌های خرید</span>
@@ -275,7 +284,7 @@ export default function TadarokStagePanel({
                       saleType={saleType}
                       vatInclusive={vatInclusive}
                       showToggle={isOfficialSale}
-                      disabled={!canToggleVat}
+                      disabled={!canToggleVat || readOnly}
                       onChange={handleVatInclusiveChange}
                     />
                   ) : (
@@ -392,8 +401,9 @@ export default function TadarokStagePanel({
 
       {!live && (
         <p className="tadarok-stage__readonly-hint">
-          نمایش تاریخچه مرحله تدارک — صدور سفارش خرید جدید فقط در مرحله فعال جاری مجاز است.
-          کنترل کیفیت از دکمه QC در ستون عملیات قابل دسترسی است.
+          {readOnly
+            ? '🔒 سفارش بایگانی شده — تدارک فقط خواندنی است.'
+            : 'نمایش تاریخچه مرحله تدارک — صدور سفارش خرید جدید فقط در مرحله فعال جاری مجاز است. کنترل کیفیت از دکمه QC در ستون عملیات قابل دسترسی است.'}
         </p>
       )}
 

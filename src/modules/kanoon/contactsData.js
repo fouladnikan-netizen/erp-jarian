@@ -87,6 +87,7 @@ const rawContacts = [
     ],
     interactions: [{ id: 'POY-1404-012', date: '۱۴۰۴/۰۱/۱۲', type: 'پیگیری', summary: 'استعلام قیمت تیرآهن' }],
     relatedOrders: [],
+    accountBalanceRial: 8_400_000_000,
   },
   {
     id: 3,

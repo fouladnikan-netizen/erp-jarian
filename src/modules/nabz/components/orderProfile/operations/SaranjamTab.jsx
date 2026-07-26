@@ -1,11 +1,14 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import logo from '../../../../../assets/images/nikan2.jpg';
 import { COMPANY_BRAND, PROFORMA_BANK_ACCOUNTS } from '../../../proformaConfig';
 import { formatAmountRial, toDisplayOrderCode } from '../../../orderCode';
 import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { getCustomerById } from '../../../customers';
 import { getTodayJalali } from '../../../dateUtils';
+import { listCrmPaymentsAsCustomerPayments } from '../../../orderCrmService';
+import { buildSaranjamSettlementModel } from '../../../saranjamSettlementService';
 import { printTaxInvoice } from './printTaxInvoice';
+import SaranjamSettlementLayout from './SaranjamSettlementLayout';
 import './SaranjamTab.css';
 
 const VAT_RATE = 0.09;
@@ -90,6 +93,57 @@ function CheckIcon() {
       <path d="M7.5 12.5l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 20h9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function buildSalesInvoiceFingerprint(items) {
+  return (items || []).map((item) => ({
+    id: item.id,
+    code: item.code || '',
+    name: item.name || '',
+    qty: Number(item.qty) || 0,
+    unitPriceRial: Number(item.unitPriceRial) || 0,
+    discountRial: Number(item.discountRial) || 0,
+  }));
+}
+
+function hasSalesInvoiceContentChanged(currentItems, snapshotItems) {
+  if (!snapshotItems?.length) return false;
+  return JSON.stringify(buildSalesInvoiceFingerprint(currentItems))
+    !== JSON.stringify(buildSalesInvoiceFingerprint(snapshotItems));
 }
 
 function readFileAsDataUrl(file) {
@@ -421,7 +475,9 @@ function TaxInvoiceModal({
       >
         <header className="saranjam-modal__toolbar saranjam-modal__no-print">
           <h2 id="saranjam-tax-title" className="saranjam-modal__toolbar-title">
-            {isViewMode ? 'مشاهده فاکتور فروش رسمی' : 'صدور فاکتور فروش رسمی'}
+            {isViewMode
+              ? 'مشاهده فاکتور فروش'
+              : (mode === 'reissue' ? 'صدور مجدد فاکتور فروش' : 'صدور فاکتور فروش')}
           </h2>
           <button type="button" className="saranjam-modal__close" onClick={onClose} aria-label="بستن">×</button>
         </header>
@@ -604,7 +660,7 @@ function TaxInvoiceModal({
           </button>
           {!isViewMode && (
             <button type="button" className="saranjam-btn saranjam-btn--solid" onClick={onConfirm}>
-              تأیید و صدور
+              {mode === 'reissue' ? 'تأیید و صدور مجدد' : 'تأیید و صدور'}
             </button>
           )}
         </footer>
@@ -636,6 +692,31 @@ export default function SaranjamTab({
       ? order.saranjam.customerPayments
       : MOCK_CUSTOMER_PAYMENTS.map((p) => ({ ...p }))
   ));
+
+  // واریزی‌های ثبت‌شده از فعالیت «دریافت وجه» + پرداخت‌های سرانجام
+  const mergedCustomerPayments = useMemo(() => {
+    const byId = new Map();
+    customerPayments.forEach((pay) => byId.set(pay.id, pay));
+    (order?.saranjam?.customerPayments || []).forEach((pay) => {
+      if (pay?.sourceActivityId) byId.set(pay.id, pay);
+    });
+    listCrmPaymentsAsCustomerPayments(order).forEach((pay) => {
+      byId.set(pay.id, pay);
+    });
+    return Array.from(byId.values());
+  }, [customerPayments, order]);
+
+  useEffect(() => {
+    const fromOrder = order?.saranjam?.customerPayments;
+    if (!Array.isArray(fromOrder) || !fromOrder.length) return;
+    setCustomerPayments((prev) => {
+      const manual = prev.filter((pay) => !pay.sourceActivityId);
+      const byId = new Map();
+      manual.forEach((pay) => byId.set(pay.id, pay));
+      fromOrder.forEach((pay) => byId.set(pay.id, pay));
+      return Array.from(byId.values());
+    });
+  }, [order?.saranjam?.customerPayments]);
   const [supplierPayments, setSupplierPayments] = useState(() => (
     order?.saranjam?.supplierPayments?.length
       ? order.saranjam.supplierPayments
@@ -644,12 +725,21 @@ export default function SaranjamTab({
   const [salesInvoiceIssued, setSalesInvoiceIssued] = useState(
     Boolean(order?.saranjam?.salesInvoiceIssued),
   );
+  const [salesInvoiceSnapshot, setSalesInvoiceSnapshot] = useState(
+    () => order?.saranjam?.salesInvoiceSnapshot || null,
+  );
   const [saleModalOpen, setSaleModalOpen] = useState(false);
   const [saleModalMode, setSaleModalMode] = useState('issue');
   const [draftItems, setDraftItems] = useState([]);
   const [purchaseViewItemId, setPurchaseViewItemId] = useState(null);
-  const [archived, setArchived] = useState(Boolean(order?.saranjam?.archivedAt));
+  const [archived, setArchived] = useState(
+    Boolean(order?.saranjam?.archivedAt || order?.saranjam?.locked),
+  );
   const [toast, setToast] = useState('');
+
+  useEffect(() => {
+    setArchived(Boolean(order?.saranjam?.archivedAt || order?.saranjam?.locked));
+  }, [order?.saranjam?.archivedAt, order?.saranjam?.locked]);
 
   const orderCode = order?.code ? toDisplayOrderCode(order.code) : 'JR-05-01-09-004';
 
@@ -684,7 +774,17 @@ export default function SaranjamTab({
     () => items.reduce((acc, item) => acc + lineEconomics(item).finalTotal, 0),
     [items],
   );
-  const customerPaid = useMemo(() => sumPayments(customerPayments), [customerPayments]);
+  const issuedInvoiceTotalRial = order?.saranjam?.salesInvoiceTotalRial ?? (
+    salesInvoiceSnapshot
+      ? salesInvoiceSnapshot.reduce((acc, item) => acc + lineEconomics(item).finalTotal, 0)
+      : saleTotalRial
+  );
+  // صدور مجدد: با تغییر محتوا نسبت به نسخهٔ صادرشده، یا در حالت مدیر برای ویرایش فی/مقدار
+  const canReissueSalesInvoice = salesInvoiceIssued && (
+    isAdmin || hasSalesInvoiceContentChanged(items, salesInvoiceSnapshot)
+  );
+
+  const customerPaid = useMemo(() => sumPayments(mergedCustomerPayments), [mergedCustomerPayments]);
   const customerBalanceRial = saleTotalRial - customerPaid;
 
   const supplierLedgers = useMemo(
@@ -715,7 +815,7 @@ export default function SaranjamTab({
       saranjam: {
         ...(current.saranjam || {}),
         items,
-        customerPayments,
+        customerPayments: mergedCustomerPayments,
         supplierPayments,
         salesInvoiceIssued,
         ...patch,
@@ -770,12 +870,12 @@ export default function SaranjamTab({
     }
     const payment = {
       id: `cp-${Date.now()}`,
-      date: '۱۴۰۴/۰۱/۱۵',
+      date: getTodayJalali(),
       amountRial: remaining,
       note: 'فیش واریزی مشتری',
       receiptFileName: file.name,
     };
-    const next = [...customerPayments, payment];
+    const next = [...mergedCustomerPayments, payment];
     setCustomerPayments(next);
     persist({ customerPayments: next });
     showToast(`فیش «${file.name}» ثبت و مانده مشتری صفر شد.`);
@@ -813,118 +913,131 @@ export default function SaranjamTab({
   };
 
   const handleConfirmSalesInvoice = () => {
-    setItems(draftItems);
+    const snapshot = draftItems.map((item) => ({ ...item }));
+    const total = snapshot.reduce((acc, item) => acc + lineEconomics(item).finalTotal, 0);
+    setItems(snapshot);
+    setSalesInvoiceSnapshot(snapshot);
     setSalesInvoiceIssued(true);
     setSaleModalOpen(false);
     setSaleModalMode('view');
     persist({
-      items: draftItems,
+      items: snapshot,
       salesInvoiceIssued: true,
       salesInvoiceNumber: invoiceNumber,
       salesInvoiceDate: issueDate,
+      salesInvoiceSnapshot: snapshot,
+      salesInvoiceTotalRial: total,
     });
-    showToast('فاکتور فروش رسمی صادر و ثبت شد.');
+    showToast(
+      saleModalMode === 'reissue'
+        ? 'فاکتور فروش مجدداً صادر شد.'
+        : 'فاکتور فروش صادر و ثبت شد.',
+    );
   };
 
   const handleArchive = () => {
-    if (!gates.canArchive || archived) return;
+    if (archived) return;
+    const confirmed = window.confirm(
+      'با تأیید مالی، سفارش بایگانی و تمام بخش‌های عملیاتی قفل می‌شوند. ادامه می‌دهید؟',
+    );
+    if (!confirmed) return;
+    const archivedAt = new Date().toISOString();
     setArchived(true);
-    persist({ archivedAt: new Date().toISOString() });
-    showToast('سفارش ختم و بایگانی شد.');
+    onUpdateOrder?.((current) => ({
+      ...current,
+      archivedAt,
+      saranjam: {
+        ...(current.saranjam || {}),
+        items,
+        customerPayments: mergedCustomerPayments,
+        supplierPayments,
+        salesInvoiceIssued,
+        salesInvoiceSnapshot,
+        archivedAt,
+        locked: true,
+        statusLabel: 'بایگانی‌شده',
+      },
+    }));
+    showToast('تأیید مالی انجام و سفارش بایگانی شد.');
   };
 
-  const sortedCustomerPayments = useMemo(
-    () => [...customerPayments].sort((a, b) => String(a.date).localeCompare(String(b.date), 'fa')),
-    [customerPayments],
-  );
+  const settlement = useMemo(() => buildSaranjamSettlementModel({
+    ...order,
+    saranjam: {
+      ...(order?.saranjam || {}),
+      items,
+      customerPayments: mergedCustomerPayments,
+      supplierPayments,
+      salesInvoiceIssued,
+      salesInvoiceSnapshot,
+      archivedAt: archived ? (order?.saranjam?.archivedAt || new Date().toISOString()) : null,
+      locked: archived,
+    },
+  }), [
+    order,
+    items,
+    mergedCustomerPayments,
+    supplierPayments,
+    salesInvoiceIssued,
+    salesInvoiceSnapshot,
+    archived,
+  ]);
 
   return (
     <section
-      className={`saranjam-tab font-meem${compact ? ' saranjam-tab--compact' : ''}`}
+      className={`saranjam-tab font-meem${compact ? ' saranjam-tab--compact' : ''}${archived ? ' is-archived' : ''}`}
       dir="rtl"
     >
-      <header className="saranjam-tab__head">
-        <div>
-          <h2 className="saranjam-tab__title">سرانجام — تسویه و بایگانی</h2>
-          <p className="saranjam-tab__subtitle">
-            آپلود فاکتورها و فیش‌ها، صدور صورتحساب رسمی، و صفر کردن مانده‌ها پیش از ختم سفارش
-          </p>
-          <p className="saranjam-tab__order-id">
-            شماره سفارش:
-            {' '}
-            <span className="font-vazir saranjam-tab__order-id-value">{orderCode}</span>
-          </p>
-        </div>
+      <SaranjamSettlementLayout
+        settlement={settlement}
+        archived={archived}
+        locked={archived}
+        compact={compact}
+        customerFileRef={customerFileRef}
+        onArchive={handleArchive}
+        onOpenSalesInvoice={() => openSalesModal(
+          salesInvoiceIssued || archived ? 'view' : 'issue',
+        )}
+        onUploadCustomerReceipt={handleCustomerReceipt}
+      />
 
-        <div className="saranjam-tab__head-aside">
-          <label className="saranjam-tab__admin-toggle">
-            <input
-              type="checkbox"
-              checked={isAdmin}
-              onChange={(e) => setIsAdmin(e.target.checked)}
-            />
-            <span>حالت مدیر (ویرایش فی/مقدار در فاکتور)</span>
-          </label>
-          <div className="saranjam-tab__badges">
-            {!gates.allPurchaseInvoicesUploaded && (
-              <span className="saranjam-badge saranjam-badge--warn">فاکتور خرید ناقص</span>
-            )}
-            {!gates.salesInvoiceIssued && (
-              <span className="saranjam-badge saranjam-badge--warn">فاکتور فروش صادر نشده</span>
-            )}
-            {!gates.customerBalanceZero && (
-              <span className="saranjam-badge saranjam-badge--danger">
-                مانده مشتری:
-                {' '}
-                <span className="jarian-money font-vazir">{formatJarianMoney(customerBalanceRial, { withCurrency: true })}</span>
-              </span>
-            )}
-            {!gates.allSupplierBalancesZero && (
-              <span className="saranjam-badge saranjam-badge--danger">مانده تأمین‌کننده باز</span>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <div className="saranjam-tab__body">
-        {/* A. Purchase invoices */}
-        <section className="saranjam-card" aria-labelledby="saranjam-supply-title">
-          <h3 id="saranjam-supply-title" className="saranjam-card__title">پازل تأمین — فاکتورهای خرید</h3>
-          <ul className="saranjam-supply-list">
-            {items.map((item) => {
-              const done = Boolean(item.invoiceUploaded);
-              const canView = Boolean(item.invoiceFileDataUrl);
-              return (
-                <li key={item.id} className={`saranjam-supply-row${done ? ' is-done' : ' is-missing'}`}>
-                  <div className="saranjam-supply-row__main">
-                    {done ? <CheckIcon /> : <span className="saranjam-dot" />}
-                    <div>
-                      <p className="saranjam-supply-row__name">{item.name}</p>
-                      <p className="saranjam-supply-row__meta">
-                        تأمین‌کننده: {item.supplier}
-                        {' · '}
-                        مقدار: <span className="font-vazir">{toNumber(item.qty).toLocaleString('fa-IR')}</span> {item.unit}
-                      </p>
-                      {item.invoiceFileName && (
-                        <p className="saranjam-file-name font-vazir">{item.invoiceFileName}</p>
-                      )}
+      {!archived && (
+        <details className="saranjam-legacy-tools">
+          <summary>ابزارهای تکمیلی فاکتور خرید / فروش</summary>
+          <div className="saranjam-legacy-tools__body">
+            <ul className="saranjam-supply-list">
+              {items.map((item) => {
+                const done = Boolean(item.invoiceUploaded);
+                const canView = Boolean(item.invoiceFileDataUrl);
+                return (
+                  <li key={item.id} className={`saranjam-supply-row${done ? ' is-done' : ' is-missing'}`}>
+                    <div className="saranjam-supply-row__main">
+                      {done ? <CheckIcon /> : <span className="saranjam-dot" />}
+                      <div>
+                        <p className="saranjam-supply-row__name">{item.name}</p>
+                        <p className="saranjam-supply-row__meta">تأمین‌کننده: {item.supplier}</p>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="saranjam-supply-row__actions">
-                    <input
-                      ref={(el) => { purchaseFileRefs.current[item.id] = el; }}
-                      type="file"
-                      accept="image/*,.pdf"
-                      className="saranjam-file-input"
-                      onChange={(e) => {
-                        handlePurchaseFile(item.id, e.target.files?.[0]);
-                        e.target.value = '';
-                      }}
-                    />
-                    {done ? (
-                      <>
-                        <span className="saranjam-status-ok">بارگذاری شده</span>
+                    <div className="saranjam-supply-row__actions">
+                      <input
+                        ref={(el) => { purchaseFileRefs.current[item.id] = el; }}
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="saranjam-file-input"
+                        onChange={(e) => {
+                          handlePurchaseFile(item.id, e.target.files?.[0]);
+                          e.target.value = '';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="saranjam-btn saranjam-btn--flat"
+                        onClick={() => purchaseFileRefs.current[item.id]?.click()}
+                      >
+                        <UploadIcon />
+                        {done ? 'جایگزینی فاکتور خرید' : 'آپلود فاکتور خرید'}
+                      </button>
+                      {done && (
                         <button
                           type="button"
                           className="saranjam-btn saranjam-btn--solid"
@@ -937,214 +1050,32 @@ export default function SaranjamTab({
                             setPurchaseViewItemId(item.id);
                           }}
                         >
-                          مشاهده و چاپ فاکتور
+                          مشاهده
                         </button>
-                        <button
-                          type="button"
-                          className="saranjam-btn saranjam-btn--flat"
-                          onClick={() => purchaseFileRefs.current[item.id]?.click()}
-                        >
-                          <UploadIcon />
-                          جایگزینی فایل
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        className="saranjam-btn saranjam-btn--flat"
-                        onClick={() => purchaseFileRefs.current[item.id]?.click()}
-                      >
-                        <UploadIcon />
-                        آپلود فاکتور خرید
-                      </button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-
-        {/* B. Sales invoice */}
-        <section className="saranjam-card" aria-labelledby="saranjam-sales-title">
-          <h3 id="saranjam-sales-title" className="saranjam-card__title">خروجی رسمی — فاکتور فروش</h3>
-          {salesInvoiceIssued ? (
-            <div className="saranjam-sales-done">
-              <div className="saranjam-sales-done__status">
-                <CheckIcon />
-                <div className="saranjam-sales-done__meta">
-                  <span className="saranjam-badge saranjam-badge--ok">فاکتور فروش رسمی صادر و ثبت شد</span>
-                  <p className="saranjam-sales-done__refs font-meem">
-                    شماره:
-                    {' '}
-                    <span className="font-vazir">{invoiceNumber}</span>
-                    {' · '}
-                    تاریخ:
-                    {' '}
-                    <span className="font-vazir">{issueDate}</span>
-                  </p>
-                </div>
-              </div>
-              <div className="saranjam-sales-done__actions">
-                <button
-                  type="button"
-                  className="saranjam-btn saranjam-btn--solid"
-                  onClick={() => openSalesModal('view')}
-                >
-                  مشاهده و چاپ فاکتور
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="saranjam-sales-pending">
-              <p>صورتحساب رسمی هنوز صادر نشده است.</p>
-              <button type="button" className="saranjam-btn saranjam-btn--flat" onClick={() => openSalesModal('issue')}>
-                صدور فاکتور فروش
-              </button>
-            </div>
-          )}
-        </section>
-
-        {/* C. Dual ledgers — RTL: first = right = customer */}
-        <section className="saranjam-ledgers" aria-label="ترازوی مالی دوگانه">
-          <div className={`saranjam-card saranjam-ledger${gates.customerBalanceZero ? ' is-zero' : ''}`}>
-            <div className="saranjam-ledger__head">
-              <h3 className="saranjam-card__title">تسویه مشتری</h3>
-              <input
-                ref={customerFileRef}
-                type="file"
-                accept="image/*,.pdf"
-                className="saranjam-file-input"
-                onChange={(e) => {
-                  handleCustomerReceipt(e.target.files?.[0]);
-                  e.target.value = '';
-                }}
-              />
-              <button
-                type="button"
-                className="saranjam-btn saranjam-btn--flat"
-                disabled={gates.customerBalanceZero}
-                onClick={() => customerFileRef.current?.click()}
-              >
-                <UploadIcon />
-                آپلود فیش واریزی
-              </button>
-            </div>
-            <ul className="saranjam-pay-list">
-              {sortedCustomerPayments.map((pay) => (
-                <li key={pay.id} className="saranjam-pay-row">
-                  <span className="font-vazir">{pay.date}</span>
-                  <span className="font-meem">{pay.note || '—'}</span>
-                  <span className="jarian-money font-vazir">{formatJarianMoney(pay.amountRial)}</span>
-                  {pay.receiptFileName && (
-                    <span className="saranjam-file-name font-vazir">{pay.receiptFileName}</span>
-                  )}
-                </li>
-              ))}
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
-            <div className="saranjam-ledger__foot">
-              <span className="font-meem">مانده مشتری</span>
-              <strong className="jarian-money font-vazir">{formatJarianMoney(customerBalanceRial, { withCurrency: true })}</strong>
-            </div>
+            <label className="saranjam-tab__admin-toggle" style={{ marginTop: '0.75rem' }}>
+              <input
+                type="checkbox"
+                checked={isAdmin}
+                onChange={(e) => setIsAdmin(e.target.checked)}
+              />
+              <span>حالت مدیر (ویرایش فی/مقدار در فاکتور فروش)</span>
+            </label>
           </div>
-
-          <div className={`saranjam-card saranjam-ledger${gates.allSupplierBalancesZero ? ' is-zero' : ''}`}>
-            <h3 className="saranjam-card__title">تسویه تأمین‌کنندگان</h3>
-            <div className="saranjam-supplier-blocks">
-              {supplierLedgers.map((ledger) => (
-                <div key={ledger.supplierId} className="saranjam-supplier-block">
-                  <div className="saranjam-supplier-block__head">
-                    <strong className="font-meem">{ledger.supplier}</strong>
-                    <span className="font-vazir">مانده: {formatJarianMoney(ledger.balanceRial, { withCurrency: true })}</span>
-                  </div>
-                  <ul className="saranjam-pay-list">
-                    {ledger.payments.length === 0 ? (
-                      <li className="saranjam-pay-row saranjam-pay-row--empty">پرداختی ثبت نشده</li>
-                    ) : (
-                      [...ledger.payments]
-                        .sort((a, b) => String(a.date).localeCompare(String(b.date), 'fa'))
-                        .map((pay) => (
-                          <li key={pay.id} className="saranjam-pay-row">
-                            <span className="font-vazir">{pay.date}</span>
-                            <span className="jarian-money font-vazir">{formatJarianMoney(pay.amountRial)}</span>
-                            {pay.receiptFileName && (
-                              <span className="saranjam-file-name font-vazir">{pay.receiptFileName}</span>
-                            )}
-                          </li>
-                        ))
-                    )}
-                  </ul>
-                  <input
-                    ref={(el) => { supplierFileRefs.current[ledger.supplierId] = el; }}
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="saranjam-file-input"
-                    onChange={(e) => {
-                      handleSupplierReceipt(ledger, e.target.files?.[0]);
-                      e.target.value = '';
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="saranjam-btn saranjam-btn--flat"
-                    disabled={ledger.balanceRial === 0}
-                    onClick={() => supplierFileRefs.current[ledger.supplierId]?.click()}
-                  >
-                    <UploadIcon />
-                    آپلود رسید پرداخت
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* D. Post-mortem */}
-        <section className="saranjam-card saranjam-postmortem" aria-labelledby="saranjam-postmortem-title">
-          <h3 id="saranjam-postmortem-title" className="saranjam-card__title">کارنامه سفارش</h3>
-          <div className="saranjam-postmortem__grid">
-            <div className="saranjam-postmortem__cell">
-              <span className="font-meem">زمان بسته‌شدن سفارش</span>
-              <strong className="font-vazir">
-                {closeDuration.days.toLocaleString('fa-IR')} روز، {closeDuration.hours.toLocaleString('fa-IR')} ساعت
-              </strong>
-            </div>
-            <div className="saranjam-postmortem__cell">
-              <span className="font-meem">سود خالص سفارش</span>
-              <strong className="font-vazir saranjam-postmortem__profit">
-                {formatJarianMoney(profitRial, { withCurrency: true })}
-              </strong>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* E. Hard gate */}
-      <footer className="saranjam-tab__footer">
-        {!gates.canArchive && !archived && (
-          <p className="saranjam-tab__gate-hint" role="status">
-            ختم سفارش فقط پس از آپلود همه فاکتورهای خرید، صدور فاکتور فروش، و صفر بودن مانده مشتری و تأمین‌کنندگان فعال می‌شود.
-          </p>
-        )}
-        {archived && (
-          <p className="saranjam-tab__archived" role="status">این سفارش بایگانی شده است.</p>
-        )}
-        <button
-          type="button"
-          className={`saranjam-archive-btn${gates.canArchive && !archived ? ' is-active' : ''}`}
-          disabled={!gates.canArchive || archived}
-          onClick={handleArchive}
-        >
-          {archived ? 'سفارش بایگانی شد' : 'ختم سفارش و بایگانی'}
-        </button>
-      </footer>
+        </details>
+      )}
 
       <TaxInvoiceModal
         open={saleModalOpen}
         mode={saleModalMode}
         onClose={() => setSaleModalOpen(false)}
         onConfirm={handleConfirmSalesInvoice}
-        isAdmin={isAdmin}
+        isAdmin={isAdmin && !archived}
         draftItems={draftItems}
         onChangeDraft={handleDraftChange}
         orderCode={orderCode}

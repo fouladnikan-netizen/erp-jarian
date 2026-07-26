@@ -331,13 +331,17 @@ export default function GatewayMorphTable({
     ? (vatInclusive ? 'قیمت با مالیات' : 'قیمت قبل از مالیات')
     : 'قیمت فروش';
   const showSupplier = canViewSupplierIdentity();
-  const live = isGatewayLivePhase(orderPhase, viewPhase);
-  const isReadOnly = isGatewayPhaseReadOnly(orderPhase, viewPhase);
+  const archived = Boolean(
+    order?.saranjam?.archivedAt || order?.saranjam?.locked || order?.archivedAt,
+  );
+  const live = isGatewayLivePhase(orderPhase, viewPhase) && !archived;
+  const isReadOnly = isGatewayPhaseReadOnly(orderPhase, viewPhase) || archived;
   const allowInquiryEdit = canEditInquiryPrices();
   const allowMarginEdit = canEditProfitMargin();
   const allowLineFieldEdit = canEditOrderLineFields();
   /* رهبر: ویرایش حاشیه در تب مظنه، وقتی سفارش جاری به مظنه رسیده باشد */
-  const marginEditable = allowMarginEdit
+  const marginEditable = !archived
+    && allowMarginEdit
     && viewPhase === GATEWAY_PHASES.MOZENE
     && order.status === ORDER_TABS.CURRENT
     && getGatewayPhaseIndex(orderPhase) >= getGatewayPhaseIndex(GATEWAY_PHASES.MOZENE);

@@ -64,6 +64,10 @@ export function getEffectiveStageId(order) {
 }
 
 export function getOrderDisplayStatus(order) {
+  if (order?.saranjam?.archivedAt || order?.saranjam?.locked || order?.archivedAt) {
+    return 'بایگانی‌شده';
+  }
+
   const decisionLabel = getOrderDecisionLabel(order);
   if (decisionLabel) return decisionLabel;
 
@@ -84,6 +88,10 @@ export function getOrderDisplayStatus(order) {
 }
 
 export function getOrderDisplayStatusKind(order) {
+  if (order?.saranjam?.archivedAt || order?.saranjam?.locked || order?.archivedAt) {
+    return 'archived';
+  }
+
   const decisionLabel = getOrderDecisionLabel(order);
   if (decisionLabel === 'موفق') return 'success';
   if (decisionLabel === 'ناموفق') return 'failed';

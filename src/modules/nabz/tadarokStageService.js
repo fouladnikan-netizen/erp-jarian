@@ -149,6 +149,7 @@ export function validatePurchaseOrderDraft(draft, line) {
   }
   if (!parseMoneyInput(draft.agreedUnitPriceRial)) return 'قیمت توافقی را وارد کنید.';
   if (!draft.warehouseId) return 'انبار را انتخاب کنید.';
+  if (!isValidJalaliDate(draft.cargoDeliveryTime)) return 'زمان تحویل بار معتبر نیست.';
   return validatePaymentTerms(draft.paymentTerms);
 }
 
@@ -217,6 +218,7 @@ function normalizePurchaseOrderPayload(draft, existingPo = null) {
     purchaseQty: Number(draft.purchaseQty),
     agreedUnitPriceRial: parseMoneyInput(draft.agreedUnitPriceRial) || 0,
     warehouseVoucherCode: (draft.warehouseVoucherCode || '').trim(),
+    cargoDeliveryTime: (draft.cargoDeliveryTime || '').trim(),
     poNumber: existingPo?.poNumber,
     issuedAt: existingPo?.issuedAt,
     issuedBy: existingPo?.issuedBy,

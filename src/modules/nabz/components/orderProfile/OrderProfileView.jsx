@@ -139,6 +139,7 @@ export default function OrderProfileView({
         type: input.type,
         body: input.body,
         followUp: input.followUp,
+        payment: input.payment,
       }));
     } else {
       updateOrder((current) => appendCrmActivity(current, input));

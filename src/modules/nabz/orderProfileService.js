@@ -281,8 +281,14 @@ export function getProformaHeaderActions(order) {
 
   const versions = getProformaVersions(order);
   const hasVersion = versions.length > 0;
+  const archived = Boolean(
+    order?.saranjam?.archivedAt || order?.saranjam?.locked || order?.archivedAt,
+  );
+
   if (!hasVersion) {
-    return { showIssue: true, showView: false, showUpdate: false };
+    return archived
+      ? empty
+      : { showIssue: true, showView: false, showUpdate: false };
   }
 
   const latest = getLatestProformaVersion(order);
@@ -290,6 +296,10 @@ export function getProformaHeaderActions(order) {
     latest?.contentHash && latest.contentHash === buildProformaFingerprint(order),
   );
   const signed = Boolean(order.proforma?.signed);
+
+  if (archived) {
+    return { showIssue: false, showView: true, showUpdate: false };
+  }
 
   if (!contentCurrent) {
     return { showIssue: true, showView: false, showUpdate: false };

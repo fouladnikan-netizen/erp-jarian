@@ -4405,6 +4405,27 @@ html[data-theme='dark'] .nabz-excel-filter {
   color: #b91c1c;
 }
 
+.order-profile-smart-badge--archived {
+  background: rgba(100, 116, 139, 0.14);
+  color: #475569;
+}
+
+.order-profile-archived-overlay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid #b8bfca;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.95);
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
 .order-profile-stepper-band {
   padding: 0.4rem 1rem 0.35rem;
   background: var(--bg-surface);
@@ -4885,7 +4906,7 @@ html[data-theme='dark'] .nabz-excel-filter {
 
 .order-crm-type-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.25rem;
   padding: 0.25rem;
   background: #f3f4f6;
@@ -5559,6 +5580,74 @@ html[data-theme='dark'] .nabz-excel-filter {
   justify-content: flex-end;
   gap: 0.5rem;
   padding-top: 0.25rem;
+}
+
+.quick-activity-modal__payment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-md);
+  background: #f0fdf4;
+}
+
+.quick-activity-modal__payment-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #065f46;
+}
+
+.quick-activity-modal__file {
+  width: 100%;
+  font-size: 0.8rem;
+}
+
+.quick-activity-modal__file-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.quick-activity-modal__file-clear {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: inherit;
+  padding: 0;
+}
+
+.order-crm-payment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-sm);
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  font-size: 0.78rem;
+  color: #065f46;
+}
+
+.order-crm-composer__payment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.order-crm-composer__file-name {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
 }
 
 @media (max-width: 1024px) {

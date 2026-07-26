@@ -407,16 +407,25 @@ export default function PurchaseOrderModal({
             </label>
           )}
 
-          <label className="tadarok-form__field tadarok-form__field--full">
-            <span>آدرس انبار</span>
-            <input
-              type="text"
-              className="tadarok-form__input"
-              value={draft.warehouseAddress}
-              readOnly
-              placeholder="پس از انتخاب انبار تکمیل می‌شود"
+          <div className="tadarok-form__grid">
+            <label className="tadarok-form__field">
+              <span>آدرس انبار</span>
+              <input
+                type="text"
+                className="tadarok-form__input"
+                value={draft.warehouseAddress}
+                readOnly
+                placeholder="پس از انتخاب انبار تکمیل می‌شود"
+              />
+            </label>
+
+            <JalaliDatePicker
+              label="زمان تحویل بار"
+              value={draft.cargoDeliveryTime}
+              onChange={(cargoDeliveryTime) => updateDraft({ cargoDeliveryTime })}
+              disabled={readOnly}
             />
-          </label>
+          </div>
 
           <label className="tadarok-form__field tadarok-form__field--full">
             <span>توضیحات مهم</span>

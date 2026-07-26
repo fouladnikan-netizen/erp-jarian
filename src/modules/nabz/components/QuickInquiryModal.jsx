@@ -10,6 +10,7 @@ import ParvaneStagePanel from './orderProfile/operations/ParvaneStagePanel';
 import TadarokStagePanel from './orderProfile/operations/TadarokStagePanel';
 import RahseparStagePanel from './orderProfile/operations/RahseparStagePanel';
 import SaranjamStagePanel from './orderProfile/operations/SaranjamStagePanel';
+import { isOrderArchived } from '../saranjamSettlementService';
 import { GATEWAY_PHASES } from '../gatewayConfig';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
@@ -443,6 +444,7 @@ export default function QuickInquiryModal({
   const showSaranjamPanel = order.status === ORDER_TABS.SUCCESS
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.SARANJAM;
+  const archivedReadOnly = isOrderArchived(order);
   const tableColumns = useMemo(
     () => (showQuoting
       ? [...BASE_QUICK_TABLE_COLUMNS, ...QUOTING_TABLE_COLUMNS, EXPAND_TABLE_COLUMN]
@@ -751,6 +753,7 @@ export default function QuickInquiryModal({
               order={order}
               operationalViewPhase={activeOperationalPhase}
               compact
+              readOnly={archivedReadOnly}
               onUpdateOrder={updateModalOrder}
               onOperationalPhaseChange={pipeline.handleOperationalPhaseChange}
               onReturnToGateway={() => pipeline.handlePhaseChange(GATEWAY_PHASES.PISHKESH)}
@@ -760,6 +763,7 @@ export default function QuickInquiryModal({
               order={order}
               operationalViewPhase={activeOperationalPhase}
               compact
+              readOnly={archivedReadOnly}
               onUpdateOrder={updateModalOrder}
               onOperationalPhaseChange={pipeline.handleOperationalPhaseChange}
             />
@@ -767,6 +771,7 @@ export default function QuickInquiryModal({
             <RahseparStagePanel
               order={order}
               compact
+              readOnly={archivedReadOnly}
               onUpdateOrder={updateModalOrder}
               onOperationalPhaseChange={pipeline.handleOperationalPhaseChange}
             />
