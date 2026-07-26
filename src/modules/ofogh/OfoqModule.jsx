@@ -167,6 +167,7 @@ function SourceTag({ source }) {
 
 function OpportunityCard({ opportunity, onDragStart }) {
   const followUp = getFollowUpStatus(opportunity.nextActionAt);
+  const followMeta = FOLLOW_UP_META[followUp] || FOLLOW_UP_META.future;
 
   return (
     <article
@@ -180,7 +181,13 @@ function OpportunityCard({ opportunity, onDragStart }) {
       <h3 className="ofoq-card__client">{opportunity.client}</h3>
       <p className="ofoq-card__subject">{opportunity.subject}</p>
       <div className="ofoq-card__footer">
-        <FollowUpIndicator status={followUp} />
+        <span
+          className={`${followMeta.className} ofoq-followup--dot-only`}
+          title={followMeta.label}
+          aria-label={followMeta.label}
+        >
+          <span className="ofoq-followup__dot" aria-hidden="true" />
+        </span>
       </div>
     </article>
   );
