@@ -34,6 +34,10 @@
   --border-default: var(--color-neutral-200);
   --action-primary: var(--color-brand-red);
 
+  --table-head-bg: #E8FAF7;
+  --table-row-odd-bg: #FFFFFF;
+  --table-row-even-bg: rgba(243, 244, 246, 0.85);
+
   --status-radar: #64748B;
   --status-hesitant: #B45309;
   --status-trial: #1F6FB2;
@@ -84,6 +88,10 @@ html[data-theme='dark'] {
   --text-primary: #F3F4F6;
   --text-secondary: #A8AFBA;
   --border-default: #2A2F38;
+
+  --table-head-bg: #14322E;
+  --table-row-odd-bg: var(--bg-surface);
+  --table-row-even-bg: var(--bg-muted);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);

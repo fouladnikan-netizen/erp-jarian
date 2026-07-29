@@ -236,8 +236,8 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .data-table th,
 .gateway-th--supply,
 .gateway-th--sale {
-  background: #E8FAF7 !important;
-  background-color: #E8FAF7 !important;
+  background: var(--table-head-bg) !important;
+  background-color: var(--table-head-bg) !important;
   color: var(--text-primary, #0f172a) !important;
 }
 
@@ -272,7 +272,7 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .nabz-quick-table tbody tr:nth-child(odd).is-expanded > td,
 .gateway-table tbody tr:nth-child(odd).is-expanded > td,
 .gateway-table tbody tr:nth-child(odd).has-target > td {
-  background-color: #ffffff !important;
+  background-color: var(--table-row-odd-bg) !important;
 }
 
 .jarian-table tbody tr:nth-child(even) > td,
@@ -292,7 +292,7 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .nabz-quick-table tbody tr:nth-child(even).is-expanded > td,
 .gateway-table tbody tr:nth-child(even).is-expanded > td,
 .gateway-table tbody tr:nth-child(even).has-target > td {
-  background-color: rgba(243, 244, 246, 0.85) !important;
+  background-color: var(--table-row-even-bg) !important;
 }
 
 /* خنثی‌سازی پس‌زمینهٔ رنگی ستون‌ها در بدنهٔ جدول */
