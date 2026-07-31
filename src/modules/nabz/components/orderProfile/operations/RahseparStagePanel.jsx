@@ -406,7 +406,7 @@ export default function RahseparStagePanel({
   const [printJob, setPrintJob] = useState(null);
   const toastTimerRef = useRef(null);
   const notifiedDeliveryKeyRef = useRef('');
-  const printPendingRef = useRef(false);
+  const printJobIdRef = useRef(0);
 
   const selectedCount = selectedIds.length;
   const canAssign = selectedCount > 0;
@@ -658,6 +658,9 @@ export default function RahseparStagePanel({
 
   /**
    * صدور صورت‌بار فقط برای اقلام همان تخصیص راننده (نه کل سفارش).
+   * چاپ بعد از mount شدن PrintableSooratBar اجرا می‌شود.
+   * توجه: از فلگ یک‌بارمصرف در useEffect استفاده نمی‌کنیم — در React StrictMode
+   * اثر دو بار mount/cleanup می‌شود و آن فلگ باعث می‌شد چاپ هرگز اجرا نشود.
    */
   const handlePrintPackingList = (assignmentId) => {
     const payload = buildSooratBarPayloadForAssignment(order, assignmentId);
@@ -665,8 +668,9 @@ export default function RahseparStagePanel({
       showToast(payload.reason || 'امکان صدور صورت‌بار وجود ندارد.');
       return;
     }
-    printPendingRef.current = true;
+    printJobIdRef.current += 1;
     setPrintJob({
+      id: printJobIdRef.current,
       lines: payload.lines,
       logistics: payload.logistics,
       meta: payload.meta,
@@ -674,20 +678,20 @@ export default function RahseparStagePanel({
   };
 
   useEffect(() => {
-    if (!printJob || !printPendingRef.current) return undefined;
-    printPendingRef.current = false;
+    if (!printJob) return undefined;
 
-    const previousTitle = document.title;
+    const jobId = printJob.id;
     document.body.classList.add('rahsepar-printing');
+
     const timer = window.setTimeout(() => {
       try {
         window.print();
       } finally {
         document.body.classList.remove('rahsepar-printing');
-        document.title = previousTitle;
-        setPrintJob(null);
+        // فقط همان job فعال را پاک کن تا race در StrictMode مشکلی نسازد
+        setPrintJob((current) => (current?.id === jobId ? null : current));
       }
-    }, 80);
+    }, 120);
 
     return () => {
       window.clearTimeout(timer);
@@ -1024,6 +1028,22 @@ export default function RahseparStagePanel({
                               onClick={() => handleConfirmReady([item.id])}
                             >
                               تأیید آمادگی
+                            </button>
+                          ) : null}
+                          {isDispatched && (assignment?.assignmentId || dispatch?.sessionId) ? (
+                            <button
+                              type="button"
+                              className="rahsepar-stage__print-btn"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handlePrintPackingList(
+                                  assignment?.assignmentId || dispatch?.sessionId,
+                                );
+                              }}
+                              aria-label="صدور صورت‌بار این راننده"
+                              title="صدور صورت‌بار"
+                            >
+                              <PrintPackingIcon />
                             </button>
                           ) : null}
                         </div>
