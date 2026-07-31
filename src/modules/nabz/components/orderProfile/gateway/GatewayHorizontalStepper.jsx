@@ -1,4 +1,4 @@
-import { GATEWAY_PHASE_META, GATEWAY_PHASE_ORDER } from '../../../gatewayConfig';
+import { GATEWAY_PHASE_META, GATEWAY_PHASE_ORDER, GATEWAY_PHASES } from '../../../gatewayConfig';
 import { getGatewayStepStateForProfile } from '../../../gatewayService';
 import {
   OPERATIONAL_PHASE_META,
@@ -15,6 +15,36 @@ function CheckIcon() {
       <path d="M20 6 9 17l-5-5" />
     </svg>
   );
+}
+
+function HelpIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5" />
+      <path d="M12 17.5h.01" />
+    </svg>
+  );
+}
+
+function DocumentIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+      <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M9 13h6M9 17h6" />
+    </svg>
+  );
+}
+
+function phaseIcon(phaseKey, status) {
+  if (status === 'completed') return <CheckIcon />;
+  if (phaseKey === GATEWAY_PHASES.MOZENE) return <HelpIcon />;
+  if (phaseKey === GATEWAY_PHASES.PISHKESH) return <DocumentIcon />;
+  if (status === 'active') {
+    return <span className="gateway-chevron-stepper__active-dot" aria-hidden="true" />;
+  }
+  return null;
 }
 
 function ChevronStep({
@@ -47,10 +77,9 @@ function ChevronStep({
         aria-label={`${stepNumber}. ${label} — ${subtitle}`}
         onClick={() => clickable && onClick()}
       >
-        {status === 'completed' && <CheckIcon />}
-        {status === 'active' && (
-          <span className="gateway-chevron-stepper__active-dot" aria-hidden="true" />
-        )}
+        <span className="gateway-chevron-stepper__icon" aria-hidden="true">
+          {phaseIcon(phaseKey, status)}
+        </span>
         <span className="gateway-chevron-stepper__text">
           {stepNumber}. {label}
         </span>

@@ -4,8 +4,8 @@ export const TADAROK_LINE_STATUS = {
 };
 
 export const TADAROK_LINE_STATUS_LABEL = {
-  [TADAROK_LINE_STATUS.PENDING]: 'در انتظار حواله',
-  [TADAROK_LINE_STATUS.PO_ISSUED]: 'حواله صادر شد',
+  [TADAROK_LINE_STATUS.PENDING]: 'در انتظار خرید',
+  [TADAROK_LINE_STATUS.PO_ISSUED]: 'خرید شد',
 };
 
 export const PAYMENT_TERM_TYPES = {
@@ -34,14 +34,19 @@ export function getEmptyPaymentTerms() {
 }
 
 export function getEmptyPurchaseOrderDraft(line) {
+  const inquiryPrice = line?.inquiryUnitPriceRial ?? line?.estimatedUnitPriceRial;
+  const supplierId = line?.kavoshSupplierId != null && line.kavoshSupplierId !== ''
+    ? String(line.kavoshSupplierId)
+    : '';
   return {
-    supplierId: '',
-    supplyType: 'رسمی',
+    supplierId,
+    supplyType: line?.kavoshSupplyType || 'رسمی',
     purchaseQty: line?.qty != null ? String(line.qty) : '',
-    agreedUnitPriceRial: line?.estimatedUnitPriceRial ?? '',
+    agreedUnitPriceRial: inquiryPrice != null && inquiryPrice !== '' ? String(inquiryPrice) : '',
     warehouseVoucherCode: '',
     warehouseId: '',
     warehouseAddress: '',
+    cargoDeliveryTime: '',
     importantNotes: '',
     discrepancyNotes: '',
     paymentTerms: getEmptyPaymentTerms(),
@@ -69,10 +74,11 @@ export function getPurchaseOrderDraftFromLine(line) {
     purchaseQty: po.purchaseQty != null ? String(po.purchaseQty) : (line?.qty != null ? String(line.qty) : ''),
     agreedUnitPriceRial: po.agreedUnitPriceRial != null
       ? String(po.agreedUnitPriceRial)
-      : (line?.estimatedUnitPriceRial ?? ''),
+      : (line?.inquiryUnitPriceRial ?? line?.estimatedUnitPriceRial ?? ''),
     warehouseVoucherCode: po.warehouseVoucherCode || '',
     warehouseId: po.warehouseId || '',
     warehouseAddress: po.warehouseAddress || '',
+    cargoDeliveryTime: po.cargoDeliveryTime || '',
     importantNotes: po.importantNotes || '',
     discrepancyNotes: po.discrepancyNotes || '',
     paymentTerms,

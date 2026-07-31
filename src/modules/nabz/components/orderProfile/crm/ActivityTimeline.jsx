@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import {
   CRM_ACTIVITY_META,
+  CRM_ACTIVITY_TYPES,
   CRM_TIMELINE_FILTER_ORDER,
   CRM_TIMELINE_FILTER_META,
   CRM_TIMELINE_FILTERS,
 } from '../../../orderCrmConfig';
 import { filterCrmActivities } from '../../../orderCrmService';
+import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { CrmActivityBody } from './MentionTextarea';
 
 function ActivityTypeIcon({ type }) {
@@ -95,6 +97,30 @@ export default function ActivityTimeline({ activities, onCompleteFollowUp }) {
                     </header>
 
                     <CrmActivityBody body={activity.body} />
+
+                    {activity.type === CRM_ACTIVITY_TYPES.PAYMENT && activity.payment ? (
+                      <div className="order-crm-payment-meta">
+                        <span>
+                          مبلغ:
+                          {' '}
+                          <strong className="font-vazir">
+                            {formatJarianMoney(activity.payment.amountRial, { withCurrency: true })}
+                          </strong>
+                        </span>
+                        <span>
+                          تاریخ:
+                          {' '}
+                          <strong className="font-vazir">{activity.payment.date || '—'}</strong>
+                        </span>
+                        {activity.payment.receiptFileName ? (
+                          <span className="font-vazir">
+                            فیش:
+                            {' '}
+                            {activity.payment.receiptFileName}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     {activity.followUp && (
                       <div className={`order-crm-reminder${activity.followUp.completed ? ' is-done' : ''}`}>

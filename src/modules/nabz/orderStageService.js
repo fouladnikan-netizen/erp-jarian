@@ -2,9 +2,12 @@ import { CURRENT_USER } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import {
   PHASE1_STAGES,
+  ALL_STAGES,
   STAGE_KAVOSH_ID,
   STAGE_MOZENE_ID,
   STAGE_PISHKESH_ID,
+  STAGE_RAHESPAR_ID,
+  LEGACY_STAGE_TAJHIZ_ID,
   ORDER_TABS,
   getStageLabel,
   isPhase1Stage,
@@ -16,7 +19,6 @@ import { canDropOnPhase2KanbanStage, tryChangePhase2Stage } from './phase2Servic
 
 export const ORDER_DISPLAY_STATUS = {
   ANNOUNCING: 'در حال اعلام',
-  NEEDS_SUPPLY: 'نیازمند تامین',
   EXPLORING: 'کاوش',
 };
 
@@ -36,6 +38,8 @@ export function hasInquiryOnAllLines(order) {
 }
 
 export function hasInquiryCompletionEvent(order) {
+  // پس از به‌روزرسانی پیش‌فاکتور، تا «تکمیل کاوش» دوباره، رویدادهای قبلی را حساب نکن
+  if (order.proformaUpdate) return false;
   return Boolean(order.inquiryCompletedAt)
     || (order.events || []).some((event) => event.type === 'inquiry_order_completed');
 }
@@ -52,10 +56,18 @@ export function getEffectiveStageId(order) {
   if (order.stageId === STAGE_MOZENE_ID && !canEnterMozeneStage(order)) {
     return STAGE_KAVOSH_ID;
   }
+  // تجهیز حذف شد؛ سفارش‌های قدیمی به رهسپار نگاشت می‌شوند
+  if (order.stageId === LEGACY_STAGE_TAJHIZ_ID) {
+    return STAGE_RAHESPAR_ID;
+  }
   return order.stageId;
 }
 
 export function getOrderDisplayStatus(order) {
+  if (order?.saranjam?.archivedAt || order?.saranjam?.locked || order?.archivedAt) {
+    return 'بایگانی‌شده';
+  }
+
   const decisionLabel = getOrderDecisionLabel(order);
   if (decisionLabel) return decisionLabel;
 
@@ -65,30 +77,30 @@ export function getOrderDisplayStatus(order) {
     return ORDER_DISPLAY_STATUS.ANNOUNCING;
   }
 
-  if (!hasInquiryOnAllLines(order)) {
-    return ORDER_DISPLAY_STATUS.NEEDS_SUPPLY;
-  }
+  const effectiveId = getEffectiveStageId(order);
 
-  if (isMozeneEarned(order)) {
-    return getStageLabel(order.stageId);
-  }
-
-  if (canEnterMozeneStage(order)) {
-    return getStageLabel(STAGE_MOZENE_ID);
+  // وضعیت نمایشی همان مرحلهٔ مؤثر کانبان است (برگشت عمدی به کاوش را مظنه نشان نده)
+  if (effectiveId >= STAGE_MOZENE_ID) {
+    return getStageLabel(effectiveId);
   }
 
   return ORDER_DISPLAY_STATUS.EXPLORING;
 }
 
 export function getOrderDisplayStatusKind(order) {
+  if (order?.saranjam?.archivedAt || order?.saranjam?.locked || order?.archivedAt) {
+    return 'archived';
+  }
+
   const decisionLabel = getOrderDecisionLabel(order);
   if (decisionLabel === 'موفق') return 'success';
   if (decisionLabel === 'ناموفق') return 'failed';
 
   const label = getOrderDisplayStatus(order);
   if (label === ORDER_DISPLAY_STATUS.ANNOUNCING) return 'pending';
-  if (label === ORDER_DISPLAY_STATUS.NEEDS_SUPPLY) return 'needs-supply';
-  if (label === ORDER_DISPLAY_STATUS.EXPLORING) return 'in-progress';
+  if (label === ORDER_DISPLAY_STATUS.EXPLORING || label === 'کاوش') return 'kavosh';
+  if (label === 'مظنه') return 'mozene';
+  if (label === 'پیش‌کش') return 'pishkesh';
   return 'stage';
 }
 
@@ -181,6 +193,11 @@ export function tryChangeOrderStage(order, targetStageId) {
     events: [...(current.events || []), buildStageAdvancedEvent(current, targetStageId)],
   };
 
+  // برگشت به کاوش: تکمیل کاوش قبلی باطل می‌شود تا دوباره بتوان استعلام ثبت/ویرایش کرد
+  if (targetStageId === STAGE_KAVOSH_ID && current.stageId > STAGE_KAVOSH_ID) {
+    nextOrder.inquiryCompletedAt = null;
+  }
+
   return { order: nextOrder, accepted: true };
 }
 
@@ -193,19 +210,24 @@ export function getManualStageOptions(order) {
 }
 
 export function buildStatusHistory(order) {
-  if (order.statusHistory?.length) return order.statusHistory;
+  if (order.statusHistory?.length) {
+    return order.statusHistory.filter(
+      (entry) => entry.stageId !== LEGACY_STAGE_TAJHIZ_ID,
+    );
+  }
 
   const effectiveStageId = getEffectiveStageId(order);
+  const stages = ALL_STAGES.filter((stage) => stage.id <= effectiveStageId);
   const entries = [];
 
-  for (let id = 1; id <= effectiveStageId; id += 1) {
-    const isCurrent = id === effectiveStageId;
-    const offset = effectiveStageId - id;
+  stages.forEach((stage, index) => {
+    const isCurrent = stage.id === effectiveStageId;
+    const offset = stages.length - 1 - index;
     entries.push({
-      stageId: id,
-      stageLabel: id === effectiveStageId
+      stageId: stage.id,
+      stageLabel: isCurrent
         ? getOrderDisplayStatus(order)
-        : getStageLabel(id),
+        : stage.label,
       at: isCurrent
         ? `${order.registeredDate} · ${order.registeredTime}`
         : offset === 1
@@ -213,7 +235,7 @@ export function buildStatusHistory(order) {
           : `${offset} مرحله قبل`,
       isCurrent,
     });
-  }
+  });
 
   return entries;
 }

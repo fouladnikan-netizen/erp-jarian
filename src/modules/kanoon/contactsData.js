@@ -47,6 +47,16 @@ const rawContacts = [
     fullAddress: 'اهواز، کیانپارس، خیابان صنعت، پلاک ۱۲',
     officialSpecs: { ...officialSample },
     legalPersons: { ...legalPersonsSample },
+    /** Last-used delivery fields for Nabz smart pre-fill (Smart Dispatch). */
+    lastUsedDeliveryInfo: {
+      needsShipping: true,
+      unloadAddress: 'اهواز، کیانپارس، خیابان صنعت، پلاک ۱۲ — محل تخلیه انبار مرکزی',
+      postalCode: '6135933456',
+      recipientName: 'علی رضایی',
+      recipientPhone: '09121112233',
+      shippingNotes: 'تحویل فقط در ساعات اداری؛ هماهنگی قبلی با نگهبانی',
+      updatedAt: daysAgo(5),
+    },
     relatedPersons: [
       { name: 'علی رضایی', mobile: '09121112233', role: 'مدیر', notes: 'مسئول خرید' },
       { name: 'سارا موسوی', mobile: '09354445566', role: 'کارشناس', notes: 'پیگیری سفارش' },
@@ -77,6 +87,7 @@ const rawContacts = [
     ],
     interactions: [{ id: 'POY-1404-012', date: '۱۴۰۴/۰۱/۱۲', type: 'پیگیری', summary: 'استعلام قیمت تیرآهن' }],
     relatedOrders: [],
+    accountBalanceRial: 8_400_000_000,
   },
   {
     id: 3,

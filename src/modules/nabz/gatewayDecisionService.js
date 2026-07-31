@@ -1,6 +1,7 @@
 import { CURRENT_USER } from './constants';
 import { ORDER_TABS, STAGE_PISHKESH_ID } from './config';
 import { GATEWAY_PHASES } from './gatewayConfig';
+import { applyDeliveryInfoToOrder } from './deliveryInfoService';
 import { enterPhase2FromDecision } from './phase2Service';
 import {
   GATEWAY_DECISION_OUTCOMES,
@@ -33,7 +34,8 @@ export function isGatewayDecisionEditable(order, orderPhase, viewPhase) {
     && orderPhase === GATEWAY_PHASES.PISHKESH
     && !hasGatewayDecision(order)
     && order.status === ORDER_TABS.CURRENT
-    && order.stageId === STAGE_PISHKESH_ID;
+    && order.stageId === STAGE_PISHKESH_ID
+    && Boolean(order.proforma?.signed);
 }
 
 export function getOrderDecisionLabel(order) {
@@ -44,19 +46,38 @@ export function getOrderDecisionLabel(order) {
   return null;
 }
 
-export function markGatewayDecisionSuccess(order, { paymentType, financeNotes }) {
+export function markGatewayDecisionSuccess(order, {
+  paymentType,
+  financeNotes,
+  paymentTerms,
+  deliveryInfo,
+}) {
   const decidedAt = formatDecisionTimestamp();
+  const withDelivery = deliveryInfo
+    ? applyDeliveryInfoToOrder(order, deliveryInfo)
+    : order;
+
   const withDecision = {
-    ...order,
+    ...withDelivery,
     gatewayDecision: {
       outcome: GATEWAY_DECISION_OUTCOMES.SUCCESS,
       paymentType,
       financeNotes: financeNotes?.trim() || '',
+      paymentTerms: paymentTerms
+        ? {
+          dueDate: paymentTerms.dueDate || '',
+          lcMonths: paymentTerms.lcMonths || '',
+          daysAfterDelivery: paymentTerms.daysAfterDelivery || '',
+          partialAmount: paymentTerms.partialAmount || '',
+          document: paymentTerms.document || null,
+        }
+        : null,
+      deliveryInfo: withDelivery.deliveryInfo || null,
       decidedAt,
       decidedBy: CURRENT_USER,
     },
     events: [
-      ...(order.events || []),
+      ...(withDelivery.events || []),
       {
         id: Date.now(),
         type: 'order_decision_success',

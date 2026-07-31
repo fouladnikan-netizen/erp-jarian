@@ -1,7 +1,4 @@
-/** کاربر فعال سامانه — پیش‌فرض شوالیه ثبت‌کننده */
-export const CURRENT_USER = 'علی رضایی';
-export const CURRENT_USER_ROLE = 'knight';
-
+/** نقش‌های نبض */
 export const USER_ROLES = {
   KNIGHT: 'knight',
   EXPLORER: 'explorer',
@@ -11,6 +8,10 @@ export const USER_ROLES = {
   /** @deprecated use LEADER — راهبر */
   MANAGER: 'manager',
 };
+
+/** کاربر فعال سامانه — راهبر برای تست کامل همه ویرایش‌ها */
+export const CURRENT_USER = 'علی رضایی';
+export const CURRENT_USER_ROLE = USER_ROLES.LEADER;
 
 const SUPPLIER_VISIBLE_ROLES = new Set([
   USER_ROLES.EXPLORER,
@@ -28,6 +29,8 @@ export function canViewSupplierIdentity(role = CURRENT_USER_ROLE) {
 export const UNPRICED_LABEL = 'هنوز قیمت‌گذاری نشده';
 
 export const ORDER_TYPES = ['فوری', 'خرید', 'استعلام قیمت'];
+
+export const CREATE_ORDER_TYPES = ['استعلام قیمت', 'خرید'];
 
 export const DEFAULT_ORDER_TYPE = 'خرید';
 

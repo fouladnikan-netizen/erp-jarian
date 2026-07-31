@@ -2,13 +2,20 @@ import { initialContacts } from '../kanoon/contactsData';
 import { getDisplayName, getLatestInteraction } from '../kanoon/columns';
 import { BEHAVIORAL_STATUS, ENTITY_TYPES, PERSON_TYPES } from '../kanoon/config';
 
+/** In-memory registry — supports quick-add from Nabz create-order flow */
+let contactsRegistry = initialContacts.map((contact) => ({ ...contact }));
+
+function nextContactId() {
+  return contactsRegistry.reduce((max, contact) => Math.max(max, contact.id), 0) + 1;
+}
+
 export function getCustomerById(id) {
   if (!id) return null;
-  return initialContacts.find((c) => c.id === id) || null;
+  return contactsRegistry.find((c) => c.id === id) || null;
 }
 
 export function listCustomers() {
-  return initialContacts.filter(
+  return contactsRegistry.filter(
     (c) => c.entityType === ENTITY_TYPES.CUSTOMER && c.isActive !== false,
   );
 }
@@ -31,6 +38,96 @@ export function searchCustomers(query) {
       .toLowerCase();
     return haystack.includes(q);
   }).slice(0, 12);
+}
+
+export function listCustomerExperts(customerId) {
+  const customer = getCustomerById(customerId);
+  if (!customer) return [];
+
+  const experts = [...(customer.relatedPersons || [])];
+
+  if (customer.personType === PERSON_TYPES.NATURAL && customer.personName) {
+    experts.unshift({
+      name: customer.personName,
+      mobile: customer.mobile || '',
+      role: 'مشتری',
+      notes: '',
+    });
+  }
+
+  return experts;
+}
+
+export function searchCustomerExperts(customerId, query) {
+  const experts = listCustomerExperts(customerId);
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return experts.slice(0, 12);
+
+  return experts.filter((person) => {
+    const haystack = [person.name, person.mobile, person.role, person.notes]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(q);
+  }).slice(0, 12);
+}
+
+export function expertKey(person) {
+  return `${person.name}::${person.mobile || ''}`;
+}
+
+export function findExpertByKey(customerId, key) {
+  if (!key) return null;
+  return listCustomerExperts(customerId).find((person) => expertKey(person) === key) || null;
+}
+
+export function addCustomerRecord(contact) {
+  const record = { ...contact, id: nextContactId() };
+  contactsRegistry = [...contactsRegistry, record];
+  return record;
+}
+
+export function addExpertToCustomer(customerId, person) {
+  contactsRegistry = contactsRegistry.map((contact) => {
+    if (contact.id !== customerId) return contact;
+    return {
+      ...contact,
+      relatedPersons: [...(contact.relatedPersons || []), person],
+    };
+  });
+  return getCustomerById(customerId);
+}
+
+/** به‌روزرسانی عمومی پروفایل مشتری در رجیستری مشترک نبض/کانون */
+export function updateCustomer(customerId, patch) {
+  if (!customerId || !patch) return null;
+  contactsRegistry = contactsRegistry.map((contact) => {
+    if (contact.id !== customerId) return contact;
+    return { ...contact, ...patch };
+  });
+  return getCustomerById(customerId);
+}
+
+export function getCustomerLastUsedDeliveryInfo(customerId) {
+  const customer = getCustomerById(customerId);
+  return customer?.lastUsedDeliveryInfo || null;
+}
+
+/**
+ * Smart Persistence — آخرین اطلاعات تحویل استفاده‌شده را روی پروفایل مشتری می‌نشاند
+ */
+export function updateCustomerLastUsedDeliveryInfo(customerId, lastUsedDeliveryInfo) {
+  if (!customerId || !lastUsedDeliveryInfo) return null;
+  return updateCustomer(customerId, {
+    lastUsedDeliveryInfo: {
+      unloadAddress: lastUsedDeliveryInfo.unloadAddress || '',
+      postalCode: lastUsedDeliveryInfo.postalCode || '',
+      recipientName: lastUsedDeliveryInfo.recipientName || '',
+      recipientPhone: lastUsedDeliveryInfo.recipientPhone || '',
+      shippingNotes: lastUsedDeliveryInfo.shippingNotes || '',
+      updatedAt: new Date().toISOString(),
+    },
+  });
 }
 
 export function getCustomerPreview(customerId) {

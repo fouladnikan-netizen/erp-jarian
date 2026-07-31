@@ -13,14 +13,32 @@ export function computeNabzKpis(orders) {
   };
 
   return [
-    { label: 'سفارشات جاری', value: current.length.toLocaleString('fa-IR'), trend: formatBillions(currentValue), trendDir: 'up', variant: 'accent' },
-    { label: 'سفارشات موفق', value: success.length.toLocaleString('fa-IR'), trend: 'نهایی‌شده', trendDir: 'up' },
-    { label: 'سفارشات ناموفق', value: failed.length.toLocaleString('fa-IR'), trend: 'متوقف‌شده', trendDir: 'down', variant: 'danger' },
+    {
+      label: 'سفارشات جاری',
+      value: current.length.toLocaleString('fa-IR'),
+      trend: formatBillions(currentValue),
+      trendDir: 'up',
+      tone: 'current',
+    },
+    {
+      label: 'سفارشات موفق',
+      value: success.length.toLocaleString('fa-IR'),
+      trend: 'نهایی‌شده',
+      trendDir: 'up',
+      tone: 'success',
+    },
+    {
+      label: 'سفارشات ناموفق',
+      value: failed.length.toLocaleString('fa-IR'),
+      trend: 'متوقف‌شده',
+      trendDir: 'down',
+      tone: 'failed',
+    },
   ];
 }
 
 export function filterOrders(orders, { tab, search }) {
-  return orders.filter((order) => {
+  const filtered = orders.filter((order) => {
     if (order.status !== tab) return false;
     if (!search) return true;
     const haystack = [
@@ -36,6 +54,17 @@ export function filterOrders(orders, { tab, search }) {
       .toLowerCase();
     return haystack.includes(search.toLowerCase());
   });
+
+  // سفارشات تازه‌به‌روزشده (updatedAt / updated_at) بالای لیست «سفارشات امروز»
+  return filtered
+    .map((order, index) => ({ order, index }))
+    .sort((a, b) => {
+      const ta = a.order.updatedAt || a.order.updated_at || 0;
+      const tb = b.order.updatedAt || b.order.updated_at || 0;
+      if (tb !== ta) return tb - ta;
+      return a.index - b.index;
+    })
+    .map(({ order }) => order);
 }
 
 /** سفارشات قابل نمایش در کانبان — فقط وضعیت تب فعال */

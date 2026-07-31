@@ -5,8 +5,9 @@ import {
   STAGE_RAHESPAR_ID,
   STAGE_SARANJAM_ID,
   STAGE_TADAROK_ID,
-  STAGE_TAJHIZ_ID,
+  LEGACY_STAGE_TAJHIZ_ID,
   getStageLabel,
+  isActivePhase2Stage,
   isPhase2Stage,
 } from './config';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
@@ -25,8 +26,9 @@ export function getOperationalPhaseIndex(phase) {
 export function getOrderOperationalPhase(order) {
   const stageId = order.stageId || STAGE_PARVANE_ID;
   if (stageId >= STAGE_SARANJAM_ID) return OPERATIONAL_PHASES.SARANJAM;
-  if (stageId === STAGE_RAHESPAR_ID) return OPERATIONAL_PHASES.RAHESPAR;
-  if (stageId === STAGE_TAJHIZ_ID) return OPERATIONAL_PHASES.TAJHIZ;
+  if (stageId === STAGE_RAHESPAR_ID || stageId === LEGACY_STAGE_TAJHIZ_ID) {
+    return OPERATIONAL_PHASES.RAHESPAR;
+  }
   if (stageId === STAGE_TADAROK_ID) return OPERATIONAL_PHASES.TADAROK;
   return OPERATIONAL_PHASES.PARVANE;
 }
@@ -123,7 +125,7 @@ export function tryChangePhase2Stage(order, targetStageId) {
     };
   }
 
-  if (!isPhase2Stage(targetStageId)) {
+  if (!isActivePhase2Stage(targetStageId)) {
     return {
       order,
       accepted: false,
@@ -131,8 +133,17 @@ export function tryChangePhase2Stage(order, targetStageId) {
     };
   }
 
-  if (targetStageId === order.stageId) {
-    return { order, accepted: true };
+  const fromStageId = order.stageId === LEGACY_STAGE_TAJHIZ_ID
+    ? STAGE_RAHESPAR_ID
+    : order.stageId;
+
+  if (targetStageId === fromStageId) {
+    return {
+      order: order.stageId === LEGACY_STAGE_TAJHIZ_ID
+        ? { ...order, stageId: STAGE_RAHESPAR_ID }
+        : order,
+      accepted: true,
+    };
   }
 
   const nextOrder = {
@@ -142,9 +153,9 @@ export function tryChangePhase2Stage(order, targetStageId) {
       ...(order.events || []),
       buildPhase2Event(
         order,
-        order.stageId,
+        fromStageId,
         targetStageId,
-        `تغییر مرحله عملیاتی سفارش ${order.code} از «${getStageLabel(order.stageId)}» به «${getStageLabel(targetStageId)}»`,
+        `تغییر مرحله عملیاتی سفارش ${order.code} از «${getStageLabel(fromStageId)}» به «${getStageLabel(targetStageId)}»`,
       ),
     ],
   };
@@ -154,8 +165,11 @@ export function tryChangePhase2Stage(order, targetStageId) {
 
 export function canDropOnPhase2KanbanStage(order, targetStageId) {
   if (order.status !== ORDER_TABS.SUCCESS) return false;
-  if (!isPhase2Stage(targetStageId)) return false;
-  return targetStageId !== order.stageId;
+  if (!isActivePhase2Stage(targetStageId)) return false;
+  const currentId = order.stageId === LEGACY_STAGE_TAJHIZ_ID
+    ? STAGE_RAHESPAR_ID
+    : order.stageId;
+  return targetStageId !== currentId;
 }
 
 export function advanceToNextOperationalPhase(order) {

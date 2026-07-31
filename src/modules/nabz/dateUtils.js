@@ -8,6 +8,14 @@ export function toAsciiDigits(value) {
   return String(value).replace(/[۰-۹]/g, (d) => PERSIAN_DIGITS.indexOf(d));
 }
 
+/**
+ * متن نمایشی پیش‌فاکتور: فقط ارقام به فارسی (حروف انگلیسی دست‌نخورده می‌مانند).
+ */
+export function toPersianInvoiceText(value) {
+  if (value == null || value === '') return value == null ? '' : value;
+  return toPersianDigits(String(value));
+}
+
 export function getTodayJalali() {
   try {
     const parts = new Intl.DateTimeFormat('fa-IR', {
@@ -68,6 +76,21 @@ export function parseJalaliDate(dateStr) {
   const ascii = toAsciiDigits((dateStr || '').trim());
   const [year, month, day] = ascii.split('/').map((n) => Number(n) || 0);
   return { year, month, day };
+}
+
+/** منفی: a قبل از b — صفر: برابر — مثبت: a بعد از b */
+export function compareJalaliDates(a, b) {
+  const left = parseJalaliDate(a);
+  const right = parseJalaliDate(b);
+  if (left.year !== right.year) return left.year - right.year;
+  if (left.month !== right.month) return left.month - right.month;
+  return left.day - right.day;
+}
+
+/** آیا تاریخ جلالی فرا رسیده یا گذشته است؟ */
+export function isJalaliDateReached(dateStr, today = getTodayJalali()) {
+  if (!isValidJalaliDate(dateStr) || !isValidJalaliDate(today)) return false;
+  return compareJalaliDates(today, dateStr) >= 0;
 }
 
 export function getJalaliMonthLength(year, month) {

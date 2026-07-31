@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { toDisplayOrderCode } from '../../orderCode';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../../orderStageService';
+import { canEditWholeOrder } from '../../orderEditPermissions';
 import { getOrderProfilePrimaryActions } from '../../orderProfileService';
 import { getProformaTerms } from '../../proformaService';
 import { openProformaPreview, printProforma } from '../../proformaPrint';
@@ -85,7 +86,11 @@ export default function OrderProfileHeader({
               پیش‌نمایش
             </button>
           )}
-          <OrderProfileMoreMenu onEdit={onEditOrder} onCancel={onCancelOrder} />
+          <OrderProfileMoreMenu
+            onEdit={onEditOrder}
+            onCancel={onCancelOrder}
+            canEdit={canEditWholeOrder()}
+          />
         </div>
       </header>
     </div>

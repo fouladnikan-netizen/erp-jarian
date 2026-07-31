@@ -83,7 +83,7 @@ export default function OrderDetailContent({
           {(order.items || []).length > 0 && (
             <div className="nabz-profile-panel__section">
               <h3>اقلام سفارش</h3>
-              <table className="nabz-profile-items-table">
+              <table className="nabz-profile-items-table jarian-table">
                 <thead>
                   <tr>
                     <th>ردیف</th>

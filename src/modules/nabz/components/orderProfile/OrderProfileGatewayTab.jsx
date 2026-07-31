@@ -1,26 +1,16 @@
 import { useMemo } from 'react';
-import { calculateQuotingPreview } from '../../inquiryService';
+import { calculateQuotingPreview, updateInquiryOnOrder } from '../../inquiryService';
 import { DEFAULT_SALE_TYPE } from '../../constants';
 import { GATEWAY_PHASES } from '../../gatewayConfig';
-import {
-  advanceGatewayPhase,
-  sendProformaToCustomer,
-} from '../../gatewayLifecycleService';
 import {
   shouldShowGatewayFinancialSummary,
   removeGatewayOrderItem,
   removeGatewayInquiry,
-  updateGatewayOrderItem,
+  updateGatewayOrderItemWithSensitivity,
 } from '../../gatewayService';
-import { saveItemMargin } from '../../quotingService';
-import {
-  markGatewayDecisionFailed,
-  markGatewayDecisionSuccess,
-} from '../../gatewayDecisionService';
+import { saveItemMargin, updateOrderQuoting } from '../../quotingService';
 import GatewayMorphTable from './gateway/GatewayMorphTable';
 import GatewayFinancialSummary from './gateway/GatewayFinancialSummary';
-import GatewayDecisionPanel from './gateway/GatewayDecisionPanel';
-import GatewayStageActions from './gateway/GatewayStageActions';
 import GatewayPishkeshPanel from './gateway/GatewayPishkeshPanel';
 import OrderProfileOperationsTab from './OrderProfileOperationsTab';
 
@@ -33,11 +23,9 @@ export default function OrderProfileGatewayTab({
   operationalViewPhase,
   onAddInquiry,
   onSetTargetInquiry,
+  onUpdateInquiry,
   onUpdateOrder,
-  onAdvancePhase,
   onOperationalPhaseChange,
-  onDecisionSuccess,
-  onDecisionFailed,
   onReturnToGateway,
 }) {
   const preview = useMemo(() => calculateQuotingPreview(order), [order]);
@@ -45,6 +33,14 @@ export default function OrderProfileGatewayTab({
 
   const handleAddInquiry = (itemIndex, draft) => {
     onAddInquiry?.(order.id, itemIndex, draft);
+  };
+
+  const handleUpdateInquiry = (itemIndex, inquiryId, draft) => {
+    if (onUpdateInquiry) {
+      onUpdateInquiry(order.id, itemIndex, inquiryId, draft);
+      return;
+    }
+    onUpdateOrder?.((current) => updateInquiryOnOrder(current, itemIndex, inquiryId, draft));
   };
 
   const handleSetTarget = (itemIndex, inquiryId) => {
@@ -55,22 +51,17 @@ export default function OrderProfileGatewayTab({
     onUpdateOrder?.((current) => saveItemMargin(current, itemIndex, marginValue, marginType));
   };
 
-  const handleAdvance = (phase) => {
-    const result = advanceGatewayPhase(order, phase);
-    if (!result.accepted) {
-      window.alert(result.error || 'امکان پیشروی به مرحله بعد وجود ندارد.');
-      return;
-    }
-    onAdvancePhase?.(result.order);
+  const handleUpdateQuoting = (patch) => {
+    onUpdateOrder?.((current) => updateOrderQuoting(current, patch));
   };
 
-  const handleSendProforma = () => {
-    onUpdateOrder?.((current) => sendProformaToCustomer(current));
-    window.alert(`پیش‌فاکتور سفارش برای ${order.customer} ارسال شد.`);
-  };
-
-  const handleEditItem = (itemIndex, patch) => {
-    onUpdateOrder?.((current) => updateGatewayOrderItem(current, itemIndex, patch));
+  const handleEditItem = (itemIndex, patch, { wipeConfirmed = false } = {}) => {
+    onUpdateOrder?.((current) => updateGatewayOrderItemWithSensitivity(
+      current,
+      itemIndex,
+      patch,
+      { wipeConfirmed },
+    ));
   };
 
   const handleDeleteItem = (itemIndex) => {
@@ -83,23 +74,6 @@ export default function OrderProfileGatewayTab({
     onUpdateOrder?.((current) => removeGatewayInquiry(current, itemIndex, inquiryId));
   };
 
-  const handleDecisionSuccess = (payload) => {
-    if (onDecisionSuccess) {
-      onDecisionSuccess(payload);
-      return;
-    }
-    onUpdateOrder?.((current) => markGatewayDecisionSuccess(current, payload));
-  };
-
-  const handleDecisionFailed = (payload) => {
-    if (onDecisionFailed) {
-      onDecisionFailed(payload);
-      return;
-    }
-    onUpdateOrder?.((current) => markGatewayDecisionFailed(current, payload));
-  };
-
-  const showDecisionPanel = viewPhase === GATEWAY_PHASES.PISHKESH && viewMode === 'gateway';
   const showMozeneSummary = viewMode === 'gateway'
     && viewPhase === GATEWAY_PHASES.MOZENE
     && shouldShowGatewayFinancialSummary(viewPhase);
@@ -120,24 +94,16 @@ export default function OrderProfileGatewayTab({
 
   return (
     <div className="order-profile-gateway" data-gateway-stage={currentStage}>
-      {showDecisionPanel && (
-        <GatewayDecisionPanel
-          order={order}
-          viewPhase={viewPhase}
-          orderPhase={orderPhase}
-          onSubmitSuccess={handleDecisionSuccess}
-          onSubmitFailed={handleDecisionFailed}
-        />
-      )}
-
       <GatewayMorphTable
         order={order}
         viewPhase={viewPhase}
         orderPhase={orderPhase}
         onAddInquiry={handleAddInquiry}
         onSetTargetInquiry={handleSetTarget}
+        onUpdateInquiry={handleUpdateInquiry}
         onDeleteInquiry={handleDeleteInquiry}
         onSaveMargin={handleSaveMargin}
+        onUpdateQuoting={handleUpdateQuoting}
         onEditItem={handleEditItem}
         onDeleteItem={handleDeleteItem}
       />
@@ -147,20 +113,9 @@ export default function OrderProfileGatewayTab({
       )}
 
       <GatewayPishkeshPanel
-        order={order}
         viewPhase={viewPhase}
-        orderPhase={orderPhase}
         preview={preview}
         saleType={saleType}
-        onAdvance={handleAdvance}
-        onSendToCustomer={handleSendProforma}
-      />
-
-      <GatewayStageActions
-        order={order}
-        viewPhase={viewPhase}
-        orderPhase={orderPhase}
-        onAdvance={handleAdvance}
       />
     </div>
   );

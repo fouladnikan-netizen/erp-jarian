@@ -1,36 +1,56 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ORDER_TABS } from '../../config';
 import { ORDER_PROFILE_TABS } from '../../orderProfileConfig';
 import { getOrderGatewayPhase } from '../../gatewayService';
 import {
   executeGatewayHeaderAction,
-  gatewayStageToPhase,
   getGatewayCurrentStage,
+  sendProformaToCustomer,
 } from '../../gatewayLifecycleService';
 import { getOrderOperationalPhase } from '../../phase2Service';
-import { markOrderCancelled } from '../../orderProfileService';
+import { markOrderCancelled, appendProfileAttachment, appendSignedProformaRecord, archivePreviousSignedProforma } from '../../orderProfileService';
+import { issueProforma, updateProforma, getLatestProformaVersion } from '../../proformaService';
+import {
+  openStoredProformaPreview,
+  PROFORMA_SEND_MESSAGE_TYPE,
+  PROFORMA_SIGNED_MESSAGE_TYPE,
+} from '../../proformaPrint';
 import {
   appendCrmActivity,
   updateCrmActivity,
 } from '../../orderCrmService';
+import { canEditWholeOrder } from '../../orderEditPermissions';
+import {
+  markGatewayDecisionFailed,
+  markGatewayDecisionSuccess,
+} from '../../gatewayDecisionService';
 import QuickActivityModal from '../QuickActivityModal';
+import DeliveryLocationModal from '../DeliveryLocationModal';
+import {
+  canShowDeliveryLocationAction,
+  canEnableDeliveryOrderAction,
+} from '../../deliveryInfoService';
+import { issueShippingVoucher } from '../../shippingService';
+import { printShippingVoucher } from '../../shippingPrint';
+import CreateOrderDrawer from '../CreateOrderDrawer';
 import OrderProfileChrome from './OrderProfileChrome';
 import OrderProfileGatewayTab from './OrderProfileGatewayTab';
 import OrderProfileCrmTab from './OrderProfileCrmTab';
-import OrderProfilePlaceholderTab from './OrderProfilePlaceholderTab';
-
-const PLACEHOLDER_MESSAGES = {
-  [ORDER_PROFILE_TABS.TIMELINE]: 'محتوای تب سوابق و تایم‌لاین در اینجا قرار می‌گیرد.',
-  [ORDER_PROFILE_TABS.ATTACHMENTS]: 'محتوای تب اسناد و فایل‌ها در اینجا قرار می‌گیرد.',
-};
+import OrderProfileTimelineTab from './OrderProfileTimelineTab';
+import OrderProfileAttachmentsTab from './OrderProfileAttachmentsTab';
+import OrderActionDrawer from './OrderActionDrawer';
+import DeliveryOrderSelectionModal from './operations/DeliveryOrderSelectionModal';
+import { GATEWAY_PHASES } from '../../gatewayConfig';
 
 export default function OrderProfileView({
   order,
   onUpdateOrder,
   onAddInquiry,
+  onUpdateInquiry,
   onSetTargetInquiry,
 }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(ORDER_PROFILE_TABS.GATEWAY);
   const orderPhase = getOrderGatewayPhase(order);
   const operationalPhase = getOrderOperationalPhase(order);
@@ -41,6 +61,10 @@ export default function OrderProfileView({
     order.status === ORDER_TABS.SUCCESS ? 'operations' : 'gateway',
   );
   const [activityModal, setActivityModal] = useState({ open: false, editActivity: null });
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [deliveryOrderModalOpen, setDeliveryOrderModalOpen] = useState(false);
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [decisionDrawerOpen, setDecisionDrawerOpen] = useState(false);
 
   useEffect(() => {
     setViewPhase(orderPhase);
@@ -75,7 +99,7 @@ export default function OrderProfileView({
 
   const handleGatewayAdvance = (nextOrder) => {
     updateOrder(() => nextOrder);
-    setViewPhase(gatewayStageToPhase(nextOrder.stageId));
+    setViewPhase(getOrderGatewayPhase(nextOrder));
     if (nextOrder.status === ORDER_TABS.SUCCESS) {
       setOperationalViewPhase(getOrderOperationalPhase(nextOrder));
       setViewMode('operations');
@@ -115,12 +139,88 @@ export default function OrderProfileView({
         type: input.type,
         body: input.body,
         followUp: input.followUp,
+        payment: input.payment,
       }));
     } else {
       updateOrder((current) => appendCrmActivity(current, input));
     }
     closeActivityModal();
   };
+
+  const handleSendProforma = (version) => {
+    updateOrder((current) => sendProformaToCustomer(current));
+    const label = version?.documentNumber || order.code;
+    window.alert(`پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.`);
+  };
+
+  const handleIssueProforma = () => {
+    const result = issueProforma(order);
+    if (result.changed) {
+      updateOrder(() => result.order);
+    }
+    openStoredProformaPreview(result.payload);
+  };
+
+  const handleViewProforma = () => {
+    const latest = getLatestProformaVersion(order);
+    if (!latest) return;
+    openStoredProformaPreview({
+      viewModel: latest.viewModel,
+      terms: latest.terms,
+      termsCustom: latest.termsCustom,
+      orderId: order.id,
+      versionId: latest.id,
+      signed: Boolean(order.proforma?.signed),
+    });
+  };
+
+  const handleUpdateProforma = () => {
+    const withArchive = archivePreviousSignedProforma(order);
+    const result = updateProforma(withArchive);
+    updateOrder(() => result.order);
+    // پیش‌نمایش را باز نکن — برگشت به فهرست سفارشات جاری
+    navigate(`/nabz?tab=${ORDER_TABS.CURRENT}`);
+  };
+
+  const handleDecisionSuccess = (payload) => {
+    updateOrder((current) => markGatewayDecisionSuccess(current, payload));
+    setDecisionDrawerOpen(false);
+  };
+
+  const handleDecisionFailed = (payload) => {
+    updateOrder((current) => markGatewayDecisionFailed(current, payload));
+    setDecisionDrawerOpen(false);
+  };
+
+  const handleOpenDecisionDrawer = () => {
+    setActiveTab(ORDER_PROFILE_TABS.GATEWAY);
+    setViewMode('gateway');
+    setViewPhase(GATEWAY_PHASES.PISHKESH);
+    setDecisionDrawerOpen(true);
+  };
+
+  useEffect(() => {
+    const onMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data) return;
+      if (data.orderId != null && data.orderId !== order.id) return;
+
+      if (data.type === PROFORMA_SEND_MESSAGE_TYPE) {
+        handleSendProforma({ documentNumber: data.documentNumber });
+        return;
+      }
+
+      if (data.type === PROFORMA_SIGNED_MESSAGE_TYPE) {
+        updateOrder((current) => appendSignedProformaRecord(current, {
+          ...(data.attachment || {}),
+          documentNumber: data.documentNumber,
+        }));
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [order.id, order.customer]);
 
   return (
     <div className="order-profile-view" data-module="nabz">
@@ -136,12 +236,51 @@ export default function OrderProfileView({
           viewMode={viewMode}
           onPhaseChange={handlePhaseChange}
           onOperationalPhaseChange={handleOperationalPhaseChange}
-          onCancelOrder={() => updateOrder(markOrderCancelled)}
-          onEditOrder={() => window.alert('ویرایش کلی سفارش — در نسخه بعدی فعال می‌شود.')}
+          onCancelOrder={(reason) => {
+            updateOrder((current) => markOrderCancelled(current, reason));
+            navigate(`/nabz?tab=${ORDER_TABS.FAILED}`);
+          }}
+          onEditOrder={() => {
+            if (!canEditWholeOrder()) {
+              window.alert('ویرایش کلی سفارش فقط برای نقش شوالیه فعال است.');
+              return;
+            }
+            setEditDrawerOpen(true);
+          }}
           onNextAction={handleNextAction}
           onOpenActivityModal={() => openActivityModal()}
+          onOpenDeliveryOrderModal={() => setDeliveryOrderModalOpen(true)}
+          onOpenDeliveryModal={() => setDeliveryModalOpen(true)}
+          onIssueProforma={handleIssueProforma}
+          onViewProforma={handleViewProforma}
+          onUpdateProforma={handleUpdateProforma}
+          onOpenDecisionDrawer={handleOpenDecisionDrawer}
         />
       </div>
+
+      <OrderActionDrawer
+        open={decisionDrawerOpen}
+        order={order}
+        viewPhase={GATEWAY_PHASES.PISHKESH}
+        orderPhase={orderPhase}
+        onClose={() => setDecisionDrawerOpen(false)}
+        onSubmitSuccess={handleDecisionSuccess}
+        onSubmitFailed={handleDecisionFailed}
+      />
+
+      {editDrawerOpen && (
+        <CreateOrderDrawer
+          key={`edit-${order.id}`}
+          mode="edit"
+          order={order}
+          orders={[]}
+          onClose={() => setEditDrawerOpen(false)}
+          onSave={(nextOrder) => {
+            updateOrder(() => nextOrder);
+            setEditDrawerOpen(false);
+          }}
+        />
+      )}
 
       <QuickActivityModal
         open={activityModal.open}
@@ -149,6 +288,31 @@ export default function OrderProfileView({
         editActivity={activityModal.editActivity}
         onClose={closeActivityModal}
         onSubmit={handleActivityModalSubmit}
+      />
+
+      <DeliveryLocationModal
+        open={deliveryModalOpen && canShowDeliveryLocationAction(order)}
+        order={order}
+        onClose={() => setDeliveryModalOpen(false)}
+        onSave={(nextOrder) => {
+          updateOrder(() => nextOrder);
+        }}
+      />
+
+      <DeliveryOrderSelectionModal
+        open={deliveryOrderModalOpen && canEnableDeliveryOrderAction(order)}
+        order={order}
+        onClose={() => setDeliveryOrderModalOpen(false)}
+        onConfirm={(carrierId, selectedKeys) => {
+          const result = issueShippingVoucher(order, carrierId, selectedKeys);
+          if (!result.accepted) {
+            window.alert(result.reason || 'امکان صدور سفارش ارسال وجود ندارد.');
+            return;
+          }
+          updateOrder(() => result.order);
+          setDeliveryOrderModalOpen(false);
+          printShippingVoucher(result.order, carrierId, selectedKeys);
+        }}
       />
 
       <div className="order-profile-view__body">
@@ -167,9 +331,9 @@ export default function OrderProfileView({
               currentStage={currentStage}
               operationalViewPhase={operationalViewPhase}
               onAddInquiry={onAddInquiry}
+              onUpdateInquiry={onUpdateInquiry}
               onSetTargetInquiry={onSetTargetInquiry}
               onUpdateOrder={updateOrder}
-              onAdvancePhase={handleGatewayAdvance}
               onOperationalPhaseChange={handleOperationalPhaseChange}
               onReturnToGateway={handlePhaseChange}
             />
@@ -196,7 +360,10 @@ export default function OrderProfileView({
             id="order-profile-panel-timeline"
             aria-labelledby="order-profile-tab-timeline"
           >
-            <OrderProfilePlaceholderTab message={PLACEHOLDER_MESSAGES[ORDER_PROFILE_TABS.TIMELINE]} />
+            <OrderProfileTimelineTab
+              order={order}
+              onSendProformaVersion={handleSendProforma}
+            />
           </div>
         )}
         {activeTab === ORDER_PROFILE_TABS.ATTACHMENTS && (
@@ -206,7 +373,10 @@ export default function OrderProfileView({
             id="order-profile-panel-attachments"
             aria-labelledby="order-profile-tab-attachments"
           >
-            <OrderProfilePlaceholderTab message={PLACEHOLDER_MESSAGES[ORDER_PROFILE_TABS.ATTACHMENTS]} />
+            <OrderProfileAttachmentsTab
+              order={order}
+              onUpload={(file) => updateOrder((current) => appendProfileAttachment(current, file))}
+            />
           </div>
         )}
       </div>

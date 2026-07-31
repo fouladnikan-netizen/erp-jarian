@@ -1,6 +1,7 @@
 import { getDefaultQuoting, MARGIN_MODES } from './quotingConfig';
 import { DEFAULT_SALE_TYPE, SALES_TYPES } from './constants';
 import { parseMoneyInput } from './orderCode';
+import { canEditProfitMargin } from './orderEditPermissions';
 
 function parseNumber(value) {
   if (value === '' || value == null) return null;
@@ -110,25 +111,34 @@ function calculateRowPricing({ quotePrice, profit, qty, saleType }) {
   const unitProfit = toNumber(profit);
   const q = toNumber(qty);
 
-  const basePrice = isOfficialSaleType(saleType)
-    ? Math.round((qPrice + unitProfit) / 1.1)
+  // BasePrice (قبل از مالیات): مبنای Visual Math برای هر دو حالت نمایش
+  const rawBasePrice = isOfficialSaleType(saleType)
+    ? (qPrice + unitProfit) / 1.1
     : qPrice + unitProfit;
-
-  const rowTotal = basePrice * q;
-  const lineProfitRial = unitProfit * q;
+  const basePrice = Math.round(rawBasePrice);
 
   return {
     basePrice,
-    rowTotal,
-    lineProfitRial,
+    lineProfitRial: Math.round(unitProfit * q),
     unitMarginRial: unitProfit,
   };
 }
 
-export function calculateQuotingPreview(order) {
+/**
+ * Visual Math — جمع آنچه در جدول دیده می‌شود باید دقیقاً با جمع کل یکی باشد.
+ *
+ * Inclusive (روشن): unit = round(base×1.1)، row = round(qty×unit)، grand = Σ rows
+ * Exclusive (خاموش): unit = round(base)، row = round(qty×unit)،
+ *   subtotal = Σ rows، tax = round(subtotal×0.1)، grand = subtotal + tax
+ */
+export function calculateQuotingPreview(order, options = {}) {
   const quoting = getOrderQuoting(order);
   const items = order.items || [];
   const saleType = order.saleType || DEFAULT_SALE_TYPE;
+  const isOfficial = isOfficialSaleType(saleType);
+  const vatInclusive = options.forceVatExclusive
+    ? false
+    : Boolean(quoting.vatInclusive) && isOfficial;
 
   const lines = items.map((item, index) => {
     const target = getTargetInquiry(item);
@@ -142,26 +152,32 @@ export function calculateQuotingPreview(order) {
       saleType,
     });
 
+    const saleUnitPrice = vatInclusive
+      ? Math.round(pricing.basePrice * 1.1)
+      : pricing.basePrice;
+    const lineTotal = Math.round(qty * saleUnitPrice);
+
     return {
       itemIndex: index,
       name: item.name,
       qty,
       targetUnitPrice: quotePrice,
-      baseTotal: quotePrice * qty,
+      baseTotal: Math.round(quotePrice * qty),
       marginInputValue: getLineMarginInputValue(quoting, index, unitProfit),
       marginTotalRial: pricing.lineProfitRial,
       unitMarginRial: pricing.unitMarginRial,
       lineProfitRial: pricing.lineProfitRial,
-      saleUnitPrice: pricing.basePrice,
-      lineSubtotal: pricing.rowTotal,
-      lineTotal: pricing.rowTotal,
+      saleUnitPrice,
+      lineSubtotal: lineTotal,
+      lineTotal,
       hasTarget: Boolean(target),
     };
   });
 
   const subtotal = lines.reduce((sum, line) => sum + toNumber(line.lineTotal), 0);
   const totalProfit = lines.reduce((sum, line) => sum + toNumber(line.lineProfitRial), 0);
-  const vatAmount = isOfficialSaleType(saleType) ? Math.round(subtotal * 0.1) : 0;
+  const showVatBreakdown = isOfficial && !vatInclusive;
+  const vatAmount = showVatBreakdown ? Math.round(subtotal * 0.1) : 0;
   const orderTotal = subtotal + vatAmount;
   const baseTotal = lines.reduce((sum, line) => sum + toNumber(line.baseTotal), 0);
 
@@ -174,6 +190,8 @@ export function calculateQuotingPreview(order) {
     orderTotal,
     marginMode: quoting.marginMode,
     saleType,
+    vatInclusive,
+    showVatBreakdown,
   };
 }
 
@@ -217,6 +235,9 @@ export function setTargetInquiryOnOrder(order, itemIndex, inquiryId) {
 }
 
 export function updateOrderQuoting(order, patch) {
+  if (!canEditProfitMargin()) {
+    return order;
+  }
   const quoting = {
     ...getOrderQuoting(order),
     ...patch,
@@ -241,6 +262,16 @@ export function ensureTargetOnAppend(order, itemIndex, inquiryId) {
 export function canCompleteOrderInquiries(order) {
   const items = order.items || [];
   if (!items.length) return false;
+
+  // بعد از به‌روزرسانی پیش‌فاکتور: هر سطر باید حداقل یک استعلام جدید داشته باشد
+  const baseline = order.proformaUpdate?.baselineInquiryIds;
+  if (baseline) {
+    return items.every((item, index) => {
+      const prior = new Set(baseline[index] || baseline[String(index)] || []);
+      return (item.inquiries || []).some((inq) => !prior.has(inq.id));
+    });
+  }
+
   return items.every((item) => (item.inquiries || []).length > 0);
 }
 
@@ -277,6 +308,9 @@ export function allLinesHaveSavedMargin(order) {
  * @param {'percent'|'rial'} marginType — واحد سود
  */
 export function saveItemMargin(order, itemIndex, marginValue, marginType) {
+  if (!canEditProfitMargin()) {
+    return order;
+  }
   const mode = marginTypeToMode(marginType);
   const updated = updateOrderQuoting(order, {
     marginMode: mode,

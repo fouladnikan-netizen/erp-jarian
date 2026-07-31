@@ -7,6 +7,7 @@ import NabzPage from './modules/nabz/NabzPage';
 import OrderDetailPage from './modules/nabz/OrderDetailPage';
 import ProformaPreviewPage from './modules/nabz/ProformaPreviewPage';
 import ShippingPreviewPage from './modules/nabz/ShippingPreviewPage';
+import OfoqModule from './modules/ofogh/OfoqModule';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { modules, moduleData } from './modules/registry';
 
@@ -26,12 +27,18 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<KanoonPage />} />
         <Route path="/vitrin" element={<VitrinPage />} />
+        <Route path="/ofogh" element={<OfoqModule />} />
         <Route element={<NabzRoutes />}>
           <Route path="/nabz" element={<NabzPage />} />
           <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
         </Route>
         {modules
-          .filter((module) => module.id !== 'kanoon' && module.id !== 'vitrin' && module.id !== 'nabz')
+          .filter((module) => (
+            module.id !== 'kanoon'
+            && module.id !== 'vitrin'
+            && module.id !== 'nabz'
+            && module.id !== 'ofogh'
+          ))
           .map((module) => (
             <Route
               key={module.id}

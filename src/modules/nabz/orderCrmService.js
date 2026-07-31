@@ -83,26 +83,79 @@ export function createCrmActivity({
   author = CURRENT_USER,
   roleLabel = getRoleLabel(),
   followUp = null,
+  payment = null,
 }) {
-  const trimmedBody = body.trim();
+  const trimmedBody = String(body || '').trim();
+  const normalizedPayment = type === CRM_ACTIVITY_TYPES.PAYMENT && payment
+    ? {
+      amountRial: Number(payment.amountRial) || 0,
+      date: String(payment.date || '').trim(),
+      receiptFileName: String(payment.receiptFileName || '').trim(),
+      receiptFileDataUrl: payment.receiptFileDataUrl || '',
+      receiptMimeType: payment.receiptMimeType || '',
+    }
+    : null;
+
   return {
     id: activityIdCounter++,
     type,
     author,
     roleLabel,
     createdAt: formatActivityTimestamp(),
-    body: trimmedBody,
+    body: trimmedBody || (normalizedPayment ? 'دریافت وجه' : ''),
     mentions: parseMentions(trimmedBody),
     followUp: followUp ? { ...followUp, completed: false } : null,
+    payment: normalizedPayment,
   };
+}
+
+function buildCustomerPaymentFromActivity(activity) {
+  if (activity?.type !== CRM_ACTIVITY_TYPES.PAYMENT || !activity.payment) return null;
+  const amountRial = Number(activity.payment.amountRial) || 0;
+  if (amountRial <= 0 || !activity.payment.date) return null;
+  return {
+    id: `crm-pay-${activity.id}`,
+    date: activity.payment.date,
+    amountRial,
+    note: activity.body || 'دریافت وجه',
+    receiptFileName: activity.payment.receiptFileName || '',
+    receiptFileDataUrl: activity.payment.receiptFileDataUrl || '',
+    receiptMimeType: activity.payment.receiptMimeType || '',
+    sourceActivityId: activity.id,
+  };
+}
+
+export function syncSaranjamCustomerPaymentsFromCrm(order, activities = getOrderCrmActivities(order)) {
+  const crmPayments = (activities || [])
+    .map(buildCustomerPaymentFromActivity)
+    .filter(Boolean);
+  const existing = order?.saranjam?.customerPayments || [];
+  const manualPayments = existing.filter((pay) => !pay.sourceActivityId);
+  const crmIds = new Set(crmPayments.map((pay) => pay.id));
+  const retainedManual = manualPayments.filter((pay) => !crmIds.has(pay.id));
+
+  return {
+    ...order,
+    saranjam: {
+      ...(order.saranjam || {}),
+      customerPayments: [...retainedManual, ...crmPayments],
+    },
+  };
+}
+
+export function listCrmPaymentsAsCustomerPayments(order) {
+  return getOrderCrmActivities(order)
+    .map(buildCustomerPaymentFromActivity)
+    .filter(Boolean);
 }
 
 export function appendCrmActivity(order, activityInput) {
   const activity = createCrmActivity(activityInput);
-  return {
+  const withActivity = {
     ...order,
     crmActivities: [...getOrderCrmActivities(order), activity],
   };
+  return syncSaranjamCustomerPaymentsFromCrm(withActivity);
 }
 
 export function getPendingCrmActivities(order) {
@@ -143,9 +196,24 @@ export function getPendingActivityTitle(activity) {
 export function updateCrmActivity(order, activityId, patch) {
   const activities = getOrderCrmActivities(order).map((activity) => {
     if (activity.id !== activityId) return activity;
+    const nextType = patch.type ?? activity.type;
+    const nextPayment = patch.payment !== undefined
+      ? (
+        nextType === CRM_ACTIVITY_TYPES.PAYMENT && patch.payment
+          ? {
+            amountRial: Number(patch.payment.amountRial) || 0,
+            date: String(patch.payment.date || '').trim(),
+            receiptFileName: String(patch.payment.receiptFileName || '').trim(),
+            receiptFileDataUrl: patch.payment.receiptFileDataUrl || '',
+            receiptMimeType: patch.payment.receiptMimeType || '',
+          }
+          : null
+      )
+      : activity.payment;
     return {
       ...activity,
       ...patch,
+      payment: nextPayment,
       followUp: patch.followUp === undefined
         ? activity.followUp
         : patch.followUp,
@@ -154,7 +222,7 @@ export function updateCrmActivity(order, activityId, patch) {
         : activity.mentions,
     };
   });
-  return { ...order, crmActivities: activities };
+  return syncSaranjamCustomerPaymentsFromCrm({ ...order, crmActivities: activities }, activities);
 }
 
 export function completeCrmFollowUp(order, activityId) {

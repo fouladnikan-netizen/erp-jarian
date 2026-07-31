@@ -14,7 +14,7 @@ export default function ResizableTh({
       {children}
       {resizable && onResizeStart && (
         <span
-          className="resizable-th__handle"
+          className="resizable-th__handle resizer-handle"
           onMouseDown={(e) => {
             e.preventDefault();
             e.stopPropagation();

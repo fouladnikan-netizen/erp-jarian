@@ -1,10 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import OrderProfileConfirmDialog from './OrderProfileConfirmDialog';
 
-export default function OrderProfileMoreMenu({ onEdit, onCancel }) {
+export default function OrderProfileMoreMenu({
+  onEdit,
+  onCancel,
+  onArchive,
+  onCloseOrder,
+  canEdit = true,
+  showEdit = true,
+  showCancel = true,
+}) {
   const [open, setOpen] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const menuRef = useRef(null);
+
+  const hasVisibleItems = (showEdit && canEdit)
+    || showCancel
+    || Boolean(onArchive)
+    || Boolean(onCloseOrder);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -19,11 +34,7 @@ export default function OrderProfileMoreMenu({ onEdit, onCancel }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  const handleCancelConfirm = () => {
-    setConfirmCancel(false);
-    setOpen(false);
-    onCancel?.();
-  };
+  if (!hasVisibleItems) return null;
 
   return (
     <>
@@ -39,28 +50,58 @@ export default function OrderProfileMoreMenu({ onEdit, onCancel }) {
         </button>
         {open && (
           <div className="order-profile-more__menu" role="menu">
-            <button
-              type="button"
-              className="order-profile-more__item"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                onEdit?.();
-              }}
-            >
-              ویرایش کلی سفارش
-            </button>
-            <button
-              type="button"
-              className="order-profile-more__item order-profile-more__item--danger"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                setConfirmCancel(true);
-              }}
-            >
-              لغو سفارش
-            </button>
+            {showEdit && canEdit && (
+              <button
+                type="button"
+                className="order-profile-more__item"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onEdit?.();
+                }}
+              >
+                ویرایش سفارش
+              </button>
+            )}
+            {onArchive && (
+              <button
+                type="button"
+                className="order-profile-more__item"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  setConfirmArchive(true);
+                }}
+              >
+                بایگانی
+              </button>
+            )}
+            {showCancel && (
+              <button
+                type="button"
+                className="order-profile-more__item order-profile-more__item--danger"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  setConfirmCancel(true);
+                }}
+              >
+                لغو
+              </button>
+            )}
+            {onCloseOrder && (
+              <button
+                type="button"
+                className="order-profile-more__item"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  setConfirmClose(true);
+                }}
+              >
+                بستن سفارش
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -70,8 +111,33 @@ export default function OrderProfileMoreMenu({ onEdit, onCancel }) {
         title="لغو سفارش"
         message="آیا از لغو این سفارش مطمئن هستید؟ این عمل قابل بازگشت نیست."
         confirmLabel="لغو سفارش"
-        onConfirm={handleCancelConfirm}
+        onConfirm={() => {
+          setConfirmCancel(false);
+          onCancel?.();
+        }}
         onCancel={() => setConfirmCancel(false)}
+      />
+      <OrderProfileConfirmDialog
+        open={confirmArchive}
+        title="بایگانی سفارش"
+        message="این سفارش بایگانی شود؟"
+        confirmLabel="بایگانی"
+        onConfirm={() => {
+          setConfirmArchive(false);
+          onArchive?.();
+        }}
+        onCancel={() => setConfirmArchive(false)}
+      />
+      <OrderProfileConfirmDialog
+        open={confirmClose}
+        title="بستن سفارش"
+        message="این سفارش بسته شود؟"
+        confirmLabel="بستن سفارش"
+        onConfirm={() => {
+          setConfirmClose(false);
+          onCloseOrder?.();
+        }}
+        onCancel={() => setConfirmClose(false)}
       />
     </>
   );

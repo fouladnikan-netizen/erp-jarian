@@ -1,8 +1,9 @@
 .shipping-preview-page {
   min-height: 100vh;
-  padding: 1rem;
-  background: #e5e7eb;
+  padding: 2rem 1rem;
+  background: #eae7e7;
   direction: rtl;
+  font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
 }
 
 .shipping-preview-page--empty {
@@ -13,98 +14,99 @@
 }
 
 .shipping-preview-page__toolbar {
-  max-width: 210mm;
+  max-width: 297mm;
   margin: 0 auto 0.75rem;
   display: flex;
   justify-content: flex-end;
 }
 
-.shipping-doc {
-  max-width: 210mm;
-  margin: 0 auto;
-  padding: 12mm 14mm;
-  background: #fff;
-  color: #111827;
-  font-size: 11pt;
-  line-height: 1.55;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+/* A4 landscape — override portrait invoice-doc page size */
+.shipping-doc.invoice-doc {
+  width: 297mm;
+  max-width: 297mm;
+  height: 210mm;
+  min-height: 210mm;
+  max-height: 210mm;
+  --invoice-page-margin-x: 1.2cm;
 }
 
-.shipping-doc__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #991b1b;
-  margin-bottom: 1rem;
-}
-
-.shipping-doc__brand {
-  display: flex;
-  gap: 0.65rem;
-  align-items: center;
-}
-
-.shipping-doc__logo {
-  width: 56px;
-  height: 56px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.shipping-doc__company {
-  margin: 0;
+.shipping-doc__doc-title {
+  margin: 0.4rem auto 0.75rem;
+  text-align: center;
   font-size: 1rem;
-  color: #991b1b;
+  font-weight: 800;
+  color: var(--invoice-on-surface, #1c1b1b);
+  flex-shrink: 0;
+  display: table;
+  width: max-content;
+  max-width: 100%;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
-.shipping-doc__tagline {
-  margin: 0.15rem 0 0;
-  font-size: 0.68rem;
-  color: #4b5563;
+.shipping-doc__parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 1.5rem;
+  align-items: start;
+  margin-top: 0.15rem;
+  margin-bottom: 0.65rem;
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.shipping-doc__meta {
-  text-align: left;
-  font-size: 0.78rem;
-}
-
-.shipping-doc__title {
-  margin: 0 0 0.35rem;
-  font-size: 0.95rem;
-  color: #111827;
-}
-
-.shipping-doc__meta p {
-  margin: 0.1rem 0;
-}
-
-.shipping-doc__meta span {
-  color: #6b7280;
+.shipping-doc__party {
+  margin-bottom: 0;
+  min-width: 0;
 }
 
 .shipping-doc__section {
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
+  flex-shrink: 0;
+}
+
+.shipping-doc__section--table {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .shipping-doc__section-title {
-  margin: 0 0 0.45rem;
+  margin: 0 0 0.35rem;
   font-size: 0.85rem;
-  color: #991b1b;
+  font-weight: 800;
+  color: var(--invoice-table-header, #d31120);
 }
 
-.shipping-doc__recipient-grid {
+.shipping-doc__party .shipping-doc__section-title {
+  margin: 0 0 0.45rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1.5px solid #9ca3af;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.shipping-doc__info-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem 1rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem 1rem;
   font-size: 0.78rem;
+  color: var(--invoice-on-surface, #1c1b1b);
 }
 
-.shipping-doc__recipient-grid span {
-  color: #6b7280;
+.shipping-doc__info-grid p {
+  margin: 0;
+  line-height: 1.7;
+  min-width: 0;
 }
 
-.shipping-doc__recipient-address {
+.shipping-doc__info-grid span {
+  color: var(--invoice-on-surface-variant, #454742);
+  font-weight: 700;
+}
+
+.shipping-doc__info-grid__full {
   grid-column: 1 / -1;
 }
 
@@ -112,14 +114,23 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.72rem;
+  table-layout: fixed;
 }
+
+.shipping-doc__col--row { width: 6%; }
+.shipping-doc__col--product { width: 21%; }
+.shipping-doc__col--qty { width: 8%; }
+.shipping-doc__col--unit { width: 8%; }
+.shipping-doc__col--warehouse { width: 12%; }
+.shipping-doc__col--address { width: 28%; }
+.shipping-doc__col--voucher { width: 17%; }
 
 .shipping-doc__table th,
 .shipping-doc__table td {
   border: 1px solid #d1d5db;
-  padding: 0.35rem 0.4rem;
-  text-align: right;
-  vertical-align: top;
+  padding: 0.3rem 0.4rem;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .shipping-doc__table th {
@@ -127,63 +138,78 @@
   font-weight: 700;
 }
 
-.shipping-doc__signatures {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-top: 1.5rem;
-  padding-top: 0.75rem;
+.shipping-doc__product-cell {
+  text-align: right;
+  vertical-align: middle;
 }
 
-.shipping-doc__signature {
-  text-align: center;
-  font-size: 0.78rem;
+.shipping-doc__product-inline {
+  display: inline;
+  text-align: right;
+  line-height: 1.45;
+  word-break: break-word;
 }
 
-.shipping-doc__signature-line {
-  margin-top: 2.5rem;
-  border-top: 1px solid #9ca3af;
+.shipping-doc__product-name {
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--invoice-on-surface, #1c1b1b);
+}
+
+.shipping-doc__product-note {
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #757575;
+}
+
+.shipping-doc__product-note::before {
+  content: ' — ';
+  color: #9ca3af;
+}
+
+.shipping-doc .invoice-doc__footer {
+  box-shadow: none;
+  border-top: none;
+  outline: none;
 }
 
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 10mm;
+  @page shipping {
+    size: A4 landscape;
+    margin: 0;
   }
 
-  body {
+  body:has(.shipping-preview-page) {
     background: #fff !important;
-  }
-
-  .no-print {
-    display: none !important;
+    margin: 0;
+    padding: 0 !important;
+    width: 297mm;
+    font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif !important;
   }
 
   .shipping-preview-page {
-    padding: 0;
-    background: #fff;
+    padding: 0 !important;
+    background: #fff !important;
   }
 
-  .shipping-doc {
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  .shipping-doc.invoice-doc,
+  .shipping-doc.invoice-doc--page {
+    page: shipping;
+    width: 297mm !important;
+    max-width: 297mm !important;
+    height: 210mm !important;
+    min-height: 210mm !important;
+    max-height: 210mm !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
   }
 }
 
 @media (max-width: 640px) {
-  .shipping-doc__header {
-    flex-direction: column;
-  }
-
-  .shipping-doc__recipient-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .shipping-doc__signatures {
+  .shipping-doc__parties {
     grid-template-columns: 1fr;
   }
 }

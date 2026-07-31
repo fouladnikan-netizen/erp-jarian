@@ -1,4 +1,4 @@
-/** سند چارچوب جریان — نسخه ۲.۰: مراحل هشت‌گانه سفارش */
+/** سند چارچوب جریان — مراحل هفت‌گانه سفارش (تجهیز در تدارک ادغام شد) */
 
 export const ORDER_TABS = {
   CURRENT: 'current',
@@ -17,10 +17,10 @@ export const PHASE1_STAGES = [
   { id: 3, key: 'pishkesh', label: 'پیش‌کش' },
 ];
 
+/** فاز عملیات: ماشه تأمین → تدارک → رهسپار → سرانجام */
 export const PHASE2_STAGES = [
-  { id: 4, key: 'parvane', label: 'پروانه' },
+  { id: 4, key: 'parvane', label: 'ماشه تأمین' },
   { id: 5, key: 'tadarok', label: 'تدارک' },
-  { id: 6, key: 'tajhiz', label: 'تجهیز' },
   { id: 7, key: 'rahespar', label: 'رهسپار' },
   { id: 8, key: 'saranjam', label: 'سرانجام' },
 ];
@@ -50,18 +50,26 @@ export const STAGE_MOZENE_ID = 2;
 export const STAGE_PISHKESH_ID = 3;
 export const STAGE_PARVANE_ID = 4;
 export const STAGE_TADAROK_ID = 5;
-export const STAGE_TAJHIZ_ID = 6;
+/** @deprecated مرحله تجهیز حذف شد؛ فقط برای مهاجرت داده‌های قدیمی */
+export const LEGACY_STAGE_TAJHIZ_ID = 6;
 export const STAGE_RAHESPAR_ID = 7;
 export const STAGE_SARANJAM_ID = 8;
 export const PHASE2_FIRST_STAGE_ID = STAGE_PARVANE_ID;
 export const PHASE2_LAST_STAGE_ID = STAGE_SARANJAM_ID;
 
 export function isPhase1Stage(stageId) {
-  return stageId >= 1 && stageId <= PHASE1_LAST_STAGE_ID;
+  return PHASE1_STAGES.some((stage) => stage.id === stageId);
 }
 
+/** شامل شناسهٔ منسوخ تجهیز برای سازگاری دادهٔ قدیمی */
 export function isPhase2Stage(stageId) {
-  return stageId >= PHASE2_FIRST_STAGE_ID && stageId <= PHASE2_LAST_STAGE_ID;
+  return PHASE2_STAGES.some((stage) => stage.id === stageId)
+    || stageId === LEGACY_STAGE_TAJHIZ_ID;
+}
+
+/** فقط مراحل فعال کانبان/استپر فاز ۲ (بدون تجهیز) */
+export function isActivePhase2Stage(stageId) {
+  return PHASE2_STAGES.some((stage) => stage.id === stageId);
 }
 
 /** رنگ‌های ملایم مرحله — یکپارچه با پس‌زمینه کارت */
@@ -71,7 +79,6 @@ export const STAGE_TINTS = {
   3: { bg: 'rgba(245, 158, 11, 0.09)', accent: '#d97706' },
   4: { bg: 'rgba(13, 148, 136, 0.1)', accent: '#0d9488' },
   5: { bg: 'rgba(59, 130, 246, 0.08)', accent: '#3b82f6' },
-  6: { bg: 'rgba(16, 185, 129, 0.09)', accent: '#10b981' },
   7: { bg: 'rgba(234, 88, 12, 0.08)', accent: '#ea580c' },
   8: { bg: 'rgba(5, 150, 105, 0.1)', accent: '#059669' },
 };

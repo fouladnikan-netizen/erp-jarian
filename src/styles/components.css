@@ -17,18 +17,35 @@
 }
 
 .btn--primary {
-  background: linear-gradient(145deg, #ff4d4d 0%, var(--action-primary) 50%, #991b1b 100%);
-  color: var(--color-white);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-brand-red-glossy) 88%, white) 0%,
+    var(--color-brand-red-glossy) 48%,
+    color-mix(in srgb, var(--color-brand-red-glossy) 82%, black) 100%
+  );
+  color: var(--color-white-glossy);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.14);
 }
 
 .btn--primary:hover {
-  background: linear-gradient(145deg, #ff6666 0%, var(--color-brand-red-hover) 50%, #7f1515 100%);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-brand-red-glossy) 92%, white) 0%,
+    var(--color-brand-red-hover) 50%,
+    color-mix(in srgb, var(--color-brand-red-active) 90%, black) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+    0 2px 4px rgba(0, 0, 0, 0.16);
 }
 
 .btn--accent {
   background: linear-gradient(145deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
-  color: var(--color-white);
+  color: var(--color-white-glossy);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
@@ -42,7 +59,7 @@
 }
 
 .btn--ghost:hover {
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
 }
 
 .btn--outline {
@@ -96,7 +113,7 @@
 .kpi-card {
   padding: 1rem 1.1rem;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #f8fafc 0%, #e8ecf1 55%, #dde3ea 100%);
+  background: linear-gradient(135deg, var(--bg-muted) 0%, var(--bg-surface) 55%, var(--border-default) 100%);
   border: 1px solid var(--border-default);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
@@ -170,7 +187,7 @@
   padding: 0.6rem 2.5rem 0.6rem 1rem;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
   font-size: 0.875rem;
   color: var(--text-primary);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -184,7 +201,7 @@
   outline: none;
   border-color: var(--color-accent-dark);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
-  background: var(--color-white);
+  background: var(--bg-surface);
 }
 
 .actions-bar__search-icon {
@@ -267,7 +284,7 @@
 .data-table th,
 .data-table td {
   padding: 0.85rem 1.25rem;
-  text-align: right;
+  text-align: center;
   border-bottom: 1px solid var(--border-default);
 }
 
@@ -276,7 +293,7 @@
   font-weight: 600;
   font-size: 0.75rem;
   color: var(--text-secondary);
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
   white-space: nowrap;
 }
 
@@ -285,7 +302,7 @@
 }
 
 .data-table tbody tr:hover {
-  background: var(--color-neutral-50);
+  background: var(--bg-muted);
 }
 
 .data-table__actions {
@@ -303,6 +320,14 @@
 .data-table__actions button:hover {
   background: var(--color-neutral-100);
   color: var(--color-accent-dark);
+}
+
+/* نمایشگرهای کوچک‌تر: کاهش padding سلول‌ها تا جدول فشرده نشود */
+@media (max-width: 1100px) {
+  .data-table th,
+  .data-table td {
+    padding: 0.6rem 0.7rem;
+  }
 }
 
 /* ??? ?? ????? ??? */
@@ -366,10 +391,12 @@
   overflow: visible;
 }
 
-.resizable-th__handle {
+.resizable-th__handle,
+.resizer-handle {
   position: absolute;
   top: 0;
   bottom: 0;
+  /* RTL: inline-end = left edge — drag left widens column */
   inset-inline-end: 0;
   width: 6px;
   margin-inline-end: -3px;
@@ -379,6 +406,8 @@
 }
 
 .resizable-th__handle:hover,
-.resizable-th__handle:active {
+.resizable-th__handle:active,
+.resizer-handle:hover,
+.resizer-handle:active {
   background: rgba(13, 148, 136, 0.22);
 }

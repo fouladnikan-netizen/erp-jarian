@@ -6,6 +6,7 @@ import {
   INQUIRY_STATUS,
   ITEM_INQUIRY_STATUS,
 } from './inquiryConfig';
+import { canEditInquiryPrices } from './orderEditPermissions';
 import { getSupplierName } from './suppliers';
 import { formatAmountRial, parseMoneyInput } from './orderCode';
 import {
@@ -50,6 +51,7 @@ export function getEmptyQuickInquiryDraft() {
     supplyType: 'رسمی',
     supplierId: '',
     unitPrice: '',
+    notes: '',
     discrepancyDescription: '',
     discrepancyWeight: '',
     discrepancyUnitPrice: '',
@@ -129,6 +131,74 @@ export function buildInquiryFromDraft(
   return base;
 }
 
+export function inquiryToQuickDraft(inquiry) {
+  return {
+    supplyType: inquiry.supplyType,
+    supplierId: inquiry.supplierId,
+    unitPrice: inquiry.unitPrice,
+    notes: inquiry.notes || '',
+    discrepancyDescription: inquiry.discrepancyDescription || '',
+    discrepancyWeight: inquiry.discrepancyWeight ?? '',
+    discrepancyUnitPrice: inquiry.discrepancyUnitPrice ?? '',
+  };
+}
+
+function applyDraftToInquiry(inquiry, draft) {
+  const updated = {
+    ...inquiry,
+    supplyType: draft.supplyType,
+    supplierId: Number(draft.supplierId),
+    unitPrice: parseMoneyInput(draft.unitPrice) || 0,
+    notes: (draft.notes || '').trim(),
+  };
+
+  if (isDiscrepancySupplyType(draft.supplyType)) {
+    const discrepancyDescription = (draft.discrepancyDescription ?? '').trim();
+    const discrepancyWeight = draft.discrepancyWeight;
+    const discrepancyUnitPrice = draft.discrepancyUnitPrice;
+
+    if (discrepancyDescription) {
+      updated.discrepancyDescription = discrepancyDescription;
+    } else {
+      delete updated.discrepancyDescription;
+    }
+    if (discrepancyWeight !== '' && discrepancyWeight != null) {
+      updated.discrepancyWeight = Number(discrepancyWeight);
+    } else {
+      delete updated.discrepancyWeight;
+    }
+    if (discrepancyUnitPrice !== '' && discrepancyUnitPrice != null) {
+      updated.discrepancyUnitPrice = parseMoneyInput(discrepancyUnitPrice) || 0;
+    } else {
+      delete updated.discrepancyUnitPrice;
+    }
+  } else {
+    delete updated.discrepancyDescription;
+    delete updated.discrepancyWeight;
+    delete updated.discrepancyUnitPrice;
+  }
+
+  return updated;
+}
+
+export function updateInquiryOnOrder(order, itemIndex, inquiryId, draft) {
+  if (!canEditInquiryPrices()) return order;
+  const items = (order.items || []).map((item, idx) => {
+    if (idx !== itemIndex) return item;
+    return {
+      ...item,
+      inquiries: (item.inquiries || []).map((inq) => (
+        inq.id === inquiryId ? applyDraftToInquiry(inq, draft) : inq
+      )),
+    };
+  });
+
+  return {
+    ...order,
+    items,
+  };
+}
+
 export function formatInquirySummary(inquiry, itemName) {
   const supplier = getSupplierName(inquiry.supplierId);
   const statusLabel = inquiry.status === INQUIRY_STATUS.FINALIZED ? 'تکمیل‌شده' : 'پیش‌نویس';
@@ -167,6 +237,7 @@ export function appendInquiryToOrder(
   registeredBy = CURRENT_USER,
   status = INQUIRY_STATUS.DRAFT,
 ) {
+  if (!canEditInquiryPrices()) return order;
   const inquiry = buildInquiryFromDraft(draft, registeredBy, status);
   const event = buildInquiryEvent(order, itemIndex, inquiry);
   const items = (order.items || []).map((item, idx) => {
@@ -289,6 +360,7 @@ export function completeOrderInquiries(order) {
     items,
     stageId: nextStageId,
     inquiryCompletedAt: at,
+    proformaUpdate: null,
     amountRial: preview.orderTotal > 0 ? Math.round(preview.orderTotal) : pricedOrder.amountRial,
     isPriced: preview.orderTotal > 0,
     events: [...(pricedOrder.events || []), event],
@@ -324,6 +396,7 @@ export function completeOrderQuoting(order) {
   return {
     ...pricedOrder,
     stageId: nextStageId,
+    quotingCompletedAt: at,
     amountRial: preview.orderTotal > 0 ? Math.round(preview.orderTotal) : pricedOrder.amountRial,
     isPriced: preview.orderTotal > 0,
     events: [...(pricedOrder.events || []), event],

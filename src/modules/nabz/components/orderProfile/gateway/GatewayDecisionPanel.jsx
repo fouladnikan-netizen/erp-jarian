@@ -1,17 +1,53 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   GATEWAY_CANCEL_REASONS,
   GATEWAY_DECISION_OUTCOMES,
-  GATEWAY_PAYMENT_TYPES,
   getCancelReasonLabel,
+  getEmptyPaymentTerms,
+  validatePaymentTerms,
 } from '../../../gatewayDecisionConfig';
 import {
   getGatewayDecision,
   hasGatewayDecision,
   isGatewayDecisionEditable,
 } from '../../../gatewayDecisionService';
+import {
+  resolveDeliveryInfoPrefill,
+  validateDeliveryInfo,
+} from '../../../deliveryInfoService';
+import { formatJarianMoney } from '../../../../../config/JarianUI.config';
+import { pickRandomSalesQuote } from '../../../salesMotivationalQuotes';
+import DeliveryInfoForm from '../../DeliveryInfoForm';
 import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
+import DealCelebrationModal from './DealCelebrationModal';
 import GatewaySelect from './GatewaySelect';
+import PaymentTermsForm from './PaymentTermsForm';
+
+function formatPaymentTermsSummary(decision) {
+  const terms = decision.paymentTerms || {};
+  const lines = [`نوع پرداخت: ${decision.paymentType}`];
+  if (terms.dueDate) lines.push(`تاریخ سررسید: ${terms.dueDate}`);
+  if (terms.lcMonths) lines.push(`تعداد ماه LC: ${terms.lcMonths}`);
+  if (terms.daysAfterDelivery != null && terms.daysAfterDelivery !== '') {
+    lines.push(`روز پس از تحویل: ${terms.daysAfterDelivery}`);
+  }
+  if (terms.partialAmount) {
+    lines.push(`مبلغ علی‌الحساب: ${formatJarianMoney(terms.partialAmount, { withCurrency: true })}`);
+  }
+  if (terms.document?.name) lines.push(`سند پیوست: ${terms.document.name}`);
+  return lines;
+}
+
+function formatDeliverySummary(deliveryInfo) {
+  if (!deliveryInfo?.needsShipping) return ['ارسال: ندارد'];
+  return [
+    `تحویل‌گیرنده: ${deliveryInfo.recipientName || '—'}`,
+    `تماس: ${deliveryInfo.recipientPhone || '—'}`,
+    `کد پستی: ${deliveryInfo.postalCode || '—'}`,
+    `آدرس تخلیه: ${deliveryInfo.unloadAddress || '—'}`,
+    deliveryInfo.shippingNotes ? `توضیحات ارسال: ${deliveryInfo.shippingNotes}` : null,
+  ].filter(Boolean);
+}
 
 export default function GatewayDecisionPanel({
   order,
@@ -21,22 +57,54 @@ export default function GatewayDecisionPanel({
   onSubmitFailed,
 }) {
   const [selectedOutcome, setSelectedOutcome] = useState(null);
-  const [paymentType, setPaymentType] = useState(GATEWAY_PAYMENT_TYPES[0]);
+  const [paymentTerms, setPaymentTerms] = useState(() => getEmptyPaymentTerms());
   const [financeNotes, setFinanceNotes] = useState('');
+  const [deliveryInfo, setDeliveryInfo] = useState(() => resolveDeliveryInfoPrefill(order));
   const [cancelReason, setCancelReason] = useState(GATEWAY_CANCEL_REASONS[0].value);
   const [cancelNotes, setCancelNotes] = useState('');
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const [celebrationQuote, setCelebrationQuote] = useState('');
+  const [pendingSuccessPayload, setPendingSuccessPayload] = useState(null);
 
   const decision = getGatewayDecision(order);
   const editable = isGatewayDecisionEditable(order, orderPhase, viewPhase);
   const decided = hasGatewayDecision(order);
 
+  useEffect(() => {
+    if (!editable || decided) return;
+    setDeliveryInfo(resolveDeliveryInfoPrefill(order));
+  }, [order?.id, order?.customerId, editable, decided]);
+
   const handleSuccessSubmit = () => {
-    if (!paymentType) {
-      window.alert('لطفاً نوع پرداخت را انتخاب کنید.');
+    const paymentError = validatePaymentTerms(paymentTerms);
+    if (paymentError) {
+      window.alert(paymentError);
       return;
     }
-    onSubmitSuccess?.({ paymentType, financeNotes });
+    const deliveryError = validateDeliveryInfo(deliveryInfo);
+    if (deliveryError) {
+      window.alert(deliveryError);
+      return;
+    }
+    setPendingSuccessPayload({
+      paymentType: paymentTerms.paymentType,
+      financeNotes,
+      paymentTerms,
+      deliveryInfo,
+    });
+    setCelebrationQuote(pickRandomSalesQuote());
+    setCelebrationOpen(true);
+  };
+
+  const handleCelebrationThanks = () => {
+    const payload = pendingSuccessPayload;
+    setCelebrationOpen(false);
+    setCelebrationQuote('');
+    setPendingSuccessPayload(null);
+    if (payload) {
+      onSubmitSuccess?.(payload);
+    }
     resetForm();
   };
 
@@ -54,14 +122,10 @@ export default function GatewayDecisionPanel({
     setSelectedOutcome(null);
     setFinanceNotes('');
     setCancelNotes('');
-    setPaymentType(GATEWAY_PAYMENT_TYPES[0]);
+    setPaymentTerms(getEmptyPaymentTerms());
+    setDeliveryInfo(resolveDeliveryInfoPrefill(order));
     setCancelReason(GATEWAY_CANCEL_REASONS[0].value);
   };
-
-  const paymentOptions = GATEWAY_PAYMENT_TYPES.map((type) => ({
-    value: type,
-    label: type,
-  }));
 
   const cancelReasonOptions = GATEWAY_CANCEL_REASONS.map((reason) => ({
     value: reason.value,
@@ -70,6 +134,10 @@ export default function GatewayDecisionPanel({
 
   if (decided && decision) {
     const isSuccess = decision.outcome === GATEWAY_DECISION_OUTCOMES.SUCCESS;
+    const summaryLines = isSuccess ? formatPaymentTermsSummary(decision) : [];
+    const deliveryLines = isSuccess
+      ? formatDeliverySummary(order.deliveryInfo || decision.deliveryInfo)
+      : [];
     return (
       <section className={`gateway-decision gateway-decision--resolved${isSuccess ? ' is-success' : ' is-failed'}`}>
         <header className="gateway-decision__head">
@@ -81,11 +149,9 @@ export default function GatewayDecisionPanel({
         <div className="gateway-decision__summary">
           {isSuccess ? (
             <>
-              <p>
-                <strong>نوع پرداخت:</strong>
-                {' '}
-                {decision.paymentType}
-              </p>
+              {summaryLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
               {decision.financeNotes && (
                 <p>
                   <strong>توضیحات مالی:</strong>
@@ -93,6 +159,9 @@ export default function GatewayDecisionPanel({
                   {decision.financeNotes}
                 </p>
               )}
+              {deliveryLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
             </>
           ) : (
             <>
@@ -127,7 +196,7 @@ export default function GatewayDecisionPanel({
       <section className="gateway-decision gateway-decision--readonly">
         <h2 className="gateway-decision__title">تعیین تکلیف نهایی سفارش</h2>
         <p className="gateway-decision__hint">
-          برای ثبت تصمیم نهایی، سفارش باید در مرحله «پیش‌کش» باشد.
+          تعیین تکلیف پس از صدور، مهر و امضای پیش‌فاکتور در مرحله «پیش‌کش» فعال می‌شود.
         </p>
       </section>
     );
@@ -143,49 +212,48 @@ export default function GatewayDecisionPanel({
         <div className="gateway-decision__options">
           <button
             type="button"
-            className={`gateway-decision__option${selectedOutcome === GATEWAY_DECISION_OUTCOMES.SUCCESS ? ' is-active' : ''}`}
+            className={`gateway-decision__option gateway-decision__option--success${selectedOutcome === GATEWAY_DECISION_OUTCOMES.SUCCESS ? ' is-active' : ''}`}
             onClick={() => setSelectedOutcome(GATEWAY_DECISION_OUTCOMES.SUCCESS)}
           >
-            <span className="gateway-decision__option-icon" aria-hidden="true">🏆</span>
-            <span>🏆 تایید و فروش موفق</span>
+            موفق
           </button>
           <button
             type="button"
             className={`gateway-decision__option gateway-decision__option--failed${selectedOutcome === GATEWAY_DECISION_OUTCOMES.FAILED ? ' is-active' : ''}`}
             onClick={() => setSelectedOutcome(GATEWAY_DECISION_OUTCOMES.FAILED)}
           >
-            <span className="gateway-decision__option-icon" aria-hidden="true">❌</span>
-            <span>❌ عدم موفقیت / لغو</span>
+            ناموفق
           </button>
         </div>
 
         {selectedOutcome === GATEWAY_DECISION_OUTCOMES.SUCCESS && (
           <div className="gateway-decision__form gateway-decision__form--success">
+            <PaymentTermsForm
+              value={paymentTerms}
+              onChange={setPaymentTerms}
+            />
             <label className="gateway-decision__field">
-              <span>نوع پرداخت</span>
-              <GatewaySelect
-                value={paymentType}
-                onChange={setPaymentType}
-                options={paymentOptions}
-                ariaLabel="نوع پرداخت"
-              />
-            </label>
-            <label className="gateway-decision__field">
-              <span>توضیحات مالی</span>
+              <span>توضیحات مالی (اختیاری)</span>
               <textarea
                 className="gateway-decision__textarea"
-                rows={3}
+                rows={2}
                 value={financeNotes}
                 onChange={(e) => setFinanceNotes(e.target.value)}
-                placeholder="شرایط پرداخت، مهلت تسویه یا یادداشت مالی..."
+                placeholder="یادداشت تکمیلی مالی..."
               />
             </label>
+            <DeliveryInfoForm
+              value={deliveryInfo}
+              onChange={setDeliveryInfo}
+              idPrefix={`gateway-delivery-${order.id}`}
+              compact
+            />
             <button
               type="button"
               className="btn gateway-decision__submit gateway-decision__submit--success"
               onClick={handleSuccessSubmit}
             >
-              ثبت موفقیت و ارسال به مالی/انبار
+              ثبت موفقیت
             </button>
           </div>
         )}
@@ -231,6 +299,12 @@ export default function GatewayDecisionPanel({
         confirmLabel="بله، لغو شود"
         onConfirm={handleFailedSubmit}
         onCancel={() => setConfirmCancelOpen(false)}
+      />
+
+      <DealCelebrationModal
+        open={celebrationOpen}
+        quote={celebrationQuote}
+        onThanks={handleCelebrationThanks}
       />
     </>
   );

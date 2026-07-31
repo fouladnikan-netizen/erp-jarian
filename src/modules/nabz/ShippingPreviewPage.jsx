@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ShippingDocument from './components/ShippingDocument';
 import { readShippingPreviewPayload } from './shippingPrint';
+import './proforma.css';
 import './shipping.css';
 
 export default function ShippingPreviewPage() {
@@ -13,6 +14,8 @@ export default function ShippingPreviewPage() {
   useEffect(() => {
     document.fonts.load('400 1rem Meem');
     document.fonts.load('700 1rem Meem');
+    document.fonts.load('400 1rem Vazirmatn');
+    document.fonts.load('700 1rem Vazirmatn');
   }, []);
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function ShippingPreviewPage() {
   if (!payload) {
     return (
       <div className="shipping-preview-page shipping-preview-page--empty">
-        <p>داده حواله باربری یافت نشد. لطفاً از مرحله تجهیز اقدام کنید.</p>
+        <p>داده حواله باربری یافت نشد. لطفاً از دکمه «سفارش ارسال» در پروفایل سفارش اقدام کنید.</p>
       </div>
     );
   }

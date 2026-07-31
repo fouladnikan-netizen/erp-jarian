@@ -21,10 +21,26 @@ export default function NabzToolbar({
   onCreateClick,
 }) {
   const showViewToggle = activeTab !== ORDER_TABS.FAILED;
+  const isList = viewMode === VIEW_MODES.LIST;
 
   return (
     <section className="section-actions nabz-toolbar" aria-label="عملیات">
-      <div className="nabz-toolbar__tabs">
+      {/* DOM-first → far right in RTL */}
+      <div className="actions-bar__search nabz-toolbar__search">
+        <input
+          type="search"
+          placeholder="جستجو در سفارشات..."
+          aria-label="جستجو"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
+        <SearchIcon />
+      </div>
+
+      <div className="nabz-toolbar__spacer" aria-hidden="true" />
+
+      {/* Far left group in RTL */}
+      <div className="nabz-toolbar__controls">
         <div className="nabz-tabs" role="tablist" aria-label="وضعیت سفارشات">
           {TAB_ORDER.map((tab) => (
             <button
@@ -39,44 +55,40 @@ export default function NabzToolbar({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="actions-bar nabz-toolbar__bar">
-        <div className="actions-bar__search nabz-toolbar__search">
-          <input
-            type="search"
-            placeholder="جستجو در سفارشات..."
-            aria-label="جستجو"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-          <SearchIcon />
-        </div>
 
         {showViewToggle && (
-          <div className="nabz-toggle" role="group" aria-label="نمای نمایش">
+          <div
+            className={`nabz-segment${isList ? ' nabz-segment--list' : ' nabz-segment--kanban'}`}
+            role="group"
+            aria-label="حالت نمایش"
+          >
+            <span className="nabz-segment__pill" aria-hidden="true" />
             <button
               type="button"
-              className={`nabz-toggle__btn${viewMode === VIEW_MODES.LIST ? ' is-active' : ''}`}
+              className={`nabz-segment__btn${isList ? ' is-active' : ''}`}
+              aria-pressed={isList}
               onClick={() => onViewModeChange(VIEW_MODES.LIST)}
             >
-              نمای فهرست
+              لیستی
             </button>
             <button
               type="button"
-              className={`nabz-toggle__btn${viewMode === VIEW_MODES.KANBAN ? ' is-active' : ''}`}
+              className={`nabz-segment__btn${!isList ? ' is-active' : ''}`}
+              aria-pressed={!isList}
               onClick={() => onViewModeChange(VIEW_MODES.KANBAN)}
             >
-              نمای کانبان
+              کارتی
             </button>
           </div>
         )}
 
-        <div className="actions-bar__buttons">
-          <button type="button" className="btn btn--primary" onClick={onCreateClick}>
-            ثبت سفارش جدید
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn btn--primary nabz-cta"
+          onClick={onCreateClick}
+        >
+          ثبت سفارش جدید
+        </button>
       </div>
     </section>
   );

@@ -5,6 +5,7 @@ import { useNabzOrders } from './NabzOrdersContext';
 import {
   appendInquiryToOrder,
   setTargetInquiryOnOrder,
+  updateInquiryOnOrder,
   updateOrderQuoting,
 } from './inquiryService';
 import OrderProfileView, { OrderProfileViewNotFound } from './components/orderProfile/OrderProfileView';
@@ -22,6 +23,12 @@ export default function OrderDetailPage() {
   const addInquiry = (orderId, itemIndex, draft) => {
     setOrders((prev) => prev.map((o) => (
       o.id === orderId ? appendInquiryToOrder(o, itemIndex, draft) : o
+    )));
+  };
+
+  const updateInquiry = (orderId, itemIndex, inquiryId, draft) => {
+    setOrders((prev) => prev.map((o) => (
+      o.id === orderId ? updateInquiryOnOrder(o, itemIndex, inquiryId, draft) : o
     )));
   };
 
@@ -51,6 +58,7 @@ export default function OrderDetailPage() {
         order={order}
         onUpdateOrder={setOrders}
         onAddInquiry={addInquiry}
+        onUpdateInquiry={updateInquiry}
         onSetTargetInquiry={setTargetInquiry}
         onUpdateQuoting={updateQuoting}
       />

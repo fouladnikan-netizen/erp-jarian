@@ -23,7 +23,9 @@ import {
 import { OPERATIONAL_PHASES } from '../../phase2Config';
 import ParvaneStagePanel from './operations/ParvaneStagePanel';
 import TadarokStagePanel from './operations/TadarokStagePanel';
-import TajhizStagePanel from './operations/TajhizStagePanel';
+import RahseparStagePanel from './operations/RahseparStagePanel';
+import SaranjamStagePanel from './operations/SaranjamStagePanel';
+import { isOrderArchived } from '../../saranjamSettlementService';
 
 function FlatField({ label, children }) {
   return (
@@ -88,6 +90,7 @@ export default function OrderProfileOperationsTab({
   }
 
   const activePhase = operationalViewPhase || currentPhase;
+  const readOnly = isOrderArchived(order);
 
   if (activePhase === OPERATIONAL_PHASES.PARVANE) {
     return (
@@ -97,6 +100,7 @@ export default function OrderProfileOperationsTab({
         onUpdateOrder={onUpdateOrder}
         onOperationalPhaseChange={onOperationalPhaseChange}
         onReturnToGateway={onReturnToGateway}
+        readOnly={readOnly}
       />
     );
   }
@@ -109,15 +113,27 @@ export default function OrderProfileOperationsTab({
         onUpdateOrder={onUpdateOrder}
         onOperationalPhaseChange={onOperationalPhaseChange}
         compact={false}
+        readOnly={readOnly}
       />
     );
   }
 
-  if (activePhase === OPERATIONAL_PHASES.TAJHIZ) {
+  if (activePhase === OPERATIONAL_PHASES.RAHESPAR) {
     return (
-      <TajhizStagePanel
+      <RahseparStagePanel
         order={order}
-        operationalViewPhase={activePhase}
+        onUpdateOrder={onUpdateOrder}
+        onOperationalPhaseChange={onOperationalPhaseChange}
+        compact={false}
+        readOnly={readOnly}
+      />
+    );
+  }
+
+  if (activePhase === OPERATIONAL_PHASES.SARANJAM) {
+    return (
+      <SaranjamStagePanel
+        order={order}
         onUpdateOrder={onUpdateOrder}
         compact={false}
       />
@@ -162,7 +178,7 @@ export default function OrderProfileOperationsTab({
 
       <SectionCard
         title="پیوست‌های اسنادی / مجوز تأمین"
-        description="اسناد پروانه، مجوز خرید و معرفی‌نامه‌های انبار"
+        description="اسناد ماشه تأمین، مجوز خرید و معرفی‌نامه‌های انبار"
       >
         <ul className="ops-records">
           {supplyDocs.map((doc) => (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import JalaliDatePicker from '../../JalaliDatePicker';
 import MoneyInput from '../../MoneyInput';
 import { SUPPLY_CHANNEL_TYPES, isDiscrepancySupplyType } from '../../../inquiryConfig';
@@ -12,6 +12,26 @@ import {
   PAYMENT_TERM_TYPES,
 } from '../../../tadarokStageConfig';
 import GatewaySelect from '../gateway/GatewaySelect';
+import './PurchaseOrderSlideOver.css';
+
+const CLOSE_MS = 400;
+
+function PoHeaderProduct({ name, description }) {
+  const productName = String(name || '').trim() || '—';
+  const detail = String(description || '').trim();
+
+  return (
+    <p className="po-slideover__product">
+      <span className="po-slideover__product-name">{productName}</span>
+      {detail ? (
+        <>
+          <span className="po-slideover__product-sep" aria-hidden="true">|</span>
+          <span className="po-slideover__product-desc">{detail}</span>
+        </>
+      ) : null}
+    </p>
+  );
+}
 
 function PaymentTermsFields({ paymentTerms, onChange, readOnly = false }) {
   const update = (patch) => {
@@ -45,18 +65,12 @@ function PaymentTermsFields({ paymentTerms, onChange, readOnly = false }) {
 
   if (paymentTerms.type === PAYMENT_TERM_TYPES.ON_DELIVERY) {
     return (
-      <label className="tadarok-form__field tadarok-form__field--full">
-        <span>زمان تحویل</span>
-        <input
-          type="text"
-          className="tadarok-form__input"
-          value={paymentTerms.deliveryTime}
-          onChange={(e) => update({ deliveryTime: e.target.value })}
-          placeholder="مثلاً: ۳ روز کاری پس از صدور حواله"
-          readOnly={readOnly}
-          disabled={readOnly}
-        />
-      </label>
+      <JalaliDatePicker
+        label="تاریخ تحویل"
+        value={paymentTerms.deliveryTime}
+        onChange={(deliveryTime) => update({ deliveryTime })}
+        disabled={readOnly}
+      />
     );
   }
 
@@ -141,6 +155,9 @@ export default function PurchaseOrderModal({
   const isEdit = mode === 'edit';
   const [draft, setDraft] = useState(() => getEmptyPurchaseOrderDraft(line));
   const [editing, setEditing] = useState(!isEdit);
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const closeTimerRef = useRef(null);
   const suppliers = useMemo(() => listSuppliers(), []);
   const warehouses = useMemo(() => listWarehouses(), []);
 
@@ -175,13 +192,56 @@ export default function PurchaseOrderModal({
     const base = getEmptyPurchaseOrderDraft(line);
     setDraft({
       ...base,
-      supplierId: defaultSupplierId ? String(defaultSupplierId) : '',
+      supplierId: defaultSupplierId
+        ? String(defaultSupplierId)
+        : (base.supplierId || ''),
+      supplyType: line.kavoshSupplyType || base.supplyType,
+      agreedUnitPriceRial: line.inquiryUnitPriceRial != null && line.inquiryUnitPriceRial !== ''
+        ? String(line.inquiryUnitPriceRial)
+        : base.agreedUnitPriceRial,
       purchaseQty: line.qty != null ? String(line.qty) : base.purchaseQty,
     });
     setEditing(true);
   }, [open, line, defaultSupplierId, isEdit]);
 
-  if (!open || !line) return null;
+  useEffect(() => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    if (open && line) {
+      setMounted(true);
+      const frame = window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setVisible(true));
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    setVisible(false);
+    closeTimerRef.current = window.setTimeout(() => {
+      setMounted(false);
+      closeTimerRef.current = null;
+    }, CLOSE_MS);
+
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    };
+  }, [open, line]);
+
+  useEffect(() => {
+    if (!mounted) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mounted]);
+
+  if (!mounted || !line) return null;
 
   const readOnly = isEdit && !editing;
   const updateDraft = (patch) => {
@@ -217,31 +277,46 @@ export default function PurchaseOrderModal({
   };
 
   const title = isEdit
-    ? (editing ? 'ویرایش حواله خرید' : 'جزئیات حواله خرید')
-    : 'صدور حواله خرید';
-  const submitLabel = isEdit ? 'ذخیره تغییرات' : 'صدور حواله خرید';
+    ? (editing ? 'ویرایش سفارش خرید' : 'جزئیات سفارش خرید')
+    : 'صدور سفارش خرید';
+  const submitLabel = isEdit ? 'ذخیره تغییرات' : 'صدور سفارش خرید';
 
   return (
-    <div className="tadarok-modal" role="presentation">
-      <button type="button" className="tadarok-modal__backdrop" aria-label="بستن" onClick={onClose} />
-      <div className="tadarok-modal__panel" role="dialog" aria-modal="true" aria-labelledby="po-modal-title">
-        <header className="tadarok-modal__header">
-          <div>
-            <h2 id="po-modal-title" className="tadarok-modal__title">{title}</h2>
-            <p className="tadarok-modal__subtitle">
-              {line.name}
-              {' '}
-              —
-              سفارش
-              {' '}
-              {order?.code}
-              {line.purchaseOrder?.poNumber ? ` — ${line.purchaseOrder.poNumber}` : ''}
-            </p>
+    <div
+      className={`po-slideover${visible ? ' is-open' : ''}`}
+      role="presentation"
+    >
+      <button
+        type="button"
+        className="po-slideover__backdrop"
+        aria-label="بستن"
+        onClick={onClose}
+      />
+      <div
+        className="po-slideover__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="po-modal-title"
+      >
+        <header className="po-slideover__header">
+          <div className="po-slideover__heading">
+            <h2 id="po-modal-title" className="po-slideover__title">{title}</h2>
+            <PoHeaderProduct name={line.name} description={line.description} />
           </div>
-          <button type="button" className="tadarok-modal__close" onClick={onClose} aria-label="بستن">×</button>
+          <button
+            type="button"
+            className="po-slideover__close"
+            onClick={onClose}
+            aria-label="بستن"
+          >
+            ×
+          </button>
         </header>
 
-        <form className={`tadarok-modal__form${readOnly ? ' is-readonly' : ''}`} onSubmit={handleSubmit}>
+        <form
+          className={`po-slideover__form${readOnly ? ' is-readonly' : ''}`}
+          onSubmit={handleSubmit}
+        >
           <div className="tadarok-form__grid">
             <label className="tadarok-form__field">
               <span>نام تامین‌کننده</span>
@@ -332,16 +407,25 @@ export default function PurchaseOrderModal({
             </label>
           )}
 
-          <label className="tadarok-form__field tadarok-form__field--full">
-            <span>آدرس انبار</span>
-            <input
-              type="text"
-              className="tadarok-form__input"
-              value={draft.warehouseAddress}
-              readOnly
-              placeholder="پس از انتخاب انبار تکمیل می‌شود"
+          <div className="tadarok-form__grid">
+            <label className="tadarok-form__field">
+              <span>آدرس انبار</span>
+              <input
+                type="text"
+                className="tadarok-form__input"
+                value={draft.warehouseAddress}
+                readOnly
+                placeholder="پس از انتخاب انبار تکمیل می‌شود"
+              />
+            </label>
+
+            <JalaliDatePicker
+              label="زمان تحویل بار"
+              value={draft.cargoDeliveryTime}
+              onChange={(cargoDeliveryTime) => updateDraft({ cargoDeliveryTime })}
+              disabled={readOnly}
             />
-          </label>
+          </div>
 
           <label className="tadarok-form__field tadarok-form__field--full">
             <span>توضیحات مهم</span>
@@ -375,17 +459,17 @@ export default function PurchaseOrderModal({
             />
           </section>
 
-          <footer className="tadarok-modal__footer">
+          <footer className="po-slideover__footer">
             <button type="button" className="btn btn--outline" onClick={onClose}>
               {readOnly ? 'بستن' : 'انصراف'}
             </button>
             {isEdit && readOnly && (
               <button type="button" className="btn btn--primary" onClick={() => setEditing(true)}>
-                ویرایش حواله
+                ویرایش سفارش خرید
               </button>
             )}
             {!readOnly && (
-              <button type="submit" className="btn btn--primary tadarok-modal__submit">
+              <button type="submit" className="btn btn--primary po-slideover__submit">
                 {submitLabel}
               </button>
             )}

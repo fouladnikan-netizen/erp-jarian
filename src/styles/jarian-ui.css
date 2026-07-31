@@ -1,0 +1,306 @@
+/* Jarian Unified Presentation Rule 2.0 — مرجع بصری src/config/JarianUI.config.js */
+
+.jarian-money {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  direction: rtl;
+  text-align: center;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.jarian-money--emphasis {
+  font-weight: 700;
+}
+
+.jarian-money--empty {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+td .jarian-money,
+.gateway-table__num .jarian-money,
+.nabz-quick-table__final .jarian-money {
+  justify-content: center;
+}
+
+.jarian-supplier {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.jarian-supplier__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
+  color: var(--text-primary);
+}
+
+.jarian-product-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  min-width: 0;
+  width: 100%;
+  text-align: right;
+}
+
+.jarian-product-name {
+  display: block;
+  width: 100%;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.jarian-product-desc {
+  display: block;
+  width: 100%;
+  font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #757575;
+  text-align: right;
+}
+
+.jarian-td-row,
+td.jarian-td-row,
+.data-table th:first-child,
+.data-table td.jarian-td-row {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tadarok-stage__supply-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+  width: 100%;
+}
+
+/*
+ * قانون تراز جدول جریان:
+ * تیتر و داده وسط‌چین — به‌جز دادهٔ ستون «شرح کالا» که راست‌چین است
+ */
+.jarian-table th,
+.jarian-table td,
+.gateway-table th,
+.gateway-table td,
+.nabz-quick-table th,
+.nabz-quick-table td,
+.tadarok-stage__table th,
+.tadarok-stage__table td,
+.order-profile-items__table th,
+.order-profile-items__table td,
+.nabz-proforma-table th,
+.nabz-proforma-table td,
+.nabz-inquiries-table th,
+.nabz-inquiries-table td,
+.nabz-create-table th,
+.nabz-create-table td,
+.nabz-items-table th,
+.nabz-items-table td,
+.nabz-profile-items-table th,
+.nabz-profile-items-table td,
+.data-table th,
+.data-table td,
+.delivery-order-modal__table th,
+.delivery-order-modal__table td,
+.jarian-td-money,
+td.jarian-td-money,
+.order-profile-items__num {
+  text-align: center !important;
+  vertical-align: middle;
+}
+
+/*
+ * ستون شرح کالا:
+ * تیتر وسط‌چین می‌ماند؛ فقط داده راست‌چین
+ */
+td.jarian-td-product,
+td.nabz-quick-table__name,
+td.nabz-create-table__name,
+td.order-profile-items__desc,
+td:has(> .jarian-product-cell),
+td:has(.jarian-product-cell),
+.nabz-proforma-table tbody td:nth-child(2),
+.order-profile-items__table tbody td:nth-child(2),
+.tadarok-stage__table tbody td:nth-child(2),
+.gateway-table tbody td:has(.jarian-product-cell),
+.nabz-quick-table tbody td:has(.jarian-product-cell),
+.nabz-create-table tbody td:has(.jarian-product-cell) {
+  text-align: right !important;
+}
+
+td.jarian-td-product .jarian-product-cell,
+td.nabz-quick-table__name .jarian-product-cell,
+td.nabz-create-table__name .jarian-product-cell,
+td.order-profile-items__desc .jarian-product-cell,
+td:has(.jarian-product-cell) .jarian-product-cell {
+  text-align: right;
+  align-items: stretch;
+}
+
+/*
+ * قانون بوردر جدول جریان:
+ * بدون خطوط عمودی بین ستون‌ها — فقط خط افقی ظریف بین سطرها
+ */
+.jarian-table th,
+.jarian-table td,
+.gateway-table th,
+.gateway-table td,
+.nabz-quick-table th,
+.nabz-quick-table td,
+.tadarok-stage__table th,
+.tadarok-stage__table td,
+.order-profile-items__table th,
+.order-profile-items__table td,
+.nabz-proforma-table th,
+.nabz-proforma-table td,
+.nabz-inquiries-table th,
+.nabz-inquiries-table td,
+.data-table th,
+.data-table td,
+.delivery-order-modal__table th,
+.delivery-order-modal__table td {
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: 1px solid var(--border-default, #e5e7eb);
+}
+
+.gateway-table th,
+.nabz-quick-table th,
+.tadarok-stage__table th,
+.order-profile-items__table th,
+.nabz-proforma-table th,
+.data-table th,
+.delivery-order-modal__table th {
+  border-bottom-color: var(--border-default, #d1d5db);
+}
+
+/*
+ * بک‌گراند تیتر همه جداول
+ */
+.jarian-table thead th,
+.gateway-table thead th,
+.gateway-table th,
+.nabz-quick-table thead th,
+.nabz-quick-table th,
+.tadarok-stage__table thead th,
+.tadarok-stage__table th,
+.order-profile-items__table thead th,
+.order-profile-items__table th,
+.nabz-proforma-table thead th,
+.nabz-proforma-table th,
+.nabz-inquiries-table thead th,
+.nabz-inquiries-table th,
+.nabz-create-table thead th,
+.nabz-create-table th,
+.nabz-items-table thead th,
+.nabz-items-table th,
+.nabz-profile-items-table thead th,
+.nabz-profile-items-table th,
+.nabz-picker-table thead th,
+.nabz-picker-table th,
+.nabz-table thead th,
+.nabz-table th,
+.rahsepar-stage__table thead th,
+.rahsepar-stage__table th,
+.data-table thead th,
+.data-table th,
+.gateway-th--supply,
+.gateway-th--sale {
+  background: var(--table-head-bg) !important;
+  background-color: var(--table-head-bg) !important;
+  color: var(--text-primary, #0f172a) !important;
+}
+
+.gateway-table tbody tr:last-child td,
+.nabz-quick-table tbody tr:last-child td,
+.tadarok-stage__table tbody tr:last-child td,
+.order-profile-items__table tbody tr:last-child td,
+.nabz-proforma-table tbody tr:last-child td,
+.data-table tbody tr:last-child td {
+  border-bottom-color: transparent;
+}
+
+/*
+ * راه‌راه سطرها (شبیه پیش‌فاکتور):
+ * فرد = سفید، زوج = طوسی روشن
+ * همه سلول‌های یک سطر پس‌زمینهٔ یکسان دارند — بدون رنگ جداگانه برای ستون‌ها
+ */
+.jarian-table tbody tr:nth-child(odd) > td,
+.gateway-table tbody tr:nth-child(odd) > td,
+.nabz-quick-table tbody tr:nth-child(odd) > td,
+.tadarok-stage__table tbody tr:nth-child(odd) > td,
+.order-profile-items__table tbody tr:nth-child(odd) > td,
+.nabz-proforma-table tbody tr:nth-child(odd) > td,
+.nabz-inquiries-table tbody tr:nth-child(odd) > td,
+.nabz-create-table tbody tr:nth-child(odd) > td,
+.nabz-items-table tbody tr:nth-child(odd) > td,
+.nabz-profile-items-table tbody tr:nth-child(odd) > td,
+.data-table tbody tr:nth-child(odd) > td,
+.gateway-table tbody tr:nth-child(odd) > td.gateway-td--supply,
+.gateway-table tbody tr:nth-child(odd) > td.gateway-td--sale,
+.nabz-quick-table tbody tr:nth-child(odd).is-active > td,
+.nabz-quick-table tbody tr:nth-child(odd).is-expanded > td,
+.gateway-table tbody tr:nth-child(odd).is-expanded > td,
+.gateway-table tbody tr:nth-child(odd).has-target > td {
+  background-color: var(--table-row-odd-bg) !important;
+}
+
+.jarian-table tbody tr:nth-child(even) > td,
+.gateway-table tbody tr:nth-child(even) > td,
+.nabz-quick-table tbody tr:nth-child(even) > td,
+.tadarok-stage__table tbody tr:nth-child(even) > td,
+.order-profile-items__table tbody tr:nth-child(even) > td,
+.nabz-proforma-table tbody tr:nth-child(even) > td,
+.nabz-inquiries-table tbody tr:nth-child(even) > td,
+.nabz-create-table tbody tr:nth-child(even) > td,
+.nabz-items-table tbody tr:nth-child(even) > td,
+.nabz-profile-items-table tbody tr:nth-child(even) > td,
+.data-table tbody tr:nth-child(even) > td,
+.gateway-table tbody tr:nth-child(even) > td.gateway-td--supply,
+.gateway-table tbody tr:nth-child(even) > td.gateway-td--sale,
+.nabz-quick-table tbody tr:nth-child(even).is-active > td,
+.nabz-quick-table tbody tr:nth-child(even).is-expanded > td,
+.gateway-table tbody tr:nth-child(even).is-expanded > td,
+.gateway-table tbody tr:nth-child(even).has-target > td {
+  background-color: var(--table-row-even-bg) !important;
+}
+
+/* خنثی‌سازی پس‌زمینهٔ رنگی ستون‌ها در بدنهٔ جدول */
+.gateway-table tbody td.gateway-td--supply,
+.gateway-table tbody td.gateway-td--sale,
+.gateway-table__row--master.has-target .gateway-td--supply.gateway-table__num,
+.gateway-table__row--master .gateway-td--supply.gateway-table__text,
+.gateway-td--supply.gateway-table__text {
+  background-color: transparent;
+}
+

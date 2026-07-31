@@ -1,20 +1,28 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toDisplayOrderCode } from '../../orderCode';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../../orderStageService';
+import { canEditWholeOrder } from '../../orderEditPermissions';
 import {
   getOrderProfileBreadcrumb,
   getOrderProfileNextAction,
-  shouldShowPrintProforma,
 } from '../../orderProfileService';
-import { getProformaTerms } from '../../proformaService';
-import { printProforma } from '../../proformaPrint';
+import {
+  canCompleteOrderInquiries,
+  canCompleteQuoting,
+} from '../../quotingService';
 import {
   ORDER_PROFILE_TAB_META,
   getOrderProfileTabOrder,
   ORDER_PROFILE_TABS,
 } from '../../orderProfileConfig';
+import { canShowDeliveryLocationAction, canShowDeliveryOrderAction, canEnableDeliveryOrderAction } from '../../deliveryInfoService';
+import { getOrderShippingRecord } from '../../shippingService';
+import { isOrderArchived } from '../../saranjamSettlementService';
 import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
-import OrderProfileMoreMenu from './OrderProfileMoreMenu';
+import OrderProfileCancelDialog from './OrderProfileCancelDialog';
+import ProformaHeaderActions from '../ProformaHeaderActions';
+import { ORDER_TABS } from '../../config';
 
 function BackArrowIcon() {
   return (
@@ -29,6 +37,15 @@ function ActivityBellIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 10v6M12 7h.01" />
     </svg>
   );
 }
@@ -48,94 +65,256 @@ export default function OrderProfileChrome({
   onEditOrder,
   onNextAction,
   onOpenActivityModal,
+  onOpenDeliveryOrderModal,
+  onOpenDeliveryModal,
+  onIssueProforma,
+  onViewProforma,
+  onUpdateProforma,
+  onOpenDecisionDrawer,
 }) {
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const detailsRef = useRef(null);
+  const moreRef = useRef(null);
+
   const breadcrumb = getOrderProfileBreadcrumb(order);
+  const backCrumb = breadcrumb.find((crumb) => crumb.isBack) || breadcrumb[0];
   const statusKind = getOrderDisplayStatusKind(order);
   const statusLabel = getOrderDisplayStatus(order);
   const nextAction = getOrderProfileNextAction(order);
-  const showPrint = shouldShowPrintProforma(order);
+  const nextActionReady = nextAction?.id === 'complete-kavosh'
+    ? canCompleteOrderInquiries(order)
+    : nextAction?.id === 'complete-mozene'
+      ? canCompleteQuoting(order)
+      : false;
   const profileTabs = getOrderProfileTabOrder();
+  const expertName = order.requesterName || '—';
+  const knightName = order.assignee || '—';
+  const displayCode = toDisplayOrderCode(order.code);
+  const registeredAt = [order.registeredDate, order.registeredTime].filter(Boolean).join(' · ');
+  const archived = isOrderArchived(order);
+  const canEdit = canEditWholeOrder() && !archived;
+  const canCancel = order.status !== ORDER_TABS.FAILED && !archived;
+  const hasOverflowItems = canEdit || canCancel;
+  const showDeliveryLocation = canShowDeliveryLocationAction(order);
+  const showDeliveryOrder = canShowDeliveryOrderAction(order);
+  const deliveryOrderEnabled = canEnableDeliveryOrderAction(order);
+  const shippingRecord = getOrderShippingRecord(order);
+
+  useEffect(() => {
+    if (!detailsOpen && !moreOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (detailsOpen && detailsRef.current && !detailsRef.current.contains(event.target)) {
+        setDetailsOpen(false);
+      }
+      if (moreOpen && moreRef.current && !moreRef.current.contains(event.target)) {
+        setMoreOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setDetailsOpen(false);
+        setMoreOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [detailsOpen, moreOpen]);
 
   return (
     <div className="order-profile-chrome">
-      <nav className="order-profile-breadcrumb" aria-label="مسیر ناوبری">
-        {breadcrumb.map((crumb, index) => {
-          const isLast = index === breadcrumb.length - 1;
-          if (isLast) {
-            return (
-              <span key={crumb.label} className="order-profile-breadcrumb__current" aria-current="page">
-                {crumb.label}
-              </span>
-            );
-          }
-          return (
-            <span key={crumb.label} className="order-profile-breadcrumb__segment">
-              {crumb.to ? (
-                <Link
-                  to={crumb.to}
-                  className={`order-profile-breadcrumb__link${crumb.isBack ? ' order-profile-breadcrumb__link--back' : ''}`}
-                >
-                  {crumb.isBack && <BackArrowIcon />}
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span>{crumb.label}</span>
-              )}
-              <span className="order-profile-breadcrumb__sep" aria-hidden="true">/</span>
-            </span>
-          );
-        })}
-      </nav>
+      <div className="order-profile-slim-header">
+        <div className="order-profile-slim-header__identity">
+          {backCrumb && (
+            <Link
+              to={backCrumb.to || '/nabz'}
+              className="order-profile-slim-header__back"
+              aria-label={backCrumb.label}
+              title={backCrumb.label}
+            >
+              <BackArrowIcon />
+            </Link>
+          )}
 
-      <div className="order-profile-smart-header">
-        <div className="order-profile-smart-header__main">
-          <h1 className="order-profile-smart-header__title">
-            پروفایل سفارش شرکت
-            {' '}
+          <h1 className="order-profile-slim-header__customer font-meem" title={order.customer}>
             {order.customer}
           </h1>
-          <div className="order-profile-smart-header__meta">
-            <span className="order-profile-smart-header__code">
-              شماره سفارش:
-              {' '}
-              {toDisplayOrderCode(order.code)}
+
+          <span className="order-profile-slim-header__code font-yekan" title={displayCode}>
+            {displayCode}
+          </span>
+
+          <span className={`order-profile-smart-badge order-profile-smart-badge--${statusKind}`}>
+            {statusLabel}
+          </span>
+
+          {archived && (
+            <span
+              className="order-profile-archived-overlay"
+              title="ARCHIVED"
+              aria-label="بایگانی‌شده"
+            >
+              🔒 بایگانی‌شده
             </span>
-            <span className={`order-profile-smart-badge order-profile-smart-badge--${statusKind}`}>
-              {statusLabel}
-            </span>
+          )}
+
+          <div className="order-profile-slim-header__details" ref={detailsRef}>
+            <button
+              type="button"
+              className={`order-profile-slim-header__icon-btn${detailsOpen ? ' is-active' : ''}`}
+              aria-label="جزئیات سفارش"
+              aria-expanded={detailsOpen}
+              onClick={() => {
+                setDetailsOpen((prev) => !prev);
+                setMoreOpen(false);
+              }}
+            >
+              <InfoIcon />
+            </button>
+            {detailsOpen && (
+              <div className="order-profile-slim-details" role="dialog" aria-label="جزئیات سفارش">
+                <div className="order-profile-slim-details__row font-meem">
+                  <span className="order-profile-slim-details__label">کارشناس مرتبط</span>
+                  <strong className="order-profile-slim-details__value">{expertName}</strong>
+                </div>
+                <div className="order-profile-slim-details__row font-meem">
+                  <span className="order-profile-slim-details__label">شوالیه</span>
+                  <strong className="order-profile-slim-details__value">{knightName}</strong>
+                </div>
+                {registeredAt && (
+                  <div className="order-profile-slim-details__row font-meem">
+                    <span className="order-profile-slim-details__label">تاریخ و زمان ثبت</span>
+                    <strong className="order-profile-slim-details__value font-yekan">{registeredAt}</strong>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="order-profile-smart-header__actions">
+        <div className="order-profile-slim-header__actions">
           <button
             type="button"
             className="btn btn--outline order-profile-activity-btn"
             onClick={() => onOpenActivityModal?.()}
           >
             <ActivityBellIcon />
-            + فعالیت جدید
+            فعالیت
           </button>
+
+          {showDeliveryOrder && (
+            <button
+              type="button"
+              className={`btn btn--outline order-profile-activity-btn${shippingRecord?.voucherNumber ? ' is-ready' : ''}`}
+              onClick={() => onOpenDeliveryOrderModal?.()}
+              disabled={!deliveryOrderEnabled}
+              title={
+                !deliveryOrderEnabled
+                  ? 'پس از خرید حداقل یک قلم در تدارک فعال می‌شود'
+                  : shippingRecord?.voucherNumber
+                    ? 'صدور / مشاهده سفارش ارسال'
+                    : 'صدور سفارش ارسال'
+              }
+            >
+              سفارش ارسال
+            </button>
+          )}
+
+          {showDeliveryLocation && (
+            <button
+              type="button"
+              className={`btn btn--outline order-profile-activity-btn${order.deliveryInfo?.needsShipping ? ' is-ready' : ''}`}
+              onClick={() => onOpenDeliveryModal?.()}
+              title={order.deliveryInfo?.needsShipping ? 'مشاهده / ویرایش محل ارسال' : 'ثبت محل ارسال'}
+            >
+              محل ارسال
+            </button>
+          )}
+
           {nextAction && (
             <button
               type="button"
-              className="btn btn--primary"
+              className={`btn btn--outline order-profile-activity-btn order-profile-stage-btn${nextActionReady ? ' is-ready' : ''}`}
+              disabled={!nextActionReady}
               onClick={() => onNextAction?.(nextAction.id)}
             >
               {nextAction.label}
             </button>
           )}
-          {showPrint && (
-            <button
-              type="button"
-              className="btn btn--outline"
-              onClick={() => printProforma(order, getProformaTerms(order))}
-            >
-              چاپ پیش‌فاکتور
-            </button>
+
+          <ProformaHeaderActions
+            order={order}
+            onIssue={onIssueProforma}
+            onView={onViewProforma}
+            onUpdate={onUpdateProforma}
+            onDecision={onOpenDecisionDrawer}
+          />
+
+          {hasOverflowItems && (
+            <div className="order-profile-slim-more" ref={moreRef}>
+              <button
+                type="button"
+                className="order-profile-slim-header__icon-btn order-profile-slim-header__more-btn"
+                aria-label="اقدامات بیشتر"
+                aria-expanded={moreOpen}
+                onClick={() => {
+                  setMoreOpen((prev) => !prev);
+                  setDetailsOpen(false);
+                }}
+              >
+                ⋯
+              </button>
+              {moreOpen && (
+                <div className="order-profile-slim-more__menu" role="menu">
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="order-profile-slim-more__item"
+                      role="menuitem"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        onEditOrder?.();
+                      }}
+                    >
+                      ویرایش سفارش
+                    </button>
+                  )}
+                  {canCancel && (
+                    <button
+                      type="button"
+                      className="order-profile-slim-more__item order-profile-slim-more__item--danger"
+                      role="menuitem"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setConfirmCancel(true);
+                      }}
+                    >
+                      لغو سفارش
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           )}
-          <OrderProfileMoreMenu onEdit={onEditOrder} onCancel={onCancelOrder} />
         </div>
       </div>
+
+      <OrderProfileCancelDialog
+        open={confirmCancel}
+        onConfirm={(reason) => {
+          setConfirmCancel(false);
+          onCancelOrder?.(reason);
+        }}
+        onCancel={() => setConfirmCancel(false)}
+      />
 
       <div className="order-profile-chrome__tabs" role="tablist" aria-label="بخش‌های پروفایل سفارش">
         {profileTabs.map((tabId) => (
@@ -153,6 +332,20 @@ export default function OrderProfileChrome({
           </button>
         ))}
       </div>
+
+      {order.generalNotes?.trim() ? (
+        <aside
+          className="nabz-requester-notes"
+          aria-label="توضیحات مهم درخواست‌کننده"
+        >
+          <span className="nabz-requester-notes__label font-meem">
+            توضیحات مهم درخواست‌کننده
+          </span>
+          <p className="nabz-requester-notes__text font-meem">
+            {order.generalNotes.trim()}
+          </p>
+        </aside>
+      ) : null}
 
       {activeTab === ORDER_PROFILE_TABS.GATEWAY && (
         <div className="order-profile-stepper-band">
