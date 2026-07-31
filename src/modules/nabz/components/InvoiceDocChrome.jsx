@@ -5,7 +5,7 @@ import { COMPANY_BRAND } from '../proformaConfig';
 /**
  * سربرگ برند پیش‌فاکتور — مشترک بین پیش‌فاکتور و حواله باربری
  * @param {object} viewModel
- * @param {boolean} [viewModel.isOfficial=true] — غیررسمی: لوگو و شناسه‌های شرکت مخفی
+ * @param {boolean} [viewModel.isOfficial=true] — غیررسمی: باکس می‌ماند، به‌جای لوگو «فولاد نیکان» و بدون شناسه‌ها
  * @param {string} [viewModel.documentNumberLabel] — پیش‌فرض: «شماره:»
  * @param {string} [viewModel.documentNumber] — پیش‌فرض: orderCode
  */
@@ -32,7 +32,11 @@ export function InvoiceDocBrandHeader({ viewModel }) {
           </div>
         </div>
       ) : (
-        <div className="invoice-doc__header-brand invoice-doc__header-brand--masked" aria-hidden="true" />
+        <div className="invoice-doc__header-brand invoice-doc__header-brand--unofficial">
+          <div className="invoice-doc__brand-mark">
+            <span className="invoice-doc__brand-name">فولاد نیکان</span>
+          </div>
+        </div>
       )}
       <div className="invoice-doc__header-meta">
         <div className="invoice-doc__meta-grid">
@@ -52,16 +56,17 @@ export function InvoiceDocBrandHeader({ viewModel }) {
 
 /**
  * فوتر شرکت پیش‌فاکتور — مشترک بین پیش‌فاکتور و حواله باربری
- * غیررسمی: آدرس/تلفن/کدپستی شرکت نمایش داده نمی‌شود.
+ * غیررسمی: باکس فوتر می‌ماند اما آدرس/تلفن/کدپستی شرکت نمایش داده نمی‌شود.
  */
 export function InvoiceDocFooter({ measure = false, isOfficial = true }) {
   if (!isOfficial) {
     return (
       <footer
-        className="invoice-doc__footer invoice-doc__footer--masked"
+        className="invoice-doc__footer invoice-doc__footer--unofficial"
         data-measure={measure ? 'footer' : undefined}
-        aria-hidden="true"
-      />
+      >
+        <div className="invoice-doc__footer-inner invoice-doc__footer-inner--empty" aria-hidden="true" />
+      </footer>
     );
   }
 
