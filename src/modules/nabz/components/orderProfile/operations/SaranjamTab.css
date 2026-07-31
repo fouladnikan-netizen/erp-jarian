@@ -1428,6 +1428,334 @@
   margin-top: 0.75rem;
 }
 
+/* ─── Discrepancy alert banner (conditional / critical) ─── */
+.saranjam-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid;
+  border-radius: 12px;
+}
+
+.saranjam-alert--critical {
+  background: linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.saranjam-alert--warning {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+.saranjam-alert__icon {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.saranjam-alert__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.saranjam-alert__title {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-bottom: 0.15rem;
+}
+
+.saranjam-alert__list {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+
+.saranjam-alert__variance {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+/* ─── KPI net-profit margin tiers (steel-industry standard) ─── */
+.saranjam-kpi__card--profit.is-warning {
+  border-color: rgba(220, 38, 38, 0.4);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(254, 226, 226, 0.5) 100%);
+}
+
+.saranjam-kpi__card--profit.is-normal {
+  border-color: rgba(148, 163, 184, 0.55);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(241, 245, 249, 0.8) 100%);
+}
+
+.saranjam-kpi__card--profit.is-excellent {
+  border-color: rgba(21, 128, 61, 0.4);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(220, 252, 231, 0.5) 100%);
+}
+
+.saranjam-kpi__margin.is-warning { color: #dc2626; }
+.saranjam-kpi__margin.is-normal { color: #b45309; }
+.saranjam-kpi__margin.is-excellent { color: #15803d; }
+
+/* ─── تراز این سفارش (order balance strip) ─── */
+.saranjam-balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--settle-border);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.saranjam-balance__label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.saranjam-balance__value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.saranjam-balance.is-negative {
+  border-color: #fca5a5;
+  background: linear-gradient(180deg, #ffffff 0%, #fee2e2 100%);
+}
+
+.saranjam-balance.is-negative .saranjam-balance__label,
+.saranjam-balance.is-negative .saranjam-balance__value {
+  color: #b91c1c;
+}
+
+/* Negative money cell + anomalous row marker (do NOT hide anomalies) */
+.saranjam-cell--negative {
+  color: #b91c1c !important;
+  font-weight: 700;
+}
+
+.saranjam-row--anomaly > td {
+  box-shadow: inset 0 -1px 0 rgba(239, 68, 68, 0.45);
+}
+
+/* ─── Ledger tables: strict fit, no horizontal scrolling ─── */
+.saranjam-ledger-table {
+  table-layout: fixed;
+}
+
+.saranjam-ledger-table th,
+.saranjam-ledger-table td {
+  padding: 0.5rem 0.4rem;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ─── Attachments section ─── */
+.saranjam-attach {
+  border: 1px solid var(--settle-border);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  background: #fff;
+}
+
+.saranjam-attach__head {
+  margin-bottom: 0.6rem;
+}
+
+.saranjam-attach__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.saranjam-attach__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.saranjam-attach__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--settle-border);
+  border-radius: 999px;
+  background: #f8fafc;
+  font-size: 0.78rem;
+}
+
+.saranjam-attach__chip.is-uploaded {
+  border-color: #bbf7d0;
+  background: #ecfdf5;
+}
+
+.saranjam-attach__chip.is-pending {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.saranjam-attach__chip-label {
+  font-weight: 700;
+  color: #334155;
+}
+
+.saranjam-attach__chip-status {
+  font-size: 0.72rem;
+  color: var(--settle-muted);
+}
+
+.saranjam-attach__upload {
+  border: none;
+  background: transparent;
+  color: #0f766e;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+}
+
+.saranjam-attach__upload:hover {
+  text-decoration: underline;
+}
+
+/* ─── Action footer (exports right, glossy archive left) ─── */
+.saranjam-actionbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--settle-border);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.saranjam-actionbar__exports {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.saranjam-archive-engine__btn--glossy:not(:disabled) {
+  background: linear-gradient(145deg, #ff4d4d 0%, #e53935 50%, #b71c1c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 3px rgba(229, 57, 53, 0.35);
+}
+
+/* ─── Archive confirmation modal (hard gate) ─── */
+.saranjam-modal__panel.saranjam-confirm {
+  width: min(560px, 100%);
+}
+
+.saranjam-confirm__warn {
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.saranjam-confirm__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-surface);
+}
+
+.saranjam-confirm__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.82rem;
+}
+
+.saranjam-confirm__row.is-strong {
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border-default);
+  font-size: 0.9rem;
+}
+
+.saranjam-confirm__row-label {
+  color: var(--text-secondary);
+}
+
+.saranjam-confirm__row-value {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.saranjam-confirm__audit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.saranjam-confirm__audit-alert {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.saranjam-confirm__audit-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.saranjam-confirm__audit-input {
+  width: 100%;
+  resize: vertical;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.saranjam-confirm__audit-input:focus {
+  outline: none;
+  border-color: var(--color-accent-dark);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+.saranjam-btn--solid:disabled {
+  background: #cbd5e1;
+  color: #ffffff;
+  cursor: not-allowed;
+}
+
 .saranjam-settle.is-locked .saranjam-kpi__card,
 .saranjam-settle.is-locked .saranjam-ledger-card,
 .saranjam-settle.is-locked .saranjam-archive-engine {

@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { JarianProductCell } from '../../../../../components/jarian/JarianPresentation';
 
@@ -12,18 +13,142 @@ function formatPercent(value) {
   return `${value.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`;
 }
 
+/**
+ * رنگ حاشیه سود خالص (استاندارد صنعت فولاد):
+ *  < ۲٪  → قرمز (هشدار)
+ *  ۲–۵٪ → خاکستری/زرد (عادی)
+ *  > ۵٪  → سبز (عالی)
+ */
+function marginTier(percent) {
+  if (!Number.isFinite(percent) || percent < 2) return 'warning';
+  if (percent <= 5) return 'normal';
+  return 'excellent';
+}
+
+function DiscrepancyBanner({ discrepancy }) {
+  if (!discrepancy?.hasAny) return null;
+
+  const critical = discrepancy.severity === 'critical';
+  const messages = [];
+
+  if (discrepancy.hasWeightDiscrepancy) {
+    messages.push(
+      `مغایرت وزن بین فاکتور و باسکول — حداکثر انحراف ${formatPercent(discrepancy.maxWeightVariancePercent)}`,
+    );
+  }
+  if (discrepancy.hasNegativeCustomerBalance) {
+    messages.push('تراز مشتری منفی است (اضافه‌دریافت / مغایرت مالی)');
+  }
+  if (discrepancy.hasNegativeSupplierBalance) {
+    messages.push('تراز یک یا چند تأمین‌کننده منفی است (اضافه‌پرداخت)');
+  }
+  if (discrepancy.hasNegativeProfit) {
+    messages.push('سود خالص این سفارش منفی است (زیان)');
+  }
+
+  return (
+    <div
+      className={`saranjam-alert saranjam-alert--${critical ? 'critical' : 'warning'}`}
+      role="alert"
+    >
+      <span className="saranjam-alert__icon" aria-hidden="true">
+        {critical ? '⛔' : '⚠️'}
+      </span>
+      <div className="saranjam-alert__body">
+        <strong className="saranjam-alert__title">
+          {critical ? 'مغایرت بحرانی پیش از بایگانی' : 'هشدار مغایرت وزن'}
+        </strong>
+        <ul className="saranjam-alert__list">
+          {messages.map((msg) => (
+            <li key={msg}>{msg}</li>
+          ))}
+        </ul>
+      </div>
+      {discrepancy.hasWeightDiscrepancy ? (
+        <span className="saranjam-alert__variance font-vazir" aria-label="درصد انحراف وزن">
+          {formatPercent(discrepancy.maxWeightVariancePercent)}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function AttachmentsSection({ attachments, onUploadAttachment, locked }) {
+  const fileRef = useRef(null);
+  const pendingKeyRef = useRef(null);
+
+  const triggerUpload = (key) => {
+    if (locked) return;
+    pendingKeyRef.current = key;
+    fileRef.current?.click();
+  };
+
+  return (
+    <section className="saranjam-attach" aria-label="مدارک پیوست">
+      <header className="saranjam-attach__head">
+        <h3 className="saranjam-attach__title">مدارک پیوست</h3>
+      </header>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,.pdf"
+        className="saranjam-file-input"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          const key = pendingKeyRef.current;
+          if (file && key) onUploadAttachment?.(key, file);
+          pendingKeyRef.current = null;
+          e.target.value = '';
+        }}
+      />
+      <div className="saranjam-attach__chips">
+        {attachments.map((att) => (
+          <div
+            key={att.key}
+            className={`saranjam-attach__chip${att.uploaded ? ' is-uploaded' : ' is-pending'}`}
+          >
+            <span className="saranjam-attach__chip-icon" aria-hidden="true">
+              {att.uploaded ? '✅' : '⏳'}
+            </span>
+            <span className="saranjam-attach__chip-label">{att.label}</span>
+            <span className="saranjam-attach__chip-status">
+              {att.uploaded ? 'بارگذاری‌شده' : 'در انتظار'}
+            </span>
+            {!att.uploaded && !locked ? (
+              <button
+                type="button"
+                className="saranjam-attach__upload"
+                onClick={() => triggerUpload(att.key)}
+              >
+                آپلود
+              </button>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function SaranjamSettlementLayout({
   settlement,
+  discrepancy,
+  attachments = [],
   archived,
   locked,
   onArchive,
   onOpenSalesInvoice,
   onUploadCustomerReceipt,
+  onUploadAttachment,
+  onExportPdf,
+  onExportExcel,
   customerFileRef,
   compact = false,
 }) {
-  const { kpis, suppliers, customerLedger, gates } = settlement;
-  const profitPositive = kpis.netProfitRial >= 0;
+  const { kpis, suppliers, customerLedger } = settlement;
+  const orderBalanceRial = customerLedger.orderBalanceRial;
+  const balanceNegative = Number(orderBalanceRial) < 0;
+  const tier = marginTier(kpis.profitPercent);
 
   return (
     <div className={`saranjam-settle font-meem${compact ? ' saranjam-settle--compact' : ''}${locked ? ' is-locked' : ''}`}>
@@ -41,8 +166,22 @@ export default function SaranjamSettlementLayout({
         ) : null}
       </header>
 
-      {/* 1. KPI cards */}
+      {/* 1. Conditional critical alert banner */}
+      <DiscrepancyBanner discrepancy={discrepancy} />
+
+      {/* 2. KPI cards — RTL order (right→left): سود خالص، فروش، خرید، لجستیک */}
       <section className="saranjam-kpi" aria-label="شاخص‌های مالی سفارش">
+        <article className={`saranjam-kpi__card saranjam-kpi__card--profit is-${tier}`}>
+          <span className="saranjam-kpi__label">سود خالص سفارش</span>
+          <strong className="saranjam-kpi__value font-vazir">
+            {formatJarianMoney(kpis.netProfitRial, { withCurrency: true })}
+          </strong>
+          <span className={`saranjam-kpi__margin font-vazir is-${tier}`}>
+            حاشیه:
+            {' '}
+            {formatPercent(kpis.profitPercent)}
+          </span>
+        </article>
         <article className="saranjam-kpi__card">
           <span className="saranjam-kpi__label">مبلغ فروش نهایی</span>
           <strong className="saranjam-kpi__value font-vazir">
@@ -64,29 +203,28 @@ export default function SaranjamSettlementLayout({
           </strong>
           <span className="saranjam-kpi__hint">باسکول + کرایه / بارگیری</span>
         </article>
-        <article className={`saranjam-kpi__card saranjam-kpi__card--profit${profitPositive ? ' is-positive' : ' is-negative'}`}>
-          <span className="saranjam-kpi__label">سود خالص سفارش</span>
-          <strong className="saranjam-kpi__value font-vazir">
-            {formatJarianMoney(kpis.netProfitRial, { withCurrency: true })}
-          </strong>
-          <span className={`saranjam-kpi__margin font-vazir${profitPositive ? ' is-positive' : ' is-negative'}`}>
-            حاشیه:
-            {' '}
-            {formatPercent(kpis.profitPercent)}
-          </span>
-        </article>
       </section>
 
-      {/* 2. Dual ledger */}
+      {/* تراز این سفارش — منفی = قرمز + ⚠️ */}
+      <div className={`saranjam-balance${balanceNegative ? ' is-negative' : ''}`}>
+        <span className="saranjam-balance__label">
+          {balanceNegative ? '⚠️ ' : ''}
+          تراز این سفارش
+        </span>
+        <strong className="saranjam-balance__value font-vazir">
+          {formatJarianMoney(orderBalanceRial, { withCurrency: true })}
+        </strong>
+      </div>
+
+      {/* 3. Parallel ledgers AR (customer) & AP (suppliers) — 50/50, no horizontal scroll */}
       <section className="saranjam-dual" aria-label="دفتر دوگانه تسویه">
-        {/* Right in RTL = first in DOM for suppliers/AP when using direction rtl with grid */}
         <article className="saranjam-ledger-card">
           <header className="saranjam-ledger-card__head">
             <h3 className="saranjam-ledger-card__title">تأمین‌کنندگان (حساب‌های پرداختنی)</h3>
             <span className="saranjam-ledger-card__badge">AP</span>
           </header>
           <div className="saranjam-ledger-card__table-wrap">
-            <table className="jarian-table saranjam-ledger-table">
+            <table className="jarian-table saranjam-ledger-table saranjam-ledger-table--ap">
               <thead>
                 <tr>
                   <th scope="col">ردیف</th>
@@ -103,23 +241,28 @@ export default function SaranjamSettlementLayout({
                     <td colSpan={6} className="saranjam-ledger-table__empty">قلم خریدشده‌ای ثبت نشده است.</td>
                   </tr>
                 ) : (
-                  suppliers.map((row, index) => (
-                    <tr key={row.supplierKey}>
-                      <td className="font-vazir">{(index + 1).toLocaleString('fa-IR')}</td>
-                      <td>
-                        <div className="saranjam-ledger-table__supplier">
-                          <strong className="font-meem">{row.supplierName}</strong>
-                          {row.hasWeightVarianceWarning ? (
-                            <span className="saranjam-variance-tag">مغایرت وزن &gt; ۰٫۵٪</span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="font-vazir">{formatWeightTons(row.invoicedWeightKg)}</td>
-                      <td className="font-vazir">{formatWeightTons(row.deliveredWeightKg)}</td>
-                      <td className="font-vazir">{formatJarianMoney(row.totalCostRial)}</td>
-                      <td className="font-vazir">{formatJarianMoney(row.balanceRial, { withCurrency: true })}</td>
-                    </tr>
-                  ))
+                  suppliers.map((row, index) => {
+                    const rowNegative = Number(row.balanceRial) < 0;
+                    return (
+                      <tr key={row.supplierKey} className={rowNegative ? 'saranjam-row--anomaly' : undefined}>
+                        <td className="font-vazir">{(index + 1).toLocaleString('fa-IR')}</td>
+                        <td>
+                          <div className="saranjam-ledger-table__supplier">
+                            <strong className="font-meem">{row.supplierName}</strong>
+                            {row.hasWeightVarianceWarning ? (
+                              <span className="saranjam-variance-tag">مغایرت وزن &gt; ۰٫۵٪</span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="font-vazir">{formatWeightTons(row.invoicedWeightKg)}</td>
+                        <td className="font-vazir">{formatWeightTons(row.deliveredWeightKg)}</td>
+                        <td className="font-vazir">{formatJarianMoney(row.totalCostRial)}</td>
+                        <td className={`font-vazir${rowNegative ? ' saranjam-cell--negative' : ''}`}>
+                          {formatJarianMoney(row.balanceRial, { withCurrency: true })}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -143,7 +286,7 @@ export default function SaranjamSettlementLayout({
           </header>
 
           <div className="saranjam-ledger-card__table-wrap">
-            <table className="jarian-table saranjam-ledger-table">
+            <table className="jarian-table saranjam-ledger-table saranjam-ledger-table--ar">
               <thead>
                 <tr>
                   <th scope="col">ردیف</th>
@@ -196,7 +339,7 @@ export default function SaranjamSettlementLayout({
               <button
                 type="button"
                 className="saranjam-settle-link"
-                disabled={locked || gates.customerBalanceZero}
+                disabled={locked || settlement.gates.customerBalanceZero}
                 onClick={() => customerFileRef?.current?.click()}
               >
                 آپلود فیش
@@ -222,9 +365,10 @@ export default function SaranjamSettlementLayout({
             </ul>
             <div className="saranjam-ar-balances">
               <div>
-                <span>مانده این سفارش</span>
-                <strong className="font-vazir">
-                  {formatJarianMoney(customerLedger.orderBalanceRial, { withCurrency: true })}
+                <span>تراز این سفارش</span>
+                <strong className={`font-vazir${balanceNegative ? ' saranjam-cell--negative' : ''}`}>
+                  {balanceNegative ? '⚠️ ' : ''}
+                  {formatJarianMoney(orderBalanceRial, { withCurrency: true })}
                 </strong>
               </div>
               <div>
@@ -238,24 +382,38 @@ export default function SaranjamSettlementLayout({
         </article>
       </section>
 
-      {/* 3. Archive engine */}
-      <footer className="saranjam-archive-engine">
-        {!archived ? (
-          <p className="saranjam-archive-engine__hint" role="status">
-            با تأیید مالی، سفارش قفل و بایگانی می‌شود؛ تمام فیلدهای پیش‌فاکتور، تدارک و رهسپار فقط‌خواندنی خواهند شد.
-          </p>
-        ) : (
-          <p className="saranjam-archive-engine__hint is-done" role="status">
-            این سفارش بایگانی و قفل شده است.
-          </p>
-        )}
+      {/* 4. Attachments */}
+      <AttachmentsSection
+        attachments={attachments}
+        onUploadAttachment={onUploadAttachment}
+        locked={locked}
+      />
+
+      {/* 5. Action footer — exports (right) + final approval & archive (left) */}
+      <footer className="saranjam-actionbar">
+        <div className="saranjam-actionbar__exports">
+          <button
+            type="button"
+            className="saranjam-btn saranjam-btn--flat"
+            onClick={onExportPdf}
+          >
+            چاپ PDF
+          </button>
+          <button
+            type="button"
+            className="saranjam-btn saranjam-btn--flat"
+            onClick={onExportExcel}
+          >
+            خروجی Excel
+          </button>
+        </div>
         <button
           type="button"
-          className={`saranjam-archive-engine__btn${archived ? ' is-done' : ''}`}
+          className={`saranjam-archive-engine__btn saranjam-archive-engine__btn--glossy${archived ? ' is-done' : ''}`}
           disabled={archived}
           onClick={onArchive}
         >
-          {archived ? 'سفارش بایگانی شد' : 'تأیید مالی و بایگانی سفارش'}
+          {archived ? 'سفارش بایگانی شد' : 'تأیید نهایی و بایگانی'}
         </button>
       </footer>
     </div>

@@ -6,7 +6,7 @@ import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { getCustomerById } from '../../../customers';
 import { getTodayJalali } from '../../../dateUtils';
 import { listCrmPaymentsAsCustomerPayments } from '../../../orderCrmService';
-import { buildSaranjamSettlementModel } from '../../../saranjamSettlementService';
+import { buildSaranjamSettlementModel, getSaranjamDiscrepancy } from '../../../saranjamSettlementService';
 import { printTaxInvoice } from './printTaxInvoice';
 import SaranjamSettlementLayout from './SaranjamSettlementLayout';
 import './SaranjamTab.css';
@@ -669,6 +669,129 @@ function TaxInvoiceModal({
   );
 }
 
+function SummaryRow({ label, value, strong = false, negative = false }) {
+  return (
+    <div className={`saranjam-confirm__row${strong ? ' is-strong' : ''}`}>
+      <span className="saranjam-confirm__row-label">{label}</span>
+      <strong className={`saranjam-confirm__row-value font-vazir${negative ? ' saranjam-cell--negative' : ''}`}>
+        {value}
+      </strong>
+    </div>
+  );
+}
+
+/**
+ * ArchiveConfirmModal — Hard gate before the irreversible archive action.
+ * اگر مغایرتی وجود داشته باشد، تکمیل «دلیل تأیید مغایرت» اجباری است و تا پیش از
+ * آن دکمهٔ تأیید غیرفعال می‌ماند.
+ */
+function ArchiveConfirmModal({
+  open,
+  onClose,
+  onConfirm,
+  settlement,
+  discrepancy,
+  reason,
+  onReasonChange,
+}) {
+  if (!open) return null;
+
+  const { kpis, customerLedger } = settlement;
+  const balanceNegative = Number(customerLedger.orderBalanceRial) < 0;
+  const requiresReason = Boolean(discrepancy?.hasAny);
+  const reasonMissing = requiresReason && !reason.trim();
+
+  return (
+    <div className="saranjam-modal" role="presentation">
+      <button
+        type="button"
+        className="saranjam-modal__backdrop"
+        aria-label="بستن"
+        onClick={onClose}
+      />
+      <div
+        className="saranjam-modal__panel saranjam-confirm font-meem"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="saranjam-confirm-title"
+        dir="rtl"
+      >
+        <header className="saranjam-modal__toolbar">
+          <h2 id="saranjam-confirm-title" className="saranjam-modal__toolbar-title">
+            تأیید نهایی و بایگانی سفارش
+          </h2>
+          <button type="button" className="saranjam-modal__close" onClick={onClose} aria-label="بستن">×</button>
+        </header>
+
+        <p className="saranjam-confirm__warn" role="status">
+          این اقدام <strong>برگشت‌ناپذیر</strong> است؛ با تأیید، سفارش قفل و بایگانی می‌شود و
+          تمام بخش‌های عملیاتی فقط‌خواندنی خواهند شد.
+        </p>
+
+        <div className="saranjam-confirm__summary">
+          <SummaryRow
+            label="مبلغ فروش نهایی"
+            value={formatJarianMoney(kpis.finalSalesAmountRial, { withCurrency: true })}
+          />
+          <SummaryRow
+            label="جمع مبلغ خرید"
+            value={formatJarianMoney(kpis.totalPurchaseAmountRial, { withCurrency: true })}
+          />
+          <SummaryRow
+            label="هزینه لجستیک"
+            value={formatJarianMoney(kpis.logisticsCostRial, { withCurrency: true })}
+          />
+          <SummaryRow
+            label="سود خالص"
+            value={formatJarianMoney(kpis.netProfitRial, { withCurrency: true })}
+            negative={Number(kpis.netProfitRial) < 0}
+            strong
+          />
+          <SummaryRow
+            label="تراز این سفارش"
+            value={`${balanceNegative ? '⚠️ ' : ''}${formatJarianMoney(customerLedger.orderBalanceRial, { withCurrency: true })}`}
+            negative={balanceNegative}
+            strong
+          />
+        </div>
+
+        {requiresReason ? (
+          <div className="saranjam-confirm__audit">
+            <div className="saranjam-confirm__audit-alert" role="alert">
+              ⚠️ در این سفارش مغایرت شناسایی شده است. برای بایگانی، ثبت دلیل تأیید الزامی است.
+            </div>
+            <label className="saranjam-confirm__audit-label" htmlFor="saranjam-discrepancy-reason">
+              دلیل تأیید مغایرت
+            </label>
+            <textarea
+              id="saranjam-discrepancy-reason"
+              className="saranjam-confirm__audit-input"
+              rows={3}
+              value={reason}
+              onChange={(e) => onReasonChange(e.target.value)}
+              placeholder="مثال: اختلاف وزن باسکول با تأیید مدیر فروش پذیرفته شد."
+            />
+          </div>
+        ) : null}
+
+        <footer className="saranjam-modal__footer">
+          <button type="button" className="saranjam-btn saranjam-btn--flat" onClick={onClose}>
+            انصراف
+          </button>
+          <button
+            type="button"
+            className="saranjam-btn saranjam-btn--solid"
+            onClick={() => onConfirm(reason)}
+            disabled={reasonMissing}
+          >
+            تأیید نهایی و بایگانی
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
 /**
  * SaranjamTab — Settlement & Archive (final operations tab)
  */
@@ -736,6 +859,9 @@ export default function SaranjamTab({
     Boolean(order?.saranjam?.archivedAt || order?.saranjam?.locked),
   );
   const [toast, setToast] = useState('');
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [discrepancyReason, setDiscrepancyReason] = useState('');
+  const [manualAttachments, setManualAttachments] = useState({});
 
   useEffect(() => {
     setArchived(Boolean(order?.saranjam?.archivedAt || order?.saranjam?.locked));
@@ -935,14 +1061,11 @@ export default function SaranjamTab({
     );
   };
 
-  const handleArchive = () => {
+  const performArchive = (reason = '') => {
     if (archived) return;
-    const confirmed = window.confirm(
-      'با تأیید مالی، سفارش بایگانی و تمام بخش‌های عملیاتی قفل می‌شوند. ادامه می‌دهید؟',
-    );
-    if (!confirmed) return;
     const archivedAt = new Date().toISOString();
     setArchived(true);
+    setArchiveModalOpen(false);
     onUpdateOrder?.((current) => ({
       ...current,
       archivedAt,
@@ -956,9 +1079,11 @@ export default function SaranjamTab({
         archivedAt,
         locked: true,
         statusLabel: 'بایگانی‌شده',
+        discrepancyReason: reason.trim() || null,
+        discrepancyAckAt: reason.trim() ? archivedAt : null,
       },
     }));
-    showToast('تأیید مالی انجام و سفارش بایگانی شد.');
+    showToast('تأیید نهایی انجام و سفارش بایگانی شد.');
   };
 
   const settlement = useMemo(() => buildSaranjamSettlementModel({
@@ -983,6 +1108,67 @@ export default function SaranjamTab({
     archived,
   ]);
 
+  const discrepancy = useMemo(() => getSaranjamDiscrepancy(settlement), [settlement]);
+
+  const attachments = useMemo(() => {
+    const paymentUploaded = Boolean(manualAttachments.paymentReceipt)
+      || (settlement.customerLedger.payments || []).some((p) => p.receiptFileName);
+    const invoiceUploaded = Boolean(manualAttachments.invoice)
+      || settlement.gates.salesInvoiceIssued;
+    const weighbridgeUploaded = Boolean(manualAttachments.weighbridge)
+      || (settlement.customerLedger.lines || []).some((line) => line.scaleWeightKg != null);
+    return [
+      { key: 'paymentReceipt', label: 'فیش واریزی', uploaded: paymentUploaded },
+      { key: 'invoice', label: 'فاکتور', uploaded: invoiceUploaded },
+      { key: 'weighbridge', label: 'رسید باسکول', uploaded: weighbridgeUploaded },
+    ];
+  }, [settlement, manualAttachments]);
+
+  const handleUploadAttachment = (key, file) => {
+    if (!file || !key) return;
+    setManualAttachments((prev) => ({ ...prev, [key]: file.name || true }));
+    showToast(`مدرک «${file.name}» پیوست شد.`);
+  };
+
+  const handleExportPdf = () => {
+    window.print();
+  };
+
+  const handleExportExcel = () => {
+    const rows = [];
+    rows.push(['شاخص', 'مبلغ (ریال)']);
+    rows.push(['مبلغ فروش نهایی', settlement.kpis.finalSalesAmountRial]);
+    rows.push(['جمع مبلغ خرید', settlement.kpis.totalPurchaseAmountRial]);
+    rows.push(['هزینه لجستیک', settlement.kpis.logisticsCostRial]);
+    rows.push(['سود خالص', settlement.kpis.netProfitRial]);
+    rows.push(['تراز این سفارش', settlement.customerLedger.orderBalanceRial]);
+    rows.push([]);
+    rows.push(['تأمین‌کننده', 'وزن فاکتور (kg)', 'وزن باسکول (kg)', 'مبلغ خرید', 'مانده']);
+    settlement.suppliers.forEach((s) => {
+      rows.push([s.supplierName, s.invoicedWeightKg, s.deliveredWeightKg, s.totalCostRial, s.balanceRial]);
+    });
+
+    const csv = rows
+      .map((cols) => cols
+        .map((cell) => {
+          const text = String(cell ?? '');
+          return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+        })
+        .join(','))
+      .join('\n');
+
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `saranjam-${orderCode}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('خروجی Excel (CSV) دانلود شد.');
+  };
+
   return (
     <section
       className={`saranjam-tab font-meem${compact ? ' saranjam-tab--compact' : ''}${archived ? ' is-archived' : ''}`}
@@ -990,15 +1176,33 @@ export default function SaranjamTab({
     >
       <SaranjamSettlementLayout
         settlement={settlement}
+        discrepancy={discrepancy}
+        attachments={attachments}
         archived={archived}
         locked={archived}
         compact={compact}
         customerFileRef={customerFileRef}
-        onArchive={handleArchive}
+        onArchive={() => {
+          setDiscrepancyReason('');
+          setArchiveModalOpen(true);
+        }}
         onOpenSalesInvoice={() => openSalesModal(
           salesInvoiceIssued || archived ? 'view' : 'issue',
         )}
         onUploadCustomerReceipt={handleCustomerReceipt}
+        onUploadAttachment={handleUploadAttachment}
+        onExportPdf={handleExportPdf}
+        onExportExcel={handleExportExcel}
+      />
+
+      <ArchiveConfirmModal
+        open={archiveModalOpen}
+        onClose={() => setArchiveModalOpen(false)}
+        onConfirm={performArchive}
+        settlement={settlement}
+        discrepancy={discrepancy}
+        reason={discrepancyReason}
+        onReasonChange={setDiscrepancyReason}
       />
 
       {!archived && (

@@ -225,4 +225,53 @@ export function isOrderArchived(order) {
   return Boolean(order?.saranjam?.archivedAt || order?.saranjam?.locked);
 }
 
+/**
+ * تشخیص مغایرت‌های سفارش برای بنر هشدار و گیت تأیید نهایی.
+ * منبع واحد حقیقت — هم بنر بالای صفحه و هم مودال تأیید از همین استفاده می‌کنند.
+ *
+ * - مغایرت وزن: اختلاف وزن فاکتور و باسکول بیش از آستانه (۰٫۵٪).
+ * - مغایرت مالی: تراز منفی مشتری/تأمین‌کننده (اضافه‌پرداخت) یا سود خالص منفی (زیان).
+ */
+export function getSaranjamDiscrepancy(settlement) {
+  const suppliers = settlement?.suppliers || [];
+  const lines = settlement?.customerLedger?.lines || settlement?.lines || [];
+  const kpis = settlement?.kpis || {};
+  const customerLedger = settlement?.customerLedger || {};
+
+  const supplierVariance = suppliers.reduce(
+    (max, row) => Math.max(max, toNum(row.varianceRatio)),
+    0,
+  );
+  const lineVariance = lines.reduce(
+    (max, row) => Math.max(max, toNum(row.varianceRatio)),
+    0,
+  );
+  const maxWeightVarianceRatio = Math.max(supplierVariance, lineVariance);
+  const hasWeightDiscrepancy = maxWeightVarianceRatio > WEIGHT_VARIANCE_WARN_RATIO
+    || suppliers.some((row) => row.hasWeightVarianceWarning)
+    || lines.some((row) => row.hasWeightVarianceWarning);
+
+  const orderBalanceRial = toNum(customerLedger.orderBalanceRial);
+  const netProfitRial = toNum(kpis.netProfitRial);
+  const hasNegativeCustomerBalance = orderBalanceRial < 0;
+  const hasNegativeSupplierBalance = suppliers.some((row) => toNum(row.balanceRial) < 0);
+  const hasNegativeProfit = netProfitRial < 0;
+  const hasFinancialMismatch = hasNegativeCustomerBalance
+    || hasNegativeSupplierBalance
+    || hasNegativeProfit;
+
+  return {
+    hasWeightDiscrepancy,
+    hasFinancialMismatch,
+    hasNegativeCustomerBalance,
+    hasNegativeSupplierBalance,
+    hasNegativeProfit,
+    maxWeightVarianceRatio,
+    maxWeightVariancePercent: maxWeightVarianceRatio * 100,
+    // مالی = بحرانی (قرمز)، فقط وزن = هشدار (نارنجی)
+    severity: hasFinancialMismatch ? 'critical' : (hasWeightDiscrepancy ? 'warning' : 'none'),
+    hasAny: hasWeightDiscrepancy || hasFinancialMismatch,
+  };
+}
+
 export { WEIGHT_VARIANCE_WARN_RATIO };
