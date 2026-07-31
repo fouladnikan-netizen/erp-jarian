@@ -116,10 +116,10 @@
 }
 
 .ofoq-column-filter__popover {
-  position: absolute;
-  top: 2.9rem;
-  inset-inline: 0.35rem;
-  z-index: 40;
+  /* پرتال روی body با مختصات fixed از JS — تا اسکرول افقی بورد آن را کلیپ نکند */
+  position: fixed;
+  z-index: 90;
+  direction: rtl;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
@@ -201,8 +201,69 @@
   background: #ef4444;
 }
 
+.ofoq-column-filter__option-dot--future {
+  background: #94a3b8;
+}
+
+/* —— بلوک اکسلی: انتخاب همه/بخشی آیتم‌های ستون (الگوی فیلتر فهرست نبض) —— */
+.ofoq-column-filter__divider {
+  height: 1px;
+  background: rgba(148, 163, 184, 0.25);
+  margin: 0.1rem 0;
+}
+
+.ofoq-column-filter__master,
+.ofoq-column-filter__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.35rem;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ofoq-column-filter__master {
+  font-weight: 700;
+}
+
+.ofoq-column-filter__master:hover,
+.ofoq-column-filter__item:hover {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.ofoq-column-filter__master input,
+.ofoq-column-filter__item input {
+  accent-color: var(--stage-color, var(--color-brand-red-glossy));
+}
+
+.ofoq-column-filter__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  max-height: 10.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.ofoq-column-filter__list-empty {
+  margin: 0;
+  padding: 0.4rem 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.ofoq-column-filter__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.15rem;
+}
+
 .ofoq-column-filter__clear {
-  align-self: flex-start;
   padding: 0.3rem 0.55rem;
   border: none;
   border-radius: 8px;
@@ -217,6 +278,25 @@
 
 .ofoq-column-filter__clear:hover {
   background: rgba(229, 57, 53, 0.08);
+}
+
+.ofoq-column-filter__apply {
+  padding: 0.32rem 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-brand-red-glossy, #e53935);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(229, 57, 53, 0.3);
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.ofoq-column-filter__apply:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 
 .ofoq-pipeline__column-body {
@@ -429,10 +509,10 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 }
 
 .ofoq-filterbar__stage-popover {
-  position: absolute;
-  top: calc(100% + 0.4rem);
-  inset-inline-start: 0;
-  z-index: 60;
+  /* پرتال روی body با مختصات fixed از JS — تا زیر بورد کانبان نرود */
+  position: fixed;
+  z-index: 90;
+  direction: rtl;
   min-width: 13rem;
   display: flex;
   flex-direction: column;
@@ -447,6 +527,14 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
     0 6px 16px rgba(15, 23, 42, 0.12),
     0 18px 40px rgba(15, 23, 42, 0.14);
   animation: ofoq-fade-in 0.15s ease;
+}
+
+.ofoq-filterbar__group-title {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
 }
 
 .ofoq-filterbar__stage-option {
@@ -1248,6 +1336,15 @@ html[data-theme='dark'] .ofoq-column-filter__search {
   background: rgba(15, 23, 42, 0.7);
   border-color: rgba(148, 163, 184, 0.25);
   color: var(--text-primary);
+}
+
+html[data-theme='dark'] .ofoq-column-filter__divider {
+  background: rgba(148, 163, 184, 0.18);
+}
+
+html[data-theme='dark'] .ofoq-column-filter__master:hover,
+html[data-theme='dark'] .ofoq-column-filter__item:hover {
+  background: rgba(148, 163, 184, 0.12);
 }
 
 /* —— حالت شب —— */

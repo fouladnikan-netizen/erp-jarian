@@ -123,13 +123,18 @@
 }
 
 .sidebar--expanded .sidebar__logo {
-  width: 64px;
-  height: 64px;
+  width: 190px;
+  height: 80px;
 }
 
 .sidebar--collapsed .sidebar__logo {
-  width: 36px;
-  height: 36px;
+  width: 66px;
+  height: 66px;
+}
+
+/* حالت شب: بخش‌های مشکی لوگو سفید شوند؛ hue-rotate قرمز «نیکان» را قرمز نگه می‌دارد */
+html[data-theme='dark'] .sidebar__logo {
+  filter: invert(1) hue-rotate(180deg);
 }
 
 .sidebar__brand-text {

@@ -5,11 +5,9 @@ import { UNPRICED_LABEL } from '../constants';
 import {
   canDropOnKanbanStage,
   getEffectiveStageId,
-  getOrderDisplayStatus,
-  getOrderDisplayStatusKind,
   MOZENE_LOCKED_MESSAGE,
 } from '../orderStageService';
-import ProformaRevisionTag from './ProformaRevisionTag';
+import ProformaRevisionTag, { getProformaRevisionNumber } from './ProformaRevisionTag';
 
 export default function NabzKanban({
   orders,
@@ -132,8 +130,6 @@ export default function NabzKanban({
                 )}
                 {columnOrders.map((order) => {
                   const tint = STAGE_TINTS[getEffectiveStageId(order)] || STAGE_TINTS[1];
-                  const statusKind = getOrderDisplayStatusKind(order);
-                  const displayStatus = getOrderDisplayStatus(order);
 
                   return (
                     <li key={order.id}>
@@ -156,30 +152,34 @@ export default function NabzKanban({
                           }}
                           onClick={() => onOrderClick(order)}
                         >
-                          <span className="nabz-kanban-card__code-row">
-                            <span className="nabz-kanban-card__code">{order.code}</span>
-                            <ProformaRevisionTag order={order} className="proforma-revision-tag--kanban" />
-                          </span>
-                          <span className={`nabz-order-status nabz-order-status--${statusKind}`}>
-                            {displayStatus}
-                          </span>
-                          <div className="nabz-kanban-card__middle">
-                            {order.customerId ? (
-                              <button
-                                type="button"
-                                className="nabz-kanban-card__customer nabz-kanban-card__customer-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onCustomerClick(order.customerId);
-                                }}
-                              >
-                                {order.customer}
-                              </button>
-                            ) : (
-                              <span className="nabz-kanban-card__customer">{order.customer}</span>
-                            )}
-                            <span className="nabz-kanban-card__assignee">{order.assignee}</span>
+                          <div className="nabz-kanban-card__top">
+                            <span className="nabz-kanban-card__top-main">
+                              {order.customerId ? (
+                                <button
+                                  type="button"
+                                  className="nabz-kanban-card__customer nabz-kanban-card__customer-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCustomerClick(order.customerId);
+                                  }}
+                                >
+                                  {order.customer}
+                                </button>
+                              ) : (
+                                <span className="nabz-kanban-card__customer">{order.customer}</span>
+                              )}
+                              {getProformaRevisionNumber(order) != null && (
+                                <ProformaRevisionTag order={order} className="proforma-revision-tag--kanban" />
+                              )}
+                            </span>
+                            {/* تاریخ ثبت اولیه — گوشه بالا چپ، هم‌قرینه با تاریخ پیگیری کارت‌های افق */}
+                            <span className="nabz-kanban-card__date" title="تاریخ ثبت اولیه">
+                              {order.registeredDate || '—'}
+                            </span>
                           </div>
+                          <span className="nabz-kanban-card__assignee">
+                            شوالیه: {order.assignee}
+                          </span>
                           <div className="nabz-kanban-card__footer">
                             <span>{order.itemCount.toLocaleString('fa-IR')} آیتم</span>
                             <span>

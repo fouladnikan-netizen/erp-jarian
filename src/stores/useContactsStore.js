@@ -55,12 +55,16 @@ function seedContacts() {
   }));
 }
 
-/** تعاملات موجود کانون ({date, type, summary}) را به قالب واحد تایم‌لاین ({id, date, note, operator}) تبدیل می‌کند. */
+/**
+ * تعاملات موجود کانون ({date, type, summary}) را به قالب واحد تایم‌لاین ({id, date, note, operator}) تبدیل می‌کند.
+ * فیلد summary هم نگه داشته می‌شود چون تایم‌لاین پروفایل کانون از آن می‌خواند.
+ */
 function normalizeSeedInteractions(contact) {
   return (contact.interactions || []).map((item, index) => ({
     id: item.id || `seed-${contact.id}-${index}`,
     date: item.date || null,
     note: item.note || item.summary || '',
+    summary: item.summary || item.note || '',
     type: item.type || 'note',
     nextFollowUp: item.nextFollowUp ?? null,
     operator: item.operator || contact.assignee?.name || '—',
@@ -100,6 +104,7 @@ export const useContactsStore = create((set) => ({
           id: `int-${contactId}-${Date.now()}`,
           date: now,
           note: trimmed,
+          summary: trimmed,
           type,
           nextFollowUp: nextFollowUpDate || null,
           operator: contact.assignee?.name || 'کاربر جریان',
@@ -114,18 +119,29 @@ export const useContactsStore = create((set) => ({
     }));
   },
 
-  /** ثبت مخاطب جدید — بعداً به مودال «ثبت مخاطب» کانون وصل می‌شود. */
+  /**
+   * ثبت مخاطب/فرصت جدید — از فرم کانون یا فرم «فرصت جدید» افق.
+   * هر مخاطب تازه به‌صورت خودکار کارت مرحله اول پایپ‌لاین افق (نوپدید) می‌شود.
+   */
   addContact: (contact) => {
+    const newContact = {
+      lifecycle_stage: LIFECYCLE_STAGES.COLD_LEAD,
+      next_follow_up_date: null,
+      last_interaction_date: new Date().toISOString(),
+      interactions: [],
+      ...contact,
+      id: contact.id ?? Date.now(),
+    };
+    set((state) => ({ contacts: [newContact, ...state.contacts] }));
+    return newContact.id;
+  },
+
+  /** ویرایش مخاطب (پروفایل کانون). */
+  updateContact: (contactId, updates) => {
     set((state) => ({
-      contacts: [
-        {
-          lifecycle_stage: LIFECYCLE_STAGES.COLD_LEAD,
-          next_follow_up_date: null,
-          last_interaction_date: new Date().toISOString(),
-          ...contact,
-        },
-        ...state.contacts,
-      ],
+      contacts: state.contacts.map((contact) => (
+        contact.id === contactId ? { ...contact, ...updates } : contact
+      )),
     }));
   },
 }));

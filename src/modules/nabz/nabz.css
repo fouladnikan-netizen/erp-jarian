@@ -870,22 +870,29 @@ html[data-theme='dark'] .nabz-kanban-col__empty-state {
   }
 }
 
-.nabz-kanban-card__code-row {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.35rem;
-  direction: ltr;
+/* ردیف بالای کارت — نام مشتری (راست) + تاریخ ثبت اولیه (گوشه چپ، الگوی کارت افق) */
+.nabz-kanban-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem;
   align-self: stretch;
 }
 
-.nabz-kanban-card__code {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-primary);
+.nabz-kanban-card__top-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.nabz-kanban-card__date {
+  flex-shrink: 0;
+  font-family: var(--font-secondary);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
   direction: ltr;
-  text-align: right;
-  letter-spacing: 0.02em;
 }
 
 /* بج ویرایش — مستطیل عمودی قرمز براق، فقط عدد، کنار شماره سفارش */
@@ -922,12 +929,6 @@ html[data-theme='dark'] .nabz-kanban-col__empty-state {
 .proforma-revision-tag--table,
 .proforma-revision-tag--kanban {
   position: static;
-}
-
-.nabz-kanban-card__middle {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
 }
 
 .nabz-kanban-card__customer {

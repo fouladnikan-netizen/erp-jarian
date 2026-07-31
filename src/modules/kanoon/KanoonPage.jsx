@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { initialContacts } from './contactsData';
+import { useContactsStore } from '../../stores/useContactsStore';
 import { ENTITY_TYPES, PERSON_TYPES } from './config';
 import { computeKanoonKpis } from './kpi';
 import KanoonKpis from './components/KanoonKpis';
@@ -13,7 +13,10 @@ import { KANOON_ACTION } from './kanoonActionTypes';
 import './kanoon.css';
 
 export default function KanoonPage() {
-  const [contacts, setContacts] = useState(initialContacts);
+  // منبع واحد حقیقت مخاطبین — مشترک با پایپ‌لاین افق
+  const contacts = useContactsStore((state) => state.contacts);
+  const addContact = useContactsStore((state) => state.addContact);
+  const updateContact = useContactsStore((state) => state.updateContact);
   const [entityTab, setEntityTab] = useState(ENTITY_TYPES.CUSTOMER);
   const [personType, setPersonType] = useState(PERSON_TYPES.LEGAL);
   const [search, setSearch] = useState('');
@@ -39,12 +42,12 @@ export default function KanoonPage() {
   }, [entityTab, personType]);
 
   const handleAddContact = (contact) => {
-    setContacts((prev) => [...prev, { ...contact, id: Date.now() }]);
+    addContact(contact);
     setModalState(null);
   };
 
   const handleUpdateContact = (id, updates) => {
-    setContacts((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+    updateContact(id, updates);
     setProfileContact((prev) => (prev?.id === id ? { ...prev, ...updates } : prev));
   };
 

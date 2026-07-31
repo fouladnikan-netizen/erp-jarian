@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useContactsStore } from '../../stores/useContactsStore';
 import OfoqLeadModal from './OfoqLeadModal';
@@ -11,16 +12,20 @@ import {
 } from './pipelineConfig';
 
 const DUE_FILTER_OPTIONS = [
-  { id: 'today', label: 'پیگیری‌های امروز' },
   { id: 'overdue', label: 'پیگیری‌های عقب‌افتاده' },
+  { id: 'today', label: 'پیگیری‌های امروز' },
+  { id: 'future', label: 'پیگیری‌های آینده' },
 ];
 
-const EMPTY_FILTER = { query: '', due: null };
+const EMPTY_FILTER = { query: '', due: null, selected: null };
 
-function FunnelIcon() {
+/** آیکون سه‌خط فیلتر — عین هدر ستون‌های فهرست نبض (وحدت رویه). */
+function LinesFilterIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 7h16" />
+      <path d="M7 12h10" />
+      <path d="M10 17h4" />
     </svg>
   );
 }
@@ -82,10 +87,107 @@ function ContactCard({ contact, index, onOpen }) {
   );
 }
 
-/** پاپ‌اور گلس فیلتر ستون — جستجو + سررسید. state محلی ستون است و به استور دست نمی‌زند. */
-function ColumnFilterPopover({ filter, onChange, onClose }) {
-  return (
-    <div className="ofoq-column-filter__popover" role="menu">
+/**
+ * پاپ‌اور گلس فیلتر ستون — جستجو + سررسید + فیلتر اکسلی آیتم‌های ستون
+ * (انتخاب همه/بخشی با اعمال/پاک کردن، عین فیلتر ستون‌های فهرست نبض).
+ * state محلی ستون است و به استور دست نمی‌زند.
+ */
+function ColumnFilterPopover({ filter, options, triggerRef, onChange, onClose }) {
+  const panelRef = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 248 });
+
+  // پیش‌نویس انتخاب اکسلی — فقط با «اعمال» روی ستون می‌نشیند (الگوی نبض)
+  const [draft, setDraft] = useState(
+    filter.selected && filter.selected.length ? [...filter.selected] : [...options],
+  );
+
+  // موقعیت‌دهی fixed زیر دکمه فیلتر (پرتال به body، عین فیلتر اکسلی نبض) تا بورد آن را کلیپ نکند
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const width = 248;
+      const padding = 8;
+      let left = rect.right - width;
+      left = Math.max(padding, Math.min(left, window.innerWidth - width - padding));
+      let top = rect.bottom + 6;
+      const estimatedHeight = 340;
+      if (top + estimatedHeight > window.innerHeight - padding) {
+        top = Math.max(padding, rect.top - estimatedHeight - 6);
+      }
+      setCoords({ top, left, width });
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [triggerRef]);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (panelRef.current?.contains(event.target)) return;
+      if (triggerRef.current?.contains(event.target)) return;
+      onClose();
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [triggerRef, onClose]);
+
+  const query = filter.query.trim();
+  const visibleOptions = useMemo(() => {
+    if (!query) return options;
+    return options.filter((option) => option.includes(query));
+  }, [options, query]);
+
+  const allVisibleSelected = visibleOptions.length > 0
+    && visibleOptions.every((option) => draft.includes(option));
+  const someVisibleSelected = visibleOptions.some((option) => draft.includes(option));
+
+  const toggleOption = (option) => {
+    setDraft((prev) => (
+      prev.includes(option)
+        ? prev.filter((item) => item !== option)
+        : [...prev, option]
+    ));
+  };
+
+  const toggleAllVisible = () => {
+    if (allVisibleSelected) {
+      setDraft((prev) => prev.filter((item) => !visibleOptions.includes(item)));
+      return;
+    }
+    setDraft((prev) => Array.from(new Set([...prev, ...visibleOptions])));
+  };
+
+  const handleApply = () => {
+    const selected = draft.length === 0 || draft.length === options.length ? null : draft;
+    onChange({ ...filter, selected });
+    onClose();
+  };
+
+  const handleClear = () => {
+    onChange(EMPTY_FILTER);
+    onClose();
+  };
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      className="ofoq-column-filter__popover"
+      role="menu"
+      style={{ top: `${coords.top}px`, left: `${coords.left}px`, width: `${coords.width}px` }}
+    >
       <input
         type="search"
         className="ofoq-column-filter__search"
@@ -94,6 +196,7 @@ function ColumnFilterPopover({ filter, onChange, onClose }) {
         autoFocus
         onChange={(event) => onChange({ ...filter, query: event.target.value })}
       />
+
       <div className="ofoq-column-filter__options">
         {DUE_FILTER_OPTIONS.map((option) => (
           <button
@@ -107,63 +210,87 @@ function ColumnFilterPopover({ filter, onChange, onClose }) {
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        className="ofoq-column-filter__clear"
-        onClick={() => {
-          onChange(EMPTY_FILTER);
-          onClose();
-        }}
-      >
-        پاک کردن فیلتر
-      </button>
-    </div>
+
+      <div className="ofoq-column-filter__divider" aria-hidden="true" />
+
+      <label className="ofoq-column-filter__master">
+        <input
+          type="checkbox"
+          checked={allVisibleSelected}
+          ref={(el) => {
+            if (el) el.indeterminate = !allVisibleSelected && someVisibleSelected;
+          }}
+          onChange={toggleAllVisible}
+        />
+        <span>انتخاب همه</span>
+      </label>
+
+      <div className="ofoq-column-filter__list">
+        {visibleOptions.length === 0 ? (
+          <p className="ofoq-column-filter__list-empty">موردی یافت نشد</p>
+        ) : (
+          visibleOptions.map((option) => (
+            <label key={option} className="ofoq-column-filter__item">
+              <input
+                type="checkbox"
+                checked={draft.includes(option)}
+                onChange={() => toggleOption(option)}
+              />
+              <span>{option}</span>
+            </label>
+          ))
+        )}
+      </div>
+
+      <div className="ofoq-column-filter__footer">
+        <button type="button" className="ofoq-column-filter__clear" onClick={handleClear}>
+          پاک کردن
+        </button>
+        <button type="button" className="ofoq-column-filter__apply" onClick={handleApply}>
+          اعمال
+        </button>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
 function PipelineColumn({ stage, contacts, onOpenContact }) {
   const [filter, setFilter] = useState(EMPTY_FILTER);
   const [filterOpen, setFilterOpen] = useState(false);
-  const columnRef = useRef(null);
+  const filterBtnRef = useRef(null);
 
-  const isFiltered = Boolean(filter.query.trim() || filter.due);
+  const isFiltered = Boolean(
+    filter.query.trim() || filter.due || (filter.selected && filter.selected.length),
+  );
+
+  /** آیتم‌های اکسلی ستون: نام نمایشی کارت‌های همین ستون (یکتا، مرتب فارسی) */
+  const itemOptions = useMemo(() => {
+    const names = new Set(contacts.map((contact) => getContactDisplayName(contact)));
+    return Array.from(names).sort((a, b) => a.localeCompare(b, 'fa'));
+  }, [contacts]);
 
   const visibleContacts = useMemo(() => {
     if (!isFiltered) return contacts;
     const query = filter.query.trim();
     return contacts.filter((contact) => {
+      const name = getContactDisplayName(contact);
       if (query) {
-        const haystack = `${getContactDisplayName(contact)} ${getContactTag(contact)}`;
+        const haystack = `${name} ${getContactTag(contact)}`;
         if (!haystack.includes(query)) return false;
       }
       if (filter.due && getPulseStatus(contact.next_follow_up_date) !== filter.due) {
+        return false;
+      }
+      if (filter.selected && filter.selected.length && !filter.selected.includes(name)) {
         return false;
       }
       return true;
     });
   }, [contacts, filter, isFiltered]);
 
-  useEffect(() => {
-    if (!filterOpen) return undefined;
-    const handlePointerDown = (event) => {
-      if (columnRef.current && !columnRef.current.contains(event.target)) {
-        setFilterOpen(false);
-      }
-    };
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setFilterOpen(false);
-    };
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [filterOpen]);
-
   return (
     <section
-      ref={columnRef}
       className="ofoq-pipeline__column"
       style={{ '--stage-color': stage.color, '--stage-glow': stage.glow }}
       aria-label={stage.label}
@@ -177,13 +304,14 @@ function PipelineColumn({ stage, contacts, onOpenContact }) {
               : contacts.length.toLocaleString('fa-IR')}
           </span>
           <button
+            ref={filterBtnRef}
             type="button"
             className={`ofoq-column-filter__btn${isFiltered ? ' is-active' : ''}`}
             aria-label={`فیلتر ستون ${stage.label}`}
             aria-expanded={filterOpen}
             onClick={() => setFilterOpen((open) => !open)}
           >
-            <FunnelIcon />
+            <LinesFilterIcon />
           </button>
         </div>
       </header>
@@ -191,6 +319,8 @@ function PipelineColumn({ stage, contacts, onOpenContact }) {
       {filterOpen && (
         <ColumnFilterPopover
           filter={filter}
+          options={itemOptions}
+          triggerRef={filterBtnRef}
           onChange={setFilter}
           onClose={() => setFilterOpen(false)}
         />
@@ -219,8 +349,8 @@ function PipelineColumn({ stage, contacts, onOpenContact }) {
   );
 }
 
-/** بورد کانبان افق — فیلترهای سراسری (جستجو/مراحل) از تولبار ماژول به‌صورت props می‌آیند. */
-export default function OfoqPipelineBoard({ globalQuery = '', selectedStages = [] }) {
+/** بورد کانبان افق — فیلترهای سراسری (جستجو/مراحل/سررسید) از تولبار ماژول به‌صورت props می‌آیند. */
+export default function OfoqPipelineBoard({ globalQuery = '', selectedStages = [], globalDue = null }) {
   const contacts = useContactsStore((state) => state.contacts);
   const updateContactStage = useContactsStore((state) => state.updateContactStage);
   const [selectedContactId, setSelectedContactId] = useState(null);
@@ -233,10 +363,11 @@ export default function OfoqPipelineBoard({ globalQuery = '', selectedStages = [
         const haystack = `${getContactDisplayName(contact)} ${contact.personName || ''} ${getContactTag(contact)}`;
         if (!haystack.includes(query)) return;
       }
+      if (globalDue && getPulseStatus(contact.next_follow_up_date) !== globalDue) return;
       (map[contact.lifecycle_stage] || map[PIPELINE_STAGES[0].id]).push(contact);
     });
     return map;
-  }, [contacts, globalQuery]);
+  }, [contacts, globalQuery, globalDue]);
 
   const visibleStages = useMemo(() => (
     selectedStages.length
