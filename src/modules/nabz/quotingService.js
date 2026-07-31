@@ -25,6 +25,15 @@ function isOfficialSaleType(saleType) {
   return saleType === SALES_TYPES[0] || saleType === 'رسمی';
 }
 
+/** Canonical Official flag — prefers `order.isOfficial`, else derives from `saleType`. */
+export function resolveOrderIsOfficial(order) {
+  if (typeof order?.isOfficial === 'boolean') return order.isOfficial;
+  return isOfficialSaleType(order?.saleType || DEFAULT_SALE_TYPE);
+}
+
+const VAT_MULTIPLIER = 1.1;
+const VAT_RATE = 0.1;
+
 export function getOrderQuoting(order) {
   return { ...getDefaultQuoting(), ...(order.quoting || {}) };
 }
@@ -113,7 +122,7 @@ function calculateRowPricing({ quotePrice, profit, qty, saleType }) {
 
   // BasePrice (قبل از مالیات): مبنای Visual Math برای هر دو حالت نمایش
   const rawBasePrice = isOfficialSaleType(saleType)
-    ? (qPrice + unitProfit) / 1.1
+    ? (qPrice + unitProfit) / VAT_MULTIPLIER
     : qPrice + unitProfit;
   const basePrice = Math.round(rawBasePrice);
 
@@ -135,10 +144,12 @@ export function calculateQuotingPreview(order, options = {}) {
   const quoting = getOrderQuoting(order);
   const items = order.items || [];
   const saleType = order.saleType || DEFAULT_SALE_TYPE;
-  const isOfficial = isOfficialSaleType(saleType);
+  const isOfficial = resolveOrderIsOfficial(order);
+  // Official exclusive mode only; unofficial always rolls 10% VAT into unit price.
   const vatInclusive = options.forceVatExclusive
     ? false
     : Boolean(quoting.vatInclusive) && isOfficial;
+  const rollVatIntoUnit = !isOfficial || vatInclusive;
 
   const lines = items.map((item, index) => {
     const target = getTargetInquiry(item);
@@ -149,11 +160,11 @@ export function calculateQuotingPreview(order, options = {}) {
       quotePrice,
       profit: unitProfit,
       qty,
-      saleType,
+      saleType: isOfficial ? SALES_TYPES[0] : (saleType || 'غیر رسمی'),
     });
 
-    const saleUnitPrice = vatInclusive
-      ? Math.round(pricing.basePrice * 1.1)
+    const saleUnitPrice = rollVatIntoUnit
+      ? Math.round(pricing.basePrice * VAT_MULTIPLIER)
       : pricing.basePrice;
     const lineTotal = Math.round(qty * saleUnitPrice);
 
@@ -177,7 +188,7 @@ export function calculateQuotingPreview(order, options = {}) {
   const subtotal = lines.reduce((sum, line) => sum + toNumber(line.lineTotal), 0);
   const totalProfit = lines.reduce((sum, line) => sum + toNumber(line.lineProfitRial), 0);
   const showVatBreakdown = isOfficial && !vatInclusive;
-  const vatAmount = showVatBreakdown ? Math.round(subtotal * 0.1) : 0;
+  const vatAmount = showVatBreakdown ? Math.round(subtotal * VAT_RATE) : 0;
   const orderTotal = subtotal + vatAmount;
   const baseTotal = lines.reduce((sum, line) => sum + toNumber(line.baseTotal), 0);
 
@@ -190,6 +201,7 @@ export function calculateQuotingPreview(order, options = {}) {
     orderTotal,
     marginMode: quoting.marginMode,
     saleType,
+    isOfficial,
     vatInclusive,
     showVatBreakdown,
   };

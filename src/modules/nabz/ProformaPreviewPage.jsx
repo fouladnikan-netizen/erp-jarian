@@ -128,9 +128,16 @@ export default function ProformaPreviewPage() {
 
   const handleSignAndStamp = () => {
     if (sealState !== SEAL_IDLE) return;
-    setSealState(SEAL_SIGNING);
     setSendMenuOpen(false);
 
+    const official = payload?.viewModel?.isOfficial !== false;
+    if (!official) {
+      setSealState(SEAL_APPROVED);
+      archiveSignedSnapshot();
+      return;
+    }
+
+    setSealState(SEAL_SIGNING);
     const approveTimer = window.setTimeout(() => {
       setSealState(SEAL_APPROVED);
       archiveSignedSnapshot();
@@ -149,9 +156,12 @@ export default function ProformaPreviewPage() {
 
   const isSigning = sealState === SEAL_SIGNING;
   const isApproved = sealState === SEAL_APPROVED;
+  const isOfficial = payload.viewModel?.isOfficial !== false;
+  const finalizeLabel = isOfficial ? 'مهر و امضا' : 'تأیید';
+  const finalizeBusyLabel = isOfficial ? 'در حال مهر و امضا…' : 'در حال تأیید…';
 
   return (
-    <div className={`proforma-preview-page${isApproved ? ' proforma-preview-page--approved' : ''}`}>
+    <div className={`proforma-preview-page${isApproved ? ' proforma-preview-page--approved' : ''}${isOfficial ? '' : ' proforma-preview-page--unofficial'}`}>
       {!shouldPrint && (
         <div className="proforma-preview-page__toolbar proforma-preview-page__toolbar--top no-print">
           <button type="button" className="btn btn--ghost" onClick={() => window.close()}>
@@ -181,10 +191,10 @@ export default function ProformaPreviewPage() {
               {isSigning ? (
                 <>
                   <span className="proforma-preview-page__spinner" aria-hidden="true" />
-                  در حال مهر و امضا…
+                  {finalizeBusyLabel}
                 </>
               ) : (
-                'مهر و امضای رسمی'
+                finalizeLabel
               )}
             </button>
           )}

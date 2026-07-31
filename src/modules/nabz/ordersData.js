@@ -39,6 +39,7 @@ function o({
     assignee,
     orderType,
     saleType,
+    isOfficial: saleType === 'رسمی',
     generalNotes,
     itemCount: orderItems.length,
     amountRial,

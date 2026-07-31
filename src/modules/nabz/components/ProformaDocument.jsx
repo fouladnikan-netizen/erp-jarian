@@ -58,11 +58,50 @@ function ProformaTermsBlock({ terms, termsCustom }) {
 }
 
 function ProductDescription({ name, note }) {
+  const detail = String(note || '').trim();
   return (
-    <div className="jarian-product-cell invoice-doc__product-desc">
-      <span className="jarian-product-name invoice-doc__product-name">{name}</span>
-      {note ? (
-        <span className="jarian-product-desc invoice-doc__product-note">{note}</span>
+    <div
+      className="jarian-product-cell invoice-doc__product-desc"
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: '0.35rem',
+        flexWrap: 'nowrap',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        width: '100%',
+        minWidth: 0,
+        textAlign: 'right',
+      }}
+    >
+      <span
+        className="jarian-product-name invoice-doc__product-name"
+        style={{
+          display: 'inline',
+          width: 'auto',
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {name}
+      </span>
+      {detail ? (
+        <span
+          className="jarian-product-desc invoice-doc__product-note"
+          style={{
+            display: 'inline',
+            width: 'auto',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            color: '#757575',
+            marginInlineStart: '0.25rem',
+          }}
+        >
+          - {detail}
+        </span>
       ) : null}
     </div>
   );
@@ -204,7 +243,7 @@ function TotalsBlock({ viewModel, measure = false }) {
   );
 }
 
-function TermsFootBlock({ terms, termsCustom, sealState, measure = false }) {
+function TermsFootBlock({ terms, termsCustom, sealState, isOfficial = true, measure = false }) {
   return (
     <div
       className="invoice-doc__terms-foot"
@@ -213,13 +252,13 @@ function TermsFootBlock({ terms, termsCustom, sealState, measure = false }) {
       <section className="invoice-doc__terms-section">
         <ProformaTermsBlock terms={terms} termsCustom={termsCustom} />
       </section>
-      <ProformaSeal sealState={sealState} />
+      {isOfficial ? <ProformaSeal sealState={sealState} /> : null}
     </div>
   );
 }
 
-function DocFooter({ measure = false }) {
-  return <InvoiceDocFooter measure={measure} />;
+function DocFooter({ measure = false, isOfficial = true }) {
+  return <InvoiceDocFooter measure={measure} isOfficial={isOfficial} />;
 }
 
 /**
@@ -310,11 +349,19 @@ function InvoicePage({
   editable,
   onColResizeStart,
 }) {
+  const isOfficial = viewModel.isOfficial !== false;
   return (
     <article
-      className={`invoice-doc invoice-doc--page${approved ? ' invoice-doc--approved' : ''}${pageIndex === pageCount - 1 ? ' is-last' : ''}`}
+      className={[
+        'invoice-doc',
+        'invoice-doc--page',
+        approved ? 'invoice-doc--approved' : '',
+        pageIndex === pageCount - 1 ? 'is-last' : '',
+        isOfficial ? '' : 'invoice-doc--unofficial',
+      ].filter(Boolean).join(' ')}
       data-page={pageIndex + 1}
       data-page-count={pageCount}
+      data-official={isOfficial ? '1' : '0'}
     >
       <div className="invoice-doc__page-body">
         {/* ۱+۲: هدر و مشخصات خریدار — همیشه */}
@@ -353,12 +400,13 @@ function InvoicePage({
             terms={terms}
             termsCustom={termsCustom}
             sealState={sealState}
+            isOfficial={isOfficial}
           />
         )}
       </div>
 
       {/* فوتر — همیشه */}
-      <DocFooter />
+      <DocFooter isOfficial={isOfficial} />
     </article>
   );
 }
@@ -395,13 +443,15 @@ export default function ProformaDocument({
       terms,
       termsCustom,
       sealState,
+      isOfficial: viewModel.isOfficial !== false,
+      showVat: viewModel.showVatBreakdown ?? viewModel.isOfficial,
       subtotal: viewModel.subtotal,
       vat: viewModel.vatAmount,
       grand: viewModel.grandTotal,
       colWidths,
       rowHPx,
     }),
-    [lines, terms, termsCustom, sealState, viewModel.subtotal, viewModel.vatAmount, viewModel.grandTotal, colWidths, rowHPx],
+    [lines, terms, termsCustom, sealState, viewModel.isOfficial, viewModel.showVatBreakdown, viewModel.subtotal, viewModel.vatAmount, viewModel.grandTotal, colWidths, rowHPx],
   );
 
   useLayoutEffect(() => {
@@ -516,6 +566,7 @@ export default function ProformaDocument({
   };
 
   const approved = sealState === 'approved';
+  const isOfficial = viewModel.isOfficial !== false;
   const plan = pagePlan || [{
     rowIndexes: lines.map((_, i) => i),
     showTotals: true,
@@ -524,7 +575,7 @@ export default function ProformaDocument({
 
   return (
     <div
-      className={`invoice-doc-stack${layoutEditable ? ' invoice-doc-stack--editable' : ''}`}
+      className={`invoice-doc-stack${layoutEditable ? ' invoice-doc-stack--editable' : ''}${isOfficial ? '' : ' invoice-doc-stack--unofficial'}`}
       style={layoutStyle}
     >
       {layoutEditable && (
@@ -557,7 +608,10 @@ export default function ProformaDocument({
       )}
 
       <div className="invoice-doc-stack__measure" aria-hidden="true">
-        <article className="invoice-doc invoice-doc--page invoice-doc--measure" ref={measureRef}>
+        <article
+          className={`invoice-doc invoice-doc--page invoice-doc--measure${isOfficial ? '' : ' invoice-doc--unofficial'}`}
+          ref={measureRef}
+        >
           <div className="invoice-doc__page-body">
             <div className="invoice-doc__print-header" data-measure="header">
               <ProformaDocHeader viewModel={viewModel} />
@@ -578,10 +632,11 @@ export default function ProformaDocument({
               terms={terms}
               termsCustom={termsCustom}
               sealState={sealState}
+              isOfficial={isOfficial}
               measure
             />
           </div>
-          <DocFooter measure />
+          <DocFooter measure isOfficial={isOfficial} />
         </article>
       </div>
 

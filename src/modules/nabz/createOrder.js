@@ -1,5 +1,5 @@
 import { ORDER_TABS } from './config';
-import { CURRENT_USER, DEFAULT_ORDER_TYPE, DEFAULT_SALE_TYPE } from './constants';
+import { CURRENT_USER, DEFAULT_ORDER_TYPE, DEFAULT_SALE_TYPE, SALES_TYPES } from './constants';
 import { getTodayJalali, getNowTimeFa, parseJalaliParts } from './dateUtils';
 import { buildOrderCodeDashed } from './orderCode';
 import { getCustomerById } from './customers';
@@ -10,6 +10,11 @@ import {
   updateGatewayOrderItemWithSensitivity,
 } from './gatewayService';
 import { isMozeneStage } from './orderStageService';
+
+function resolveIsOfficialFromSaleType(saleType) {
+  const type = saleType || DEFAULT_SALE_TYPE;
+  return type === SALES_TYPES[0] || type === 'رسمی';
+}
 
 let lineIdCounter = 1;
 
@@ -64,6 +69,8 @@ export function buildNewOrder({
   const itemCount = lineItems.length;
   const nextId = orders.reduce((max, o) => Math.max(max, o.id), 0) + 1;
 
+  const resolvedSaleType = saleType || DEFAULT_SALE_TYPE;
+
   return {
     id: nextId,
     code,
@@ -71,7 +78,8 @@ export function buildNewOrder({
     customer: customer ? getDisplayName(customer) : '—',
     assignee: assignee || CURRENT_USER,
     orderType: orderType || DEFAULT_ORDER_TYPE,
-    saleType: saleType || DEFAULT_SALE_TYPE,
+    saleType: resolvedSaleType,
+    isOfficial: resolveIsOfficialFromSaleType(resolvedSaleType),
     generalNotes: (generalNotes || '').trim(),
     requesterName: (requesterName || '').trim() || undefined,
     requesterMobile: (requesterMobile || '').trim() || undefined,
@@ -179,6 +187,7 @@ export function applyOrderEdit(order, {
     customer: customer ? getDisplayName(customer) : order.customer,
     orderType: orderType || order.orderType || DEFAULT_ORDER_TYPE,
     saleType: saleType || order.saleType || DEFAULT_SALE_TYPE,
+    isOfficial: resolveIsOfficialFromSaleType(saleType || order.saleType || DEFAULT_SALE_TYPE),
     generalNotes: (generalNotes || '').trim(),
     requesterName: (requesterName || '').trim() || undefined,
     requesterMobile: (requesterMobile || '').trim() || undefined,

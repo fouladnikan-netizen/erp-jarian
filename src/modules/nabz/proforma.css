@@ -1017,6 +1017,42 @@ body.is-invoice-resizing[data-resize='row'] {
   letter-spacing: 0.05em;
 }
 
+/* —— غیررسمی: مخفی‌سازی برند / شناسه شرکت / مهر و امضا (صفحه + چاپ) —— */
+.invoice-doc--unofficial .invoice-doc__header-brand:not(.invoice-doc__header-brand--masked),
+.invoice-doc--unofficial .invoice-doc__brand-mark,
+.invoice-doc--unofficial .invoice-doc__tagline,
+.invoice-doc--unofficial .invoice-doc__company-ids,
+.invoice-doc--unofficial .invoice-doc__footer-inner,
+.invoice-doc--unofficial .invoice-doc__signatures {
+  display: none !important;
+}
+
+.invoice-doc__header-brand--masked,
+.invoice-doc__footer--masked {
+  display: block;
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.invoice-doc--unofficial .invoice-doc__header {
+  justify-content: flex-end;
+}
+
+@media print {
+  .invoice-doc--unofficial .invoice-doc__header-brand:not(.invoice-doc__header-brand--masked),
+  .invoice-doc--unofficial .invoice-doc__brand-mark,
+  .invoice-doc--unofficial .invoice-doc__tagline,
+  .invoice-doc--unofficial .invoice-doc__company-ids,
+  .invoice-doc--unofficial .invoice-doc__footer-inner,
+  .invoice-doc--unofficial .invoice-doc__signatures,
+  .invoice-doc--unofficial .invoice-doc__footer:not(.invoice-doc__footer--masked) {
+    display: none !important;
+  }
+}
+
 @media print {
   @page {
     size: A4 portrait;

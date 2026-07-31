@@ -5,29 +5,35 @@ import { COMPANY_BRAND } from '../proformaConfig';
 /**
  * سربرگ برند پیش‌فاکتور — مشترک بین پیش‌فاکتور و حواله باربری
  * @param {object} viewModel
+ * @param {boolean} [viewModel.isOfficial=true] — غیررسمی: لوگو و شناسه‌های شرکت مخفی
  * @param {string} [viewModel.documentNumberLabel] — پیش‌فرض: «شماره:»
  * @param {string} [viewModel.documentNumber] — پیش‌فرض: orderCode
  */
 export function InvoiceDocBrandHeader({ viewModel }) {
   const numberLabel = viewModel.documentNumberLabel || 'شماره:';
   const numberValue = viewModel.documentNumber ?? viewModel.orderCode;
+  const isOfficial = viewModel.isOfficial !== false;
 
   return (
-    <header className="invoice-doc__header">
-      <div className="invoice-doc__header-brand">
-        <div className="invoice-doc__brand-mark">
-          <img
-            src={headerBrand}
-            alt=""
-            className="invoice-doc__brand-mark-img"
-          />
+    <header className={`invoice-doc__header${isOfficial ? '' : ' invoice-doc__header--unofficial'}`}>
+      {isOfficial ? (
+        <div className="invoice-doc__header-brand">
+          <div className="invoice-doc__brand-mark">
+            <img
+              src={headerBrand}
+              alt=""
+              className="invoice-doc__brand-mark-img"
+            />
+          </div>
+          <p className="invoice-doc__tagline">{COMPANY_BRAND.tagline}</p>
+          <div className="invoice-doc__company-ids">
+            <span>شناسه ملی: {toPersianInvoiceText(COMPANY_BRAND.nationalId)}</span>
+            <span>شماره ثبت: {toPersianInvoiceText(COMPANY_BRAND.registrationNumber)}</span>
+          </div>
         </div>
-        <p className="invoice-doc__tagline">{COMPANY_BRAND.tagline}</p>
-        <div className="invoice-doc__company-ids">
-          <span>شناسه ملی: {toPersianInvoiceText(COMPANY_BRAND.nationalId)}</span>
-          <span>شماره ثبت: {toPersianInvoiceText(COMPANY_BRAND.registrationNumber)}</span>
-        </div>
-      </div>
+      ) : (
+        <div className="invoice-doc__header-brand invoice-doc__header-brand--masked" aria-hidden="true" />
+      )}
       <div className="invoice-doc__header-meta">
         <div className="invoice-doc__meta-grid">
           <span className="invoice-doc__meta-label">{numberLabel}</span>
@@ -46,8 +52,19 @@ export function InvoiceDocBrandHeader({ viewModel }) {
 
 /**
  * فوتر شرکت پیش‌فاکتور — مشترک بین پیش‌فاکتور و حواله باربری
+ * غیررسمی: آدرس/تلفن/کدپستی شرکت نمایش داده نمی‌شود.
  */
-export function InvoiceDocFooter({ measure = false }) {
+export function InvoiceDocFooter({ measure = false, isOfficial = true }) {
+  if (!isOfficial) {
+    return (
+      <footer
+        className="invoice-doc__footer invoice-doc__footer--masked"
+        data-measure={measure ? 'footer' : undefined}
+        aria-hidden="true"
+      />
+    );
+  }
+
   return (
     <footer className="invoice-doc__footer" data-measure={measure ? 'footer' : undefined}>
       <div className="invoice-doc__footer-inner">

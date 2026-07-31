@@ -1,6 +1,6 @@
 import { PERSON_TYPES } from '../kanoon/config';
 import { getCustomerById } from './customers';
-import { calculateQuotingPreview } from './quotingService';
+import { calculateQuotingPreview, resolveOrderIsOfficial } from './quotingService';
 import { getTodayJalali, getNowTimeFa, toPersianDigits } from './dateUtils';
 import { formatAmountRialWords } from './numberToPersianWords';
 import { DEFAULT_PROFORMA_TERMS } from './proformaConfig';
@@ -79,7 +79,8 @@ export function getLatestProformaVersion(order) {
 /** اثرانگشت محتوا برای تشخیص تغییر نسبت به آخرین نسخه بایگانی‌شده */
 export function buildProformaFingerprint(order) {
   // پیش‌فاکتور همیشه قیمت قبل از مالیات رسمی را مبنا می‌گیرد (مستقل از سوئیچ نمایش مظنه/پیش‌کش)
-  const preview = calculateQuotingPreview(order, { forceVatExclusive: true });
+  const isOfficial = resolveOrderIsOfficial(order);
+  const preview = calculateQuotingPreview(order, { forceVatExclusive: isOfficial });
   const terms = getProformaTerms(order);
   const quoting = order.quoting ? { ...order.quoting } : null;
   if (quoting) delete quoting.vatInclusive;
@@ -87,10 +88,11 @@ export function buildProformaFingerprint(order) {
     customerId: order.customerId,
     customer: order.customer,
     saleType: preview.saleType || order.saleType || 'رسمی',
+    isOfficial,
     terms,
     quoting,
     subtotal: preview.subtotal,
-    vatAmount: preview.vatAmount,
+    vatAmount: isOfficial ? preview.vatAmount : 0,
     orderTotal: preview.orderTotal,
     items: (order.items || []).map((item) => ({
       name: item.name,
@@ -109,12 +111,14 @@ export function buildProformaFingerprint(order) {
 }
 
 export function buildProformaViewModel(order, options = {}) {
-  // پیش‌نمایش/سند پیش‌فاکتور برای فروش رسمی همیشه قیمت قبل از مالیات است
-  // (مستقل از سوئیچ نمایش در مظنه و پیش‌کش)
-  const preview = calculateQuotingPreview(order, { forceVatExclusive: true });
+  // رسمی: قیمت قبل از مالیات + ردیف VAT جدا
+  // غیررسمی: مالیات ۱۰٪ داخل فی (*1.10) — بدون ردیف VAT و بدون سوئیچ دستی
+  const isOfficial = resolveOrderIsOfficial(order);
+  const preview = calculateQuotingPreview(order, {
+    forceVatExclusive: isOfficial,
+  });
   const customer = getCustomerById(order.customerId);
   const saleType = preview.saleType || order.saleType || 'رسمی';
-  const isOfficial = saleType === 'رسمی';
   const revision = options.revision ?? order.proforma?.revision ?? 1;
   const documentNumber = options.documentNumber
     || formatProformaDocumentNumber(order.code, revision);
@@ -157,7 +161,7 @@ export function buildProformaViewModel(order, options = {}) {
     salePriceLabel: isOfficial ? 'قیمت قبل از مالیات' : 'قیمت فروش',
     lines,
     subtotal: preview.subtotal,
-    vatAmount: preview.vatAmount,
+    vatAmount: isOfficial ? preview.vatAmount : 0,
     grandTotal: preview.orderTotal,
     grandTotalWords: formatAmountRialWords(preview.orderTotal),
   };
