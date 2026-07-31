@@ -224,7 +224,7 @@ function InquiryGridRow({
           <JarianMoney amount={inquiry.unitPrice} />
         </span>
         {notes ? (
-          <span className="gateway-inquiry-grid__notes">{notes}</span>
+          <span className="gateway-inquiry-grid__notes" title={notes}>{notes}</span>
         ) : null}
       </div>
       <div className="gateway-inquiry-grid__actions">

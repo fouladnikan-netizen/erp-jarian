@@ -108,6 +108,7 @@ export default function QuotingOrderTable({
                           isTarget={getTargetInquiry(item)?.id === inq.id}
                           showSupplier={showSupplier}
                           readOnly
+                          showNotes
                         />
                       ))}
                     </div>

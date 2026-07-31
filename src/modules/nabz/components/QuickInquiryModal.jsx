@@ -262,6 +262,7 @@ function SupplyStrip({
                 showSupplier={showSupplier}
                 readOnly
                 flat
+                showNotes
               />
             ) : (
               canManage && !draftOpen && <span className="nabz-quick-table__muted">—</span>
