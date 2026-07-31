@@ -1111,6 +1111,8 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   font-size: 0.8rem;
   line-height: 1.75;
   color: var(--text-primary);
+  /* بولت‌پوینت‌های خلاصه نتایج AI خط‌به‌خط نمایش داده شوند */
+  white-space: pre-line;
 }
 
 .ofoq-timeline__follow-up {

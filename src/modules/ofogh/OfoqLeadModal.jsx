@@ -115,27 +115,68 @@ const INTERACTION_TYPE_META = {
 
 /**
  * ماک بازنویسی هوش مصنوعی — شبیه‌ساز فراخوانی DeepSeek در بک‌اند.
- * متن خام کاربر را به گزارش رسمی CRM تبدیل می‌کند.
+ * قالب رسمی «خلاصه نتایج» جریان (موضوع / توافق‌ها / دغدغه‌ها / قدم‌های بعدی).
+ * هم‌راستا با DEFAULT_SYSTEM_PROMPT در src/server/api/aiRoutes.js
  */
-const AI_REWRITE_PREFIX = {
-  call: 'طی تماس تلفنی با مشتری',
-  message: 'در مکاتبه انجام‌شده با مشتری',
-  meeting: 'در جلسه حضوری با مشتری',
-  catalog: 'در پی ارسال کاتالوگ محصولات برای مشتری',
-  note: 'بر اساس بررسی داخلی',
+const AI_SUBJECT_BY_TYPE = {
+  call: 'تماس تلفنی با مشتری',
+  message: 'مکاتبه (پیام/ایمیل) با مشتری',
+  meeting: 'جلسه حضوری با مشتری',
+  catalog: 'ارسال کاتالوگ محصولات',
+  note: 'یادداشت داخلی پیگیری',
 };
 
 function mockAiRewrite(raw, type) {
   const text = raw.trim();
+  const subject = AI_SUBJECT_BY_TYPE[type] || AI_SUBJECT_BY_TYPE.note;
+  const today = new Date().toLocaleDateString('fa-IR');
+
   if (/گرو[نو]|قیمت\s*(بالا|زیاد)/.test(text)) {
-    return 'طی تماس تلفنی، مشتری به دلیل نوسانات قیمت از خرید منصرف شد. نیازمند پیگیری مجدد.';
+    return [
+      `**موضوع:** ${subject}`,
+      `**تاریخ:** ${today}`,
+      '',
+      '**✅ توافق‌ها و دستاوردها:**',
+      '- کانال گفتگو باز ماند و امکان ادامه مذاکره وجود دارد.',
+      '',
+      '**💬 نکات مهم / دغدغه‌های مشتری:**',
+      '- قیمت از نظر مشتری بالاست و فعلاً برای خرید دست نگه داشته.',
+      '',
+      '**📌 قدم‌های بعدی:**',
+      `- تماس پیگیری با پیشنهاد شرایط بهتر — مسئول: کارشناس فروش — تا ${today} (به‌روزرسانی موعد در فرم)`,
+    ].join('\n');
   }
+
   if (/جواب\s*نداد|برنداشت|در دسترس نبود/.test(text)) {
-    return 'تماس با مشتری برقرار نشد. مقرر شد در بازه زمانی مناسب‌تری تماس مجدد گرفته شود.';
+    return [
+      `**موضوع:** ${subject}`,
+      `**تاریخ:** ${today}`,
+      '',
+      '**✅ توافق‌ها و دستاوردها:**',
+      '- تماس برقرار نشد؛ توافق جدیدی شکل نگرفت.',
+      '',
+      '**💬 نکات مهم / دغدغه‌های مشتری:**',
+      '- مشتری در دسترس نبود / پاسخ نداد.',
+      '',
+      '**📌 قدم‌های بعدی:**',
+      `- تماس مجدد در بازه مناسب‌تر — مسئول: کارشناس فروش — تا ${today} (به‌روزرسانی موعد در فرم)`,
+    ].join('\n');
   }
+
   const cleaned = text.replace(/[.!؟…]+$/u, '');
-  const prefix = AI_REWRITE_PREFIX[type] || AI_REWRITE_PREFIX.note;
-  return `${prefix}، موضوع «${cleaned}» مطرح و بررسی شد. جمع‌بندی: ادامه فرآیند نیازمند پیگیری در موعد مقرر است.`;
+  return [
+    `**موضوع:** ${subject}`,
+    `**تاریخ:** ${today}`,
+    '',
+    '**✅ توافق‌ها و دستاوردها:**',
+    `- ${cleaned}.`,
+    '',
+    '**💬 نکات مهم / دغدغه‌های مشتری:**',
+    '- دغدغهٔ خاصی در متن خام ذکر نشده؛ در صورت نیاز تکمیل شود.',
+    '',
+    '**📌 قدم‌های بعدی:**',
+    `- پیگیری ادامه فرآیند — مسئول: کارشناس فروش — تا ${today} (به‌روزرسانی موعد در فرم)`,
+  ].join('\n');
 }
 
 /** دمای رابطه بر اساس مرحله چرخه حیات — داغ / گرم / سرد */
@@ -299,7 +340,7 @@ function ActionForm({ contactId }) {
     setFollowUpDate('');
   };
 
-  /** شبیه‌سازی فراخوانی DeepSeek — دو ثانیه لودینگ گلس، سپس جایگزینی متن رسمی‌شده. */
+  /** شبیه‌سازی فراخوانی DeepSeek — دو ثانیه لودینگ گلس، سپس جایگزینی خلاصه بازنویسی‌شده. */
   const handleAiRewrite = () => {
     if (!note.trim() || aiBusy) return;
     setAiBusy(true);
@@ -332,7 +373,7 @@ function ActionForm({ contactId }) {
         <div className={`ofoq-ai-wrap${aiBusy ? ' is-busy' : ''}`} aria-busy={aiBusy}>
           <textarea
             className="ofoq-modal__note-input"
-            rows={3}
+            rows={6}
             placeholder={typeMeta.placeholder}
             value={note}
             onChange={(event) => setNote(event.target.value)}
@@ -341,8 +382,8 @@ function ActionForm({ contactId }) {
           <button
             type="button"
             className="ofoq-ai-btn"
-            title="بازنویسی رسمی با هوش مصنوعی"
-            aria-label="بازنویسی رسمی با هوش مصنوعی"
+            title="بازنویسی خلاصه نتایج با هوش مصنوعی"
+            aria-label="بازنویسی خلاصه نتایج با هوش مصنوعی"
             onClick={handleAiRewrite}
             disabled={!note.trim() || aiBusy}
           >
