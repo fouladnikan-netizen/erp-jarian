@@ -407,6 +407,8 @@ export default function RahseparStagePanel({
   const [printJob, setPrintJob] = useState(null);
   const toastTimerRef = useRef(null);
   const notifiedDeliveryKeyRef = useRef('');
+  const printJobIdRef = useRef(0);
+  const printCleanupTimerRef = useRef(null);
 
   const selectedCount = selectedIds.length;
   const canAssign = selectedCount > 0;
@@ -658,7 +660,9 @@ export default function RahseparStagePanel({
 
   /**
    * صدور صورت‌بار فقط برای اقلام همان تخصیص راننده.
-   * چاپ را مستقیم از کلیک اجرا می‌کنیم (نه useEffect) تا StrictMode تایمر را لغو نکند.
+   * چاپ از کلیک (نه useEffect) — و پاک‌سازی فقط بعد از afterprint،
+   * چون در بعضی مرورگرها window.print() بلافاصله برمی‌گردد و اگر محتوا
+   * در finally پاک شود، دیالوگ چاپ خالی می‌ماند.
    */
   const handlePrintPackingList = (assignmentId) => {
     const payload = buildSooratBarPayloadForAssignment(order, assignmentId);
@@ -667,8 +671,17 @@ export default function RahseparStagePanel({
       return;
     }
 
+    if (printCleanupTimerRef.current != null) {
+      window.clearTimeout(printCleanupTimerRef.current);
+      printCleanupTimerRef.current = null;
+    }
+
+    printJobIdRef.current += 1;
+    const jobId = printJobIdRef.current;
+
     flushSync(() => {
       setPrintJob({
+        id: jobId,
         lines: payload.lines,
         logistics: payload.logistics,
         meta: payload.meta,
@@ -676,13 +689,33 @@ export default function RahseparStagePanel({
     });
 
     document.body.classList.add('rahsepar-printing');
-    window.requestAnimationFrame(() => {
-      try {
-        window.print();
-      } finally {
-        document.body.classList.remove('rahsepar-printing');
-        setPrintJob(null);
+
+    const cleanup = () => {
+      window.removeEventListener('afterprint', cleanup);
+      if (printCleanupTimerRef.current != null) {
+        window.clearTimeout(printCleanupTimerRef.current);
+        printCleanupTimerRef.current = null;
       }
+      document.body.classList.remove('rahsepar-printing');
+      setPrintJob((current) => (current?.id === jobId ? null : current));
+    };
+
+    window.addEventListener('afterprint', cleanup);
+
+    // دو فریم + تأخیر کوتاه تا layout/paint سند چاپ کامل شود
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          try {
+            window.print();
+          } catch {
+            cleanup();
+            return;
+          }
+          // اگر afterprint شلیک نشد (بعضی WebViewها)
+          printCleanupTimerRef.current = window.setTimeout(cleanup, 1500);
+        }, 80);
+      });
     });
   };
 
@@ -1045,19 +1078,6 @@ export default function RahseparStagePanel({
                             >
                               <PencilIcon />
                             </button>
-                            {assignment?.assignmentId || dispatch?.sessionId ? (
-                              <button
-                                type="button"
-                                className="rahsepar-stage__print-btn"
-                                onClick={() => handlePrintPackingList(
-                                  assignment?.assignmentId || dispatch?.sessionId,
-                                )}
-                                aria-label="صدور صورت‌بار این راننده"
-                                title="صدور صورت‌بار"
-                              >
-                                <PrintPackingIcon />
-                              </button>
-                            ) : null}
                           </div>
                         ) : (
                           <span className="rahsepar-stage__history-muted">—</span>
