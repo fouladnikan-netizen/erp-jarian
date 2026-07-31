@@ -1,0 +1,1093 @@
+/* ═══════════════════ افق — پایپ‌لاین کانبان روی مخاطبین کانون ═══════════════════ */
+
+.ofoq-pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* —— نوار بالای بورد —— */
+.ofoq-pipeline__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ofoq-pipeline__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ofoq-pipeline__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.ofoq-pipeline__subtitle {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.ofoq-pipeline__add-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+/* —— بورد —— */
+.ofoq-pipeline__board {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  overflow-x: auto;
+  padding: 0.25rem 0.1rem 1rem;
+  scrollbar-width: thin;
+}
+
+/* —— ستون‌ها: شفاف و بدون بوردر سنگین —— */
+.ofoq-pipeline__column {
+  position: relative;
+  flex: 0 0 248px;
+  width: 248px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  background: transparent;
+}
+
+.ofoq-pipeline__column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(4px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* هاله «دمای رابطه» — نوار درخشان بالای هدر ستون */
+.ofoq-pipeline__column-head::before {
+  content: '';
+  position: absolute;
+  inset-inline: 18%;
+  top: 0;
+  height: 3px;
+  border-radius: 0 0 6px 6px;
+  background: var(--stage-color);
+  box-shadow:
+    0 0 10px 1px var(--stage-glow),
+    0 3px 14px 2px var(--stage-glow);
+}
+
+.ofoq-pipeline__column-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ofoq-pipeline__column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--stage-color);
+  background: color-mix(in srgb, var(--stage-color) 12%, white);
+}
+
+.ofoq-pipeline__column-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* —— فیلتر ستون (قیف + پاپ‌اور گلس) —— */
+.ofoq-column-filter__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ofoq-column-filter__btn:hover {
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--text-primary);
+}
+
+.ofoq-column-filter__btn.is-active {
+  color: var(--stage-color);
+  background: color-mix(in srgb, var(--stage-color) 14%, transparent);
+}
+
+.ofoq-column-filter__popover {
+  position: absolute;
+  top: 2.9rem;
+  inset-inline: 0.35rem;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 6px 16px rgba(15, 23, 42, 0.12),
+    0 18px 40px rgba(15, 23, 42, 0.14);
+  animation: ofoq-fade-in 0.15s ease;
+}
+
+.ofoq-column-filter__search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  font-size: 0.74rem;
+  color: var(--text-primary);
+}
+
+.ofoq-column-filter__search:focus {
+  outline: none;
+  border-color: var(--stage-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--stage-color) 14%, transparent);
+}
+
+.ofoq-column-filter__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ofoq-column-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.55rem;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: right;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ofoq-column-filter__option:hover {
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--text-primary);
+}
+
+.ofoq-column-filter__option.is-active {
+  background: color-mix(in srgb, var(--stage-color) 12%, transparent);
+  color: var(--text-primary);
+}
+
+.ofoq-column-filter__option-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ofoq-column-filter__option-dot--today {
+  background: #22c55e;
+}
+
+.ofoq-column-filter__option-dot--overdue {
+  background: #ef4444;
+}
+
+.ofoq-column-filter__clear {
+  align-self: flex-start;
+  padding: 0.3rem 0.55rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-brand-red-glossy);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ofoq-column-filter__clear:hover {
+  background: rgba(229, 57, 53, 0.08);
+}
+
+.ofoq-pipeline__column-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 9rem;
+  padding: 0.25rem 0.15rem 0.75rem;
+  border-radius: 14px;
+  transition: background 0.18s ease;
+}
+
+.ofoq-pipeline__column-body.is-dragging-over {
+  background: color-mix(in srgb, var(--stage-color) 7%, transparent);
+}
+
+/* —— کارت‌های شناور براق —— */
+.ofoq-lead-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 4px 10px rgba(15, 23, 42, 0.05);
+  cursor: grab;
+  user-select: none;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.ofoq-lead-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 8px rgba(15, 23, 42, 0.08),
+    0 12px 24px rgba(15, 23, 42, 0.1);
+}
+
+.ofoq-lead-card.is-dragging {
+  cursor: grabbing;
+  transform: rotate(1.5deg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 18px rgba(15, 23, 42, 0.14),
+    0 22px 44px rgba(15, 23, 42, 0.18);
+}
+
+.ofoq-lead-card__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ofoq-lead-card__name {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.ofoq-lead-card__tag {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 0.14rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: rgba(148, 163, 184, 0.14);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* —— نبض پیگیری —— */
+.ofoq-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+}
+
+.ofoq-pulse__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ofoq-pulse--overdue .ofoq-pulse__dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  animation: ofoq-pulse-beat 1.6s ease-out infinite;
+}
+
+.ofoq-pulse--today .ofoq-pulse__dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+  animation: ofoq-pulse-beat 2.2s ease-out infinite;
+}
+
+.ofoq-pulse--future .ofoq-pulse__dot {
+  background: #cbd5e1;
+}
+
+.ofoq-pulse--none .ofoq-pulse__dot {
+  background: transparent;
+  border: 1.5px dashed #cbd5e1;
+}
+
+@keyframes ofoq-pulse-beat {
+  0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  70% { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.ofoq-pulse--overdue { color: #dc2626; }
+.ofoq-pulse--today { color: #16a34a; }
+
+/* —— حالت خالی ستون —— */
+.ofoq-pipeline__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 6.5rem;
+  border: 1.5px dashed rgba(148, 163, 184, 0.5);
+  border-radius: 14px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: rgba(248, 250, 252, 0.4);
+}
+
+/* ═══════════════════ نوار فیلتر سراسری بورد (سبک نبض) ═══════════════════ */
+
+.ofoq-filterbar {
+  gap: 0.75rem;
+}
+
+.ofoq-filterbar__stage-select {
+  position: relative;
+}
+
+.ofoq-filterbar__stage-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.ofoq-filterbar__stage-trigger:hover {
+  color: var(--text-primary);
+  border-color: rgba(148, 163, 184, 0.55);
+}
+
+.ofoq-filterbar__stage-trigger.is-active {
+  color: var(--color-brand-red-glossy);
+  border-color: rgba(229, 57, 53, 0.45);
+  background: rgba(229, 57, 53, 0.06);
+}
+
+.ofoq-filterbar__stage-popover {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  inset-inline-start: 0;
+  z-index: 60;
+  min-width: 13rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.55rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 6px 16px rgba(15, 23, 42, 0.12),
+    0 18px 40px rgba(15, 23, 42, 0.14);
+  animation: ofoq-fade-in 0.15s ease;
+}
+
+.ofoq-filterbar__stage-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 9px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ofoq-filterbar__stage-option:hover {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.ofoq-filterbar__stage-option input {
+  accent-color: var(--color-brand-red-glossy);
+}
+
+.ofoq-filterbar__stage-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ofoq-filterbar__stage-clear {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0.3rem 0.55rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-brand-red-glossy);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ofoq-filterbar__stage-clear:hover {
+  background: rgba(229, 57, 53, 0.08);
+}
+
+/* ═══════════════════ مودال لید افق (Glassmorphism مرکزی) ═══════════════════ */
+
+.ofoq-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.ofoq-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: ofoq-fade-in 0.2s ease;
+}
+
+@keyframes ofoq-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* پنل مرکزی — سفید/نقره‌ای براق، گوشه نرم، سایه لطیف */
+.ofoq-modal__panel {
+  position: relative;
+  width: min(896px, 96vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(190deg, rgba(255, 255, 255, 0.95) 0%, rgba(246, 248, 251, 0.92) 100%);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 8px 24px rgba(15, 23, 42, 0.12),
+    0 28px 80px rgba(15, 23, 42, 0.22);
+  animation: ofoq-modal-pop 0.24s cubic-bezier(0.32, 0.72, 0.25, 1);
+}
+
+@keyframes ofoq-modal-pop {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* —— هدر مودال —— */
+.ofoq-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.35rem 0.95rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.ofoq-modal__identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.ofoq-modal__name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.ofoq-modal__company {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.ofoq-modal__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.ofoq-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: none;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ofoq-modal__close:hover {
+  background: rgba(148, 163, 184, 0.22);
+  color: var(--text-primary);
+}
+
+.ofoq-modal__stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--stage-color);
+  background: color-mix(in srgb, var(--stage-color) 11%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--stage-color) 28%, transparent);
+}
+
+.ofoq-modal__stage-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--stage-color);
+  box-shadow: 0 0 6px 1px var(--stage-glow);
+}
+
+.ofoq-modal__proforma-btn {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* —— گرید ۱۲ ستونه: سایدبار (۴) راست + اکشن/تایم‌لاین (۸) چپ —— */
+.ofoq-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* سایدبار فرزند اول است؛ در RTL یعنی ستون راست */
+.ofoq-modal__sidebar {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  padding: 1.15rem 1.35rem 1.35rem;
+  border-inline-start: 1px solid rgba(148, 163, 184, 0.16);
+  overflow-y: auto;
+  background: rgba(248, 250, 252, 0.55);
+}
+
+.ofoq-modal__main {
+  grid-column: span 8;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.15rem 1.35rem 1.35rem;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.ofoq-modal__sidebar-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ofoq-modal__info-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ofoq-modal__info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0.1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.ofoq-modal__info-row dt {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ofoq-modal__info-row dd {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* —— دمای رابطه —— */
+.ofoq-temperature {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.ofoq-temperature__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ofoq-temperature__title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ofoq-temperature__value {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.ofoq-temperature--hot .ofoq-temperature__value { color: #dc2626; }
+.ofoq-temperature--warm .ofoq-temperature__value { color: #d97706; }
+.ofoq-temperature--cold .ofoq-temperature__value { color: #0284c7; }
+
+.ofoq-temperature__bars {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.ofoq-temperature__bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  transition: background 0.2s ease;
+}
+
+.ofoq-temperature--hot .ofoq-temperature__bar.is-on { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.45); }
+.ofoq-temperature--warm .ofoq-temperature__bar.is-on { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+.ofoq-temperature--cold .ofoq-temperature__bar.is-on { background: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+
+.ofoq-modal__kanoon-link {
+  margin-top: auto;
+  align-self: flex-start;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-accent-dark);
+  text-decoration: none;
+}
+
+.ofoq-modal__kanoon-link:hover {
+  text-decoration: underline;
+}
+
+/* —— باکس اقدام: تب یادداشت / تماس / وظیفه —— */
+.ofoq-modal__action-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 3px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.ofoq-modal__action-tabs {
+  display: flex;
+  gap: 0.2rem;
+  padding: 0.55rem 0.75rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.ofoq-modal__action-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem 0.55rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.ofoq-modal__action-tab:hover {
+  color: var(--text-primary);
+}
+
+.ofoq-modal__action-tab.is-active {
+  color: var(--color-brand-red-glossy);
+  border-bottom-color: var(--color-brand-red-glossy);
+}
+
+.ofoq-modal__action-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem;
+}
+
+.ofoq-modal__note-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 4.2rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ofoq-modal__note-input:focus {
+  outline: none;
+  border-color: var(--color-brand-red-glossy);
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
+}
+
+.ofoq-modal__action-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.ofoq-modal__date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ofoq-modal__date-field input {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.76rem;
+  color: var(--text-primary);
+  direction: ltr;
+}
+
+.ofoq-modal__date-field input:focus {
+  outline: none;
+  border-color: var(--color-brand-red-glossy);
+}
+
+.ofoq-modal__submit {
+  font-size: 0.78rem;
+}
+
+.ofoq-modal__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .ofoq-modal__sidebar,
+  .ofoq-modal__main {
+    grid-column: span 12;
+  }
+
+  .ofoq-modal__sidebar {
+    border-inline-start: none;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+  }
+}
+
+/* —— تایم‌لاین عمودی —— */
+.ofoq-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.35rem 0 0;
+  position: relative;
+}
+
+.ofoq-timeline__item {
+  position: relative;
+  padding-inline-start: 0;
+  padding-inline-end: 1.35rem;
+  padding-bottom: 1.05rem;
+}
+
+/* خط اتصال — سمت راست (RTL) */
+.ofoq-timeline__item::before {
+  content: '';
+  position: absolute;
+  inset-inline-end: 0.34rem;
+  top: 1rem;
+  bottom: -0.1rem;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.45), rgba(148, 163, 184, 0.12));
+}
+
+.ofoq-timeline__item:last-child::before {
+  display: none;
+}
+
+.ofoq-timeline__dot {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 0.3rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 3px var(--color-brand-red-glossy),
+    0 0 0 3px rgba(229, 57, 53, 0.14);
+}
+
+.ofoq-timeline__item:not(:first-child) .ofoq-timeline__dot {
+  box-shadow:
+    inset 0 0 0 3px #cbd5e1,
+    0 0 0 3px rgba(148, 163, 184, 0.12);
+}
+
+.ofoq-timeline__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ofoq-timeline__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.ofoq-timeline__date {
+  font-weight: 700;
+}
+
+.ofoq-timeline__operator::before {
+  content: '·';
+  margin-inline-end: 0.55rem;
+}
+
+.ofoq-timeline__note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.75;
+  color: var(--text-primary);
+}
+
+.ofoq-timeline__follow-up {
+  align-self: flex-start;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #0d9488;
+  background: rgba(13, 148, 136, 0.09);
+}
+
+/* —— چیپ نوع تعامل در تایم‌لاین —— */
+.ofoq-timeline__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.ofoq-timeline__type--note {
+  color: #475569;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.ofoq-timeline__type--call {
+  color: #0369a1;
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.ofoq-timeline__type--task {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.ofoq-timeline__type--system {
+  color: #6d28d9;
+  background: rgba(139, 92, 246, 0.13);
+}
+
+.ofoq-timeline__type--other {
+  color: #475569;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.ofoq-modal__timeline-empty {
+  margin: 0;
+  padding: 1.25rem 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* —— حالت شب مودال و نوار فیلتر —— */
+html[data-theme='dark'] .ofoq-modal__backdrop {
+  background: rgba(2, 6, 16, 0.45);
+}
+
+html[data-theme='dark'] .ofoq-modal__panel {
+  background: linear-gradient(190deg, rgba(22, 31, 48, 0.94) 0%, rgba(15, 23, 42, 0.9) 100%);
+}
+
+html[data-theme='dark'] .ofoq-modal__sidebar {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+html[data-theme='dark'] .ofoq-modal__action-box,
+html[data-theme='dark'] .ofoq-temperature {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+html[data-theme='dark'] .ofoq-modal__note-input,
+html[data-theme='dark'] .ofoq-modal__date-field input {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: var(--text-primary);
+}
+
+html[data-theme='dark'] .ofoq-modal__stage-badge {
+  background: color-mix(in srgb, var(--stage-color) 16%, #0f172a);
+}
+
+html[data-theme='dark'] .ofoq-filterbar__stage-trigger {
+  background: rgba(30, 41, 59, 0.7);
+}
+
+html[data-theme='dark'] .ofoq-filterbar__stage-popover {
+  background: rgba(24, 34, 52, 0.88);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 6px 16px rgba(0, 0, 0, 0.35),
+    0 18px 40px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme='dark'] .ofoq-column-filter__popover {
+  background: rgba(24, 34, 52, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 6px 16px rgba(0, 0, 0, 0.35),
+    0 18px 40px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme='dark'] .ofoq-column-filter__search {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: var(--text-primary);
+}
+
+/* —— حالت شب —— */
+html[data-theme='dark'] .ofoq-pipeline__column-head {
+  background: rgba(30, 41, 59, 0.72);
+}
+
+html[data-theme='dark'] .ofoq-lead-card {
+  background: linear-gradient(180deg, #1e293b 0%, #182234 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme='dark'] .ofoq-pipeline__empty {
+  background: rgba(30, 41, 59, 0.3);
+}
+
+@media (max-width: 640px) {
+  .ofoq-pipeline__column {
+    flex-basis: 220px;
+    width: 220px;
+  }
+}
