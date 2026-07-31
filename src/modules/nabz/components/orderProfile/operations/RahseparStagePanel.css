@@ -405,6 +405,56 @@
   color: #0f766e;
 }
 
+.rahsepar-stage__print-btn {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #E53935;
+  cursor: pointer;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.rahsepar-stage__print-btn:hover {
+  border-color: #E53935;
+  background: rgba(229, 57, 53, 0.08);
+  color: #c62828;
+}
+
+.rahsepar-stage__history-detail--action {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-start;
+  padding-top: 0.25rem;
+}
+
+.rahsepar-stage__sooratbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #B8BFCA;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #E53935;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.rahsepar-stage__sooratbar-btn:hover {
+  border-color: #E53935;
+  background: rgba(229, 57, 53, 0.06);
+}
+
 .rahsepar-stage__table tbody tr.is-dispatched.is-editing-scale {
   opacity: 1;
   color: inherit;

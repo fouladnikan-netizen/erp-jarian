@@ -4,6 +4,7 @@ import { isOrderQcComplete } from '../../../qcInspectionConfig';
 import { getOrderOperationalPhase } from '../../../phase2Service';
 import {
   assignDriverToItems,
+  buildSooratBarPayloadForAssignment,
   confirmItemsReady,
   finalizeRahseparOrder,
   getAllLoadItems,
@@ -12,6 +13,7 @@ import {
   registerItemScaleWeight,
   updateItemScaleWeight,
 } from '../../../rahseparLoadingService';
+import PrintableSooratBar from './PrintableSooratBar';
 import './RahseparStagePanel.css';
 
 export function computeIsQcComplete(order) {
@@ -132,6 +134,28 @@ function PencilIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function PrintPackingIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 9V3h12v6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <rect x="6" y="14" width="12" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
     </svg>
   );
 }
@@ -379,8 +403,10 @@ export default function RahseparStagePanel({
   const [editingScaleIds, setEditingScaleIds] = useState(() => new Set());
   const [assignOpen, setAssignOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const [printJob, setPrintJob] = useState(null);
   const toastTimerRef = useRef(null);
   const notifiedDeliveryKeyRef = useRef('');
+  const printPendingRef = useRef(false);
 
   const selectedCount = selectedIds.length;
   const canAssign = selectedCount > 0;
@@ -629,6 +655,45 @@ export default function RahseparStagePanel({
     onUpdateOrder?.(() => result.order);
     onOperationalPhaseChange?.(getOrderOperationalPhase(result.order));
   };
+
+  /**
+   * صدور صورت‌بار فقط برای اقلام همان تخصیص راننده (نه کل سفارش).
+   */
+  const handlePrintPackingList = (assignmentId) => {
+    const payload = buildSooratBarPayloadForAssignment(order, assignmentId);
+    if (!payload.accepted) {
+      showToast(payload.reason || 'امکان صدور صورت‌بار وجود ندارد.');
+      return;
+    }
+    printPendingRef.current = true;
+    setPrintJob({
+      lines: payload.lines,
+      logistics: payload.logistics,
+      meta: payload.meta,
+    });
+  };
+
+  useEffect(() => {
+    if (!printJob || !printPendingRef.current) return undefined;
+    printPendingRef.current = false;
+
+    const previousTitle = document.title;
+    document.body.classList.add('rahsepar-printing');
+    const timer = window.setTimeout(() => {
+      try {
+        window.print();
+      } finally {
+        document.body.classList.remove('rahsepar-printing');
+        document.title = previousTitle;
+        setPrintJob(null);
+      }
+    }, 80);
+
+    return () => {
+      window.clearTimeout(timer);
+      document.body.classList.remove('rahsepar-printing');
+    };
+  }, [printJob]);
 
   return (
     <section className={`rahsepar-stage font-meem${compact ? ' rahsepar-stage--compact' : ''}${readOnly ? ' is-readonly' : ''}`}>
@@ -989,6 +1054,19 @@ export default function RahseparStagePanel({
                             >
                               <PencilIcon />
                             </button>
+                            {assignment?.assignmentId || dispatch?.sessionId ? (
+                              <button
+                                type="button"
+                                className="rahsepar-stage__print-btn"
+                                onClick={() => handlePrintPackingList(
+                                  assignment?.assignmentId || dispatch?.sessionId,
+                                )}
+                                aria-label="صدور صورت‌بار این راننده"
+                                title="صدور صورت‌بار"
+                              >
+                                <PrintPackingIcon />
+                              </button>
+                            ) : null}
                           </div>
                         ) : (
                           <span className="rahsepar-stage__history-muted">—</span>
@@ -1033,6 +1111,20 @@ export default function RahseparStagePanel({
                                 {formatFaNumber(assignment?.freightFare)}
                               </strong>
                             </div>
+                            {(assignment?.assignmentId || dispatch?.sessionId) ? (
+                              <div className="rahsepar-stage__history-detail--action">
+                                <button
+                                  type="button"
+                                  className="rahsepar-stage__sooratbar-btn"
+                                  onClick={() => handlePrintPackingList(
+                                    assignment?.assignmentId || dispatch?.sessionId,
+                                  )}
+                                >
+                                  <PrintPackingIcon />
+                                  صدور صورت‌بار
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -1052,6 +1144,15 @@ export default function RahseparStagePanel({
         onConfirm={handleAssignConfirm}
         onSendSms={handleAssignSms}
       />
+
+      {printJob ? (
+        <PrintableSooratBar
+          order={order}
+          lines={printJob.lines}
+          logistics={printJob.logistics}
+          meta={printJob.meta}
+        />
+      ) : null}
 
       {toast ? (
         <div className="rahsepar-stage__toast" role="status">

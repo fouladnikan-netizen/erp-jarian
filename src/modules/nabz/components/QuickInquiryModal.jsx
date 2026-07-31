@@ -139,12 +139,11 @@ function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
   const suppliers = listSuppliers();
 
   return (
-    <div className="nabz-inline-inquiry nabz-inline-inquiry--labeled">
+    <div className="nabz-inline-inquiry nabz-inline-inquiry--labeled nabz-inline-inquiry--with-notes">
       <div className="nabz-inline-inquiry__labels" aria-hidden="true">
         <span>نوع تامین</span>
         <span>{showSupplier ? 'نام تامین‌کننده' : 'مرجع تامین'}</span>
         <span>قیمت</span>
-        <span>توضیحات</span>
         <span />
       </div>
       <div className="nabz-inline-inquiry__fields">
@@ -178,14 +177,6 @@ function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
           placeholder="قیمت"
           aria-label="قیمت"
         />
-        <input
-          type="text"
-          className="nabz-inline-inquiry__input nabz-inline-inquiry__input--notes"
-          value={draft.notes || ''}
-          onChange={(e) => onChange({ ...draft, notes: e.target.value })}
-          placeholder="اختیاری"
-          aria-label="توضیحات استعلام"
-        />
         <div className="nabz-inline-inquiry__actions">
           <button type="button" className="nabz-inline-inquiry__save" onClick={onSave} aria-label="ذخیره استعلام">
             <TickIcon />
@@ -195,6 +186,17 @@ function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
           </button>
         </div>
       </div>
+      <label className="nabz-inline-inquiry__notes-field">
+        <span>توضیحات استعلام</span>
+        <textarea
+          className="nabz-inline-inquiry__textarea"
+          rows={3}
+          value={draft.notes || ''}
+          onChange={(e) => onChange({ ...draft, notes: e.target.value })}
+          placeholder="یادداشت آزاد هنگام ثبت استعلام…"
+          aria-label="توضیحات استعلام"
+        />
+      </label>
     </div>
   );
 }

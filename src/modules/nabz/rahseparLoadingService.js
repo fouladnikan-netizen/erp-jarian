@@ -246,6 +246,77 @@ export function getLoadingSessions(order) {
 }
 
 /**
+ * اقلام ارسال‌شدهٔ متعلق به یک تخصیص راننده (برای صورت‌بار همان محموله).
+ * فقط اقلام همان assignmentId برگردانده می‌شوند — نه کل سفارش.
+ */
+export function getDispatchedItemsForAssignment(order, assignmentId) {
+  const key = String(assignmentId || '').trim();
+  if (!key) return [];
+  return getAllLoadItems(order).filter(
+    (item) => (
+      item.status === LOAD_ITEM_STATUS.DISPATCHED
+      && String(item.assignment?.assignmentId || item.dispatch?.sessionId || '') === key
+    ),
+  );
+}
+
+/**
+ * شمارهٔ نوبت (tripIndex) برای سریال صورت‌بار — بر اساس ترتیب زمانی تخصیص‌ها.
+ */
+export function getAssignmentTripIndex(order, assignmentId) {
+  const key = String(assignmentId || '').trim();
+  if (!key) return 1;
+  const seen = [];
+  getAllLoadItems(order).forEach((item) => {
+    const id = String(item.assignment?.assignmentId || item.dispatch?.sessionId || '').trim();
+    if (!id || item.status !== LOAD_ITEM_STATUS.DISPATCHED) return;
+    if (!seen.includes(id)) seen.push(id);
+  });
+  const index = seen.indexOf(key);
+  return index >= 0 ? index + 1 : seen.length + 1;
+}
+
+/**
+ * Payload آماده‌ی چاپ صورت‌بار برای یک تخصیص راننده.
+ * lines فقط شامل اقلام همان راننده/کامیون است.
+ */
+export function buildSooratBarPayloadForAssignment(order, assignmentId) {
+  const items = getDispatchedItemsForAssignment(order, assignmentId);
+  if (!items.length) {
+    return { accepted: false, reason: 'برای این تخصیص قلم ارسال‌شده‌ای یافت نشد.' };
+  }
+
+  const sample = items[0]?.assignment || {};
+  const tripIndex = getAssignmentTripIndex(order, assignmentId);
+
+  return {
+    accepted: true,
+    lines: items.map((item) => ({
+      id: item.id,
+      name: item.name || '—',
+      notes: item.description || '',
+      unit: item.unit || 'کیلوگرم',
+      scaleWeight: item.scaleWeight,
+      qty: item.qty,
+    })),
+    logistics: {
+      driverName: sample.driverName || items[0]?.dispatch?.driverName || '—',
+      licensePlate: sample.licensePlate || items[0]?.dispatch?.licensePlate || '—',
+      phone: sample.phone || items[0]?.dispatch?.phone || '—',
+      carrierName: '—',
+      nationalId: sample.nationalId || '',
+      freightFare: sample.freightFare ?? null,
+    },
+    meta: {
+      tripIndex,
+      assignmentId: String(assignmentId),
+      date: sample.dispatchedAt?.split?.(' · ')?.[0] || undefined,
+      time: sample.dispatchedAt?.split?.(' · ')?.[1] || undefined,
+    },
+  };
+}
+
+/**
  * کاشف — تأیید آمادگی پس از رسیدن زمان تحویل بار (preparing → ready)
  */
 export function confirmItemsReady(order, selectedItemIds = []) {

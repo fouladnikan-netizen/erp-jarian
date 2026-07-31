@@ -1462,6 +1462,33 @@ html[data-theme='dark'] .nabz-excel-filter {
   font-family: inherit;
   resize: vertical;
   min-height: 3.5rem;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.nabz-inquiry-form__field--notes {
+  order: 20;
+  margin-top: 0.15rem;
+}
+
+.nabz-inquiry-form__textarea--notes {
+  min-height: 4.5rem;
+  border-color: #B8BFCA;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.nabz-inquiry-form__textarea:focus,
+.nabz-inquiry-form__textarea--notes:focus {
+  outline: none;
+  border-color: #E53935;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 0 3px rgba(229, 57, 53, 0.18);
+}
+
+.nabz-inquiry-form__actions {
+  order: 30;
 }
 
 /* Order detail tabs */
@@ -2303,6 +2330,11 @@ html[data-theme='dark'] .nabz-excel-filter {
   align-items: center;
 }
 
+.nabz-inline-inquiry--with-notes .nabz-inline-inquiry__labels,
+.nabz-inline-inquiry--with-notes .nabz-inline-inquiry__fields {
+  grid-template-columns: minmax(5.5rem, 1fr) minmax(7rem, 1.4fr) minmax(5rem, 0.9fr) auto;
+}
+
 .nabz-inline-inquiry__labels {
   font-size: 0.68rem;
   font-weight: 600;
@@ -2358,6 +2390,42 @@ html[data-theme='dark'] .nabz-excel-filter {
 
 .nabz-inline-inquiry__input--notes {
   min-width: 0;
+}
+
+.nabz-inline-inquiry__notes-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.nabz-inline-inquiry__notes-field > span {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.nabz-inline-inquiry__textarea {
+  width: 100%;
+  min-height: 4.25rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #B8BFCA;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  resize: vertical;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.nabz-inline-inquiry__textarea:focus {
+  outline: none;
+  border-color: #E53935;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 0 3px rgba(229, 57, 53, 0.18);
 }
 
 .nabz-quick-table__margin-input {
