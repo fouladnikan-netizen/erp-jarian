@@ -1,48 +1,50 @@
 import { LIFECYCLE_STAGES } from '../../stores/useContactsStore';
 
 /**
- * متادیتای ۷ ستون پایپ‌لاین افق — رنگ «دمای رابطه» برای هاله بالای هر ستون.
+ * متادیتای ۷ ستون پایپ‌لاین افق — واژگان رسمی «جریان» (Jarian Lexicon).
+ * کلیدهای store (LIFECYCLE_STAGES) ثابت می‌مانند؛ فقط برچسب نمایشی فارسی است.
+ * رنگ «دمای رابطه» برای هاله بالای هر ستون.
  */
 export const PIPELINE_STAGES = [
   {
     id: LIFECYCLE_STAGES.COLD_LEAD,
-    label: 'جدید / سرد',
+    label: 'نوپدید',
     color: '#38bdf8',
     glow: 'rgba(56, 189, 248, 0.45)',
   },
   {
     id: LIFECYCLE_STAGES.PITCHED,
-    label: 'ارائه‌شده',
+    label: 'دیدار',
     color: '#818cf8',
     glow: 'rgba(129, 140, 248, 0.45)',
   },
   {
     id: LIFECYCLE_STAGES.NURTURING,
-    label: 'در حال پرورش',
+    label: 'رویش',
     color: '#fb923c',
     glow: 'rgba(251, 146, 60, 0.55)',
   },
   {
     id: LIFECYCLE_STAGES.SALES_QUALIFIED,
-    label: 'آماده فروش',
+    label: 'آستانه',
     color: '#0d9488',
     glow: 'rgba(13, 148, 136, 0.45)',
   },
   {
     id: LIFECYCLE_STAGES.FIRST_TIME_BUYER,
-    label: 'خریدار جدید',
+    label: 'نوپیمان',
     color: '#22c55e',
     glow: 'rgba(34, 197, 94, 0.45)',
   },
   {
     id: LIFECYCLE_STAGES.LOYAL,
-    label: 'وفادار',
+    label: 'هم‌پیمان',
     color: '#f59e0b',
     glow: 'rgba(245, 158, 11, 0.55)',
   },
   {
     id: LIFECYCLE_STAGES.ARCHIVED,
-    label: 'بایگانی',
+    label: 'سایه',
     color: '#94a3b8',
     glow: 'rgba(148, 163, 184, 0.35)',
   },

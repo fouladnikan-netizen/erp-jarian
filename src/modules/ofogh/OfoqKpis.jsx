@@ -40,7 +40,7 @@ export default function OfoqKpis() {
     {
       label: 'سرنخ‌های فعال',
       value: kpis.total.toLocaleString('fa-IR'),
-      hint: 'خارج از بایگانی',
+      hint: 'خارج از سایه',
       accent: 'var(--color-accent-dark)',
     },
     {
@@ -50,7 +50,7 @@ export default function OfoqKpis() {
       accent: '#E53935',
     },
     {
-      label: 'آماده فروش (آستانه)',
+      label: 'آستانه',
       value: kpis.salesQualified.toLocaleString('fa-IR'),
       hint: 'در انتظار صدور پیش‌کش',
       accent: SQ_STAGE_COLOR,

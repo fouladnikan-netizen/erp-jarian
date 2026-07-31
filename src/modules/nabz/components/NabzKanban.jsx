@@ -107,11 +107,13 @@ export default function NabzKanban({
       <div className="nabz-kanban-board">
         {stages.map((stage) => {
           const columnOrders = ordersByStage.get(stage.id) || [];
+          const stageAccent = (STAGE_TINTS[stage.id] || STAGE_TINTS[1]).accent;
 
           return (
             <div
               key={stage.id}
               className={`nabz-kanban-col${dragOverStageId === stage.id ? ' is-drag-over' : ''}${rejectStageId === stage.id ? ' is-reject' : ''}`}
+              style={{ '--stage-color': stageAccent }}
               onDragOver={(event) => handleDragOver(event, stage.id)}
               onDragLeave={() => setDragOverStageId((current) => (current === stage.id ? null : current))}
               onDrop={(event) => handleDrop(event, stage.id)}
@@ -123,6 +125,11 @@ export default function NabzKanban({
                 </span>
               </header>
               <ul className="nabz-kanban-col__cards">
+                {columnOrders.length === 0 && (
+                  <li className="nabz-kanban-col__empty-state" aria-hidden="true">
+                    سفارش را اینجا رها کنید
+                  </li>
+                )}
                 {columnOrders.map((order) => {
                   const tint = STAGE_TINTS[getEffectiveStageId(order)] || STAGE_TINTS[1];
                   const statusKind = getOrderDisplayStatusKind(order);

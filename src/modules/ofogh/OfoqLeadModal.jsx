@@ -1,8 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContactsStore, LIFECYCLE_STAGES } from '../../stores/useContactsStore';
 import { useNabzOrders } from '../nabz/NabzOrdersContext';
 import { showSystemToast } from '../../utils/systemToast';
+import JalaliDatePicker from '../nabz/components/JalaliDatePicker';
+import {
+  compareJalaliDates,
+  getTodayJalali,
+  isValidJalaliDate,
+  jalaliToGregorian,
+  parseJalaliDate,
+} from '../nabz/dateUtils';
 import { PIPELINE_STAGES, getContactDisplayName, getContactTag } from './pipelineConfig';
 
 function CloseIcon() {
@@ -58,6 +66,15 @@ function MeetingIcon() {
   );
 }
 
+function CatalogIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  );
+}
+
 function SparklesIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -73,6 +90,7 @@ const ACTIVITY_TYPES = [
   { id: 'call', label: 'تماس', Icon: PhoneIcon, placeholder: 'گزارش تماس… (نتیجه مکالمه، درخواست مشتری)' },
   { id: 'message', label: 'پیام/ایمیل', Icon: MailIcon, placeholder: 'خلاصه پیام یا ایمیل… (موضوع، پاسخ مشتری)' },
   { id: 'meeting', label: 'جلسه حضوری', Icon: MeetingIcon, placeholder: 'صورتجلسه… (حاضرین، توافق‌ها، اقدام بعدی)' },
+  { id: 'catalog', label: 'ارسال کاتالوگ', Icon: CatalogIcon, placeholder: 'جزئیات ارسال کاتالوگ… (نسخه، کانال ارسال، بازخورد)' },
   { id: 'note', label: 'یادداشت داخلی', Icon: NoteIcon, placeholder: 'یادداشت داخلی… (نکته مهم، جمع‌بندی، هشدار)' },
 ];
 
@@ -90,6 +108,7 @@ const INTERACTION_TYPE_META = {
   call: { label: 'تماس', Icon: PhoneIcon },
   message: { label: 'پیام/ایمیل', Icon: MailIcon },
   meeting: { label: 'جلسه حضوری', Icon: MeetingIcon },
+  catalog: { label: 'ارسال کاتالوگ', Icon: CatalogIcon },
   task: { label: 'وظیفه', Icon: TaskIcon },
   system: { label: 'سیستم', Icon: SystemIcon },
 };
@@ -102,6 +121,7 @@ const AI_REWRITE_PREFIX = {
   call: 'طی تماس تلفنی با مشتری',
   message: 'در مکاتبه انجام‌شده با مشتری',
   meeting: 'در جلسه حضوری با مشتری',
+  catalog: 'در پی ارسال کاتالوگ محصولات برای مشتری',
   note: 'بر اساس بررسی داخلی',
 };
 
@@ -181,8 +201,29 @@ function LeadTemperature({ stageId }) {
 }
 
 function SidebarInfo({ contact }) {
+  /** مخاطب اصلی + اشخاص مرتبط کانون — انتخاب شخص، اطلاعات تماس را عوض می‌کند. */
+  const persons = useMemo(() => {
+    const main = {
+      id: 'main',
+      name: getContactDisplayName(contact),
+      role: 'مخاطب اصلی',
+      mobile: contact.mobile,
+    };
+    const related = (contact.relatedPersons || []).map((person, index) => ({
+      id: `person-${index}`,
+      name: person.name,
+      role: person.role || 'شخص مرتبط',
+      mobile: person.mobile,
+    }));
+    return [main, ...related];
+  }, [contact]);
+
+  const [personId, setPersonId] = useState('main');
+  useEffect(() => setPersonId('main'), [contact.id]);
+  const person = persons.find((item) => item.id === personId) || persons[0];
+
   const rows = [
-    { label: 'موبایل', value: contact.mobile || contact.relatedPersons?.[0]?.mobile, ltr: true },
+    { label: 'موبایل', value: person.mobile, ltr: true },
     { label: 'تلفن ثابت', value: contact.officialSpecs?.phone, ltr: true },
     { label: 'ایمیل', value: contact.email, ltr: true },
   ];
@@ -190,6 +231,27 @@ function SidebarInfo({ contact }) {
   return (
     <aside className="ofoq-modal__sidebar">
       <h3 className="ofoq-modal__sidebar-title">اطلاعات تماس</h3>
+
+      <label className="ofoq-modal__person-field">
+        <span>شخص مرتبط</span>
+        <select
+          className="ofoq-modal__person-select"
+          value={personId}
+          onChange={(event) => setPersonId(event.target.value)}
+        >
+          {persons.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="ofoq-modal__person-chip">
+        <strong>{person.name}</strong>
+        <span>{person.role}</span>
+      </div>
+
       <dl className="ofoq-modal__info-list">
         {rows.map((row) => (
           <div key={row.label} className="ofoq-modal__info-row">
@@ -220,17 +282,24 @@ function ActionForm({ contactId }) {
 
   const typeMeta = ACTIVITY_TYPES.find((item) => item.id === activityType);
 
+  // اعتبارسنجی: متن الزامی + تاریخ پیگیری شمسی الزامی و حتماً در آینده
+  const trimmedNote = note.trim();
+  const hasValidDate = isValidJalaliDate(followUpDate);
+  const isFutureDate = hasValidDate && compareJalaliDates(followUpDate, getTodayJalali()) > 0;
+  const canSubmit = Boolean(trimmedNote) && isFutureDate && !aiBusy;
+
   const handleSubmit = (event) => {
     event.preventDefault();
-    const trimmed = note.trim();
-    if (!trimmed || aiBusy) return;
-    const iso = followUpDate ? new Date(`${followUpDate}T09:00:00`).toISOString() : null;
-    addInteraction(contactId, trimmed, iso, activityType);
+    if (!canSubmit) return;
+    const { year, month, day } = parseJalaliDate(followUpDate);
+    const g = jalaliToGregorian(year, month, day);
+    const iso = new Date(g.year, g.month - 1, g.day, 9, 0, 0).toISOString();
+    addInteraction(contactId, trimmedNote, iso, activityType);
     setNote('');
     setFollowUpDate('');
   };
 
-  /** شبیه‌سازی فراخوانی DeepSeek — دو ثانیه لودینگ، سپس جایگزینی متن رسمی‌شده. */
+  /** شبیه‌سازی فراخوانی DeepSeek — دو ثانیه لودینگ گلس، سپس جایگزینی متن رسمی‌شده. */
   const handleAiRewrite = () => {
     if (!note.trim() || aiBusy) return;
     setAiBusy(true);
@@ -251,6 +320,7 @@ function ActionForm({ contactId }) {
             aria-selected={activityType === id}
             className={`ofoq-modal__action-tab${activityType === id ? ' is-active' : ''}`}
             onClick={() => setActivityType(id)}
+            disabled={aiBusy}
           >
             <Icon />
             {label}
@@ -259,7 +329,7 @@ function ActionForm({ contactId }) {
       </div>
 
       <form className="ofoq-modal__action-form" onSubmit={handleSubmit}>
-        <div className="ofoq-ai-wrap">
+        <div className={`ofoq-ai-wrap${aiBusy ? ' is-busy' : ''}`} aria-busy={aiBusy}>
           <textarea
             className="ofoq-modal__note-input"
             rows={3}
@@ -286,18 +356,24 @@ function ActionForm({ contactId }) {
           ) : null}
         </div>
         <div className="ofoq-modal__action-row">
-          <label className="ofoq-modal__date-field">
-            <span>پیگیری بعدی</span>
-            <input
-              type="date"
+          <div className="ofoq-modal__date-field">
+            <JalaliDatePicker
+              label="پیگیری بعدی (شمسی)"
               value={followUpDate}
-              onChange={(event) => setFollowUpDate(event.target.value)}
+              onChange={setFollowUpDate}
+              placeholder="انتخاب تاریخ"
+              disabled={aiBusy}
             />
-          </label>
-          <button type="submit" className="btn btn--primary ofoq-modal__submit" disabled={!note.trim() || aiBusy}>
-            ثبت {typeMeta.label}
+          </div>
+          <button type="submit" className="btn btn--primary ofoq-modal__submit" disabled={!canSubmit}>
+            ثبت پویش
           </button>
         </div>
+        {hasValidDate && !isFutureDate ? (
+          <p className="ofoq-modal__date-hint" role="alert">
+            تاریخ پیگیری باید بعد از امروز باشد.
+          </p>
+        ) : null}
       </form>
     </div>
   );
@@ -373,7 +449,7 @@ export default function OfoqLeadModal({ contactId, onClose }) {
       // ۱) مخاطب برای فرم ثبت سفارش نبض آماده می‌شود (مشتری پیش‌پرشده)
       await Promise.resolve(createOrderDirect(contact.id));
 
-      // ۲) کارت لید به ستون «آماده فروش» پایپ‌لاین منتقل می‌شود
+      // ۲) کارت لید به ستون «آستانه» پایپ‌لاین منتقل می‌شود
       updateContactStage(contact.id, LIFECYCLE_STAGES.SALES_QUALIFIED);
 
       // ۳) رد ممیزی در تایم‌لاین مخاطب
@@ -416,7 +492,7 @@ export default function OfoqLeadModal({ contactId, onClose }) {
               onClick={handleCreateProforma}
               disabled={converting}
             >
-              {converting ? 'در حال انتقال به نبض…' : 'صدور پیش‌کش (انتقال به نبض)'}
+              {converting ? 'در حال انتقال به نبض…' : 'ثبت سفارش'}
             </button>
             <button type="button" className="ofoq-modal__close" onClick={onClose} aria-label="بستن">
               <CloseIcon />
