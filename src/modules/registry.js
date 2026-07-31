@@ -8,7 +8,7 @@ export const mainModules = [
     path: '/nabz',
     name: 'نبض',
     subtitle: 'سفارشات',
-    description: 'قلب تپنده عملیات؛ مدیریت جریان ده‌مرحله‌ای سفارش از اعلام تا سرانجام',
+    description: 'قلب تپنده عملیات؛ مدیریت جریان سفارش از اعلام تا سرانجام',
   },
   {
     id: 'ofogh',
