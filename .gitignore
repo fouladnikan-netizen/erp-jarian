@@ -12,6 +12,7 @@ out/
 .env
 .env.*
 !.env.example
+Assets/API/
 
 # System files
 .DS_Store

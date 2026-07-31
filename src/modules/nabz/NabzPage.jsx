@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { computeNabzKpis, filterOrders, filterKanbanOrders } from './kpi';
 import {
   ORDER_TABS,
@@ -33,16 +33,41 @@ import QuickInquiryModal from './components/QuickInquiryModal';
 import './nabz.css';
 
 export default function NabzPage() {
-  const { orders, setOrders } = useNabzOrders();
+  const {
+    orders, setOrders, orderDraft, clearOrderDraft,
+  } = useNabzOrders();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isNewOrderRoute = location.pathname === '/nabz/new-order';
   const [activeTab, setActiveTab] = useState(ORDER_TABS.CURRENT);
   const [viewMode, setViewMode] = useState(VIEW_MODES.LIST);
   const [search, setSearch] = useState('');
   const [profileOrder, setProfileOrder] = useState(null);
   const [previewCustomerId, setPreviewCustomerId] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [draftCustomerId, setDraftCustomerId] = useState(null);
   const [inquiryModalOrderId, setInquiryModalOrderId] = useState(null);
   const [stageRejectMessage, setStageRejectMessage] = useState('');
+
+  // ورود مستقیم به فرم ثبت سفارش (مسیر /nabz/new-order)
+  useEffect(() => {
+    if (isNewOrderRoute) setCreateOpen(true);
+  }, [isNewOrderRoute]);
+
+  // پل طلایی: مصرف پیش‌نویس ارجاع‌شده از افق — فرم با مشتری پیش‌پرشده باز می‌شود
+  useEffect(() => {
+    if (!orderDraft) return;
+    setDraftCustomerId(orderDraft.contactId);
+    setCreateOpen(true);
+    clearOrderDraft();
+  }, [orderDraft, clearOrderDraft]);
+
+  const closeCreateDrawer = () => {
+    setCreateOpen(false);
+    setDraftCustomerId(null);
+    if (isNewOrderRoute) navigate('/nabz', { replace: true });
+  };
 
   const kpis = useMemo(() => computeNabzKpis(orders), [orders]);
 
@@ -226,7 +251,8 @@ export default function NabzPage() {
       {createOpen && (
         <CreateOrderDrawer
           orders={orders}
-          onClose={() => setCreateOpen(false)}
+          initialCustomerId={draftCustomerId}
+          onClose={closeCreateDrawer}
           onSubmit={(order) => {
             setOrders((prev) => [order, ...prev]);
             setActiveTab(ORDER_TABS.CURRENT);

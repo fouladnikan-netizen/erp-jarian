@@ -24,6 +24,7 @@ export default function App() {
           <Route path="/vitrin" element={<VitrinPage />} />
           <Route path="/ofogh" element={<OfoqModule />} />
           <Route path="/nabz" element={<NabzPage />} />
+          <Route path="/nabz/new-order" element={<NabzPage />} />
           <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
           {modules
             .filter((module) => (

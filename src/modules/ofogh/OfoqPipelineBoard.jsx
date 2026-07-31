@@ -25,122 +25,6 @@ function FunnelIcon() {
   );
 }
 
-function SearchIcon() {
-  return (
-    <svg className="actions-bar__search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-/** نوار فیلتر سراسری بورد — جستجوی کلی + چندانتخابی مراحل (هم‌خانواده تولبار نبض). */
-function OfoqFilterBar({ query, onQueryChange, selectedStages, onStagesChange }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const handlePointerDown = (event) => {
-      if (rootRef.current && !rootRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    };
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open]);
-
-  const toggleStage = (stageId) => {
-    onStagesChange(
-      selectedStages.includes(stageId)
-        ? selectedStages.filter((id) => id !== stageId)
-        : [...selectedStages, stageId],
-    );
-  };
-
-  const hasStageFilter = selectedStages.length > 0;
-
-  return (
-    <section className="section-actions nabz-toolbar ofoq-filterbar" aria-label="فیلتر پایپ‌لاین">
-      <div className="actions-bar__search nabz-toolbar__search">
-        <input
-          type="search"
-          placeholder="جستجو در سرنخ‌ها..."
-          aria-label="جستجوی سراسری"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-        />
-        <SearchIcon />
-      </div>
-
-      <div className="ofoq-filterbar__stage-select" ref={rootRef}>
-        <button
-          type="button"
-          className={`ofoq-filterbar__stage-trigger${hasStageFilter ? ' is-active' : ''}`}
-          aria-expanded={open}
-          aria-haspopup="listbox"
-          onClick={() => setOpen((value) => !value)}
-        >
-          <FunnelIcon />
-          {hasStageFilter
-            ? `مراحل (${selectedStages.length.toLocaleString('fa-IR')})`
-            : 'همه مراحل'}
-          <ChevronDownIcon />
-        </button>
-
-        {open && (
-          <div className="ofoq-filterbar__stage-popover" role="listbox" aria-label="انتخاب مراحل">
-            {PIPELINE_STAGES.map((stage) => (
-              <label key={stage.id} className="ofoq-filterbar__stage-option">
-                <input
-                  type="checkbox"
-                  checked={selectedStages.includes(stage.id)}
-                  onChange={() => toggleStage(stage.id)}
-                />
-                <span
-                  className="ofoq-filterbar__stage-swatch"
-                  style={{ background: stage.color }}
-                  aria-hidden="true"
-                />
-                <span>{stage.label}</span>
-              </label>
-            ))}
-            {hasStageFilter && (
-              <button
-                type="button"
-                className="ofoq-filterbar__stage-clear"
-                onClick={() => {
-                  onStagesChange([]);
-                  setOpen(false);
-                }}
-              >
-                پاک کردن فیلتر
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="nabz-toolbar__spacer" aria-hidden="true" />
-    </section>
-  );
-}
-
 function formatFaDate(isoDate) {
   if (!isoDate) return '';
   try {
@@ -335,12 +219,11 @@ function PipelineColumn({ stage, contacts, onOpenContact }) {
   );
 }
 
-export default function OfoqPipelineBoard() {
+/** بورد کانبان افق — فیلترهای سراسری (جستجو/مراحل) از تولبار ماژول به‌صورت props می‌آیند. */
+export default function OfoqPipelineBoard({ globalQuery = '', selectedStages = [] }) {
   const contacts = useContactsStore((state) => state.contacts);
   const updateContactStage = useContactsStore((state) => state.updateContactStage);
   const [selectedContactId, setSelectedContactId] = useState(null);
-  const [globalQuery, setGlobalQuery] = useState('');
-  const [selectedStages, setSelectedStages] = useState([]);
 
   const contactsByStage = useMemo(() => {
     const query = globalQuery.trim();
@@ -370,13 +253,6 @@ export default function OfoqPipelineBoard() {
 
   return (
     <>
-      <OfoqFilterBar
-        query={globalQuery}
-        onQueryChange={setGlobalQuery}
-        selectedStages={selectedStages}
-        onStagesChange={setSelectedStages}
-      />
-
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="ofoq-pipeline__board" dir="rtl">
           {visibleStages.map((stage) => (

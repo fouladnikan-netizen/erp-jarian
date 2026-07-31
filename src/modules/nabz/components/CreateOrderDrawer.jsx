@@ -64,11 +64,13 @@ export default function CreateOrderDrawer({
   mode = 'create',
   order = null,
   onSave,
+  /** پل طلایی افق: مشتری ارجاع‌شده، فرم را پیش‌پرشده باز می‌کند */
+  initialCustomerId = null,
 }) {
   const isEdit = mode === 'edit' && Boolean(order);
   const initialDraft = isEdit ? orderToEditDraft(order) : null;
 
-  const [customerId, setCustomerId] = useState(initialDraft?.customerId ?? null);
+  const [customerId, setCustomerId] = useState(initialDraft?.customerId ?? initialCustomerId);
   const [expertKeyValue, setExpertKeyValue] = useState(() => (
     initialDraft
       ? resolveExpertKey(

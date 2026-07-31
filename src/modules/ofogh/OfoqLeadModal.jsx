@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContactsStore, LIFECYCLE_STAGES } from '../../stores/useContactsStore';
 import { useNabzOrders } from '../nabz/NabzOrdersContext';
@@ -38,10 +38,42 @@ function TaskIcon() {
   );
 }
 
-const ACTION_TABS = [
-  { id: 'note', label: 'یادداشت', Icon: NoteIcon, placeholder: 'یادداشت جدید… (خلاصه جلسه، توافق، نکته مهم)' },
+function MailIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-10 6L2 7" />
+    </svg>
+  );
+}
+
+function MeetingIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function SparklesIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9Z" />
+      <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z" />
+      <path d="M5 16l.6 1.4L7 18l-1.4.6L5 20l-.6-1.4L3 18l1.4-.6Z" />
+    </svg>
+  );
+}
+
+/** انواع فعالیت به سبک دیدار — انتخاب نوع، پارامتر type در addInteraction می‌شود. */
+const ACTIVITY_TYPES = [
   { id: 'call', label: 'تماس', Icon: PhoneIcon, placeholder: 'گزارش تماس… (نتیجه مکالمه، درخواست مشتری)' },
-  { id: 'task', label: 'وظیفه بعدی', Icon: TaskIcon, placeholder: 'شرح وظیفه بعدی… (ارسال پیش‌فاکتور، پیگیری پرداخت)' },
+  { id: 'message', label: 'پیام/ایمیل', Icon: MailIcon, placeholder: 'خلاصه پیام یا ایمیل… (موضوع، پاسخ مشتری)' },
+  { id: 'meeting', label: 'جلسه حضوری', Icon: MeetingIcon, placeholder: 'صورتجلسه… (حاضرین، توافق‌ها، اقدام بعدی)' },
+  { id: 'note', label: 'یادداشت داخلی', Icon: NoteIcon, placeholder: 'یادداشت داخلی… (نکته مهم، جمع‌بندی، هشدار)' },
 ];
 
 function SystemIcon() {
@@ -56,9 +88,35 @@ function SystemIcon() {
 const INTERACTION_TYPE_META = {
   note: { label: 'یادداشت', Icon: NoteIcon },
   call: { label: 'تماس', Icon: PhoneIcon },
+  message: { label: 'پیام/ایمیل', Icon: MailIcon },
+  meeting: { label: 'جلسه حضوری', Icon: MeetingIcon },
   task: { label: 'وظیفه', Icon: TaskIcon },
   system: { label: 'سیستم', Icon: SystemIcon },
 };
+
+/**
+ * ماک بازنویسی هوش مصنوعی — شبیه‌ساز فراخوانی DeepSeek در بک‌اند.
+ * متن خام کاربر را به گزارش رسمی CRM تبدیل می‌کند.
+ */
+const AI_REWRITE_PREFIX = {
+  call: 'طی تماس تلفنی با مشتری',
+  message: 'در مکاتبه انجام‌شده با مشتری',
+  meeting: 'در جلسه حضوری با مشتری',
+  note: 'بر اساس بررسی داخلی',
+};
+
+function mockAiRewrite(raw, type) {
+  const text = raw.trim();
+  if (/گرو[نو]|قیمت\s*(بالا|زیاد)/.test(text)) {
+    return 'طی تماس تلفنی، مشتری به دلیل نوسانات قیمت از خرید منصرف شد. نیازمند پیگیری مجدد.';
+  }
+  if (/جواب\s*نداد|برنداشت|در دسترس نبود/.test(text)) {
+    return 'تماس با مشتری برقرار نشد. مقرر شد در بازه زمانی مناسب‌تری تماس مجدد گرفته شود.';
+  }
+  const cleaned = text.replace(/[.!؟…]+$/u, '');
+  const prefix = AI_REWRITE_PREFIX[type] || AI_REWRITE_PREFIX.note;
+  return `${prefix}، موضوع «${cleaned}» مطرح و بررسی شد. جمع‌بندی: ادامه فرآیند نیازمند پیگیری در موعد مقرر است.`;
+}
 
 /** دمای رابطه بر اساس مرحله چرخه حیات — داغ / گرم / سرد */
 const STAGE_TEMPERATURE = {
@@ -152,33 +210,47 @@ function SidebarInfo({ contact }) {
 
 function ActionForm({ contactId }) {
   const addInteraction = useContactsStore((state) => state.addInteraction);
-  const [activeTab, setActiveTab] = useState('note');
+  const [activityType, setActivityType] = useState('call');
   const [note, setNote] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
+  const [aiBusy, setAiBusy] = useState(false);
+  const aiTimer = useRef(null);
 
-  const tabMeta = ACTION_TABS.find((tab) => tab.id === activeTab);
+  useEffect(() => () => clearTimeout(aiTimer.current), []);
+
+  const typeMeta = ACTIVITY_TYPES.find((item) => item.id === activityType);
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const trimmed = note.trim();
-    if (!trimmed) return;
+    if (!trimmed || aiBusy) return;
     const iso = followUpDate ? new Date(`${followUpDate}T09:00:00`).toISOString() : null;
-    addInteraction(contactId, trimmed, iso, activeTab);
+    addInteraction(contactId, trimmed, iso, activityType);
     setNote('');
     setFollowUpDate('');
   };
 
+  /** شبیه‌سازی فراخوانی DeepSeek — دو ثانیه لودینگ، سپس جایگزینی متن رسمی‌شده. */
+  const handleAiRewrite = () => {
+    if (!note.trim() || aiBusy) return;
+    setAiBusy(true);
+    aiTimer.current = setTimeout(() => {
+      setNote((current) => mockAiRewrite(current, activityType));
+      setAiBusy(false);
+    }, 2000);
+  };
+
   return (
     <div className="ofoq-modal__action-box">
-      <div className="ofoq-modal__action-tabs" role="tablist" aria-label="نوع اقدام">
-        {ACTION_TABS.map(({ id, label, Icon }) => (
+      <div className="ofoq-modal__action-tabs" role="tablist" aria-label="نوع فعالیت">
+        {ACTIVITY_TYPES.map(({ id, label, Icon }) => (
           <button
             key={id}
             type="button"
             role="tab"
-            aria-selected={activeTab === id}
-            className={`ofoq-modal__action-tab${activeTab === id ? ' is-active' : ''}`}
-            onClick={() => setActiveTab(id)}
+            aria-selected={activityType === id}
+            className={`ofoq-modal__action-tab${activityType === id ? ' is-active' : ''}`}
+            onClick={() => setActivityType(id)}
           >
             <Icon />
             {label}
@@ -187,13 +259,32 @@ function ActionForm({ contactId }) {
       </div>
 
       <form className="ofoq-modal__action-form" onSubmit={handleSubmit}>
-        <textarea
-          className="ofoq-modal__note-input"
-          rows={3}
-          placeholder={tabMeta.placeholder}
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-        />
+        <div className="ofoq-ai-wrap">
+          <textarea
+            className="ofoq-modal__note-input"
+            rows={3}
+            placeholder={typeMeta.placeholder}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            disabled={aiBusy}
+          />
+          <button
+            type="button"
+            className="ofoq-ai-btn"
+            title="بازنویسی رسمی با هوش مصنوعی"
+            aria-label="بازنویسی رسمی با هوش مصنوعی"
+            onClick={handleAiRewrite}
+            disabled={!note.trim() || aiBusy}
+          >
+            <SparklesIcon />
+          </button>
+          {aiBusy ? (
+            <div className="ofoq-ai-overlay" role="status">
+              <span className="ofoq-ai-spinner" aria-hidden="true" />
+              دستیار هوش مصنوعی در حال پردازش...
+            </div>
+          ) : null}
+        </div>
         <div className="ofoq-modal__action-row">
           <label className="ofoq-modal__date-field">
             <span>پیگیری بعدی</span>
@@ -203,8 +294,8 @@ function ActionForm({ contactId }) {
               onChange={(event) => setFollowUpDate(event.target.value)}
             />
           </label>
-          <button type="submit" className="btn btn--primary ofoq-modal__submit" disabled={!note.trim()}>
-            ثبت {tabMeta.label}
+          <button type="submit" className="btn btn--primary ofoq-modal__submit" disabled={!note.trim() || aiBusy}>
+            ثبت {typeMeta.label}
           </button>
         </div>
       </form>
@@ -257,7 +348,7 @@ export default function OfoqLeadModal({ contactId, onClose }) {
   );
   const updateContactStage = useContactsStore((state) => state.updateContactStage);
   const addInteraction = useContactsStore((state) => state.addInteraction);
-  const { createOrderForContact } = useNabzOrders();
+  const { createOrderDirect } = useNabzOrders();
   const navigate = useNavigate();
   const [converting, setConverting] = useState(false);
 
@@ -274,24 +365,24 @@ export default function OfoqLeadModal({ contactId, onClose }) {
   const name = getContactDisplayName(contact);
   const tag = getContactTag(contact);
 
-  /** پل طلایی افق → نبض: تبدیل سرنخ به سفارش، جابه‌جایی کارت، رد ممیزی و ناوبری. */
+  /** پل طلایی افق → نبض: ارجاع مستقیم به فرم «ثبت سفارش» با مشتری پیش‌پرشده. */
   const handleCreateProforma = async () => {
     if (converting) return;
     setConverting(true);
     try {
-      // ۱) ساخت سفارش خام فاز ۱ («پیش‌کش») در نبض، متصل به همین مخاطب
-      const order = await Promise.resolve(createOrderForContact(contact.id));
+      // ۱) مخاطب برای فرم ثبت سفارش نبض آماده می‌شود (مشتری پیش‌پرشده)
+      await Promise.resolve(createOrderDirect(contact.id));
 
       // ۲) کارت لید به ستون «آماده فروش» پایپ‌لاین منتقل می‌شود
       updateContactStage(contact.id, LIFECYCLE_STAGES.SALES_QUALIFIED);
 
       // ۳) رد ممیزی در تایم‌لاین مخاطب
-      addInteraction(contact.id, 'سیستم: ارجاع به نبض برای صدور پیش‌فاکتور', null, 'system');
+      addInteraction(contact.id, 'سیستم: انتقال مستقیم به ثبت سفارش نهایی', null, 'system');
 
-      // ۴) بازخورد و ناوبری به پروفایل سفارش تازه‌ساخته‌شده
+      // ۴) بازخورد و ناوبری مستقیم به فرم ثبت سفارش
       onClose();
       showSystemToast('سرنخ با موفقیت به سفارش تبدیل شد');
-      navigate(`/nabz/order/${encodeURIComponent(order.code)}`);
+      navigate('/nabz/new-order');
     } finally {
       setConverting(false);
     }
