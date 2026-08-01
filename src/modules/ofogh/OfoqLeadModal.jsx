@@ -3,15 +3,49 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useContactsStore, LIFECYCLE_STAGES } from '../../stores/useContactsStore';
 import { useNabzOrders } from '../nabz/NabzOrdersContext';
 import { showSystemToast } from '../../utils/systemToast';
+import { mockAiRewrite } from '../../utils/aiRewrite';
+import { buildReturnQuery } from '../../components/navigation/SmartBackButton';
 import JalaliDatePicker from '../nabz/components/JalaliDatePicker';
 import {
   compareJalaliDates,
+  formatJalaliDate,
   getTodayJalali,
+  gregorianToJalali,
   isValidJalaliDate,
   jalaliToGregorian,
   parseJalaliDate,
 } from '../nabz/dateUtils';
-import { PIPELINE_STAGES, getContactDisplayName, getContactTag } from './pipelineConfig';
+import {
+  PIPELINE_STAGES,
+  ROTTING_INACTIVITY_DAYS,
+  getContactDisplayName,
+  getContactTag,
+  isCardRotting,
+} from './pipelineConfig';
+
+/** پیام پیش‌فرض پیگیری هوش مصنوعی برای فرصت‌های راکد (بات صیاد). */
+const AI_FOLLOWUP_DRAFT =
+  'سلام، مدتی پیش در خصوص تامین بار صحبت کردیم. آیا قیمت‌های به‌روز را ارسال کنم؟';
+
+function getTomorrowJalali() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const { year, month, day } = gregorianToJalali(
+    tomorrow.getFullYear(),
+    tomorrow.getMonth() + 1,
+    tomorrow.getDate(),
+  );
+  return formatJalaliDate(year, month, day);
+}
+
+function ExternalLinkIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 17 17 7" />
+      <path d="M8 7h9v9" />
+    </svg>
+  );
+}
 
 function CloseIcon() {
   return (
@@ -113,71 +147,7 @@ const INTERACTION_TYPE_META = {
   system: { label: 'سیستم', Icon: SystemIcon },
 };
 
-/**
- * ماک بازنویسی هوش مصنوعی — شبیه‌ساز فراخوانی DeepSeek در بک‌اند.
- * قالب رسمی «خلاصه نتایج» جریان (موضوع / توافق‌ها / دغدغه‌ها / قدم‌های بعدی).
- * هم‌راستا با DEFAULT_SYSTEM_PROMPT در src/server/api/aiRoutes.js
- */
-const AI_SUBJECT_BY_TYPE = {
-  call: 'تماس تلفنی با مشتری',
-  message: 'مکاتبه (پیام/ایمیل) با مشتری',
-  meeting: 'جلسه حضوری با مشتری',
-  catalog: 'ارسال کاتالوگ محصولات',
-  note: 'یادداشت داخلی پیگیری',
-};
-
-function mockAiRewrite(raw, type) {
-  const text = raw.trim();
-  const subject = AI_SUBJECT_BY_TYPE[type] || AI_SUBJECT_BY_TYPE.note;
-  const today = new Date().toLocaleDateString('fa-IR');
-
-  if (/گرو[نو]|قیمت\s*(بالا|زیاد)/.test(text)) {
-    return [
-      `**موضوع:** ${subject}`,
-      `**تاریخ:** ${today}`,
-      '',
-      '**✅ توافق‌ها و دستاوردها:**',
-      '- کانال گفتگو باز ماند و امکان ادامه مذاکره وجود دارد.',
-      '',
-      '**💬 نکات مهم / دغدغه‌های مشتری:**',
-      '- قیمت از نظر مشتری بالاست و فعلاً برای خرید دست نگه داشته.',
-      '',
-      '**📌 قدم‌های بعدی:**',
-      `- تماس پیگیری با پیشنهاد شرایط بهتر — مسئول: کارشناس فروش — تا ${today} (به‌روزرسانی موعد در فرم)`,
-    ].join('\n');
-  }
-
-  if (/جواب\s*نداد|برنداشت|در دسترس نبود/.test(text)) {
-    return [
-      `**موضوع:** ${subject}`,
-      `**تاریخ:** ${today}`,
-      '',
-      '**✅ توافق‌ها و دستاوردها:**',
-      '- تماس برقرار نشد؛ توافق جدیدی شکل نگرفت.',
-      '',
-      '**💬 نکات مهم / دغدغه‌های مشتری:**',
-      '- مشتری در دسترس نبود / پاسخ نداد.',
-      '',
-      '**📌 قدم‌های بعدی:**',
-      `- تماس مجدد در بازه مناسب‌تر — مسئول: کارشناس فروش — تا ${today} (به‌روزرسانی موعد در فرم)`,
-    ].join('\n');
-  }
-
-  const cleaned = text.replace(/[.!؟…]+$/u, '');
-  return [
-    `**موضوع:** ${subject}`,
-    `**تاریخ:** ${today}`,
-    '',
-    '**✅ توافق‌ها و دستاوردها:**',
-    `- ${cleaned}.`,
-    '',
-    '**💬 نکات مهم / دغدغه‌های مشتری:**',
-    '- دغدغهٔ خاصی در متن خام ذکر نشده؛ در صورت نیاز تکمیل شود.',
-    '',
-    '**📌 قدم‌های بعدی:**',
-    `- پیگیری ادامه فرآیند — مسئول: کارشناس فروش — تا ${today} (به‌روزرسانی موعد در فرم)`,
-  ].join('\n');
-}
+/* بازنویسی هوش مصنوعی: منطق مشترک در src/utils/aiRewrite.js */
 
 /** دمای رابطه بر اساس مرحله چرخه حیات — داغ / گرم / سرد */
 const STAGE_TEMPERATURE = {
@@ -303,15 +273,11 @@ function SidebarInfo({ contact }) {
       </dl>
 
       <LeadTemperature stageId={contact.lifecycle_stage} />
-
-      <Link to={`/kanoon/contact/${contact.id}`} className="ofoq-modal__kanoon-link">
-        مشاهده پروفایل کامل در کانون ←
-      </Link>
     </aside>
   );
 }
 
-function ActionForm({ contactId }) {
+function ActionForm({ contactId, draftSeed = null }) {
   const addInteraction = useContactsStore((state) => state.addInteraction);
   const [activityType, setActivityType] = useState('call');
   const [note, setNote] = useState('');
@@ -320,6 +286,16 @@ function ActionForm({ contactId }) {
   const aiTimer = useRef(null);
 
   useEffect(() => () => clearTimeout(aiTimer.current), []);
+
+  /** پر شدن خودکار فرم از بنر بات صیاد (پیگیری AI). */
+  useEffect(() => {
+    if (!draftSeed?.key) return;
+    setNote(draftSeed.note || '');
+    setFollowUpDate(draftSeed.followUpDate || '');
+    if (draftSeed.activityType) setActivityType(draftSeed.activityType);
+    // فقط با هر کلیک جدید (key) پر می‌شود
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftSeed?.key]);
 
   const typeMeta = ACTIVITY_TYPES.find((item) => item.id === activityType);
 
@@ -420,38 +396,66 @@ function ActionForm({ contactId }) {
   );
 }
 
-function InteractionsTimeline({ interactions }) {
-  if (!interactions.length) {
+/** ناحیه زمینه: سه تعامل اخیر — Progressive Disclosure قبل از ورود به پرونده کامل. */
+function RecentInteractions({ interactions, limit = 3 }) {
+  const recent = (interactions || []).slice(0, limit);
+
+  if (!recent.length) {
     return <p className="ofoq-modal__timeline-empty">هنوز تعاملی ثبت نشده است.</p>;
   }
 
   return (
-    <ol className="ofoq-timeline">
-      {interactions.map((item) => {
-        const meta = INTERACTION_TYPE_META[item.type];
-        return (
-          <li key={item.id} className="ofoq-timeline__item">
-            <span className="ofoq-timeline__dot" aria-hidden="true" />
-            <div className="ofoq-timeline__content">
-              <div className="ofoq-timeline__meta">
-                <span className={`ofoq-timeline__type ofoq-timeline__type--${meta ? item.type : 'other'}`}>
-                  {meta ? <meta.Icon /> : <NoteIcon />}
-                  {meta ? meta.label : item.type}
-                </span>
-                <span className="ofoq-timeline__date">{formatInteractionDate(item.date)}</span>
-                <span className="ofoq-timeline__operator">{item.operator}</span>
+    <section className="ofoq-modal__context" aria-label="سه تعامل اخیر">
+      <h3 className="ofoq-modal__context-title">سه تعامل اخیر</h3>
+      <ol className="ofoq-timeline ofoq-timeline--compact">
+        {recent.map((item) => {
+          const meta = INTERACTION_TYPE_META[item.type];
+          return (
+            <li key={item.id} className="ofoq-timeline__item">
+              <span className="ofoq-timeline__dot" aria-hidden="true" />
+              <div className="ofoq-timeline__content">
+                <div className="ofoq-timeline__meta">
+                  <span className={`ofoq-timeline__type ofoq-timeline__type--${meta ? item.type : 'other'}`}>
+                    {meta ? <meta.Icon /> : <NoteIcon />}
+                    {meta ? meta.label : item.type}
+                  </span>
+                  <span className="ofoq-timeline__date">{formatInteractionDate(item.date)}</span>
+                  <span className="ofoq-timeline__operator">{item.operator}</span>
+                </div>
+                <p className="ofoq-timeline__note">{item.note}</p>
+                {item.nextFollowUp ? (
+                  <span className="ofoq-timeline__follow-up">
+                    پیگیری بعدی: {formatInteractionDate(item.nextFollowUp)}
+                  </span>
+                ) : null}
               </div>
-              <p className="ofoq-timeline__note">{item.note}</p>
-              {item.nextFollowUp ? (
-                <span className="ofoq-timeline__follow-up">
-                  پیگیری بعدی: {formatInteractionDate(item.nextFollowUp)}
-                </span>
-              ) : null}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+function RottingWarningBanner({ onAiFollowUp }) {
+  return (
+    <div className="ofoq-rotting-banner" role="alert">
+      <div className="ofoq-rotting-banner__copy">
+        <span className="ofoq-rotting-banner__icon" aria-hidden="true">⚠️</span>
+        <p className="ofoq-rotting-banner__text">
+          این فرصت بیش از {ROTTING_INACTIVITY_DAYS.toLocaleString('fa-IR')} روز پیگیری نشده است.
+        </p>
+      </div>
+      <button
+        type="button"
+        className="ofoq-rotting-banner__ai-btn"
+        onClick={onAiFollowUp}
+        title="پیشنهاد پیگیری با هوش مصنوعی"
+      >
+        <SparklesIcon />
+        پیگیری هوشمند
+      </button>
+    </div>
   );
 }
 
@@ -468,6 +472,7 @@ export default function OfoqLeadModal({ contactId, onClose }) {
   const { createOrderDirect } = useNabzOrders();
   const navigate = useNavigate();
   const [converting, setConverting] = useState(false);
+  const [draftSeed, setDraftSeed] = useState(null);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -477,26 +482,34 @@ export default function OfoqLeadModal({ contactId, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    setDraftSeed(null);
+  }, [contactId]);
+
   if (!contact) return null;
 
   const name = getContactDisplayName(contact);
   const tag = getContactTag(contact);
+  const rotting = isCardRotting(contact.last_interaction_date, contact.lifecycle_stage);
+  const profileHref = `/kanoon/contact/${contact.id}${buildReturnQuery('/ofoq', 'بورد افق')}`;
+
+  const handleAiFollowUp = () => {
+    setDraftSeed({
+      key: Date.now(),
+      note: AI_FOLLOWUP_DRAFT,
+      followUpDate: getTomorrowJalali(),
+      activityType: 'message',
+    });
+  };
 
   /** پل طلایی افق → نبض: ارجاع مستقیم به فرم «ثبت سفارش» با مشتری پیش‌پرشده. */
   const handleCreateProforma = async () => {
     if (converting) return;
     setConverting(true);
     try {
-      // ۱) مخاطب برای فرم ثبت سفارش نبض آماده می‌شود (مشتری پیش‌پرشده)
       await Promise.resolve(createOrderDirect(contact.id));
-
-      // ۲) کارت لید به ستون «آستانه» پایپ‌لاین منتقل می‌شود
       updateContactStage(contact.id, LIFECYCLE_STAGES.SALES_QUALIFIED);
-
-      // ۳) رد ممیزی در تایم‌لاین مخاطب
       addInteraction(contact.id, 'سیستم: انتقال مستقیم به ثبت سفارش نهایی', null, 'system');
-
-      // ۴) بازخورد و ناوبری مستقیم به فرم ثبت سفارش
       onClose();
       showSystemToast('سرنخ با موفقیت به سفارش تبدیل شد');
       navigate('/nabz/new-order');
@@ -514,7 +527,7 @@ export default function OfoqLeadModal({ contactId, onClose }) {
         onClick={onClose}
       />
       <div
-        className="ofoq-modal__panel"
+        className={`ofoq-modal__panel${rotting ? ' is-rotting' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="ofoq-modal-title"
@@ -541,14 +554,23 @@ export default function OfoqLeadModal({ contactId, onClose }) {
           </div>
         </header>
 
+        {rotting ? <RottingWarningBanner onAiFollowUp={handleAiFollowUp} /> : null}
+
         <div className="ofoq-modal__grid">
           <SidebarInfo contact={contact} />
 
           <section className="ofoq-modal__main">
-            <ActionForm contactId={contact.id} />
-            <InteractionsTimeline interactions={contact.interactions || []} />
+            <RecentInteractions interactions={contact.interactions || []} limit={3} />
+            <ActionForm contactId={contact.id} draftSeed={draftSeed} />
           </section>
         </div>
+
+        <footer className="ofoq-modal__foot">
+          <Link to={profileHref} className="ofoq-modal__deep-dive" onClick={onClose}>
+            مشاهده پرونده کامل مشتری
+            <ExternalLinkIcon />
+          </Link>
+        </footer>
       </div>
     </div>
   );

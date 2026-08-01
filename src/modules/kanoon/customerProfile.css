@@ -281,6 +281,492 @@
   color: var(--text-secondary);
 }
 
+/* ── پاپ‌آپ اطلاعات حقوقی تکمیلی ──────────────────────────────────── */
+.kprofile-identity__name-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+/* آیکون مینیمال کنار نام شرکت — بدون کادر، فقط در هاور رنگ می‌گیرد */
+.kprofile-identity__legal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  transition: color 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+}
+
+.kprofile-identity__legal-btn:hover {
+  color: var(--color-brand-red, #e53935);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* بک‌دراپ شیشه‌ای واحد — هم‌استاندارد بقیه مودال‌های سیستم */
+.kprofile-legal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: kprofile-legal-fade 0.2s ease;
+}
+
+@keyframes kprofile-legal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.kprofile-legal-modal {
+  width: 100%;
+  max-width: 400px;
+  padding: 1.1rem 1.25rem 1.25rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(184, 191, 202, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 18px 48px rgba(148, 163, 184, 0.3);
+  animation: kprofile-legal-pop 0.24s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes kprofile-legal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.kprofile-legal-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.kprofile-legal-modal__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-legal-modal__title svg { color: var(--color-brand-red, #e53935); }
+
+.kprofile-legal-modal__close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(184, 191, 202, 0.35);
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.kprofile-legal-modal__close:hover {
+  color: var(--color-brand-red, #e53935);
+  border-color: rgba(184, 191, 202, 0.55);
+  transform: rotate(90deg);
+}
+
+.kprofile-legal-modal__list { margin: 0; }
+
+.kprofile-legal-modal__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.1rem;
+}
+
+.kprofile-legal-modal__row + .kprofile-legal-modal__row {
+  border-top: 1px solid rgba(184, 191, 202, 0.22);
+}
+
+.kprofile-legal-modal__row dt {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__row dd {
+  margin: 0;
+  font-family: var(--font-secondary);
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  direction: ltr;
+}
+
+.kprofile-legal-modal__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* —— ماشین زمان: ناوبری بین استعلام‌های تاریخی —— */
+.kprofile-legal-modal__timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(184, 191, 202, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.kprofile-legal-modal__timeline-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(184, 191, 202, 0.35);
+  transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.kprofile-legal-modal__timeline-btn:hover:not(:disabled) {
+  color: var(--color-brand-red, #e53935);
+  transform: scale(1.08);
+}
+
+.kprofile-legal-modal__timeline-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.kprofile-legal-modal__timeline-label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+}
+
+.kprofile-legal-modal__timeline-label.is-expired {
+  color: #d97706;
+}
+
+/* حالت نسخه منقضی — تیتر و هاله بوردر نارنجی هشدار */
+.kprofile-legal-modal.is-expired {
+  border-color: rgba(217, 119, 6, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 0 0 1px rgba(217, 119, 6, 0.18),
+    0 18px 48px rgba(217, 119, 6, 0.22);
+}
+
+.kprofile-legal-modal.is-expired .kprofile-legal-modal__title {
+  color: #d97706;
+}
+
+.kprofile-legal-modal.is-expired .kprofile-legal-modal__title svg {
+  color: #d97706;
+}
+
+/* کراس‌فید نرم هنگام پرش بین نسخه‌ها */
+.kprofile-legal-modal__fade {
+  animation: kprofile-legal-crossfade 0.3s ease;
+}
+
+@keyframes kprofile-legal-crossfade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* —— فوتر TTL + استعلام لینکا —— */
+.kprofile-legal-modal__ttl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(184, 191, 202, 0.28);
+}
+
+.kprofile-legal-modal__ttl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__ttl-badge.is-fresh {
+  color: #15803d;
+}
+
+.kprofile-legal-modal__ttl-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(140deg, #4ade80 0%, #16a34a 70%);
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.kprofile-legal-modal__linka-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 11px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(140deg, #ef5350 0%, #e53935 60%, #c62828 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 6px 16px rgba(229, 57, 53, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.kprofile-legal-modal__linka-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 9px 22px rgba(229, 57, 53, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.kprofile-legal-modal__linka-btn:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.kprofile-legal-modal__linka-btn.is-syncing svg {
+  animation: kprofile-ai-spin 0.9s linear infinite;
+}
+
+.kprofile-legal-modal__row--edit {
+  cursor: text;
+}
+
+.kprofile-legal-modal__row--edit span {
+  flex: 0 0 auto;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 12rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(184, 191, 202, 0.4);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kprofile-legal-modal__input:focus {
+  outline: none;
+  border-color: rgba(229, 57, 53, 0.55);
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
+}
+
+.kprofile-legal-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+/* —— نسخه کامل (شناسنامه رسمی شرکت) —— */
+.kprofile-legal-modal--wide {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  max-height: min(82vh, 46rem);
+}
+
+.kprofile-legal-modal__body {
+  overflow-y: auto;
+  min-height: 0;
+  /* فضای ثابت برای اسکرول‌بار تا روی متن‌ها نیفتد (در RTL سمت چپ ظاهر می‌شود) */
+  scrollbar-gutter: stable;
+  padding-inline-end: 0.85rem;
+}
+
+/* اسکرول‌بار باریک و شیشه‌ای — استایل‌دادن webkit آن را از حالت overlay خارج می‌کند */
+.kprofile-legal-modal__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kprofile-legal-modal__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kprofile-legal-modal__body::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+}
+
+.kprofile-legal-modal__body::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
+
+.kprofile-legal-modal__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.1rem 0 0.2rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--color-brand-red, #e53935);
+}
+
+.kprofile-legal-modal__section-title:first-child {
+  margin-top: 0.2rem;
+}
+
+/* خط ظریف ادامه‌دار بعد از عنوان هر بخش */
+.kprofile-legal-modal__section-title::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(184, 191, 202, 0.3);
+}
+
+.kprofile-legal-modal__members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.kprofile-legal-modal__member {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr auto;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.5rem 0.1rem;
+}
+
+.kprofile-legal-modal__member + .kprofile-legal-modal__member {
+  border-top: 1px solid rgba(184, 191, 202, 0.22);
+}
+
+.kprofile-legal-modal__member-role {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__member-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.kprofile-legal-modal__member-code {
+  font-family: var(--font-secondary);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__text {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: var(--text-primary);
+  text-align: justify;
+}
+
+.kprofile-legal-modal__empty {
+  margin: 0.35rem 0 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__textarea {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(184, 191, 202, 0.4);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.65);
+  font-family: inherit;
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kprofile-legal-modal__textarea:focus {
+  outline: none;
+  border-color: rgba(229, 57, 53, 0.55);
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
+}
+
+.kprofile-legal-modal__member-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) minmax(0, 7.5rem) auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.3rem 0;
+}
+
+.kprofile-legal-modal__member-edit .kprofile-legal-modal__input {
+  max-width: none;
+}
+
+.kprofile-legal-modal__member-remove {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+}
+
+.kprofile-legal-modal__member-remove:hover {
+  color: var(--color-brand-red, #e53935);
+}
+
+.kprofile-legal-modal__member-add {
+  margin-top: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 9px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--color-brand-red, #e53935);
+  transition: background 0.15s ease;
+}
+
+.kprofile-legal-modal__member-add:hover {
+  background: rgba(229, 57, 53, 0.08);
+}
+
 /* ── ستون چپ: تایم‌لاین ضربان ─────────────────────────────────────── */
 .kprofile__main {
   min-width: 0;
@@ -442,6 +928,82 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* —— بازنویسی هوش مصنوعی (✨) — هم‌خانواده ofoq-ai-btn —— */
+.kprofile-ai-wrap {
+  position: relative;
+}
+
+/* دکمه ✨ گوشه پایین-چپ تکست‌اریا؛ resize حذف تا تداخلی پیش نیاید */
+.kprofile-ai-wrap .kprofile-magic__textarea {
+  resize: none;
+  padding-bottom: 2.4rem;
+}
+
+/* آیکون مینیمال — بدون کادر و پس‌زمینه؛ فقط جرقه بنفش ظریف */
+.kprofile-ai-btn {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: rgba(124, 58, 237, 0.65);
+  background: transparent;
+  transition: color 0.18s ease, transform 0.18s ease, filter 0.18s ease;
+}
+
+.kprofile-ai-btn:hover:not(:disabled) {
+  color: #7c3aed;
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 6px rgba(167, 139, 250, 0.55));
+}
+
+.kprofile-ai-btn:active:not(:disabled) {
+  transform: scale(1);
+}
+
+.kprofile-ai-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.kprofile-ai-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #6d28d9;
+  animation: kprofile-legal-fade 0.2s ease;
+}
+
+.kprofile-ai-spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid rgba(109, 40, 217, 0.22);
+  border-top-color: #6d28d9;
+  animation: kprofile-ai-spin 0.75s linear infinite;
+}
+
+@keyframes kprofile-ai-spin {
+  to { transform: rotate(360deg); }
 }
 
 .kprofile-magic__cancel {
@@ -722,4 +1284,76 @@ html[data-theme='dark'] .kprofile-timeline__node {
 html[data-theme='dark'] .kprofile-empty {
   background: rgba(30, 41, 59, 0.3);
   border-color: rgba(148, 163, 184, 0.3);
+}
+
+html[data-theme='dark'] .kprofile-legal-overlay {
+  background: rgba(2, 6, 16, 0.45);
+}
+
+html[data-theme='dark'] .kprofile-legal-modal {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.14), 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .kprofile-legal-modal__close {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+html[data-theme='dark'] .kprofile-legal-modal__input,
+html[data-theme='dark'] .kprofile-legal-modal__textarea {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: var(--text-primary);
+}
+
+html[data-theme='dark'] .kprofile-legal-modal__body::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.55);
+}
+
+html[data-theme='dark'] .kprofile-legal-modal__timeline {
+  background: rgba(30, 41, 59, 0.5);
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.12);
+}
+
+html[data-theme='dark'] .kprofile-legal-modal__timeline-btn {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+html[data-theme='dark'] .kprofile-legal-modal__timeline-label.is-expired {
+  color: #fbbf24;
+}
+
+html[data-theme='dark'] .kprofile-legal-modal.is-expired .kprofile-legal-modal__title,
+html[data-theme='dark'] .kprofile-legal-modal.is-expired .kprofile-legal-modal__title svg {
+  color: #fbbf24;
+}
+
+html[data-theme='dark'] .kprofile-legal-modal__ttl {
+  border-top-color: rgba(148, 163, 184, 0.2);
+}
+
+html[data-theme='dark'] .kprofile-legal-modal__ttl-badge.is-fresh {
+  color: #4ade80;
+}
+
+html[data-theme='dark'] .kprofile-ai-btn {
+  color: rgba(196, 181, 253, 0.6);
+}
+
+html[data-theme='dark'] .kprofile-ai-btn:hover:not(:disabled) {
+  color: #c4b5fd;
+}
+
+html[data-theme='dark'] .kprofile-ai-overlay {
+  background: rgba(15, 23, 42, 0.6);
+  color: #c4b5fd;
+}
+
+html[data-theme='dark'] .kprofile-ai-spinner {
+  border-color: rgba(196, 181, 253, 0.25);
+  border-top-color: #c4b5fd;
 }

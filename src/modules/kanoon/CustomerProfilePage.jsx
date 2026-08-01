@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useContactsStore } from '../../stores/useContactsStore';
+import SmartBackButton, { withReturnParams } from '../../components/navigation/SmartBackButton';
+import { mockAiRewrite } from '../../utils/aiRewrite';
+import { showSystemToast } from '../../utils/systemToast';
+import { WEB_SERVICES_CONFIG } from '../../config/registry/webServices';
 import { useNabzOrders } from '../nabz/NabzOrdersContext';
 import JalaliDatePicker from '../nabz/components/JalaliDatePicker';
 import {
@@ -39,6 +44,13 @@ const PinIcon = () => icon(<><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 1
 const GlobeIcon = () => icon(<><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>);
 const CalendarIcon = () => icon(<><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
 </>, 12);
+const InfoIcon = () => icon(<><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></>, 13);
+const CloseIcon = () => icon(<path d="M18 6 6 18M6 6l12 12" />, 16);
+const PencilIcon = () => icon(<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />, 13);
+const SyncIcon = () => icon(<><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></>, 13);
+const CheckIcon = () => icon(<path d="M20 6 9 17l-5-5" />, 11);
+const ChevronRightIcon = () => icon(<path d="m9 18 6-6-6-6" />, 14);
+const ChevronLeftIcon = () => icon(<path d="m15 18-6-6 6-6" />, 14);
 
 /* انواع فعالیت — همان واژگان مودال پویش افق برای وحدت رویه */
 const ACTIVITY_TYPES = [
@@ -112,11 +124,23 @@ function IdentityCard({ contact }) {
   const statusMeta = BEHAVIORAL_STATUS[contact.behavioralStatus];
   const isCustomer = contact.entityType === ENTITY_TYPES.CUSTOMER;
   const isLegal = contact.personType === PERSON_TYPES.LEGAL;
+  const [isLegalModalOpen, setLegalModalOpen] = useState(false);
 
   return (
     <section className="kprofile-glass kprofile-identity" aria-label="هویت مخاطب">
       <div className="kprofile-identity__avatar" aria-hidden="true">{getInitials(displayName)}</div>
-      <h2 className="kprofile-identity__name">{displayName}</h2>
+      <div className="kprofile-identity__name-row">
+        <h2 className="kprofile-identity__name">{displayName}</h2>
+        <button
+          type="button"
+          className="kprofile-identity__legal-btn"
+          title="اطلاعات حقوقی تکمیلی"
+          aria-label="اطلاعات حقوقی تکمیلی"
+          onClick={() => setLegalModalOpen(true)}
+        >
+          <InfoIcon />
+        </button>
+      </div>
       <p className="kprofile-identity__meta">
         {isCustomer ? 'مشتری' : 'تامین‌کننده'} · {isLegal ? 'حقوقی' : 'حقیقی'}
       </p>
@@ -130,6 +154,10 @@ function IdentityCard({ contact }) {
         <p className="kprofile-identity__assignee">
           {contact.assignee.role || 'مسئول'}: <strong>{contact.assignee.name}</strong>
         </p>
+      )}
+
+      {isLegalModalOpen && (
+        <LegalInfoModal contact={contact} onClose={() => setLegalModalOpen(false)} />
       )}
     </section>
   );
@@ -247,7 +275,419 @@ function QuickContacts({ contact }) {
           </div>
         </div>
       ))}
+
     </section>
+  );
+}
+
+/* ═══ پاپ‌آپ اطلاعات حقوقی تکمیلی ═══ */
+
+/* مشخصات ثبتی — nationalId روی ریشه مخاطب است، بقیه داخل officialSpecs */
+const LEGAL_REG_FIELDS = [
+  { key: 'nationalId', label: 'شناسه ملی', root: true },
+  { key: 'registrationNumber', label: 'شماره ثبت' },
+  { key: 'establishmentDate', label: 'تاریخ تاسیس' },
+  { key: 'economicCode', label: 'کد اقتصادی' },
+  { key: 'postalCode', label: 'کد پستی ۱۰ رقمی' },
+  { key: 'latestCapital', label: 'آخرین سرمایه ثبتی', rtl: true },
+  { key: 'website', label: 'وبسایت' },
+  { key: 'phone', label: 'تلفن ثابت' },
+  { key: 'latestGazette', label: 'آخرین آگهی رسمی' },
+];
+
+function buildLegalDraft(contact) {
+  const specs = contact.officialSpecs || {};
+  const gov = contact.governance || {};
+  return {
+    nationalId: contact.nationalId || '',
+    registrationNumber: specs.registrationNumber || '',
+    establishmentDate: specs.establishmentDate || '',
+    economicCode: specs.economicCode || '',
+    postalCode: specs.postalCode || '',
+    latestCapital: specs.latestCapital || '',
+    website: specs.website || '',
+    phone: specs.phone || '',
+    latestGazette: specs.latestGazette || '',
+    ceoName: gov.ceo?.name || '',
+    ceoNationalId: gov.ceo?.nationalId || '',
+    ceoValidUntil: gov.ceo?.validUntil || '',
+    boardMembers: (gov.boardMembers || []).map((member) => ({ ...member })),
+    boardValidUntil: gov.boardValidUntil || '',
+    signatureRight: gov.signatureRight || '',
+    address: specs.address || '',
+  };
+}
+
+/* استعلام «تازه» = حداکثر ~۶ ماه پیش — برای تیک سبز TTL */
+function isRecentVerification(dateStr) {
+  if (!dateStr || !isValidJalaliDate(dateStr)) return false;
+  const d = parseJalaliDate(dateStr);
+  const t = parseJalaliDate(getTodayJalali());
+  const diffDays = (t.year - d.year) * 365 + (t.month - d.month) * 30 + (t.day - d.day);
+  return diffDays >= 0 && diffDays <= 180;
+}
+
+function LegalInfoModal({ contact, onClose }) {
+  const updateContact = useContactsStore((state) => state.updateContact);
+  const specs = contact.officialSpecs || {};
+  const gov = contact.governance || {};
+  const isLegal = contact.personType === PERSON_TYPES.LEGAL;
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [versionIndex, setVersionIndex] = useState(0);
+  const [draft, setDraft] = useState(() => buildLegalDraft(contact));
+  const syncTimer = useRef(null);
+
+  /* ماشین زمان: ایندکس ۰ = نسخه فعلی (داده زنده)، ایندکس‌های بالاتر = استعلام‌های قدیمی‌تر */
+  const snapshots = useMemo(() => [
+    {
+      isCurrent: true,
+      verifiedAt: contact.legalVerifiedAt || null,
+      nationalId: contact.nationalId,
+      specs: contact.officialSpecs || {},
+      gov: contact.governance || {},
+    },
+    ...(contact.legalHistory || []).map((snap) => ({
+      isCurrent: false,
+      verifiedAt: snap.verifiedAt,
+      nationalId: snap.nationalId ?? contact.nationalId,
+      specs: snap.officialSpecs || {},
+      gov: snap.governance || {},
+    })),
+  ], [contact]);
+
+  const active = snapshots[Math.min(versionIndex, snapshots.length - 1)];
+  const isCurrentVersion = active.isCurrent;
+  const canGoOlder = versionIndex < snapshots.length - 1;
+  const canGoNewer = versionIndex > 0;
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      clearTimeout(syncTimer.current);
+    };
+  }, [onClose]);
+
+  /**
+   * استعلام از وب‌سرویس لینکا (به‌روزرسانی خودکار مشخصات رسمی با شناسه ملی).
+   * تا وقتی سرویس در شیرازه پیکربندی نشده (WEB_SERVICES_CONFIG.linka.enabled)،
+   * فقط چرخه اتصال را شبیه‌سازی و وضعیت را اعلام می‌کند.
+   */
+  const handleLinkaSync = () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    syncTimer.current = setTimeout(() => {
+      setIsSyncing(false);
+      const linka = WEB_SERVICES_CONFIG.linka;
+      if (!linka.enabled || !linka.endpoint) {
+        showSystemToast('وب‌سرویس لینکا هنوز متصل نیست — پس از پیکربندی در شیرازه، اطلاعات با یک کلیک به‌روز می‌شود.', { duration: 3600 });
+        return;
+      }
+      /* TODO(linka): fetch(linka.endpoint + contact.nationalId) → updateContact با فیلدهای fieldsAutoFilled */
+      showSystemToast('اطلاعات رسمی شرکت از لینکا به‌روزرسانی شد.');
+    }, 1200);
+  };
+
+  const currentValue = (field) => (field.root ? active.nationalId : active.specs[field.key]);
+  const setField = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
+  const setMember = (index, key, value) => setDraft((prev) => ({
+    ...prev,
+    boardMembers: prev.boardMembers.map((member, i) => (i === index ? { ...member, [key]: value } : member)),
+  }));
+
+  const addMember = () => setDraft((prev) => ({
+    ...prev,
+    boardMembers: [...prev.boardMembers, { role: 'عضو هیئت مدیره', name: '', nationalId: '' }],
+  }));
+
+  const removeMember = (index) => setDraft((prev) => ({
+    ...prev,
+    boardMembers: prev.boardMembers.filter((_, i) => i !== index),
+  }));
+
+  const startEdit = () => {
+    setDraft(buildLegalDraft(contact));
+    setIsEditing(true);
+  };
+
+  const handleSave = (event) => {
+    event.preventDefault();
+    updateContact(contact.id, {
+      nationalId: draft.nationalId.trim(),
+      officialSpecs: {
+        ...specs,
+        registrationNumber: draft.registrationNumber.trim(),
+        establishmentDate: draft.establishmentDate.trim(),
+        economicCode: draft.economicCode.trim(),
+        postalCode: draft.postalCode.trim(),
+        latestCapital: draft.latestCapital.trim(),
+        website: draft.website.trim(),
+        phone: draft.phone.trim(),
+        latestGazette: draft.latestGazette.trim(),
+        address: draft.address.trim(),
+      },
+      governance: {
+        ...gov,
+        ceo: {
+          name: draft.ceoName.trim(),
+          nationalId: draft.ceoNationalId.trim(),
+          validUntil: draft.ceoValidUntil.trim(),
+        },
+        boardMembers: draft.boardMembers.filter((member) => member.name.trim() || member.nationalId.trim()),
+        boardValidUntil: draft.boardValidUntil.trim(),
+        signatureRight: draft.signatureRight.trim(),
+      },
+    });
+    setIsEditing(false);
+  };
+
+  const viewRow = (label, value, rtl = false) => (
+    <div className="kprofile-legal-modal__row" key={label}>
+      <dt>{label}</dt>
+      <dd style={rtl ? { direction: 'rtl' } : undefined}>{value || '—'}</dd>
+    </div>
+  );
+
+  const editRow = (key, label, rtl = false) => (
+    <label key={key} className="kprofile-legal-modal__row kprofile-legal-modal__row--edit">
+      <span>{label}</span>
+      <input
+        type="text"
+        className="kprofile-legal-modal__input"
+        value={draft[key]}
+        onChange={(event) => setField(key, event.target.value)}
+        dir={rtl ? 'rtl' : 'ltr'}
+      />
+    </label>
+  );
+
+  /* پورتال روی body — backdrop-filter کارت والد برای position:fixed
+     containing block می‌سازد و مودال را از مرکز صفحه خارج می‌کند */
+  return createPortal(
+    <div className="kprofile-legal-overlay" onClick={onClose} role="presentation">
+      <div
+        className={`kprofile-legal-modal kprofile-legal-modal--wide${isCurrentVersion ? '' : ' is-expired'}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="اطلاعات حقوقی تکمیلی"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="kprofile-legal-modal__header">
+          <h3 className="kprofile-legal-modal__title">
+            <InfoIcon />
+            {isCurrentVersion ? 'اطلاعات حقوقی تکمیلی' : 'نسخه منقضی‌شده'}
+          </h3>
+          <div className="kprofile-legal-modal__tools">
+            {!isEditing && isCurrentVersion && (
+              <button
+                type="button"
+                className="kprofile-legal-modal__close"
+                onClick={startEdit}
+                title="ویرایش"
+                aria-label="ویرایش اطلاعات حقوقی"
+              >
+                <PencilIcon />
+              </button>
+            )}
+            <button
+              type="button"
+              className="kprofile-legal-modal__close"
+              onClick={onClose}
+              aria-label="بستن"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+        </header>
+
+        {!isEditing && snapshots.length > 1 && (
+          <nav className="kprofile-legal-modal__timeline" aria-label="تاریخچه استعلام‌ها">
+            <button
+              type="button"
+              className="kprofile-legal-modal__timeline-btn"
+              onClick={() => setVersionIndex((i) => i + 1)}
+              disabled={!canGoOlder}
+              title="استعلام قدیمی‌تر"
+              aria-label="استعلام قدیمی‌تر"
+            >
+              <ChevronRightIcon />
+            </button>
+            <span className={`kprofile-legal-modal__timeline-label${isCurrentVersion ? '' : ' is-expired'}`}>
+              {isCurrentVersion ? 'نسخه فعلی' : `نسخه منقضی‌شده — استعلام ${active.verifiedAt}`}
+            </span>
+            <button
+              type="button"
+              className="kprofile-legal-modal__timeline-btn"
+              onClick={() => setVersionIndex((i) => i - 1)}
+              disabled={!canGoNewer}
+              title="استعلام جدیدتر"
+              aria-label="استعلام جدیدتر"
+            >
+              <ChevronLeftIcon />
+            </button>
+          </nav>
+        )}
+
+        <div className="kprofile-legal-modal__body">
+          {isEditing ? (
+            <form onSubmit={handleSave}>
+              <h4 className="kprofile-legal-modal__section-title">مشخصات ثبتی</h4>
+              <div className="kprofile-legal-modal__list">
+                {LEGAL_REG_FIELDS.map(({ key, label, rtl }) => editRow(
+                  key,
+                  key === 'nationalId' && !isLegal ? 'کد ملی' : label,
+                  rtl,
+                ))}
+              </div>
+
+              <h4 className="kprofile-legal-modal__section-title">مدیرعامل</h4>
+              <div className="kprofile-legal-modal__list">
+                {editRow('ceoName', 'نام و نام خانوادگی', true)}
+                {editRow('ceoNationalId', 'کد ملی')}
+                {editRow('ceoValidUntil', 'اعتبار مسئولیت تا')}
+              </div>
+
+              <h4 className="kprofile-legal-modal__section-title">اعضاء هیئت مدیره</h4>
+              {draft.boardMembers.map((member, index) => (
+                <div key={index} className="kprofile-legal-modal__member-edit">
+                  <input
+                    type="text"
+                    className="kprofile-legal-modal__input"
+                    placeholder="سمت"
+                    value={member.role}
+                    onChange={(event) => setMember(index, 'role', event.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="kprofile-legal-modal__input"
+                    placeholder="نام و نام خانوادگی"
+                    value={member.name}
+                    onChange={(event) => setMember(index, 'name', event.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="kprofile-legal-modal__input"
+                    placeholder="کد ملی"
+                    value={member.nationalId}
+                    onChange={(event) => setMember(index, 'nationalId', event.target.value)}
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    className="kprofile-legal-modal__member-remove"
+                    onClick={() => removeMember(index)}
+                    aria-label="حذف عضو"
+                  >
+                    <CloseIcon />
+                  </button>
+                </div>
+              ))}
+              <button type="button" className="kprofile-legal-modal__member-add" onClick={addMember}>
+                + افزودن عضو
+              </button>
+              <div className="kprofile-legal-modal__list">
+                {editRow('boardValidUntil', 'اعتبار هیئت مدیره تا')}
+              </div>
+
+              <h4 className="kprofile-legal-modal__section-title">حق امضا</h4>
+              <textarea
+                className="kprofile-legal-modal__textarea"
+                rows={4}
+                value={draft.signatureRight}
+                onChange={(event) => setField('signatureRight', event.target.value)}
+              />
+
+              <h4 className="kprofile-legal-modal__section-title">آدرس قانونی</h4>
+              <textarea
+                className="kprofile-legal-modal__textarea"
+                rows={3}
+                value={draft.address}
+                onChange={(event) => setField('address', event.target.value)}
+              />
+
+              <footer className="kprofile-legal-modal__footer">
+                <button type="button" className="kprofile-magic__cancel" onClick={() => setIsEditing(false)}>
+                  انصراف
+                </button>
+                <button type="submit" className="btn btn--primary">
+                  ذخیره
+                </button>
+              </footer>
+            </form>
+          ) : (
+            /* key=versionIndex → با هر پرش زمانی، محتوا remount و کراس‌فید می‌شود */
+            <div key={versionIndex} className="kprofile-legal-modal__fade">
+              <h4 className="kprofile-legal-modal__section-title">مشخصات ثبتی</h4>
+              <dl className="kprofile-legal-modal__list">
+                {LEGAL_REG_FIELDS.map((field) => viewRow(
+                  field.key === 'nationalId' && !isLegal ? 'کد ملی' : field.label,
+                  currentValue(field),
+                  field.rtl,
+                ))}
+              </dl>
+
+              <h4 className="kprofile-legal-modal__section-title">مدیرعامل</h4>
+              <dl className="kprofile-legal-modal__list">
+                {viewRow('نام و نام خانوادگی', active.gov.ceo?.name, true)}
+                {viewRow('کد ملی', active.gov.ceo?.nationalId)}
+                {viewRow('اعتبار مسئولیت تا', active.gov.ceo?.validUntil)}
+              </dl>
+
+              <h4 className="kprofile-legal-modal__section-title">اعضاء هیئت مدیره</h4>
+              {(active.gov.boardMembers || []).length ? (
+                <ul className="kprofile-legal-modal__members">
+                  {active.gov.boardMembers.map((member, index) => (
+                    <li key={`${member.name}-${index}`} className="kprofile-legal-modal__member">
+                      <span className="kprofile-legal-modal__member-role">{member.role}</span>
+                      <span className="kprofile-legal-modal__member-name">{member.name}</span>
+                      <span className="kprofile-legal-modal__member-code">کد ملی: {member.nationalId || '—'}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="kprofile-legal-modal__empty">عضوی ثبت نشده است.</p>
+              )}
+              <dl className="kprofile-legal-modal__list">
+                {viewRow('اعتبار هیئت مدیره تا', active.gov.boardValidUntil)}
+              </dl>
+
+              <h4 className="kprofile-legal-modal__section-title">حق امضا</h4>
+              <p className="kprofile-legal-modal__text">{active.gov.signatureRight || '—'}</p>
+
+              <h4 className="kprofile-legal-modal__section-title">آدرس قانونی</h4>
+              <p className="kprofile-legal-modal__text">{active.specs.address || '—'}</p>
+            </div>
+          )}
+        </div>
+
+        {!isEditing && (
+          <footer className="kprofile-legal-modal__ttl">
+            <span className={`kprofile-legal-modal__ttl-badge${isRecentVerification(active.verifiedAt) ? ' is-fresh' : ''}`}>
+              {isRecentVerification(active.verifiedAt) && (
+                <span className="kprofile-legal-modal__ttl-check" aria-hidden="true"><CheckIcon /></span>
+              )}
+              آخرین استعلام: {active.verifiedAt || '—'}
+            </span>
+            {isCurrentVersion && (
+              <button
+                type="button"
+                className={`kprofile-legal-modal__linka-btn${isSyncing ? ' is-syncing' : ''}`}
+                onClick={handleLinkaSync}
+                disabled={isSyncing}
+              >
+                <SyncIcon />
+                {isSyncing ? 'در حال استعلام…' : 'استعلام از لینکا'}
+              </button>
+            )}
+          </footer>
+        )}
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -259,18 +699,55 @@ function MagicInput({ contactId }) {
   const [activityType, setActivityType] = useState('call');
   const [note, setNote] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
+  const [isRewriting, setIsRewriting] = useState(false);
+  const rewriteTimer = useRef(null);
+  const panelRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(rewriteTimer.current), []);
 
   const trimmed = note.trim();
   const hasDate = Boolean(followUpDate);
   const hasValidDate = isValidJalaliDate(followUpDate);
   const isFutureDate = hasValidDate && compareJalaliDates(followUpDate, getTodayJalali()) > 0;
   /* متن الزامی؛ تاریخ پیگیری اختیاری اما اگر وارد شد باید معتبر و در آینده باشد */
-  const canSubmit = Boolean(trimmed) && (!hasDate || isFutureDate);
+  const canSubmit = Boolean(trimmed) && (!hasDate || isFutureDate) && !isRewriting;
 
   const reset = () => {
+    clearTimeout(rewriteTimer.current);
+    setIsRewriting(false);
     setNote('');
     setFollowUpDate('');
     setExpanded(false);
+  };
+
+  /* برگشت به حالت قرصی: Escape همیشه؛ کلیک بیرون فقط وقتی متنی تایپ نشده
+     (تا یادداشت نیمه‌کاره با یک کلیک اشتباه از بین نرود) */
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape') reset();
+    };
+    const onPointerDown = (event) => {
+      if (panelRef.current && !panelRef.current.contains(event.target) && !note.trim()) {
+        reset();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
+  });
+
+  /** شبیه‌سازی فراخوانی DeepSeek — یک ثانیه لودینگ، سپس جایگزینی خلاصه ساختاریافته B2B. */
+  const handleAiRewrite = () => {
+    if (!trimmed || isRewriting) return;
+    setIsRewriting(true);
+    rewriteTimer.current = setTimeout(() => {
+      setNote((current) => mockAiRewrite(current, activityType));
+      setIsRewriting(false);
+    }, 1000);
   };
 
   const handleSubmit = (event) => {
@@ -298,7 +775,7 @@ function MagicInput({ contactId }) {
   }
 
   return (
-    <div className="kprofile-magic">
+    <div className="kprofile-magic" ref={panelRef}>
       <form className="kprofile-magic__panel" onSubmit={handleSubmit}>
         <div className="kprofile-magic__types" role="tablist" aria-label="نوع فعالیت">
           {ACTIVITY_TYPES.map(({ id, label, Icon }) => (
@@ -309,6 +786,7 @@ function MagicInput({ contactId }) {
               aria-selected={activityType === id}
               className={`kprofile-magic__type${activityType === id ? ' is-active' : ''}`}
               onClick={() => setActivityType(id)}
+              disabled={isRewriting}
             >
               <Icon />
               {label}
@@ -316,13 +794,32 @@ function MagicInput({ contactId }) {
           ))}
         </div>
 
-        <textarea
-          className="kprofile-magic__textarea"
-          placeholder="شرح فعالیت… (نتیجه تماس، توافق‌ها، اقدام بعدی)"
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          autoFocus
-        />
+        <div className={`kprofile-ai-wrap${isRewriting ? ' is-busy' : ''}`} aria-busy={isRewriting}>
+          <textarea
+            className="kprofile-magic__textarea"
+            placeholder="شرح فعالیت… (نتیجه تماس، توافق‌ها، اقدام بعدی)"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            disabled={isRewriting}
+            autoFocus
+          />
+          <button
+            type="button"
+            className="kprofile-ai-btn"
+            title="بازنویسی خلاصه نتایج با هوش مصنوعی"
+            aria-label="بازنویسی خلاصه نتایج با هوش مصنوعی"
+            onClick={handleAiRewrite}
+            disabled={!trimmed || isRewriting}
+          >
+            <SparkIcon />
+          </button>
+          {isRewriting && (
+            <div className="kprofile-ai-overlay" role="status">
+              <span className="kprofile-ai-spinner" aria-hidden="true" />
+              دستیار هوش مصنوعی در حال پردازش...
+            </div>
+          )}
+        </div>
 
         <div className="kprofile-magic__row">
           <div className="kprofile-magic__date">
@@ -402,10 +899,19 @@ function OrdersPanel({ contact }) {
     return <div className="kprofile-empty">سفارشی برای این مخاطب ثبت نشده است.</div>;
   }
 
+  const profileReturn = [`/kanoon/contact/${contact.id}`, 'پروفایل مشتری'];
+
   return (
     <div className="kprofile-orders">
       {liveOrders.map((order) => (
-        <Link key={order.id} to={`/nabz/order/${encodeURIComponent(order.code)}`} className="kprofile-order">
+        <Link
+          key={order.id}
+          to={withReturnParams(
+            `/nabz/order/${encodeURIComponent(order.code)}`,
+            ...profileReturn,
+          )}
+          className="kprofile-order"
+        >
           <span className="kprofile-order__code">{order.code}</span>
           <span className="kprofile-order__title">{getStageLabel(order.stageId)}</span>
           <span className="kprofile-order__date">{order.registeredDate}</span>
@@ -413,7 +919,14 @@ function OrdersPanel({ contact }) {
         </Link>
       ))}
       {seedOrders.map((order) => (
-        <Link key={order.id} to={`/nabz?order=${encodeURIComponent(order.id)}`} className="kprofile-order">
+        <Link
+          key={order.id}
+          to={withReturnParams(
+            `/nabz?order=${encodeURIComponent(order.id)}`,
+            ...profileReturn,
+          )}
+          className="kprofile-order"
+        >
           <span className="kprofile-order__code">{order.id}</span>
           <span className="kprofile-order__title">{order.title || order.stage || '—'}</span>
           <span className="kprofile-order__date">{order.registeredAt}</span>
@@ -522,7 +1035,7 @@ export default function CustomerProfilePage() {
     return (
       <div className="module-page kanoon-profile-page" data-module="kanoon">
         <div className="kprofile-topbar">
-          <Link to="/" className="kprofile-topbar__back">→ بازگشت به کانون</Link>
+          <SmartBackButton fallbackTo="/" fallbackName="کانون" />
         </div>
         <div className="kprofile-empty">مخاطبی با این شناسه پیدا نشد.</div>
       </div>
@@ -532,7 +1045,7 @@ export default function CustomerProfilePage() {
   return (
     <div className="module-page kanoon-profile-page" data-module="kanoon">
       <div className="kprofile-topbar">
-        <Link to="/" className="kprofile-topbar__back">→ بازگشت به کانون</Link>
+        <SmartBackButton fallbackTo="/" fallbackName="کانون" />
       </div>
 
       <div className="kprofile">

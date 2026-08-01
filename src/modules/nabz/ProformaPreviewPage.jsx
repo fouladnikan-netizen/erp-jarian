@@ -157,7 +157,7 @@ export default function ProformaPreviewPage() {
   const isSigning = sealState === SEAL_SIGNING;
   const isApproved = sealState === SEAL_APPROVED;
   const isOfficial = payload.viewModel?.isOfficial !== false;
-  const finalizeLabel = isOfficial ? 'مهر و امضا' : 'تأیید';
+  const finalizeLabel = isOfficial ? 'تأیید، مهر و امضای رسمی' : 'تأیید';
   const finalizeBusyLabel = isOfficial ? 'در حال مهر و امضا…' : 'در حال تأیید…';
 
   return (

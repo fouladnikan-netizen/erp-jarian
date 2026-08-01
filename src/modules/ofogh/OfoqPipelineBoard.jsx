@@ -6,9 +6,11 @@ import OfoqLeadModal from './OfoqLeadModal';
 import {
   PIPELINE_STAGES,
   PULSE_META,
+  ROTTING_INACTIVITY_DAYS,
   getPulseStatus,
   getContactDisplayName,
   getContactTag,
+  isCardRotting,
 } from './pipelineConfig';
 
 const DUE_FILTER_OPTIONS = [
@@ -55,9 +57,28 @@ function PulseDot({ nextFollowUpDate }) {
   );
 }
 
+/** نشان بات صیاد — ساعت شنی کوچک کنار نقطه نبض کارت‌های راکد. */
+function RottingBadge() {
+  return (
+    <span
+      className="ofoq-rotting-badge"
+      title={`بیش از ${ROTTING_INACTIVITY_DAYS.toLocaleString('fa-IR')} روز بدون پیگیری`}
+      aria-label="فرصت راکد"
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M6 2h12" />
+        <path d="M6 22h12" />
+        <path d="M7 2v4a5 5 0 0 0 10 0V2" />
+        <path d="M7 22v-4a5 5 0 0 1 10 0v4" />
+      </svg>
+    </span>
+  );
+}
+
 function ContactCard({ contact, index, onOpen }) {
   const name = getContactDisplayName(contact);
   const tag = getContactTag(contact);
+  const rotting = isCardRotting(contact.last_interaction_date, contact.lifecycle_stage);
 
   const handleClick = (event) => {
     // بعد از درگ، کتابخانه کلیک را defaultPrevented می‌کند؛ فقط کلیک واقعی کشو را باز کند.
@@ -72,13 +93,16 @@ function ContactCard({ contact, index, onOpen }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`ofoq-lead-card${snapshot.isDragging ? ' is-dragging' : ''}`}
+          className={`ofoq-lead-card${snapshot.isDragging ? ' is-dragging' : ''}${rotting ? ' is-rotting' : ''}`}
           style={provided.draggableProps.style}
           onClick={handleClick}
         >
           <div className="ofoq-lead-card__row">
             <h3 className="ofoq-lead-card__name">{name}</h3>
-            <PulseDot nextFollowUpDate={contact.next_follow_up_date} />
+            <span className="ofoq-lead-card__signals">
+              {rotting ? <RottingBadge /> : null}
+              <PulseDot nextFollowUpDate={contact.next_follow_up_date} />
+            </span>
           </div>
           {tag ? <span className="ofoq-lead-card__tag">{tag}</span> : null}
         </article>

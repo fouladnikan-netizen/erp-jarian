@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { toDisplayOrderCode } from '../../orderCode';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../../orderStageService';
 import { canEditWholeOrder } from '../../orderEditPermissions';
 import {
-  getOrderProfileBreadcrumb,
   getOrderProfileNextAction,
 } from '../../orderProfileService';
 import {
@@ -23,14 +21,6 @@ import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
 import OrderProfileCancelDialog from './OrderProfileCancelDialog';
 import ProformaHeaderActions from '../ProformaHeaderActions';
 import { ORDER_TABS } from '../../config';
-
-function BackArrowIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <path d="M5 12h14M13 5l7 7-7 7" />
-    </svg>
-  );
-}
 
 function ActivityBellIcon() {
   return (
@@ -78,8 +68,6 @@ export default function OrderProfileChrome({
   const detailsRef = useRef(null);
   const moreRef = useRef(null);
 
-  const breadcrumb = getOrderProfileBreadcrumb(order);
-  const backCrumb = breadcrumb.find((crumb) => crumb.isBack) || breadcrumb[0];
   const statusKind = getOrderDisplayStatusKind(order);
   const statusLabel = getOrderDisplayStatus(order);
   const nextAction = getOrderProfileNextAction(order);
@@ -133,17 +121,6 @@ export default function OrderProfileChrome({
     <div className="order-profile-chrome">
       <div className="order-profile-slim-header">
         <div className="order-profile-slim-header__identity">
-          {backCrumb && (
-            <Link
-              to={backCrumb.to || '/nabz'}
-              className="order-profile-slim-header__back"
-              aria-label={backCrumb.label}
-              title={backCrumb.label}
-            >
-              <BackArrowIcon />
-            </Link>
-          )}
-
           <h1 className="order-profile-slim-header__customer font-meem" title={order.customer}>
             {order.customer}
           </h1>

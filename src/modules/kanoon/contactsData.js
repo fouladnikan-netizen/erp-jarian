@@ -1,22 +1,93 @@
 import { ENTITY_TYPES, PERSON_TYPES } from './config';
 
 const officialSample = {
-  registrationNumber: '۴۵۶۷۸۹',
-  establishmentDate: '۱۳۷۵/۰۳/۱۵',
-  economicCode: '۴۱۱۱۲۲۳۳۴۴',
+  registrationNumber: '642490',
+  establishmentDate: '1403/09/09',
+  economicCode: '14013998055',
   companyType: 'سهامی خاص',
   registrationRegion: 'تهران',
-  latestGazette: '۱۴۰۳/۱۰/۲۰',
-  latestCapital: '۵۰۰٬۰۰۰٬۰۰۰٬۰۰۰ ریال',
-  phone: '02188776655',
-  website: 'www.example.ir',
-  address: 'تهران، خیابان ولیعصر، پلاک ۱۲۳',
-  postalCode: '۱۴۳۵۶۷۸۹۰',
+  latestGazette: '1404/06/15',
+  latestCapital: '500,000,000 ریال',
+  phone: '02171683000',
+  website: 'www.fouladnikan.com',
+  address: 'استان تهران، شهرستان تهران، بخش مرکزی، شهر تهران، داوودیه، خیابان شمس تبریزی جنوبی، کوچه غفاری (ک تابان شرقی)، پلاک ۳، طبقه ۳، واحد ۷',
+  postalCode: '1549847120',
 };
 
 const legalPersonsSample = {
-  ceo: 'محمد احمدی',
-  signatory: 'زهرا کریمی',
+  ceo: 'نگین اخوان',
+  signatory: 'محمدرضا محمدی',
+};
+
+/**
+ * تاریخچه استعلام‌های رسمی (ماشین زمان پاپ‌آپ اطلاعات حقوقی) —
+ * هر رکورد یک عکس‌فوری (snapshot) کامل از وضعیت ثبتی شرکت در تاریخ استعلام است.
+ * بعداً هر استعلام موفق لینکا یک رکورد جدید به ابتدای این آرایه اضافه می‌کند.
+ */
+const legalHistorySample = [
+  {
+    verifiedAt: '1403/09/20',
+    nationalId: '14013998055',
+    officialSpecs: {
+      registrationNumber: '642490',
+      establishmentDate: '1403/09/09',
+      economicCode: '14013998055',
+      latestGazette: '1403/09/09',
+      latestCapital: '100,000,000 ریال',
+      phone: '02188776655',
+      website: '',
+      address: 'تهران، سعادت‌آباد، بلوار دریا، خیابان صرافها، پلاک ۵۸، واحد ۲',
+      postalCode: '1998764311',
+    },
+    governance: {
+      ceo: { name: 'نگین اخوان', nationalId: '3860129821', validUntil: '1405/09/08' },
+      boardMembers: [
+        { role: 'رئیس هیئت مدیره', name: 'محمدرضا محمدی', nationalId: '3875509285' },
+        { role: 'نایب رئیس هیئت مدیره', name: 'نگین اخوان', nationalId: '3860129821' },
+      ],
+      boardValidUntil: '1405/09/08',
+      signatureRight:
+        'حق امضا کلیه اوراق و اسناد بهادار و تعهدآور شرکت با امضا مدیرعامل همراه با مهر شرکت معتبر می‌باشد.',
+    },
+  },
+  {
+    verifiedAt: '1402/08/12',
+    nationalId: '14013998055',
+    officialSpecs: {
+      registrationNumber: '642490',
+      establishmentDate: '1403/09/09',
+      economicCode: '14013998055',
+      latestGazette: '1402/08/01',
+      latestCapital: '10,000,000 ریال',
+      phone: '02177445566',
+      website: '',
+      address: 'تهران، نارمک، خیابان فرجام شرقی، پلاک ۱۱۲، طبقه ۱',
+      postalCode: '1687613341',
+    },
+    governance: {
+      ceo: { name: 'محمدرضا محمدی', nationalId: '3875509285', validUntil: '1403/08/12' },
+      boardMembers: [
+        { role: 'رئیس هیئت مدیره', name: 'فاطمه سادات وفائی', nationalId: '3931630536' },
+        { role: 'عضو هیئت مدیره', name: 'محمدرضا محمدی', nationalId: '3875509285' },
+      ],
+      boardValidUntil: '1403/08/12',
+      signatureRight:
+        'حق امضا کلیه اوراق و اسناد تعهدآور شرکت با امضا مشترک رئیس هیئت مدیره و مدیرعامل همراه با مهر شرکت معتبر می‌باشد.',
+    },
+  },
+];
+
+/** ارکان رسمی شرکت (آخرین آگهی روزنامه رسمی) — مصرف پاپ‌آپ اطلاعات حقوقی پروفایل */
+const governanceSample = {
+  ceo: { name: 'نگین اخوان', nationalId: '3860129821', validUntil: '1405/09/08' },
+  boardMembers: [
+    { role: 'رئیس هیئت مدیره', name: 'محمدرضا محمدی', nationalId: '3875509285' },
+    { role: 'نایب رئیس هیئت مدیره', name: 'نگین اخوان', nationalId: '3860129821' },
+    { role: 'عضو هیئت مدیره', name: 'فاطمه سادات وفائی', nationalId: '3931630536' },
+  ],
+  boardValidUntil: '1405/09/08',
+  signatureRight:
+    'حق امضا تمامی اوراق و اسناد بهادار و تعهدآور شرکت از قبیل چک، سفته، بروات، قراردادهای عقود اسلامی و همچنین تمامی نامه‌های عادی و اداری با امضا رئیس هیئت مدیره همراه با مهر شرکت معتبر می‌باشد.',
 };
 
 function daysAgo(days) {
@@ -39,7 +110,7 @@ const rawContacts = [
     entityType: ENTITY_TYPES.CUSTOMER,
     personType: PERSON_TYPES.LEGAL,
     companyName: 'فولاد پارس',
-    nationalId: '10101234567',
+    nationalId: '14013998055',
     province: 'خوزستان',
     activityDomain: 'صنایع فولادی',
     behavioralStatus: 'ambassador',
@@ -49,6 +120,9 @@ const rawContacts = [
     fullAddress: 'اهواز، کیانپارس، خیابان صنعت، پلاک ۱۲',
     officialSpecs: { ...officialSample },
     legalPersons: { ...legalPersonsSample },
+    governance: { ...governanceSample },
+    legalVerifiedAt: '1405/04/28',
+    legalHistory: legalHistorySample,
     /** Last-used delivery fields for Nabz smart pre-fill (Smart Dispatch). */
     lastUsedDeliveryInfo: {
       needsShipping: true,

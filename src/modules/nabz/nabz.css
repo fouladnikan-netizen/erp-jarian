@@ -4315,6 +4315,12 @@ html[data-theme='dark'] .nabz-picker-overlay {
   width: 100%;
 }
 
+.order-profile-smart-back {
+  display: flex;
+  align-items: center;
+  margin: 0 0 0.65rem;
+}
+
 .order-profile-view,
 .order-profile-page {
   background: #f8fafc;

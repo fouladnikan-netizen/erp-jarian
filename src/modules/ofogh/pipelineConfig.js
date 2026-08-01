@@ -70,6 +70,25 @@ export const PULSE_META = {
   none: { label: 'بدون پیگیری برنامه‌ریزی‌شده', className: 'ofoq-pulse--none' },
 };
 
+/** بات صیاد: آستانه رکود فرصت — بیش از این تعداد روز بدون تعامل یعنی «در حال پوسیدن». */
+export const ROTTING_INACTIVITY_DAYS = 14;
+
+/** ستون‌های مستثنی از منطق پوسیدگی: هم‌پیمان (وفادار) و سایه (بایگانی). */
+const ROTTING_EXEMPT_STAGES = new Set([LIFECYCLE_STAGES.LOYAL, LIFECYCLE_STAGES.ARCHIVED]);
+
+/**
+ * آیا فرصت در حال پوسیدن است؟ بیش از ۱۴ روز بدون تعامل
+ * و خارج از ستون‌های هم‌پیمان/سایه.
+ */
+export function isCardRotting(lastInteractionDate, lifecycleStage) {
+  if (ROTTING_EXEMPT_STAGES.has(lifecycleStage)) return false;
+  if (!lastInteractionDate) return false;
+  const last = new Date(lastInteractionDate);
+  if (Number.isNaN(last.getTime())) return false;
+  const inactiveDays = (Date.now() - last.getTime()) / 86_400_000;
+  return inactiveDays > ROTTING_INACTIVITY_DAYS;
+}
+
 /** نام نمایشی مخاطب — شرکت حقوقی یا شخص حقیقی. */
 export function getContactDisplayName(contact) {
   return contact.companyName || contact.personName || '—';

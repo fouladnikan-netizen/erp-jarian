@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import SmartBackButton from '../../components/navigation/SmartBackButton';
 import { normalizeOrderCode } from './orderCode';
 import { useNabzOrders } from './NabzOrdersContext';
 import {
@@ -47,6 +48,9 @@ export default function OrderDetailPage() {
   if (!order) {
     return (
       <div className="module-page nabz-page nabz-order-profile-shell">
+        <div className="order-profile-smart-back">
+          <SmartBackButton fallbackTo="/nabz" fallbackName="لیست سفارشات" />
+        </div>
         <OrderProfileViewNotFound />
       </div>
     );
@@ -54,6 +58,9 @@ export default function OrderDetailPage() {
 
   return (
     <div className="module-page nabz-page nabz-order-profile-shell">
+      <div className="order-profile-smart-back">
+        <SmartBackButton fallbackTo="/nabz" fallbackName="لیست سفارشات" />
+      </div>
       <OrderProfileView
         order={order}
         onUpdateOrder={setOrders}
