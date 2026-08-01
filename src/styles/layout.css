@@ -109,7 +109,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 1.4rem;
   width: 100%;
 }
 
@@ -123,13 +123,13 @@
 }
 
 .sidebar--expanded .sidebar__logo {
-  width: 190px;
-  height: 80px;
+  width: 152px;
+  height: 64px;
 }
 
 .sidebar--collapsed .sidebar__logo {
-  width: 66px;
-  height: 66px;
+  width: 53px;
+  height: 53px;
 }
 
 /* حالت شب: بخش‌های مشکی لوگو سفید شوند؛ hue-rotate قرمز «نیکان» را قرمز نگه می‌دارد */
@@ -138,9 +138,9 @@ html[data-theme='dark'] .sidebar__logo {
 }
 
 .sidebar__brand-text {
-  text-align: center;
+  text-align: right;
   width: 100%;
-  padding: 0 0.2rem;
+  padding: 0 0.35rem;
 }
 
 .sidebar__brand-title {
