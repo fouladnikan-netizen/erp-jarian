@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { initialContacts } from '../modules/kanoon/contactsData';
+import { BRAND_NAME, SHOW_BRAND_NAME } from '../config/brand';
 
 /**
  * چرخه حیات مخاطب — ستون‌های پایپ‌لاین افق.
@@ -107,7 +108,7 @@ export const useContactsStore = create((set) => ({
           summary: trimmed,
           type,
           nextFollowUp: nextFollowUpDate || null,
-          operator: contact.assignee?.name || 'کاربر جریان',
+          operator: contact.assignee?.name || (SHOW_BRAND_NAME ? `کاربر ${BRAND_NAME}` : 'کاربر سامانه'),
         };
         return {
           ...contact,

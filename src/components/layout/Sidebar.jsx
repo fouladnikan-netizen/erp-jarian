@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { mainModules, footerModule } from '../../modules/registry';
+import { BRAND_NAME, SHOW_BRAND_NAME } from '../../config/brand';
 import logo from '../../assets/images/nikan4.png';
 import { MODULE_ICONS } from './ModuleIcons';
 
@@ -71,7 +72,7 @@ export default function Sidebar({ expanded, onToggle }) {
           />
           {expanded && (
             <div className="sidebar__brand-text">
-              <h1 className="sidebar__brand-title">جریان</h1>
+              {SHOW_BRAND_NAME && <h1 className="sidebar__brand-title">{BRAND_NAME}</h1>}
               <p className="sidebar__brand-tagline">سامانه مدیریت یکپارچه‌ی سفارشات</p>
             </div>
           )}
