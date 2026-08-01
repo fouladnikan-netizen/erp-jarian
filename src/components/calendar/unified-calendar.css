@@ -1,0 +1,783 @@
+/* ═══════════ تقویم یکپارچه جریان — گلس‌مورفیسم VisionOS ═══════════ */
+
+.jcal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.75rem, 3vw, 2.5rem);
+  background: rgba(30, 32, 40, 0.38);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  animation: jcal-fade-in 0.25s ease;
+}
+
+@keyframes jcal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.jcal-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(1120px, 100%);
+  height: min(86vh, 820px);
+  border-radius: 26px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 32px 80px rgba(15, 23, 42, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  animation: jcal-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes jcal-panel-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.jcal-panel--page {
+  width: 100%;
+  height: calc(100vh - var(--header-height, 64px) - 3rem);
+  min-height: 560px;
+  animation: none;
+}
+
+/* ——— هدر ——— */
+.jcal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.4rem 0.85rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.jcal-header__titles h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary, #1f2430);
+}
+
+.jcal-header__titles p {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.jcal-header__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ——— سوییچ نما ——— */
+.jcal-views {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.jcal-views__btn {
+  border: none;
+  background: transparent;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.jcal-views__btn.is-active {
+  background: linear-gradient(135deg, #e0342f, #b8231f);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(224, 52, 47, 0.35);
+}
+
+.jcal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jcal-close:hover {
+  background: rgba(224, 52, 47, 0.12);
+  color: #e0342f;
+  border-color: rgba(224, 52, 47, 0.35);
+}
+
+/* ——— نوار ابزار (ناوبری + فیلترها) ——— */
+.jcal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.8rem 1.4rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.jcal-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.jcal-nav__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text-primary, #1f2430);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jcal-nav__btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+
+.jcal-nav__today {
+  border: 1px solid rgba(224, 52, 47, 0.35);
+  background: rgba(224, 52, 47, 0.08);
+  color: #c02722;
+  border-radius: 10px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jcal-nav__today:hover {
+  background: rgba(224, 52, 47, 0.16);
+}
+
+.jcal-nav__title {
+  margin-inline-start: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary, #1f2430);
+}
+
+.jcal-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.jcal-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.jcal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.22s ease;
+}
+
+.jcal-chip.is-active { opacity: 1; }
+
+.jcal-chip--financial.is-active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(212, 175, 55, 0.18));
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #047857;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18);
+}
+
+.jcal-chip--followup.is-active {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(59, 130, 246, 0.16));
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #1d4ed8;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.16);
+}
+
+.jcal-chip--logistics.is-active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.16), rgba(239, 68, 68, 0.14));
+  border-color: rgba(249, 115, 22, 0.5);
+  color: #c2410c;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.18);
+}
+
+.jcal-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.jcal-role select {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary, #1f2430);
+  padding: 0.35rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.jcal-role select:focus {
+  outline: none;
+  border-color: rgba(224, 52, 47, 0.5);
+}
+
+/* ——— بدنه ——— */
+.jcal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 1.4rem 1.3rem;
+  scrollbar-gutter: stable;
+}
+
+.jcal-body::-webkit-scrollbar { width: 8px; height: 8px; }
+.jcal-body::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
+}
+.jcal-body::-webkit-scrollbar-track { background: transparent; }
+
+/* ——— نمای ماه ——— */
+.jcal-month {
+  animation: jcal-view-in 0.3s ease;
+}
+
+@keyframes jcal-view-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.jcal-month__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.jcal-month__weekdays span {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary, #6b7280);
+  padding: 0.3rem 0;
+}
+
+.jcal-month__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.jcal-month__cell {
+  min-height: 92px;
+  border-radius: 14px;
+  padding: 0.4rem 0.45rem;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jcal-month__cell:hover:not(.is-empty) {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(148, 163, 184, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.jcal-month__cell.is-empty {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+}
+
+.jcal-month__cell.is-today {
+  border-color: rgba(224, 52, 47, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(224, 52, 47, 0.35), 0 6px 18px rgba(224, 52, 47, 0.12);
+}
+
+.jcal-month__daynum {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-primary, #1f2430);
+}
+
+.jcal-month__cell.is-today .jcal-month__daynum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0342f, #b8231f);
+  color: #fff;
+}
+
+.jcal-month__events {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.jcal-month__more {
+  font-size: 0.66rem;
+  color: var(--text-secondary, #6b7280);
+  padding-inline-start: 0.3rem;
+}
+
+/* ——— چیپ رویداد ——— */
+.jcal-event {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 0.28rem 0.45rem;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.jcal-event--compact {
+  padding: 0.18rem 0.4rem;
+  font-size: 0.66rem;
+  border-radius: 7px;
+}
+
+.jcal-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.14);
+}
+
+.jcal-event__dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.jcal-event__label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.jcal-event--financial {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.jcal-event--gold {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(16, 185, 129, 0.1));
+  color: #92700c;
+}
+
+.jcal-event--followup {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+
+.jcal-event--logistics {
+  background: rgba(249, 115, 22, 0.14);
+  color: #c2410c;
+}
+
+.jcal-event.is-overdue {
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.5);
+}
+
+/* ——— نمای هفته ——— */
+.jcal-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  min-height: 100%;
+  animation: jcal-view-in 0.3s ease;
+}
+
+.jcal-week__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 16px;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.jcal-week__col.is-today {
+  border-color: rgba(224, 52, 47, 0.5);
+  box-shadow: 0 8px 22px rgba(224, 52, 47, 0.1);
+}
+
+.jcal-week__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  padding: 0.4rem 0.2rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.jcal-week__head:hover { background: rgba(255, 255, 255, 0.7); }
+
+.jcal-week__head .font-meem {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-primary, #1f2430);
+}
+
+.jcal-week__head .font-yekan {
+  font-size: 0.66rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.jcal-week__events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jcal-empty-hint {
+  text-align: center;
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 0.75rem;
+  padding: 0.4rem 0;
+}
+
+/* ——— نمای روز ——— */
+.jcal-day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 640px;
+  margin-inline: auto;
+  animation: jcal-view-in 0.3s ease;
+}
+
+.jcal-day__card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-inline-start: 4px solid transparent;
+}
+
+.jcal-day__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.jcal-day__card--financial { border-inline-start-color: #10b981; }
+.jcal-day__card--gold { border-inline-start-color: #d4af37; }
+.jcal-day__card--followup { border-inline-start-color: #3b82f6; }
+.jcal-day__card--logistics { border-inline-start-color: #f97316; }
+
+.jcal-day__emoji { font-size: 1.2rem; }
+
+.jcal-day__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.jcal-day__title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary, #1f2430);
+}
+
+.jcal-day__sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.jcal-day__empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.jcal-day__empty span { font-size: 2rem; }
+.jcal-day__empty p { margin: 0.6rem 0 0; font-size: 0.85rem; }
+
+/* ——— پاپ‌اور رویداد ——— */
+.jcal-popover {
+  position: fixed;
+  z-index: 1300;
+  width: 300px;
+  border-radius: 18px;
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  animation: jcal-panel-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jcal-popover__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.jcal-popover__layer {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary, #6b7280);
+}
+
+.jcal-popover__priority {
+  font-size: 0.64rem;
+  font-weight: 800;
+  padding: 0.14rem 0.55rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.jcal-popover__priority.is-high {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.35);
+}
+
+.jcal-popover__priority.is-medium {
+  background: rgba(245, 158, 11, 0.16);
+  color: #92610c;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.35);
+}
+
+.jcal-popover__priority.is-normal {
+  background: rgba(148, 163, 184, 0.16);
+  color: #475569;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
+}
+
+.jcal-popover__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary, #1f2430);
+}
+
+.jcal-popover__meta {
+  margin: 0 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.jcal-popover__meta div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.74rem;
+}
+
+.jcal-popover__meta dt { color: var(--text-secondary, #6b7280); flex-shrink: 0; }
+.jcal-popover__meta dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-primary, #1f2430);
+  text-align: start;
+}
+
+.jcal-popover__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #c02722;
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(224, 52, 47, 0.08);
+  border: 1px solid rgba(224, 52, 47, 0.25);
+  transition: all 0.2s ease;
+}
+
+.jcal-popover__link:hover {
+  background: rgba(224, 52, 47, 0.15);
+  transform: translateY(-1px);
+}
+
+/* ═══════════ دارک‌مود ═══════════ */
+
+html[data-theme='dark'] .jcal-overlay {
+  background: rgba(8, 10, 16, 0.55);
+}
+
+html[data-theme='dark'] .jcal-panel {
+  background: rgba(24, 28, 38, 0.78);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme='dark'] .jcal-header,
+html[data-theme='dark'] .jcal-toolbar {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme='dark'] .jcal-header__titles h2,
+html[data-theme='dark'] .jcal-nav__title,
+html[data-theme='dark'] .jcal-month__daynum,
+html[data-theme='dark'] .jcal-day__title,
+html[data-theme='dark'] .jcal-week__head .font-meem,
+html[data-theme='dark'] .jcal-popover__title,
+html[data-theme='dark'] .jcal-popover__meta dd {
+  color: #e5e7eb;
+}
+
+html[data-theme='dark'] .jcal-views,
+html[data-theme='dark'] .jcal-nav__btn,
+html[data-theme='dark'] .jcal-close,
+html[data-theme='dark'] .jcal-role select {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .jcal-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .jcal-chip--financial.is-active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(212, 175, 55, 0.16));
+  color: #34d399;
+}
+
+html[data-theme='dark'] .jcal-chip--followup.is-active {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.16), rgba(59, 130, 246, 0.2));
+  color: #93c5fd;
+}
+
+html[data-theme='dark'] .jcal-chip--logistics.is-active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(239, 68, 68, 0.16));
+  color: #fdba74;
+}
+
+html[data-theme='dark'] .jcal-month__cell,
+html[data-theme='dark'] .jcal-week__col,
+html[data-theme='dark'] .jcal-day__card {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+html[data-theme='dark'] .jcal-month__cell:hover:not(.is-empty),
+html[data-theme='dark'] .jcal-day__card:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+html[data-theme='dark'] .jcal-month__cell.is-empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+html[data-theme='dark'] .jcal-event--financial { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
+html[data-theme='dark'] .jcal-event--gold { background: rgba(212, 175, 55, 0.2); color: #fbbf24; }
+html[data-theme='dark'] .jcal-event--followup { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+html[data-theme='dark'] .jcal-event--logistics { background: rgba(249, 115, 22, 0.2); color: #fdba74; }
+
+html[data-theme='dark'] .jcal-popover {
+  background: rgba(28, 32, 44, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme='dark'] .jcal-popover__link {
+  background: rgba(224, 52, 47, 0.16);
+  border-color: rgba(224, 52, 47, 0.4);
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .jcal-week__head:hover { background: rgba(255, 255, 255, 0.08); }
+
+html[data-theme='dark'] .jcal-nav__today {
+  background: rgba(224, 52, 47, 0.16);
+  color: #fca5a5;
+  border-color: rgba(224, 52, 47, 0.4);
+}
+
+html[data-theme='dark'] .jcal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ═══════════ واکنش‌گرایی ═══════════ */
+
+@media (max-width: 860px) {
+  .jcal-panel { height: 94vh; border-radius: 20px; }
+  .jcal-week { grid-template-columns: repeat(2, 1fr); }
+  .jcal-month__cell { min-height: 68px; }
+  .jcal-event--compact .jcal-event__label { display: none; }
+}

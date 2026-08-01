@@ -1,4 +1,15 @@
+import { useState } from 'react';
 import { useTheme, THEMES } from '../../theme/ThemeContext';
+import UnifiedJarianCalendar from '../calendar/UnifiedJarianCalendar';
+
+function CalendarIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
 
 function BellIcon() {
   return (
@@ -29,6 +40,7 @@ function MoonIcon() {
 export default function Header({ module }) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === THEMES.DARK;
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   return (
     <header className="header" role="banner">
@@ -49,11 +61,25 @@ export default function Header({ module }) {
           >
             {isDark ? <SunIcon /> : <MoonIcon />}
           </button>
+          <button
+            type="button"
+            className="btn btn--ghost btn--icon"
+            aria-label="تقویم یکپارچه جریان"
+            aria-pressed={isCalendarOpen}
+            title="تقویم یکپارچه جریان"
+            onClick={() => setIsCalendarOpen(true)}
+          >
+            <CalendarIcon />
+          </button>
           <button type="button" className="btn btn--ghost btn--icon" aria-label="اعلان‌ها">
             <BellIcon />
           </button>
         </div>
       </div>
+
+      {isCalendarOpen ? (
+        <UnifiedJarianCalendar open onClose={() => setIsCalendarOpen(false)} />
+      ) : null}
     </header>
   );
 }

@@ -9,6 +9,7 @@ import OrderDetailPage from './modules/nabz/OrderDetailPage';
 import ProformaPreviewPage from './modules/nabz/ProformaPreviewPage';
 import ShippingPreviewPage from './modules/nabz/ShippingPreviewPage';
 import OfoqModule from './modules/ofogh/OfoqModule';
+import CalendarPage from './components/calendar/CalendarPage';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { modules, moduleData } from './modules/registry';
 
@@ -25,6 +26,8 @@ export default function App() {
           <Route path="/kanoon/contact/:contactId" element={<CustomerProfilePage />} />
           <Route path="/vitrin" element={<VitrinPage />} />
           <Route path="/ofogh" element={<OfoqModule />} />
+          <Route path="/gahshomar" element={<CalendarPage />} />
+          <Route path="/calendar" element={<Navigate to="/gahshomar" replace />} />
           <Route path="/nabz" element={<NabzPage />} />
           <Route path="/nabz/new-order" element={<NabzPage />} />
           <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
@@ -34,6 +37,7 @@ export default function App() {
               && module.id !== 'vitrin'
               && module.id !== 'nabz'
               && module.id !== 'ofogh'
+              && module.id !== 'gahshomar'
             ))
             .map((module) => (
               <Route

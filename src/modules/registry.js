@@ -35,8 +35,8 @@ export const mainModules = [
     id: 'gahshomar',
     path: '/gahshomar',
     name: 'گاه‌شمار',
-    subtitle: 'دبیرخانه',
-    description: 'تقویم سازمانی، نامه‌ها، وظایف و پیگیری مکاتبات اداری',
+    subtitle: 'موتور تعهدات',
+    description: 'نمای تجمیعی تعهدات زمان‌دار از نبض، افق و مالی — بدون ثبت دستی رویداد',
   },
   {
     id: 'pooyesh',

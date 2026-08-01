@@ -115,9 +115,9 @@ export function gregorianToJalali(gy, gm, gd) {
   let gy2 = gy - (gy <= 1600 ? 621 : 1600);
   const leap = gm > 2 ? gy2 + 1 : gy2;
   let days = (365 * gy2)
-    + Math.floor(leap / 4)
-    - Math.floor(leap / 100)
-    + Math.floor(leap / 400)
+    + Math.floor((leap + 3) / 4)
+    - Math.floor((leap + 99) / 100)
+    + Math.floor((leap + 399) / 400)
     - 80
     + gd
     + gDaysInMonth[gm - 1];
