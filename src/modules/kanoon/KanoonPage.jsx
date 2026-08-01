@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useContactsStore } from '../../stores/useContactsStore';
 import { ENTITY_TYPES, PERSON_TYPES } from './config';
 import { computeKanoonKpis } from './kpi';
@@ -7,7 +7,6 @@ import KanoonKpis from './components/KanoonKpis';
 import KanoonToolbar from './components/KanoonToolbar';
 import KanoonTable from './components/KanoonTable';
 import ContactModal from './components/ContactModal';
-import ContactProfileDrawer from './components/ContactProfileDrawer';
 import KanoonActionPlaceholder from './components/KanoonActionPlaceholder';
 import { KANOON_ACTION } from './kanoonActionTypes';
 import './kanoon.css';
@@ -22,18 +21,24 @@ export default function KanoonPage() {
   const [search, setSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState({});
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [profileContact, setProfileContact] = useState(null);
   const [modalState, setModalState] = useState(null);
   const [actionForm, setActionForm] = useState(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const kpis = useMemo(() => computeKanoonKpis(contacts), [contacts]);
+
+  /** پروفایل تمام‌صفحه مخاطب — جایگزین درآور قدیمی */
+  const openProfile = (contact, tab) => {
+    navigate(`/kanoon/contact/${contact.id}${tab ? `?tab=${tab}` : ''}`);
+  };
 
   useEffect(() => {
     const contactId = Number(searchParams.get('contact'));
     if (!contactId) return;
     const match = contacts.find((c) => c.id === contactId);
-    if (match) setProfileContact(match);
+    if (match) navigate(`/kanoon/contact/${match.id}`, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, contacts]);
 
   useEffect(() => {
@@ -48,7 +53,6 @@ export default function KanoonPage() {
 
   const handleUpdateContact = (id, updates) => {
     updateContact(id, updates);
-    setProfileContact((prev) => (prev?.id === id ? { ...prev, ...updates } : prev));
   };
 
   const handleQuickActivity = (contact) => {
@@ -60,7 +64,7 @@ export default function KanoonPage() {
   };
 
   const handleOrderFallback = (contact) => {
-    setProfileContact({ ...contact, _initialTab: 'orders' });
+    openProfile(contact, 'orders');
   };
 
   const handleToggleActive = (contact) => {
@@ -95,7 +99,7 @@ export default function KanoonPage() {
         columnFilters={columnFilters}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
-        onNameClick={setProfileContact}
+        onNameClick={openProfile}
         onQuickActivity={handleQuickActivity}
         onQuickOrder={handleQuickOrder}
         onToggleActive={handleToggleActive}
@@ -118,14 +122,6 @@ export default function KanoonPage() {
           action={actionForm}
           contact={actionForm.contact}
           onClose={() => setActionForm(null)}
-        />
-      )}
-
-      {profileContact && (
-        <ContactProfileDrawer
-          contact={profileContact}
-          onClose={() => setProfileContact(null)}
-          onUpdateContact={handleUpdateContact}
         />
       )}
     </div>

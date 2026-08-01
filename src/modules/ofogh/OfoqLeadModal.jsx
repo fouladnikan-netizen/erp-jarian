@@ -304,7 +304,7 @@ function SidebarInfo({ contact }) {
 
       <LeadTemperature stageId={contact.lifecycle_stage} />
 
-      <Link to="/" className="ofoq-modal__kanoon-link">
+      <Link to={`/kanoon/contact/${contact.id}`} className="ofoq-modal__kanoon-link">
         مشاهده پروفایل کامل در کانون ←
       </Link>
     </aside>

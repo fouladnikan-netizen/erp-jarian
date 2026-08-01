@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import ModulePage from './components/module/ModulePage';
 import KanoonPage from './modules/kanoon/KanoonPage';
+import CustomerProfilePage from './modules/kanoon/CustomerProfilePage';
 import VitrinPage from './modules/vitrin/VitrinPage';
 import NabzPage from './modules/nabz/NabzPage';
 import OrderDetailPage from './modules/nabz/OrderDetailPage';
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/nabz/shipping/preview" element={<ShippingPreviewPage />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<KanoonPage />} />
+          <Route path="/kanoon/contact/:contactId" element={<CustomerProfilePage />} />
           <Route path="/vitrin" element={<VitrinPage />} />
           <Route path="/ofogh" element={<OfoqModule />} />
           <Route path="/nabz" element={<NabzPage />} />

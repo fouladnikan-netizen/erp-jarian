@@ -43,6 +43,8 @@ const rawContacts = [
     province: 'خوزستان',
     activityDomain: 'صنایع فولادی',
     behavioralStatus: 'ambassador',
+    /** کابین مالی پروفایل — سقف اعتبار و مانده حساب (ریال) */
+    financial: { creditLimitRial: 20_000_000_000, accountBalanceRial: 6_050_000_000 },
     assignee: { name: 'علی رضایی', role: 'شوالیه' },
     fullAddress: 'اهواز، کیانپارس، خیابان صنعت، پلاک ۱۲',
     officialSpecs: { ...officialSample },
@@ -88,6 +90,7 @@ const rawContacts = [
     interactions: [{ id: 'POY-1404-012', date: '۱۴۰۴/۰۱/۱۲', type: 'پیگیری', summary: 'استعلام قیمت تیرآهن' }],
     relatedOrders: [],
     accountBalanceRial: 8_400_000_000,
+    financial: { creditLimitRial: 10_000_000_000, accountBalanceRial: 8_400_000_000 },
   },
   {
     id: 3,
@@ -98,6 +101,7 @@ const rawContacts = [
     province: 'تهران',
     activityDomain: 'بازرگانی آهن و فولاد',
     behavioralStatus: 'active',
+    financial: { creditLimitRial: 5_000_000_000, accountBalanceRial: 0 },
     assignee: { name: 'مریم احمدی', role: 'شوالیه' },
     relatedPersons: [],
     interactions: [{ id: 'POY-1404-014', date: '۱۴۰۴/۰۱/۱۴', type: 'پیگیری', summary: 'ارسال لیست قیمت' }],
