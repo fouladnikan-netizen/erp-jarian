@@ -1,5 +1,5 @@
 import { Star } from 'lucide-react';
-import { toPersianDigits } from '../../nabz/dateUtils';
+import { toPersianDigits } from '../../../../utils/numberUtils';
 
 export function RatingInput({
   value,

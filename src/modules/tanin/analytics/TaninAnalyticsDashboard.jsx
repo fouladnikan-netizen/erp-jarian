@@ -9,7 +9,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { MOCK_SURVEY_ANALYTICS } from '../../../mockData/surveyAnalytics';
-import { toPersianDigits } from '../../nabz/dateUtils';
+import { toPersianDigits } from '../../../utils/numberUtils';
 import './tanin-analytics.css';
 
 const ICON = { size: 16, strokeWidth: 1.75 };

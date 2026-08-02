@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getSurveyById } from '../../../mockData/surveySchema';
-import { toPersianDigits } from '../../nabz/dateUtils';
+import { toPersianDigits } from '../../../utils/numberUtils';
 import useSurveyEngine from './useSurveyEngine';
 import QuestionRenderer from './components/QuestionRenderer';
 import './customer-survey.css';

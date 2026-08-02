@@ -1,6 +1,6 @@
 import { User } from 'lucide-react';
 import { getActivityConfig } from '../../config/activityEvents';
-import { toPersianDigits } from '../../modules/nabz/dateUtils';
+import { toPersianDigits } from '../../utils/numberUtils';
 
 function formatActivityTime(iso) {
   try {

@@ -14,4 +14,13 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.{test,spec}.{js,jsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/modules/nabz/services/**', 'src/shared/utils/**'],
+    },
+  },
 });
