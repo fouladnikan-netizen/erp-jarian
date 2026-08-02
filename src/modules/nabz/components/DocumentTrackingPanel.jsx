@@ -12,9 +12,8 @@ import {
   getTrackingStatusBadge,
 } from '../documentTracking';
 import {
-  DOCUMENT_TRACKER_EVENTS,
-  useDocumentTracker,
-} from '../../../context/DocumentTrackerContext';
+  useNotificationEngine,
+} from '../../../context/NotificationEngineContext';
 import './document-tracking-panel.css';
 
 const ICON = { size: 15, strokeWidth: 1.75 };
@@ -50,7 +49,7 @@ export default function DocumentTrackingPanel({
   onSendWhatsApp,
 }) {
   const [copied, setCopied] = useState(false);
-  const { showDocumentAlert } = useDocumentTracker();
+  const { dispatchNotification } = useNotificationEngine();
   const displayUrl = String(secureLink || '').replace(/^https?:\/\//, '');
   const badge = getTrackingStatusBadge(status);
 
@@ -61,11 +60,15 @@ export default function DocumentTrackingPanel({
   };
 
   const handleSimulateOpen = () => {
-    showDocumentAlert({
-      type: DOCUMENT_TRACKER_EVENTS.DOCUMENT_OPENED,
-      documentNumber: documentId || 'PI-1405-00027',
-      customerName: '',
-      openedAt: new Date(),
+    dispatchNotification({
+      id: crypto.randomUUID?.() || `sim-${Date.now()}`,
+      type: 'DOCUMENT_OPENED',
+      title: 'مشتری پیش‌فاکتور را باز کرد',
+      message: `پیش‌فاکتور شماره ${documentId || 'PI-1405-00027'} هم‌اکنون مشاهده شد.`,
+      metadata: {
+        documentId: documentId || 'PI-1405-00027',
+        timestamp: new Date(),
+      },
     });
   };
 

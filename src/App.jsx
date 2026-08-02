@@ -13,8 +13,7 @@ import CalendarPage from './components/calendar/CalendarPage';
 import CampaignsDashboard from './modules/kampayn/CampaignsDashboard';
 import SurveyBuilder from './modules/kampayn/SurveyBuilder';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
-import { DocumentTrackerProvider } from './context/DocumentTrackerContext';
-import DocumentAlertToast from './components/notifications/DocumentAlertToast';
+import { NotificationEngineProvider } from './context/NotificationEngineContext';
 import { modules, moduleData } from './modules/registry';
 
 export default function App() {
@@ -22,7 +21,7 @@ export default function App() {
     // پل طلایی افق ↔ نبض: پرووایدر سفارشات باید بالای همه مسیرها بماند تا
     // سفارشِ ساخته‌شده از افق هنگام ناوبری به /nabz از بین نرود.
     <NabzOrdersProvider>
-      <DocumentTrackerProvider>
+      <NotificationEngineProvider>
         <Routes>
           <Route path="/nabz/proforma/preview" element={<ProformaPreviewPage />} />
           <Route path="/nabz/shipping/preview" element={<ShippingPreviewPage />} />
@@ -57,8 +56,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
-        <DocumentAlertToast />
-      </DocumentTrackerProvider>
+      </NotificationEngineProvider>
     </NabzOrdersProvider>
   );
 }
