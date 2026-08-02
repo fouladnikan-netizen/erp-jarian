@@ -1,0 +1,652 @@
+/* ═══════════ فرم‌ساز نظرسنجی — Notion × Typeform ═══════════ */
+
+.svb-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 3rem;
+}
+
+.svb-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  max-width: 800px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.svb-topbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.svb-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #3f6f52;
+  animation: svb-fade-in 0.25s ease;
+}
+
+.svb-canvas {
+  width: 100%;
+  max-width: 800px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.35rem 1.5rem 1.75rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(18px) saturate(155%);
+  -webkit-backdrop-filter: blur(18px) saturate(155%);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  animation: svb-rise 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes svb-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes svb-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes svb-block-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes svb-pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ——— عنوان و خوش‌آمد ——— */
+.svb-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.svb-title-input,
+.svb-welcome-input,
+.svb-thanks-input,
+.svb-block__question-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  color: #1e293b;
+  font-family: inherit;
+}
+
+.svb-title-input {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.45;
+  padding: 0.15rem 0;
+}
+
+.svb-title-input::placeholder,
+.svb-welcome-input::placeholder,
+.svb-thanks-input::placeholder,
+.svb-block__question-input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.svb-welcome-input {
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.7;
+  color: #64748b;
+  min-height: 2.8rem;
+}
+
+/* ——— بلوک‌ها ——— */
+.svb-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 2rem;
+}
+
+.svb-empty {
+  margin: 0;
+  padding: 1.25rem 0.5rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.svb-block {
+  position: relative;
+  border-radius: 16px;
+  padding: 0.85rem 0.95rem 0.9rem;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+  animation: svb-block-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.svb-block:hover {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.svb-block.is-active {
+  border-color: rgba(224, 52, 47, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.06),
+    0 0 0 3px rgba(224, 52, 47, 0.06);
+  cursor: default;
+}
+
+.svb-block__chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+  color: #94a3b8;
+}
+
+.svb-block__grip {
+  display: inline-flex;
+  opacity: 0.55;
+}
+
+.svb-block__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.svb-block__index {
+  margin-inline-start: auto;
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.12);
+  color: #64748b;
+}
+
+.svb-block__question {
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.55;
+}
+
+.svb-block__req {
+  margin-inline-start: 0.2rem;
+  color: #e0342f;
+}
+
+.svb-block__question-input {
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.55;
+  margin-bottom: 0.7rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.svb-block__question-input:focus {
+  border-bottom-color: rgba(224, 52, 47, 0.35);
+}
+
+.svb-block__preview {
+  pointer-events: none;
+}
+
+.svb-block.is-active .svb-block__preview {
+  pointer-events: auto;
+}
+
+.svb-preview-input,
+.svb-preview-textarea {
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  background: rgba(148, 163, 184, 0.05);
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.svb-preview-textarea {
+  min-height: 4.2rem;
+}
+
+.svb-preview-choices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.svb-preview-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.svb-preview-choice__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(148, 163, 184, 0.45);
+  flex-shrink: 0;
+}
+
+.svb-preview-nps {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.svb-preview-nps__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.svb-preview-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 5rem;
+  border-radius: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.32);
+  background: rgba(148, 163, 184, 0.05);
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ——— ویرایش گزینه‌ها ——— */
+.svb-options-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.svb-options-edit__row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.svb-options-edit__input {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+}
+
+.svb-options-edit__input:focus {
+  border-color: rgba(224, 52, 47, 0.3);
+}
+
+.svb-add-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  align-self: flex-start;
+  margin-top: 0.2rem;
+  padding: 0.35rem 0.55rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.svb-add-option:hover {
+  color: #1e293b;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+/* ——— تنظیمات شناور داخل بلوک ——— */
+.svb-block__settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  animation: svb-fade-in 0.2s ease;
+}
+
+.svb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.svb-toggle__track {
+  position: relative;
+  display: block;
+  width: 2.05rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: #cbd5e1;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+  transition: background 0.18s ease;
+}
+
+.svb-toggle.is-on .svb-toggle__track {
+  background: linear-gradient(90deg, #0ad1ba 0%, #0891b2 100%);
+}
+
+.svb-toggle__knob {
+  position: absolute;
+  top: 0.12rem;
+  inset-inline-start: 0.12rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  transition: inset-inline-start 0.18s ease;
+}
+
+.svb-toggle.is-on .svb-toggle__knob {
+  inset-inline-start: calc(100% - 1.02rem);
+}
+
+.svb-toggle__label {
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.svb-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.55);
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.svb-icon-btn:hover {
+  color: #1e293b;
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.svb-icon-btn--danger:hover {
+  color: #e0342f;
+  border-color: rgba(224, 52, 47, 0.3);
+  background: rgba(224, 52, 47, 0.06);
+}
+
+/* ——— افزودن سؤال + پاپ‌اور ——— */
+.svb-add-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem 0;
+}
+
+.svb-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #64748b;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.svb-add-btn:hover,
+.svb-add-btn.is-open {
+  color: #1e293b;
+  border-style: solid;
+  border-color: rgba(148, 163, 184, 0.4);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.svb-popover {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(300px, 92vw);
+  z-index: 40;
+  padding: 0.45rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  animation: svb-pop 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.svb-popover__hint {
+  margin: 0;
+  padding: 0.35rem 0.55rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.svb-popover__item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  text-align: start;
+  padding: 0.55rem 0.55rem;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #334155;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.svb-popover__item:hover {
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.svb-popover__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.svb-popover__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.svb-popover__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.svb-popover__sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+/* ——— پایان ——— */
+.svb-outro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.svb-outro__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.svb-thanks-input {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.65;
+  color: #475569;
+  min-height: 2.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.12) !important;
+}
+
+.svb-thanks-input:focus {
+  border-color: rgba(224, 52, 47, 0.25) !important;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* ═══════════ دارک‌مود ═══════════ */
+
+html[data-theme='dark'] .svb-canvas,
+html[data-theme='dark'] .svb-block,
+html[data-theme='dark'] .svb-popover,
+html[data-theme='dark'] .svb-add-btn {
+  background: rgba(24, 28, 38, 0.88);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme='dark'] .svb-title-input,
+html[data-theme='dark'] .svb-block__question,
+html[data-theme='dark'] .svb-block__question-input,
+html[data-theme='dark'] .svb-popover__title,
+html[data-theme='dark'] .svb-options-edit__input {
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .svb-welcome-input,
+html[data-theme='dark'] .svb-thanks-input {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .svb-block.is-active {
+  background: rgba(30, 36, 48, 0.95);
+  border-color: rgba(224, 52, 47, 0.35);
+}
+
+html[data-theme='dark'] .svb-preview-input,
+html[data-theme='dark'] .svb-preview-textarea,
+html[data-theme='dark'] .svb-preview-upload,
+html[data-theme='dark'] .svb-thanks-input,
+html[data-theme='dark'] .svb-options-edit__input,
+html[data-theme='dark'] .svb-preview-choice {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme='dark'] .svb-popover__item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 640px) {
+  .svb-canvas {
+    padding: 1rem 0.9rem 1.25rem;
+    border-radius: 16px;
+  }
+
+  .svb-title-input {
+    font-size: 1.25rem;
+  }
+
+  .svb-preview-nps {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}

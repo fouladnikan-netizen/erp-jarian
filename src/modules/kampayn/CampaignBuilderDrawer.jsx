@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   X,
   Filter,
@@ -12,6 +13,7 @@ import {
   Mail,
   Smartphone,
   ListTodo,
+  ClipboardList,
 } from 'lucide-react';
 import {
   ACTION_OPTIONS,
@@ -64,6 +66,7 @@ function OptionCard({ selected, title, hint, onClick, icon: IconComp }) {
 }
 
 export default function CampaignBuilderDrawer({ open, onClose, onActivate }) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState(createEmptyDraft);
 
@@ -220,6 +223,18 @@ export default function CampaignBuilderDrawer({ open, onClose, onActivate }) {
                       <option key={form.id} value={form.id}>{form.label}</option>
                     ))}
                   </select>
+                  <button
+                    type="button"
+                    className="kampayn-survey-link font-meem"
+                    onClick={() => {
+                      const id = draft.surveyId || SURVEY_FORMS[0].id;
+                      onClose();
+                      navigate(`/kampayn/survey?id=${encodeURIComponent(id)}`);
+                    }}
+                  >
+                    <ClipboardList size={14} strokeWidth={1.75} aria-hidden="true" />
+                    طراحی / ویرایش این فرم
+                  </button>
                 </div>
               ) : null}
             </section>

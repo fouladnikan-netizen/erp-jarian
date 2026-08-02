@@ -79,6 +79,13 @@
 
 .kampayn-toolbar__input::placeholder { color: #94a3b8; }
 
+.kampayn-toolbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 /* ——— جدول ——— */
 .kampayn-table-wrap {
   overflow: hidden;
@@ -201,6 +208,13 @@
 .kampayn-icon-btn:hover {
   color: #1e293b;
   border-color: rgba(148, 163, 184, 0.35);
+}
+
+.kampayn-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
 }
 
 .kampayn-empty {
@@ -533,6 +547,26 @@
 .kampayn-input:focus {
   border-color: rgba(224, 52, 47, 0.35);
   box-shadow: 0 0 0 3px rgba(224, 52, 47, 0.08);
+}
+
+.kampayn-survey-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.kampayn-survey-link:hover {
+  color: #e0342f;
 }
 
 .kampayn-summary {

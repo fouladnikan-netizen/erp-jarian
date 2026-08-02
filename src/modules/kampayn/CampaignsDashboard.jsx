@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Megaphone,
@@ -6,6 +7,7 @@ import {
   Pause,
   Play,
   Workflow,
+  ClipboardList,
 } from 'lucide-react';
 import {
   CAMPAIGN_STATUSES,
@@ -26,6 +28,7 @@ function StatusBadge({ status }) {
 }
 
 export default function CampaignsDashboard() {
+  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState(INITIAL_CAMPAIGNS);
   const [query, setQuery] = useState('');
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -109,14 +112,24 @@ export default function CampaignsDashboard() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <button
-          type="button"
-          className="kampayn-btn kampayn-btn--launch"
-          onClick={() => setBuilderOpen(true)}
-        >
-          <Plus size={16} strokeWidth={1.75} aria-hidden="true" />
-          ایجاد کمپین جدید
-        </button>
+        <div className="kampayn-toolbar__actions">
+          <button
+            type="button"
+            className="kampayn-btn kampayn-btn--ghost"
+            onClick={() => navigate('/kampayn/survey')}
+          >
+            <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />
+            طراحی فرم
+          </button>
+          <button
+            type="button"
+            className="kampayn-btn kampayn-btn--launch"
+            onClick={() => setBuilderOpen(true)}
+          >
+            <Plus size={16} strokeWidth={1.75} aria-hidden="true" />
+            ایجاد کمپین جدید
+          </button>
+        </div>
       </section>
 
       <section className="kampayn-table-wrap glass-panel" aria-label="فهرست کمپین‌ها">
@@ -165,17 +178,30 @@ export default function CampaignsDashboard() {
                     </span>
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="kampayn-icon-btn"
-                      title={campaign.status === 'active' ? 'توقف' : 'فعال‌سازی'}
-                      aria-label={campaign.status === 'active' ? 'توقف کمپین' : 'فعال‌سازی کمپین'}
-                      onClick={() => toggleStatus(campaign.id)}
-                    >
-                      {campaign.status === 'active'
-                        ? <Pause size={15} strokeWidth={1.75} />
-                        : <Play size={15} strokeWidth={1.75} />}
-                    </button>
+                    <div className="kampayn-row-actions">
+                      {campaign.surveyId ? (
+                        <button
+                          type="button"
+                          className="kampayn-icon-btn"
+                          title="طراحی فرم"
+                          aria-label="طراحی فرم نظرسنجی"
+                          onClick={() => navigate(`/kampayn/survey?id=${encodeURIComponent(campaign.surveyId)}`)}
+                        >
+                          <ClipboardList size={15} strokeWidth={1.75} />
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="kampayn-icon-btn"
+                        title={campaign.status === 'active' ? 'توقف' : 'فعال‌سازی'}
+                        aria-label={campaign.status === 'active' ? 'توقف کمپین' : 'فعال‌سازی کمپین'}
+                        onClick={() => toggleStatus(campaign.id)}
+                      >
+                        {campaign.status === 'active'
+                          ? <Pause size={15} strokeWidth={1.75} />
+                          : <Play size={15} strokeWidth={1.75} />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
