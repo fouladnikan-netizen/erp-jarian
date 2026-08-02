@@ -211,12 +211,26 @@ export function buildOrderActivityTimeline(order) {
   });
 
   (order.events || []).forEach((event) => {
+    if (event.type === 'revision_required') return; // shown via order.revisions
     entries.push({
       id: `event-${event.id}`,
       at: event.at,
       text: event.summary || event.type,
       kind: 'event',
       by: event.by,
+    });
+  });
+
+  (order.revisions || []).forEach((revision) => {
+    const atFa = revision.returnedAt
+      ? new Date(revision.returnedAt).toLocaleString('fa-IR')
+      : '—';
+    entries.push({
+      id: `revision-${revision.id}`,
+      at: atFa,
+      text: revision.changesSummary || 'عودت برای بازنگری',
+      kind: 'revision',
+      by: revision.returnedBy,
     });
   });
 

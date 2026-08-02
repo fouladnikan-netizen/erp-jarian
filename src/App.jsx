@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import ModulePage from './components/module/ModulePage';
 import KanoonPage from './modules/kanoon/KanoonPage';
@@ -14,9 +14,22 @@ import CampaignsDashboard from './modules/kampayn/CampaignsDashboard';
 import SurveyBuilder from './modules/kampayn/SurveyBuilder';
 import CustomerSurveyApp from './modules/tanin/survey-client/CustomerSurveyApp';
 import TaninAnalyticsDashboard from './modules/tanin/analytics/TaninAnalyticsDashboard';
+import LoginPage from './modules/auth/LoginPage';
+import RequireAuth from './modules/auth/RequireAuth';
+import ShirazehPage, { ShirazehSectionRoute } from './modules/shirazeh/ShirazehPage';
+import OrganizationStructurePage from './modules/shirazeh/security/organization/OrganizationStructurePage';
+import { DEFAULT_SETTINGS_SECTION } from './modules/shirazeh/config/settingsMenu';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { NotificationEngineProvider } from './context/NotificationEngineContext';
 import { modules, moduleData } from './modules/registry';
+
+function ProtectedErpShell() {
+  return (
+    <RequireAuth>
+      <Outlet />
+    </RequireAuth>
+  );
+}
 
 export default function App() {
   return (
@@ -25,42 +38,56 @@ export default function App() {
     <NabzOrdersProvider>
       <NotificationEngineProvider>
         <Routes>
+          {/* ورود — بدون AppLayout / سایدبار ERP */}
+          <Route path="/login" element={<LoginPage />} />
+
           {/* تجربه ایزوله مشتری — بدون AppLayout / سایدبار ERP */}
           <Route path="/survey/:surveyId" element={<CustomerSurveyApp />} />
           <Route path="/survey" element={<Navigate to="/survey/mock-id" replace />} />
 
           <Route path="/nabz/proforma/preview" element={<ProformaPreviewPage />} />
           <Route path="/nabz/shipping/preview" element={<ShippingPreviewPage />} />
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<KanoonPage />} />
-            <Route path="/kanoon/contact/:contactId" element={<CustomerProfilePage />} />
-            <Route path="/vitrin" element={<VitrinPage />} />
-            <Route path="/ofogh" element={<OfoqModule />} />
-            <Route path="/gahshomar" element={<CalendarPage />} />
-            <Route path="/calendar" element={<Navigate to="/gahshomar" replace />} />
-            <Route path="/kampayn" element={<CampaignsDashboard />} />
-            <Route path="/kampayn/survey" element={<SurveyBuilder />} />
-            <Route path="/kampayn/analytics" element={<TaninAnalyticsDashboard />} />
-            <Route path="/nabz" element={<NabzPage />} />
-            <Route path="/nabz/new-order" element={<NabzPage />} />
-            <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
-            {modules
-              .filter((module) => (
-                module.id !== 'kanoon'
-                && module.id !== 'vitrin'
-                && module.id !== 'nabz'
-                && module.id !== 'ofogh'
-                && module.id !== 'gahshomar'
-                && module.id !== 'kampayn'
-              ))
-              .map((module) => (
-                <Route
-                  key={module.id}
-                  path={module.path}
-                  element={<ModulePage module={module} data={moduleData[module.id]} />}
-                />
-              ))}
-            <Route path="*" element={<Navigate to="/" replace />} />
+
+          <Route element={<ProtectedErpShell />}>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<KanoonPage />} />
+              <Route path="/kanoon/contact/:contactId" element={<CustomerProfilePage />} />
+              <Route path="/vitrin" element={<VitrinPage />} />
+              <Route path="/ofogh" element={<OfoqModule />} />
+              <Route path="/gahshomar" element={<CalendarPage />} />
+              <Route path="/calendar" element={<Navigate to="/gahshomar" replace />} />
+              <Route path="/kampayn" element={<CampaignsDashboard />} />
+              <Route path="/kampayn/survey" element={<SurveyBuilder />} />
+              <Route path="/kampayn/analytics" element={<TaninAnalyticsDashboard />} />
+              <Route path="/nabz" element={<NabzPage />} />
+              <Route path="/nabz/new-order" element={<NabzPage />} />
+              <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
+
+              <Route path="/shirazeh" element={<ShirazehPage />}>
+                <Route index element={<Navigate to={DEFAULT_SETTINGS_SECTION.path} replace />} />
+                <Route path="security/organization" element={<OrganizationStructurePage />} />
+                <Route path=":sectionId" element={<ShirazehSectionRoute />} />
+              </Route>
+
+              {modules
+                .filter((module) => (
+                  module.id !== 'kanoon'
+                  && module.id !== 'vitrin'
+                  && module.id !== 'nabz'
+                  && module.id !== 'ofogh'
+                  && module.id !== 'gahshomar'
+                  && module.id !== 'kampayn'
+                  && module.id !== 'shirazeh'
+                ))
+                .map((module) => (
+                  <Route
+                    key={module.id}
+                    path={module.path}
+                    element={<ModulePage module={module} data={moduleData[module.id]} />}
+                  />
+                ))}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
           </Route>
         </Routes>
       </NotificationEngineProvider>

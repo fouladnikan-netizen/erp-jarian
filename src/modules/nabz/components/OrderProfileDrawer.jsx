@@ -1,4 +1,6 @@
+import { useMemo } from 'react';
 import { ORDER_TABS } from '../config';
+import { useNabzOrders } from '../NabzOrdersContext';
 import { getGatewayCurrentStage, gatewayStageToPhase } from '../gatewayLifecycleService';
 import {
   markGatewayDecisionFailed,

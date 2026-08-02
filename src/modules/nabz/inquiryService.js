@@ -16,6 +16,7 @@ import {
   canCompleteOrderInquiries,
   canCompleteQuoting,
 } from './quotingService';
+import { markRevisionResolved } from './services/revisionService';
 
 export {
   allLinesHaveSavedMargin,
@@ -355,7 +356,7 @@ export function completeOrderInquiries(order) {
     summary: `تکمیل کاوش سفارش ${pricedOrder.code} — انتقال به «${toLabel}»`,
   };
 
-  return {
+  return markRevisionResolved({
     ...pricedOrder,
     items,
     stageId: nextStageId,
@@ -364,7 +365,7 @@ export function completeOrderInquiries(order) {
     amountRial: preview.orderTotal > 0 ? Math.round(preview.orderTotal) : pricedOrder.amountRial,
     isPriced: preview.orderTotal > 0,
     events: [...(pricedOrder.events || []), event],
-  };
+  }, 'PENDING');
 }
 
 export function completeOrderQuoting(order) {
@@ -393,12 +394,12 @@ export function completeOrderQuoting(order) {
     summary: `تکمیل مظنه سفارش ${pricedOrder.code} — انتقال به «${toLabel}»`,
   };
 
-  return {
+  return markRevisionResolved({
     ...pricedOrder,
     stageId: nextStageId,
     quotingCompletedAt: at,
     amountRial: preview.orderTotal > 0 ? Math.round(preview.orderTotal) : pricedOrder.amountRial,
     isPriced: preview.orderTotal > 0,
     events: [...(pricedOrder.events || []), event],
-  };
+  }, 'PENDING');
 }

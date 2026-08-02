@@ -7,7 +7,7 @@ import {
   VIEW_MODES,
   getKanbanStages,
 } from './config';
-import { useNabzOrders } from './NabzOrdersContext';
+import { useNabzStore } from './store/useNabzStore';
 import {
   appendInquiryToOrder,
   completeOrderInquiries,
@@ -33,9 +33,12 @@ import QuickInquiryModal from './components/QuickInquiryModal';
 import './nabz.css';
 
 export default function NabzPage() {
-  const {
-    orders, setOrders, orderDraft, clearOrderDraft,
-  } = useNabzOrders();
+  const orders = useNabzStore((s) => s.orders);
+  const setOrders = useNabzStore((s) => s.setOrders);
+  const selectedOrderId = useNabzStore((s) => s.selectedOrderId);
+  const selectOrder = useNabzStore((s) => s.selectOrder);
+  const orderDraft = useNabzStore((s) => s.orderDraft);
+  const clearOrderDraft = useNabzStore((s) => s.clearOrderDraft);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,12 +46,16 @@ export default function NabzPage() {
   const [activeTab, setActiveTab] = useState(ORDER_TABS.CURRENT);
   const [viewMode, setViewMode] = useState(VIEW_MODES.LIST);
   const [search, setSearch] = useState('');
-  const [profileOrder, setProfileOrder] = useState(null);
   const [previewCustomerId, setPreviewCustomerId] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [draftCustomerId, setDraftCustomerId] = useState(null);
   const [inquiryModalOrderId, setInquiryModalOrderId] = useState(null);
   const [stageRejectMessage, setStageRejectMessage] = useState('');
+
+  const profileOrder = useMemo(
+    () => orders.find((o) => o.id === selectedOrderId) || null,
+    [orders, selectedOrderId],
+  );
 
   // ورود مستقیم به فرم ثبت سفارش (مسیر /nabz/new-order)
   useEffect(() => {
@@ -104,8 +111,8 @@ export default function NabzPage() {
     const code = searchParams.get('order');
     if (!code) return;
     const match = orders.find((o) => o.code === code);
-    if (match) setProfileOrder(match);
-  }, [searchParams, orders]);
+    if (match) selectOrder(match.id);
+  }, [searchParams, orders, selectOrder]);
 
   const openCustomerPreview = (customerId) => {
     if (!customerId) return;
@@ -211,7 +218,7 @@ export default function NabzPage() {
           orders={kanbanOrders}
           stages={kanbanStages}
           tab={activeTab}
-          onOrderClick={setProfileOrder}
+          onOrderClick={(order) => selectOrder(order.id)}
           onCustomerClick={openCustomerPreview}
           onStageChange={changeOrderStage}
           onStageReject={setStageRejectMessage}
@@ -222,7 +229,7 @@ export default function NabzPage() {
           orders={listOrders}
           tab={activeTab}
           listTitle={listTitle}
-          onOrderClick={setProfileOrder}
+          onOrderClick={(order) => selectOrder(order.id)}
           onCustomerClick={openCustomerPreview}
           onOpenInquiryModal={(order) => setInquiryModalOrderId(order.id)}
         />
@@ -231,7 +238,7 @@ export default function NabzPage() {
       {profileOrder && (
         <OrderProfileDrawer
           order={profileOrder}
-          onClose={() => setProfileOrder(null)}
+          onClose={() => selectOrder(null)}
           onCustomerClick={openCustomerPreview}
           onAddInquiry={addInquiry}
           onSetTargetInquiry={setTargetInquiry}

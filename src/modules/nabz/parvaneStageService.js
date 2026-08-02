@@ -5,9 +5,11 @@ import { getCustomerPreview } from './customers';
 import { calculateQuotingPreview } from './inquiryService';
 import { getOrderFinanceRecords } from './operationalRecordsService';
 import { formatAmountRial } from './orderCode';
+import { getEffectiveStageId } from './orderStageService';
 import { OPERATIONAL_PHASES } from './phase2Config';
 import { advanceOperationalPhase, getOrderOperationalPhase } from './phase2Service';
 import { getTargetInquiry } from './quotingService';
+import { applyRevisionReturn } from './services/revisionService';
 import { getSupplierName } from './suppliers';
 
 export function isParvaneStageLive(order, operationalViewPhase) {
@@ -98,25 +100,38 @@ export function issueParvaneSupplyPermit(order, driverNotes = '') {
 export function returnParvaneToPishkesh(order, driverNotes = '') {
   const trimmed = driverNotes.trim();
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
+  const fromStageId = getEffectiveStageId(order);
+  const base = {
+    ...order,
+    status: ORDER_TABS.CURRENT,
+    stageId: STAGE_PISHKESH_ID,
+    parvaneRejectionNotes: trimmed,
+    events: [
+      ...(order.events || []),
+      {
+        id: Date.now() + 1,
+        type: 'parvane_returned',
+        at,
+        by: CURRENT_USER,
+        summary: trimmed
+          ? `عودت از ماشه تأمین به پیش‌کش — ${trimmed}`
+          : 'عدم تایید ماشه تأمین — عودت به پیش‌کش',
+      },
+    ],
+  };
+
+  const withRevision = applyRevisionReturn(base, {
+    fromStageId,
+    toStageId: STAGE_PISHKESH_ID,
+    reasonCode: 'SUPPLIER_UNAVAILABLE',
+    reasonText: trimmed || undefined,
+    changesSummary: trimmed
+      ? `عودت از ماشه تأمین به پیش‌کش — ${trimmed}`
+      : 'عدم تایید ماشه تأمین — عودت به پیش‌کش',
+  });
+
   return {
-    order: {
-      ...order,
-      status: ORDER_TABS.CURRENT,
-      stageId: STAGE_PISHKESH_ID,
-      parvaneRejectionNotes: trimmed,
-      events: [
-        ...(order.events || []),
-        {
-          id: Date.now() + 1,
-          type: 'parvane_returned',
-          at,
-          by: CURRENT_USER,
-          summary: trimmed
-            ? `عودت از ماشه تأمین به پیش‌کش — ${trimmed}`
-            : 'عدم تایید ماشه تأمین — عودت به پیش‌کش',
-        },
-      ],
-    },
+    order: withRevision,
     accepted: true,
   };
 }

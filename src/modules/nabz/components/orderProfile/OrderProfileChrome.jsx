@@ -22,6 +22,7 @@ import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
 import OrderProfileCancelDialog from './OrderProfileCancelDialog';
 import ProformaHeaderActions from '../ProformaHeaderActions';
 import { ORDER_TABS } from '../../config';
+import { getRevisionBannerModel } from '../../services/revisionService';
 
 function ActivityBellIcon() {
   return (
@@ -91,6 +92,7 @@ export default function OrderProfileChrome({
   const showDeliveryOrder = canShowDeliveryOrderAction(order);
   const deliveryOrderEnabled = canEnableDeliveryOrderAction(order);
   const shippingRecord = getOrderShippingRecord(order);
+  const revisionBanner = getRevisionBannerModel(order);
 
   useEffect(() => {
     if (!detailsOpen && !moreOpen) return undefined;
@@ -321,6 +323,27 @@ export default function OrderProfileChrome({
           </button>
         ))}
       </div>
+
+      {revisionBanner ? (
+        <aside
+          className="nabz-revision-banner"
+          role="status"
+          aria-label="نیاز به بازنگری"
+        >
+          <span className="nabz-revision-banner__label font-meem">
+            {revisionBanner.title}
+          </span>
+          {revisionBanner.reasonLabel ? (
+            <p className="nabz-revision-banner__reason font-meem">
+              علت: {revisionBanner.reasonLabel}
+              {revisionBanner.reasonText ? ` — ${revisionBanner.reasonText}` : ''}
+            </p>
+          ) : null}
+          <p className="nabz-revision-banner__text font-meem">
+            {revisionBanner.summary}
+          </p>
+        </aside>
+      ) : null}
 
       {order.generalNotes?.trim() ? (
         <aside

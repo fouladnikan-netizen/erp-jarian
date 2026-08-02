@@ -1,0 +1,399 @@
+/* Shirazeh Integrations — glass control panel for external connections */
+
+.shirazeh-integrations {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.shirazeh-integrations__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shirazeh-integrations__title {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.shirazeh-integrations__subtitle {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.shirazeh-integrations__health {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.shirazeh-int-health-card {
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 8px 22px rgba(15, 23, 42, 0.07);
+}
+
+.shirazeh-int-health-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+}
+
+.shirazeh-int-health-card__icon {
+  display: inline-flex;
+  color: var(--text-secondary);
+}
+
+.shirazeh-int-health-card--accent .shirazeh-int-health-card__icon {
+  color: var(--color-accent-dark);
+}
+
+.shirazeh-int-health-card--danger .shirazeh-int-health-card__icon {
+  color: var(--color-brand-red);
+}
+
+.shirazeh-int-health-card--success .shirazeh-int-health-card__icon {
+  color: #059669;
+}
+
+.shirazeh-int-health-card__label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.shirazeh-int-health-card__value {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.shirazeh-int-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.shirazeh-int-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 10px 26px rgba(15, 23, 42, 0.07);
+  transition:
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.shirazeh-int-card--expanded {
+  border-color: color-mix(in srgb, var(--color-accent) 30%, white);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 14px 32px rgba(13, 148, 136, 0.12);
+}
+
+.shirazeh-int-card__hit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: right;
+  cursor: pointer;
+  color: inherit;
+}
+
+.shirazeh-int-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.shirazeh-int-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  color: var(--color-accent-dark);
+  flex-shrink: 0;
+}
+
+.shirazeh-int-card__titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.shirazeh-int-card__name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.shirazeh-int-card__category {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.shirazeh-int-card__desc {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.shirazeh-int-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.shirazeh-int-card__expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 220ms ease,
+    opacity 180ms ease;
+}
+
+.shirazeh-int-card__expand--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.shirazeh-int-card__expand > * {
+  overflow: hidden;
+}
+
+.shirazeh-int-card__expand--open > * {
+  overflow: visible;
+}
+
+.shirazeh-int-card__test-result {
+  margin-top: 0.75rem;
+}
+
+.shirazeh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 36px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.shirazeh-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.shirazeh-btn--ghost {
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text-primary);
+}
+
+.shirazeh-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.shirazeh-btn--primary {
+  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 35%, white);
+  background: color-mix(in srgb, var(--color-accent) 16%, white);
+  color: var(--color-accent-dark);
+}
+
+.shirazeh-btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 26%, white);
+}
+
+.shirazeh-conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.shirazeh-conn--compact .shirazeh-conn__text {
+  white-space: nowrap;
+}
+
+.shirazeh-conn--online {
+  color: #059669;
+}
+
+.shirazeh-conn--offline {
+  color: #94a3b8;
+}
+
+.shirazeh-conn--success {
+  color: #047857;
+}
+
+.shirazeh-conn--error {
+  color: #b91c1c;
+}
+
+.shirazeh-conn__spin {
+  animation: shirazeh-spin 0.9s linear infinite;
+}
+
+@keyframes shirazeh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.shirazeh-conn-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.shirazeh-conn-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shirazeh-conn-form__label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.shirazeh-conn-form__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.shirazeh-conn-form__input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.55rem 0.8rem;
+  padding-left: 2.4rem;
+  border-radius: 11px;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.shirazeh-conn-form__input:focus {
+  border-color: color-mix(in srgb, var(--color-accent-dark) 45%, white);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+.shirazeh-conn-form__reveal {
+  position: absolute;
+  left: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.shirazeh-conn-form__reveal:hover {
+  background: rgba(241, 245, 249, 0.9);
+  color: var(--text-primary);
+}
+
+.shirazeh-conn-form__hint {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.shirazeh-conn-form__actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+@media (max-width: 960px) {
+  .shirazeh-integrations__health {
+    grid-template-columns: 1fr;
+  }
+
+  .shirazeh-int-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shirazeh-int-card,
+  .shirazeh-int-card__expand,
+  .shirazeh-conn__spin {
+    transition: none;
+    animation: none;
+  }
+}
+
+html[data-theme='dark'] .shirazeh-int-card,
+html[data-theme='dark'] .shirazeh-int-health-card {
+  background: rgba(28, 31, 38, 0.62);
+  border-color: rgba(58, 65, 80, 0.8);
+}
+
+html[data-theme='dark'] .shirazeh-conn-form__input {
+  background: rgba(18, 20, 26, 0.7);
+  border-color: rgba(58, 65, 80, 0.9);
+  color: var(--text-primary);
+}

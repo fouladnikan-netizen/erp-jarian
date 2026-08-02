@@ -16,6 +16,7 @@ import {
 import { canCompleteOrderInquiries } from './quotingService';
 import { getOrderDecisionLabel } from './gatewayDecisionService';
 import { canDropOnPhase2KanbanStage, tryChangePhase2Stage } from './phase2Service';
+import { applyRevisionReturn, markRevisionResolved } from './services/revisionService';
 
 export const ORDER_DISPLAY_STATUS = {
   ANNOUNCING: 'در حال اعلام',
@@ -68,6 +69,10 @@ export function getOrderDisplayStatus(order) {
     return 'بایگانی‌شده';
   }
 
+  if (order?.revisionRequired) {
+    return 'نیاز به بازنگری';
+  }
+
   const decisionLabel = getOrderDecisionLabel(order);
   if (decisionLabel) return decisionLabel;
 
@@ -90,6 +95,10 @@ export function getOrderDisplayStatus(order) {
 export function getOrderDisplayStatusKind(order) {
   if (order?.saranjam?.archivedAt || order?.saranjam?.locked || order?.archivedAt) {
     return 'archived';
+  }
+
+  if (order?.revisionRequired) {
+    return 'revision';
   }
 
   const decisionLabel = getOrderDecisionLabel(order);
@@ -196,6 +205,22 @@ export function tryChangeOrderStage(order, targetStageId) {
   // برگشت به کاوش: تکمیل کاوش قبلی باطل می‌شود تا دوباره بتوان استعلام ثبت/ویرایش کرد
   if (targetStageId === STAGE_KAVOSH_ID && current.stageId > STAGE_KAVOSH_ID) {
     nextOrder.inquiryCompletedAt = null;
+  }
+
+  // Backward stage move → Revision Engine (no new lifecycle status)
+  if (targetStageId < current.stageId) {
+    const withRevision = applyRevisionReturn(nextOrder, {
+      fromStageId: current.stageId,
+      toStageId: targetStageId,
+      reasonCode: 'OTHER',
+      reasonText: `بازگشت دستی از «${getStageLabel(current.stageId)}» به «${getStageLabel(targetStageId)}»`,
+    });
+    return { order: withRevision, accepted: true };
+  }
+
+  // Forward progress clears needs-revision flag
+  if (targetStageId > current.stageId && current.revisionRequired) {
+    return { order: markRevisionResolved(nextOrder, 'PENDING'), accepted: true };
   }
 
   return { order: nextOrder, accepted: true };

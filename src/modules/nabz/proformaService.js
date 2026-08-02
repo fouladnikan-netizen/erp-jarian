@@ -6,6 +6,8 @@ import { formatAmountRialWords } from './numberToPersianWords';
 import { DEFAULT_PROFORMA_TERMS } from './proformaConfig';
 import { CURRENT_USER } from './constants';
 import { ORDER_TABS, STAGE_KAVOSH_ID, getStageLabel } from './config';
+import { getEffectiveStageId } from './orderStageService';
+import { applyRevisionReturn } from './services/revisionService';
 
 let proformaVersionIdCounter = 1;
 let proformaEventIdCounter = 9000;
@@ -296,37 +298,48 @@ export function updateProforma(order) {
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
   const now = Date.now();
+  const fromStageId = getEffectiveStageId(order);
+
+  const resetOrder = {
+    ...result.order,
+    stageId: STAGE_KAVOSH_ID,
+    status: ORDER_TABS.CURRENT,
+    updatedAt: now,
+    updated_at: now,
+    inquiryCompletedAt: null,
+    quotingCompletedAt: null,
+    // حاشیه سود قبلی حفظ می‌شود
+    quoting: order.quoting ? { ...order.quoting } : result.order.quoting,
+    proformaStatus: null,
+    proformaUpdate: {
+      at: now,
+      revision: result.order.proforma?.revision || 1,
+      baselineInquiryIds,
+    },
+    events: [
+      ...(result.order.events || []),
+      {
+        id: proformaEventIdCounter++,
+        type: 'proforma_update_reset_to_kavosh',
+        at,
+        by: CURRENT_USER,
+        summary: `به‌روزرسانی پیش‌فاکتور — بازگشت به «${getStageLabel(STAGE_KAVOSH_ID)}» برای استعلام مجدد`,
+        revision: result.order.proforma?.revision,
+      },
+    ],
+  };
+
+  const withRevision = applyRevisionReturn(resetOrder, {
+    fromStageId,
+    toStageId: STAGE_KAVOSH_ID,
+    reasonCode: 'PRICE_EXCEEDED',
+    reasonText: `بازنگری پیش‌فاکتور نسخه ${result.order.proforma?.revision || 1}`,
+    changesSummary: `به‌روزرسانی پیش‌فاکتور — بازگشت به «${getStageLabel(STAGE_KAVOSH_ID)}» برای استعلام مجدد`,
+  });
 
   return {
     ...result,
-    order: {
-      ...result.order,
-      stageId: STAGE_KAVOSH_ID,
-      status: ORDER_TABS.CURRENT,
-      updatedAt: now,
-      updated_at: now,
-      inquiryCompletedAt: null,
-      quotingCompletedAt: null,
-      // حاشیه سود قبلی حفظ می‌شود
-      quoting: order.quoting ? { ...order.quoting } : result.order.quoting,
-      proformaStatus: null,
-      proformaUpdate: {
-        at: now,
-        revision: result.order.proforma?.revision || 1,
-        baselineInquiryIds,
-      },
-      events: [
-        ...(result.order.events || []),
-        {
-          id: proformaEventIdCounter++,
-          type: 'proforma_update_reset_to_kavosh',
-          at,
-          by: CURRENT_USER,
-          summary: `به‌روزرسانی پیش‌فاکتور — بازگشت به «${getStageLabel(STAGE_KAVOSH_ID)}» برای استعلام مجدد`,
-          revision: result.order.proforma?.revision,
-        },
-      ],
-    },
+    order: withRevision,
   };
 }
 

@@ -7,6 +7,7 @@ import {
   GATEWAY_DECISION_OUTCOMES,
   getCancelReasonLabel,
 } from './gatewayDecisionConfig';
+import { markRevisionResolved } from './services/revisionService';
 
 function formatDecisionTimestamp(date = new Date()) {
   const datePart = date.toLocaleDateString('fa-IR', {
@@ -88,7 +89,10 @@ export function markGatewayDecisionSuccess(order, {
     ],
   };
 
-  return enterPhase2FromDecision(withDecision, decidedAt);
+  return enterPhase2FromDecision(
+    markRevisionResolved(withDecision, 'APPROVED'),
+    decidedAt,
+  );
 }
 
 export function markGatewayDecisionFailed(order, { cancelReason, cancelNotes }) {

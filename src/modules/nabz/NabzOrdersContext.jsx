@@ -1,39 +1,26 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { initialOrders } from './ordersData';
+import { useNabzStore } from './store/useNabzStore';
 
-const NabzOrdersContext = createContext(null);
-
+/**
+ * Backward-compatible hook. New code should prefer `useNabzStore` with
+ * selective selectors to avoid unnecessary re-renders.
+ * Provider is a no-op shell so existing App.jsx wiring stays valid.
+ */
 export function NabzOrdersProvider({ children }) {
-  const [orders, setOrders] = useState(initialOrders);
-  /** پیش‌نویس پل طلایی — مخاطبی که از افق برای ثبت سفارش مستقیم ارجاع شده است. */
-  const [orderDraft, setOrderDraft] = useState(null);
-
-  /**
-   * پل طلایی افق → نبض: به‌جای ساخت سفارش خام، مخاطب را برای فرم «ثبت سفارش»
-   * آماده می‌کند؛ NabzPage در مسیر /nabz/new-order این پیش‌نویس را مصرف می‌کند.
-   */
-  const createOrderDirect = useCallback((contactId) => {
-    setOrderDraft({ contactId, createdAt: Date.now() });
-  }, []);
-
-  const clearOrderDraft = useCallback(() => setOrderDraft(null), []);
-
-  const value = useMemo(
-    () => ({ orders, setOrders, orderDraft, createOrderDirect, clearOrderDraft }),
-    [orders, orderDraft, createOrderDirect, clearOrderDraft],
-  );
-
-  return (
-    <NabzOrdersContext.Provider value={value}>
-      {children}
-    </NabzOrdersContext.Provider>
-  );
+  return children;
 }
 
 export function useNabzOrders() {
-  const ctx = useContext(NabzOrdersContext);
-  if (!ctx) {
-    throw new Error('useNabzOrders must be used within NabzOrdersProvider');
-  }
-  return ctx;
+  const orders = useNabzStore((s) => s.orders);
+  const setOrders = useNabzStore((s) => s.setOrders);
+  const orderDraft = useNabzStore((s) => s.orderDraft);
+  const createOrderDirect = useNabzStore((s) => s.createOrderDirect);
+  const clearOrderDraft = useNabzStore((s) => s.clearOrderDraft);
+
+  return {
+    orders,
+    setOrders,
+    orderDraft,
+    createOrderDirect,
+    clearOrderDraft,
+  };
 }

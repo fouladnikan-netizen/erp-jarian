@@ -1958,6 +1958,55 @@ html[data-theme='dark'] .nabz-kanban-col__empty-state {
   border-top: 1px solid #fde68a;
 }
 
+.nabz-revision-banner {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid #fdba74;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+}
+
+.nabz-revision-banner__label {
+  display: block;
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #c2410c;
+  letter-spacing: 0.01em;
+}
+
+.nabz-revision-banner__reason,
+.nabz-revision-banner__text {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #9a3412;
+}
+
+.nabz-revision-banner__reason {
+  margin-bottom: 0.15rem;
+}
+
+.order-profile-chrome > .nabz-revision-banner {
+  border-top: 1px solid #fdba74;
+}
+
+.order-profile-smart-badge--revision {
+  background: rgba(234, 88, 12, 0.14);
+  color: #c2410c;
+}
+
+.order-profile-timeline__item--revision .order-profile-timeline__dot {
+  background: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.2);
+}
+
+.order-profile-timeline__item--revision .order-profile-timeline__text {
+  color: #9a3412;
+  font-weight: 700;
+}
+
 .nabz-quick-inquiry-modal__body {
   flex: 1;
   min-height: 0;
@@ -6993,6 +7042,18 @@ html[data-theme='dark'] .nabz-picker-overlay {
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -2px rgba(239, 68, 68, 0.15);
+}
+
+.gateway-chevron-stepper__step--warning .gateway-chevron-stepper__btn {
+  background: #ea580c;
+  color: var(--color-white-glossy);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.25), 0 2px 4px -2px rgba(234, 88, 12, 0.18);
+}
+
+.gateway-chevron-stepper__step--warning .gateway-chevron-stepper__btn:hover:not(:disabled) {
+  background: #c2410c;
 }
 
 .gateway-chevron-stepper__step--completed .gateway-chevron-stepper__btn {
