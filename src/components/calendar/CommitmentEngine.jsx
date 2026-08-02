@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
+import {
+  Phone,
+  CreditCard,
+  Truck,
+  FileText,
+  AlertCircle,
+  Inbox,
+  ExternalLink,
+  X,
+  Users,
+} from 'lucide-react';
 import { useContactsStore } from '../../stores/useContactsStore';
 import { getTodayJalaliParts, toPersianDigits } from '../../modules/nabz/dateUtils';
 import { withReturnParams } from '../navigation/SmartBackButton';
@@ -19,110 +30,25 @@ import './commitment-engine.css';
 const RETURN_TO = '/gahshomar';
 const RETURN_NAME = 'گاه‌شمار';
 
-/* آیکن‌های outline هم‌سبک سایدبار (stroke / slate) */
-const iconProps = {
-  width: 15,
-  height: 15,
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 2,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-  'aria-hidden': true,
-};
-
-function IconPhone() {
-  return (
-    <svg {...iconProps}>
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.7 2.35a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.75.34 1.54.57 2.35.7A2 2 0 0 1 22 16.92z" />
-    </svg>
-  );
-}
-
-function IconCard() {
-  return (
-    <svg {...iconProps}>
-      <rect x="2" y="5" width="20" height="14" rx="2" />
-      <path d="M2 10h20" />
-    </svg>
-  );
-}
-
-function IconTruck() {
-  return (
-    <svg {...iconProps}>
-      <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
-      <path d="M15 18H9" />
-      <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
-      <circle cx="17" cy="18" r="2" />
-      <circle cx="7" cy="18" r="2" />
-    </svg>
-  );
-}
-
-function IconFile() {
-  return (
-    <svg {...iconProps}>
-      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-      <path d="M14 2v6h6M8 13h8M8 17h6" />
-    </svg>
-  );
-}
-
-function IconAlert() {
-  return (
-    <svg {...iconProps}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8v4M12 16h.01" />
-    </svg>
-  );
-}
-
-function IconInbox() {
-  return (
-    <svg {...{ ...iconProps, width: 28, height: 28 }}>
-      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-    </svg>
-  );
-}
-
-function DiveIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <path d="M15 3h6v6" />
-      <path d="M10 14L21 3" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  );
-}
+const ICON_SIZE = 16;
+const ICON_STROKE = 1.75;
 
 const TYPE_ICONS = {
-  followup: IconPhone,
-  finance: IconCard,
-  logistics: IconTruck,
-  contract: IconFile,
+  followup: Phone,
+  finance: CreditCard,
+  logistics: Truck,
+  contract: FileText,
 };
 
-function TypeIcon({ type }) {
-  const Icon = TYPE_ICONS[type] || IconFile;
-  return <Icon />;
+function TypeIcon({ type, size = ICON_SIZE }) {
+  const Icon = TYPE_ICONS[type] || FileText;
+  return <Icon size={size} strokeWidth={ICON_STROKE} className="cmt-icon" aria-hidden="true" />;
 }
 
 function TypeBadge({ type, label }) {
   return (
     <span className="cmt-badge">
-      <span className={`cmt-dot cmt-dot--${type}`} aria-hidden="true" />
-      <TypeIcon type={type} />
+      <TypeIcon type={type} size={14} />
       {label}
     </span>
   );
@@ -161,7 +87,7 @@ function CommitmentCard({ item, onOpen, overdue = false }) {
         <OwnerAvatar owner={item.owner} />
         <span className="cmt-card__dive" aria-hidden="true">
           شیرجه
-          <DiveIcon />
+          <ExternalLink size={12} strokeWidth={ICON_STROKE} />
         </span>
       </span>
     </button>
@@ -198,7 +124,7 @@ function CommitmentDrawer({ item, onClose }) {
             <TypeBadge type={item.type} label={meta.label} />
             <span className={`cmt-priority ${priority.className}`}>{priority.label}</span>
             <button type="button" className="cmt-drawer__close" aria-label="بستن" onClick={onClose}>
-              <CloseIcon />
+              <X size={18} strokeWidth={ICON_STROKE} />
             </button>
           </div>
           <h3 className="cmt-drawer__title font-meem">{item.title}</h3>
@@ -236,9 +162,7 @@ function CommitmentDrawer({ item, onClose }) {
             ))}
           </dl>
 
-          {item.note ? (
-            <p className="cmt-drawer__note">{item.note}</p>
-          ) : null}
+          {item.note ? <p className="cmt-drawer__note">{item.note}</p> : null}
 
           <p className="cmt-drawer__readonly">
             این تعهد از ماژول مبدأ تجمیع شده و در گاه‌شمار قابل ویرایش نیست.
@@ -251,7 +175,7 @@ function CommitmentDrawer({ item, onClose }) {
             className="cmt-drawer__dive"
           >
             شیرجه به پرونده
-            <DiveIcon />
+            <ExternalLink size={14} strokeWidth={ICON_STROKE} />
           </Link>
         </footer>
       </aside>
@@ -304,18 +228,22 @@ export default function CommitmentEngine() {
         <div className="cmt-today__metrics">
           <span className="cmt-metric">
             <span className="cmt-dot cmt-dot--meeting" aria-hidden="true" />
+            <Users size={14} strokeWidth={ICON_STROKE} className="cmt-icon" aria-hidden="true" />
             {toPersianDigits(metrics.meetings)} جلسه
           </span>
           <span className="cmt-metric">
             <span className="cmt-dot cmt-dot--followup" aria-hidden="true" />
+            <Phone size={14} strokeWidth={ICON_STROKE} className="cmt-icon" aria-hidden="true" />
             {toPersianDigits(metrics.followups)} پیگیری
           </span>
           <span className="cmt-metric">
             <span className="cmt-dot cmt-dot--finance" aria-hidden="true" />
+            <CreditCard size={14} strokeWidth={ICON_STROKE} className="cmt-icon" aria-hidden="true" />
             {toPersianDigits(metrics.settlements)} تسویه
           </span>
           <span className="cmt-metric">
             <span className="cmt-dot cmt-dot--overdue" aria-hidden="true" />
+            <AlertCircle size={14} strokeWidth={ICON_STROKE} className="cmt-icon" aria-hidden="true" />
             {toPersianDigits(metrics.overdue)} تاخیر
           </span>
         </div>
@@ -353,7 +281,7 @@ export default function CommitmentEngine() {
         {overdue.length ? (
           <section className="cmt-group cmt-group--overdue">
             <h3 className="cmt-group__head cmt-group__head--overdue font-meem">
-              <IconAlert />
+              <AlertCircle size={15} strokeWidth={ICON_STROKE} className="cmt-icon" aria-hidden="true" />
               تأخیر و نیازمند توجه
               <span className="cmt-group__count font-yekan">{toPersianDigits(overdue.length)}</span>
             </h3>
@@ -382,7 +310,7 @@ export default function CommitmentEngine() {
 
         {!overdue.length && !days.length ? (
           <div className="cmt-empty">
-            <IconInbox />
+            <Inbox size={28} strokeWidth={ICON_STROKE} className="cmt-icon" aria-hidden="true" />
             <p className="font-meem">با فیلترهای فعلی تعهدی برای نمایش نیست.</p>
           </div>
         ) : null}

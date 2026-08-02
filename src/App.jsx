@@ -10,6 +10,7 @@ import ProformaPreviewPage from './modules/nabz/ProformaPreviewPage';
 import ShippingPreviewPage from './modules/nabz/ShippingPreviewPage';
 import OfoqModule from './modules/ofogh/OfoqModule';
 import CalendarPage from './components/calendar/CalendarPage';
+import CampaignsDashboard from './modules/kampayn/CampaignsDashboard';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { modules, moduleData } from './modules/registry';
 
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/ofogh" element={<OfoqModule />} />
           <Route path="/gahshomar" element={<CalendarPage />} />
           <Route path="/calendar" element={<Navigate to="/gahshomar" replace />} />
+          <Route path="/kampayn" element={<CampaignsDashboard />} />
           <Route path="/nabz" element={<NabzPage />} />
           <Route path="/nabz/new-order" element={<NabzPage />} />
           <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
@@ -38,6 +40,7 @@ export default function App() {
               && module.id !== 'nabz'
               && module.id !== 'ofogh'
               && module.id !== 'gahshomar'
+              && module.id !== 'kampayn'
             ))
             .map((module) => (
               <Route

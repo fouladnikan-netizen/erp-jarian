@@ -13,9 +13,9 @@ import { getContactDisplayName } from '../../modules/ofogh/pipelineConfig';
  * logistics → لجستیک و بارگیری (سفیر/بازرس — رهسپار)
  */
 export const CALENDAR_LAYERS = [
-  { id: 'financial', label: 'تعهدات مالی', emoji: '💰' },
-  { id: 'followup', label: 'پویش‌ها و پیگیری‌ها', emoji: '📞' },
-  { id: 'logistics', label: 'لجستیک و بارگیری', emoji: '🚚' },
+  { id: 'financial', label: 'تعهدات مالی', icon: 'CreditCard' },
+  { id: 'followup', label: 'پویش‌ها و پیگیری‌ها', icon: 'Phone' },
+  { id: 'logistics', label: 'لجستیک و بارگیری', icon: 'Truck' },
 ];
 
 export const CALENDAR_ROLES = [

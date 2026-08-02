@@ -4,6 +4,7 @@ import { modules } from '../../modules/registry';
 import { buildDocumentTitle } from '../../config/brand';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import OmniCommand from '../omni/OmniCommand';
 
 const SIDEBAR_STORAGE_KEY = 'jaryan-sidebar-expanded';
 
@@ -58,6 +59,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <OmniCommand />
     </div>
   );
 }

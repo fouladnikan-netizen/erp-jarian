@@ -39,6 +39,13 @@ export const mainModules = [
     description: 'نمای تجمیعی تعهدات زمان‌دار از نبض، افق و مالی — بدون ثبت دستی رویداد',
   },
   {
+    id: 'kampayn',
+    path: '/kampayn',
+    name: 'کمپین‌ها',
+    subtitle: 'اتوماسیون',
+    description: 'موتور قوانین خودکار: شرط، اقدام و اجرای کمپین‌های ارتباطی سازمان',
+  },
+  {
     id: 'pooyesh',
     path: '/pooyesh',
     name: 'پویش',

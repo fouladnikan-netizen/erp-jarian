@@ -537,7 +537,23 @@
 .jcal-day__card--followup { border-inline-start-color: #3b82f6; }
 .jcal-day__card--logistics { border-inline-start-color: #f97316; }
 
-.jcal-day__emoji { font-size: 1.2rem; }
+.jcal-day__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.jcal-icon {
+  color: #64748b;
+}
+
+.jcal-popover__layer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
 
 .jcal-day__body {
   flex: 1;

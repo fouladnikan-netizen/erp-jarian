@@ -25,6 +25,11 @@
 .cmt-dot--contract { background: #8b7e9e; }
 .cmt-dot--overdue { background: #c4a0a0; }
 
+.cmt-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
 /* ——— داشبورد امروز ——— */
 .cmt-today {
   display: flex;
@@ -109,9 +114,10 @@
   transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.cmt-chip svg {
+.cmt-chip svg,
+.cmt-chip .cmt-icon {
   color: currentColor;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .cmt-chip:hover {
@@ -198,6 +204,7 @@
   box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
 }
 
+.cmt-group__head .cmt-icon,
 .cmt-group__head svg {
   color: #94a3b8;
 }
@@ -364,10 +371,11 @@
   border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
-.cmt-badge svg {
-  color: #94a3b8;
-  width: 12px;
-  height: 12px;
+.cmt-badge svg,
+.cmt-badge .cmt-icon {
+  color: #64748b;
+  width: 14px;
+  height: 14px;
 }
 
 /* آواتار خنثی */
