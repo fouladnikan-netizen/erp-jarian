@@ -107,8 +107,6 @@ export default function CampaignBuilderDrawer({ open, onClose, onActivate }) {
       ...draft,
       name: draft.name.trim(),
       status: 'active',
-      responseRate: 0,
-      conversionRate: 0,
     });
   };
 

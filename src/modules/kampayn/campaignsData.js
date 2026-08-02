@@ -3,9 +3,39 @@
 export const CAMPAIGN_TYPES = {
   survey: { id: 'survey', label: 'نظرسنجی' },
   promo: { id: 'promo', label: 'پروموشن' },
+  sales: { id: 'sales', label: 'فروش' },
+  informational: { id: 'informational', label: 'اطلاع‌رسانی' },
   nurture: { id: 'nurture', label: 'پرورش رابطه' },
   reminder: { id: 'reminder', label: 'یادآوری' },
 };
+
+/** برچسب شاخص موفقیت بر اساس نوع کمپین */
+export const METRIC_LABEL_BY_TYPE = {
+  survey: 'نرخ مشارکت',
+  promo: 'نرخ تبدیل',
+  sales: 'نرخ تبدیل',
+  informational: 'نرخ بازدید',
+  nurture: 'نرخ تعامل',
+  reminder: 'نرخ بازدید',
+};
+
+export function buildMetrics(type, numericValue = 0) {
+  const label = METRIC_LABEL_BY_TYPE[type] || 'شاخص موفقیت';
+  const safe = Number.isFinite(Number(numericValue)) ? Number(numericValue) : 0;
+  return {
+    label,
+    value: `${safe}%`,
+    numeric: safe,
+  };
+}
+
+export function parseMetricNumeric(metrics) {
+  if (!metrics) return 0;
+  if (typeof metrics.numeric === 'number') return metrics.numeric;
+  const raw = String(metrics.value || '').replace(/[^\d.]/g, '');
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export const CAMPAIGN_STATUSES = {
   active: { id: 'active', label: 'فعال' },
@@ -41,8 +71,7 @@ export const INITIAL_CAMPAIGNS = [
     name: 'نظرسنجی پس از ارسال',
     type: 'survey',
     status: 'active',
-    responseRate: 42,
-    conversionRate: 18,
+    metrics: buildMetrics('survey', 68),
     triggerId: 'dispatch_48h',
     actionId: 'whatsapp_survey',
     surveyId: 'nps_delivery',
@@ -52,21 +81,19 @@ export const INITIAL_CAMPAIGNS = [
     name: 'تبریک تولد مشتریان',
     type: 'promo',
     status: 'active',
-    responseRate: 61,
-    conversionRate: 27,
+    metrics: buildMetrics('promo', 12),
     triggerId: 'birthday',
     actionId: 'sms',
     surveyId: null,
   },
   {
     id: 'cmp-3',
-    name: 'بازفعال‌سازی فرصت‌های راکد',
-    type: 'nurture',
+    name: 'خبرنامه محصولات جدید',
+    type: 'informational',
     status: 'paused',
-    responseRate: 23,
-    conversionRate: 9,
+    metrics: buildMetrics('informational', 95),
     triggerId: 'no_followup_7d',
-    actionId: 'internal_task',
+    actionId: 'email',
     surveyId: null,
   },
   {
@@ -74,8 +101,7 @@ export const INITIAL_CAMPAIGNS = [
     name: 'یادآوری تمدید قرارداد',
     type: 'reminder',
     status: 'draft',
-    responseRate: 0,
-    conversionRate: 0,
+    metrics: buildMetrics('reminder', 0),
     triggerId: 'first_purchase',
     actionId: 'email',
     surveyId: 'renewal_intent',
@@ -85,11 +111,20 @@ export const INITIAL_CAMPAIGNS = [
     name: 'رضایت پس از تحویل',
     type: 'survey',
     status: 'active',
-    responseRate: 55,
-    conversionRate: 21,
+    metrics: buildMetrics('survey', 55),
     triggerId: 'order_delivered',
     actionId: 'whatsapp_survey',
     surveyId: 'csat_support',
+  },
+  {
+    id: 'cmp-6',
+    name: 'پیشنهاد ویژه انبار',
+    type: 'sales',
+    status: 'active',
+    metrics: buildMetrics('sales', 18),
+    triggerId: 'first_purchase',
+    actionId: 'sms',
+    surveyId: null,
   },
 ];
 

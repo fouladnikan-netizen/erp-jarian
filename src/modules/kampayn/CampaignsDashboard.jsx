@@ -16,6 +16,8 @@ import {
   findLabel,
   TRIGGER_OPTIONS,
   ACTION_OPTIONS,
+  buildMetrics,
+  parseMetricNumeric,
 } from './campaignsData';
 import CampaignBuilderDrawer from './CampaignBuilderDrawer';
 import './kampayn.css';
@@ -25,6 +27,21 @@ const ICON = { size: 16, strokeWidth: 1.75 };
 function StatusBadge({ status }) {
   const meta = CAMPAIGN_STATUSES[status] || CAMPAIGN_STATUSES.draft;
   return <span className={`kampayn-status kampayn-status--${status}`}>{meta.label}</span>;
+}
+
+function SuccessMetricCell({ metrics }) {
+  if (!metrics?.label) {
+    return <span className="kampayn-metric__empty">—</span>;
+  }
+  const numeric = parseMetricNumeric(metrics);
+  return (
+    <span className="kampayn-metric">
+      <span className="kampayn-metric__label font-meem">{metrics.label}:</span>
+      <span className="kampayn-metric__value font-yekan">
+        {numeric.toLocaleString('fa-IR')}٪
+      </span>
+    </span>
+  );
 }
 
 export default function CampaignsDashboard() {
@@ -46,10 +63,12 @@ export default function CampaignsDashboard() {
   const kpis = useMemo(() => {
     const active = campaigns.filter((c) => c.status === 'active').length;
     const paused = campaigns.filter((c) => c.status === 'paused').length;
-    const avgResponse = campaigns.length
-      ? Math.round(campaigns.reduce((sum, c) => sum + c.responseRate, 0) / campaigns.length)
+    const avgMetric = campaigns.length
+      ? Math.round(
+        campaigns.reduce((sum, c) => sum + parseMetricNumeric(c.metrics), 0) / campaigns.length,
+      )
       : 0;
-    return { total: campaigns.length, active, paused, avgResponse };
+    return { total: campaigns.length, active, paused, avgMetric };
   }, [campaigns]);
 
   const toggleStatus = (id) => {
@@ -67,8 +86,7 @@ export default function CampaignsDashboard() {
       name: draft.name,
       type: draft.type,
       status: 'active',
-      responseRate: 0,
-      conversionRate: 0,
+      metrics: buildMetrics(draft.type, 0),
       triggerId: draft.triggerId,
       actionId: draft.actionId,
       surveyId: draft.surveyId,
@@ -95,8 +113,8 @@ export default function CampaignsDashboard() {
             <div className="kampayn-kpi__value font-yekan">{kpis.paused.toLocaleString('fa-IR')}</div>
           </article>
           <article className="kampayn-kpi">
-            <div className="kampayn-kpi__label">میانگین مشارکت</div>
-            <div className="kampayn-kpi__value font-yekan">{kpis.avgResponse.toLocaleString('fa-IR')}٪</div>
+            <div className="kampayn-kpi__label">میانگین شاخص</div>
+            <div className="kampayn-kpi__value font-yekan">{kpis.avgMetric.toLocaleString('fa-IR')}٪</div>
           </article>
         </div>
       </section>
@@ -147,8 +165,7 @@ export default function CampaignsDashboard() {
                 <th>نام کمپین</th>
                 <th>نوع</th>
                 <th>وضعیت</th>
-                <th>نرخ مشارکت</th>
-                <th>نرخ تبدیل</th>
+                <th>شاخص موفقیت</th>
                 <th>قانون</th>
                 <th>عملیات</th>
               </tr>
@@ -166,8 +183,9 @@ export default function CampaignsDashboard() {
                     </span>
                   </td>
                   <td><StatusBadge status={campaign.status} /></td>
-                  <td className="font-yekan">{campaign.responseRate.toLocaleString('fa-IR')}٪</td>
-                  <td className="font-yekan">{campaign.conversionRate.toLocaleString('fa-IR')}٪</td>
+                  <td>
+                    <SuccessMetricCell metrics={campaign.metrics} />
+                  </td>
                   <td className="kampayn-td-rule">
                     <span className="kampayn-rule-line font-meem">
                       <Workflow size={13} strokeWidth={1.75} aria-hidden="true" />
@@ -207,7 +225,7 @@ export default function CampaignsDashboard() {
               ))}
               {!filtered.length ? (
                 <tr>
-                  <td colSpan={8} className="kampayn-empty font-meem">کمپینی با این فیلتر یافت نشد.</td>
+                  <td colSpan={7} className="kampayn-empty font-meem">کمپینی با این فیلتر یافت نشد.</td>
                 </tr>
               ) : null}
             </tbody>
