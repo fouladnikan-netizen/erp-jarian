@@ -8,7 +8,7 @@ import {
   Palette,
   DatabaseBackup,
 } from 'lucide-react';
-import { SETTINGS_MENU } from '../config/settingsMenu';
+import { SETTINGS_MENU, SHIRAZEH_BASE_PATH } from '../config/settingsMenu';
 
 const ICON_MAP = {
   Settings,
@@ -22,7 +22,7 @@ const ICON_MAP = {
 
 /**
  * Configuration-driven settings sidebar.
- * Uses NavLink so nested /shirazeh/:section routes light up automatically.
+ * NavLinks always use absolute /shirazeh/:id paths (never relative).
  */
 export default function SettingsNavigation({ items = SETTINGS_MENU }) {
   return (
@@ -31,10 +31,11 @@ export default function SettingsNavigation({ items = SETTINGS_MENU }) {
       <ul className="shirazeh-nav__list">
         {items.map((item) => {
           const Icon = ICON_MAP[item.icon] || Settings;
+          const to = `${SHIRAZEH_BASE_PATH}/${item.id}`;
           return (
             <li key={item.id}>
               <NavLink
-                to={item.path}
+                to={to}
                 end={item.id !== 'security'}
                 className={({ isActive }) =>
                   `shirazeh-nav__item${isActive ? ' shirazeh-nav__item--active' : ''}`

@@ -16,9 +16,16 @@ import CustomerSurveyApp from './modules/tanin/survey-client/CustomerSurveyApp';
 import TaninAnalyticsDashboard from './modules/tanin/analytics/TaninAnalyticsDashboard';
 import LoginPage from './modules/auth/LoginPage';
 import RequireAuth from './modules/auth/RequireAuth';
-import ShirazehPage, { ShirazehSectionRoute } from './modules/shirazeh/ShirazehPage';
+import ShirazehPage, {
+  ShirazehSectionRoute,
+  ShirazehPlaceholderSection,
+  IntegrationsPage,
+  SecuritySettingsPage,
+} from './modules/shirazeh/ShirazehPage';
 import OrganizationStructurePage from './modules/shirazeh/security/organization/OrganizationStructurePage';
-import { DEFAULT_SETTINGS_SECTION } from './modules/shirazeh/config/settingsMenu';
+import PermissionsPage from './modules/shirazeh/security/permissions/PermissionsPage';
+import UsersPage from './modules/shirazeh/users/UsersPage';
+import { DEFAULT_SETTINGS_SECTION, SHIRAZEH_BASE_PATH } from './modules/shirazeh/config/settingsMenu';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { NotificationEngineProvider } from './context/NotificationEngineContext';
 import { modules, moduleData } from './modules/registry';
@@ -64,8 +71,19 @@ export default function App() {
               <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
 
               <Route path="/shirazeh" element={<ShirazehPage />}>
-                <Route index element={<Navigate to={DEFAULT_SETTINGS_SECTION.path} replace />} />
+                <Route
+                  index
+                  element={<Navigate to={`${SHIRAZEH_BASE_PATH}/${DEFAULT_SETTINGS_SECTION.id}`} replace />}
+                />
+                <Route path="integrations" element={<IntegrationsPage />} />
+                <Route path="users" element={<UsersPage />} />
+                <Route path="security" element={<SecuritySettingsPage />} />
                 <Route path="security/organization" element={<OrganizationStructurePage />} />
+                <Route path="security/permissions" element={<PermissionsPage />} />
+                <Route path="general" element={<ShirazehPlaceholderSection />} />
+                <Route path="warehouses" element={<ShirazehPlaceholderSection />} />
+                <Route path="appearance" element={<ShirazehPlaceholderSection />} />
+                <Route path="backup" element={<ShirazehPlaceholderSection />} />
                 <Route path=":sectionId" element={<ShirazehSectionRoute />} />
               </Route>
 

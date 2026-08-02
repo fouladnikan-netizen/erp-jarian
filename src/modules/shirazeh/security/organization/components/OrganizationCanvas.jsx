@@ -38,7 +38,9 @@ function OrganizationCanvasInner() {
       fitView({ padding: 0.22, duration: 260 });
     }, 30);
     return () => window.clearTimeout(timer);
-  }, [layout, selectedNodeId, setNodes, setEdges, fitView]);
+    // fitView from useReactFlow is not referentially stable — omit from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [layout, selectedNodeId, setNodes, setEdges]);
 
   const onNodeClick = useCallback(
     (_event, node) => {
@@ -98,7 +100,7 @@ function OrganizationCanvasInner() {
   );
 
   return (
-    <div className="org-canvas">
+    <div className="org-canvas org-canvas--flow" style={{ width: '100%', height: 700, minHeight: 700, position: 'relative' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -117,6 +119,7 @@ function OrganizationCanvasInner() {
         elementsSelectable
         proOptions={{ hideAttribution: true }}
         defaultEdgeOptions={{ type: 'smoothstep' }}
+        style={{ width: '100%', height: '100%' }}
       >
         <Background gap={18} color="rgba(148, 163, 184, 0.35)" />
         <Controls showInteractive={false} />

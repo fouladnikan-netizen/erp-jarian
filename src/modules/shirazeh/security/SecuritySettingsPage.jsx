@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Network, Shield } from 'lucide-react';
+import { KeyRound, Network } from 'lucide-react';
 import './organization/organization.css';
 
 /**
- * Security settings hub — entry to organization designer and future RBAC tools.
+ * Security settings hub — organization designer + permission matrix.
  */
 export default function SecuritySettingsPage() {
   return (
@@ -31,17 +31,20 @@ export default function SecuritySettingsPage() {
           </div>
         </Link>
 
-        <div className="shirazeh-security-hub__card shirazeh-security-hub__card--muted">
+        <Link
+          to="/shirazeh/security/permissions"
+          className="shirazeh-security-hub__card"
+        >
           <span className="shirazeh-security-hub__icon" aria-hidden="true">
-            <Shield size={20} strokeWidth={1.75} />
+            <KeyRound size={20} strokeWidth={1.75} />
           </span>
           <div>
             <h3 className="shirazeh-security-hub__card-title font-meem">نقش‌ها و مجوزها</h3>
             <p className="shirazeh-security-hub__card-text font-meem">
-              RBAC سیستمی — جدا از سمت سازمانی. به‌زودی به همین بخش متصل می‌شود.
+              ماتریس RBAC با تفکیک داده، اقدام و مالی — ذخیره فقط با تأیید صریح
             </p>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );

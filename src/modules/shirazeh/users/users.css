@@ -1,0 +1,351 @@
+/* Shirazeh Users — glass management grid + add/edit modal */
+
+.shirazeh-users {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.shirazeh-users__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.shirazeh-users__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.shirazeh-users__title {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.shirazeh-users__subtitle {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+/* —— Shared glass buttons —— */
+.shirazeh-users-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 36px;
+  padding: 0.4rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    opacity 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.shirazeh-users-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.shirazeh-users-btn--lg {
+  min-height: 40px;
+  padding: 0.5rem 1rem;
+  font-size: 0.84rem;
+}
+
+.shirazeh-users-btn--ghost {
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text-primary);
+}
+
+.shirazeh-users-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.shirazeh-users-btn--primary {
+  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 35%, white);
+  background: color-mix(in srgb, var(--color-accent) 16%, white);
+  color: var(--color-accent-dark);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 8px 20px rgba(13, 148, 136, 0.12);
+}
+
+.shirazeh-users-btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 26%, white);
+}
+
+/* —— Glass grid —— */
+.shirazeh-users-grid {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 10px 26px rgba(15, 23, 42, 0.07);
+  overflow: hidden;
+}
+
+.shirazeh-users-grid__scroll {
+  overflow-x: auto;
+}
+
+.shirazeh-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.shirazeh-users-table th,
+.shirazeh-users-table td {
+  padding: 0.85rem 1rem;
+  text-align: center;
+  vertical-align: middle;
+  border: none;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+}
+
+.shirazeh-users-table th {
+  background: rgba(232, 250, 247, 0.85);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.shirazeh-users-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.shirazeh-users-table tbody tr:nth-child(even) {
+  background: rgba(243, 244, 246, 0.55);
+}
+
+.shirazeh-users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.shirazeh-users-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+}
+
+.shirazeh-users-table__name {
+  text-align: right;
+}
+
+.shirazeh-users-table__name span:first-child {
+  display: block;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.shirazeh-users-table__hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #b45309;
+}
+
+.shirazeh-users-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.shirazeh-users-status--active {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.shirazeh-users-status--inactive {
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.16);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.shirazeh-users-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.shirazeh-users-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
+}
+
+.shirazeh-users-action:hover {
+  color: var(--color-accent-dark);
+  border-color: color-mix(in srgb, var(--color-accent) 35%, white);
+  background: color-mix(in srgb, var(--color-accent) 12%, white);
+}
+
+.shirazeh-users-action--warn {
+  color: #b45309;
+}
+
+.shirazeh-users-action--warn:hover {
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(251, 191, 36, 0.18);
+}
+
+/* —— Glass modal —— */
+.shirazeh-users-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.shirazeh-users-modal__card {
+  width: min(100%, 440px);
+  padding: 1.15rem 1.2rem 1.25rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 22px 48px rgba(15, 23, 42, 0.22);
+}
+
+.shirazeh-users-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.shirazeh-users-modal__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.shirazeh-users-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.shirazeh-users-modal__close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.shirazeh-users-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.shirazeh-users-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shirazeh-users-modal__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.shirazeh-users-modal__input,
+.shirazeh-users-modal__select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.shirazeh-users-modal__input:focus,
+.shirazeh-users-modal__select:focus {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, white);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.shirazeh-users-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+@media (max-width: 720px) {
+  .shirazeh-users__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .shirazeh-users-btn--lg {
+    width: 100%;
+  }
+
+  .shirazeh-users-table th,
+  .shirazeh-users-table td {
+    padding: 0.7rem 0.75rem;
+  }
+}

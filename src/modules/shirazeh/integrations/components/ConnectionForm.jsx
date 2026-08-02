@@ -2,12 +2,17 @@ import { Eye, EyeOff, Save } from 'lucide-react';
 import { useState } from 'react';
 import { useIntegrationUIStore } from '../store/integrationUIStore';
 
+/** Stable fallback — never return a fresh `{}` from a Zustand selector. */
+const EMPTY_DRAFT = Object.freeze({});
+
 /**
  * Dynamic credential form from registry fields.
  * Secret inputs stay masked in the UI; values live only in temporary draft state.
  */
 export default function ConnectionForm({ integration }) {
-  const draft = useIntegrationUIStore((s) => s.draftForms[integration.id] || {});
+  const draft = useIntegrationUIStore(
+    (s) => s.draftForms[integration.id] ?? EMPTY_DRAFT,
+  );
   const setDraftField = useIntegrationUIStore((s) => s.setDraftField);
   const saveCredentials = useIntegrationUIStore((s) => s.saveCredentials);
   const savingId = useIntegrationUIStore((s) => s.savingId);
