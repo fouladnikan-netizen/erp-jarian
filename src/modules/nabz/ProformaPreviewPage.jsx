@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProformaDocument from './components/ProformaDocument';
+import DocumentTrackingPanel from './components/DocumentTrackingPanel';
 import {
   readProformaPreviewPayload,
   PROFORMA_SEND_MESSAGE_TYPE,
   PROFORMA_SIGNED_MESSAGE_TYPE,
 } from './proformaPrint';
+import {
+  MOCK_DOCUMENT_TRACKING,
+  createWhatsAppMessage,
+} from './documentTracking';
 import './proforma.css';
 
 const SEAL_IDLE = 'idle';
@@ -235,6 +240,36 @@ export default function ProformaPreviewPage() {
           )}
         </div>
       )}
+
+      {!shouldPrint && isApproved ? (
+        <div className="proforma-preview-page__tracking no-print">
+          <DocumentTrackingPanel
+            documentId={
+              payload.viewModel?.documentNumber
+              || payload.viewModel?.orderCode
+              || MOCK_DOCUMENT_TRACKING.documentId
+            }
+            secureLink={MOCK_DOCUMENT_TRACKING.secureLink}
+            status={MOCK_DOCUMENT_TRACKING.status}
+            openedCount={MOCK_DOCUMENT_TRACKING.openedCount}
+            lastOpenedAt={MOCK_DOCUMENT_TRACKING.lastOpenedAt}
+            stepTimes={MOCK_DOCUMENT_TRACKING.stepTimes}
+            onCopyLink={async () => {
+              try {
+                await navigator.clipboard.writeText(MOCK_DOCUMENT_TRACKING.secureLink);
+              } catch {
+                window.prompt('لینک را کپی کنید:', MOCK_DOCUMENT_TRACKING.secureLink);
+              }
+            }}
+            onSendWhatsApp={() => {
+              const text = createWhatsAppMessage(MOCK_DOCUMENT_TRACKING.secureLink);
+              const phone = String(payload.viewModel?.customerPhone || '').replace(/\D/g, '');
+              const base = phone ? `https://wa.me/${phone}?text=` : 'https://wa.me/?text=';
+              window.open(`${base}${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

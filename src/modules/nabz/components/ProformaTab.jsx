@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   JarianMoney,
   JarianMoneyFooter,
@@ -6,6 +6,11 @@ import {
 } from '../../../components/jarian/JarianPresentation';
 import { buildProformaViewModel } from '../proformaService';
 import { DEFAULT_PROFORMA_TERMS } from '../proformaConfig';
+import {
+  MOCK_DOCUMENT_TRACKING,
+  createWhatsAppMessage,
+} from '../documentTracking';
+import DocumentTrackingPanel from './DocumentTrackingPanel';
 
 /**
  * محتوای خلاصه پیش‌فاکتور در نمایش سریع.
@@ -19,8 +24,39 @@ export default function ProformaTab({
 }) {
   const viewModel = useMemo(() => buildProformaViewModel(order), [order]);
 
+  const tracking = useMemo(() => ({
+    ...MOCK_DOCUMENT_TRACKING,
+    documentId: viewModel.documentNumber || order?.code || MOCK_DOCUMENT_TRACKING.documentId,
+  }), [viewModel.documentNumber, order?.code]);
+
+  const handleCopyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(tracking.secureLink);
+    } catch {
+      window.prompt('لینک را کپی کنید:', tracking.secureLink);
+    }
+  }, [tracking.secureLink]);
+
+  const handleSendWhatsApp = useCallback(() => {
+    const text = createWhatsAppMessage(tracking.secureLink);
+    const phone = String(order?.phone || order?.mobile || '').replace(/\D/g, '');
+    const base = phone ? `https://wa.me/${phone}?text=` : 'https://wa.me/?text=';
+    window.open(`${base}${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  }, [tracking.secureLink, order?.phone, order?.mobile]);
+
   return (
     <div className="nabz-proforma-tab">
+      <DocumentTrackingPanel
+        documentId={tracking.documentId}
+        secureLink={tracking.secureLink}
+        status={tracking.status}
+        openedCount={tracking.openedCount}
+        lastOpenedAt={tracking.lastOpenedAt}
+        stepTimes={tracking.stepTimes}
+        onCopyLink={handleCopyLink}
+        onSendWhatsApp={handleSendWhatsApp}
+      />
+
       <div className="nabz-proforma-table-wrap">
         <table className="nabz-proforma-table jarian-table">
           <thead>

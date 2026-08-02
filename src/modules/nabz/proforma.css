@@ -108,6 +108,12 @@
   animation: proforma-fade-in 0.45s ease both;
 }
 
+.proforma-preview-page__tracking {
+  width: min(42rem, 100%);
+  margin: 1rem auto 0;
+  padding: 0 0.5rem 1.25rem;
+}
+
 .proforma-preview-page__status-pill {
   display: inline-flex;
   align-items: center;
