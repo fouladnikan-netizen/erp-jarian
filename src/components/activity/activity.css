@@ -1,0 +1,301 @@
+/* ═══════════ Activity Timeline Engine — Layer 4 ═══════════ */
+
+.activity-drawer-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1250;
+}
+
+.activity-drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.32);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  animation: activity-fade 0.2s ease;
+}
+
+.activity-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(420px, 96vw);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border-right: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 14px 0 48px rgba(15, 23, 42, 0.18);
+  animation: activity-drawer-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes activity-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes activity-drawer-in {
+  from { transform: translateX(-36px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.activity-drawer__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1.15rem 0.95rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.activity-drawer__titles {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.activity-drawer__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.activity-drawer__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.activity-drawer__sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.activity-drawer__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(148, 163, 184, 0.06);
+  color: #64748b;
+  cursor: pointer;
+}
+
+.activity-drawer__close:hover {
+  color: #e0342f;
+  border-color: rgba(224, 52, 47, 0.28);
+  background: rgba(224, 52, 47, 0.08);
+}
+
+.activity-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.05rem 1.4rem;
+}
+
+/* ——— Timeline ——— */
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.activity-timeline--empty {
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 12rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.activity-timeline--empty p {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.activity-timeline__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: #64748b;
+}
+
+.activity-timeline__title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.activity-timeline__sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.activity-timeline__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ——— Item ——— */
+.activity-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.7rem;
+}
+
+.activity-item__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.activity-item__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  flex-shrink: 0;
+}
+
+.activity-item__line {
+  flex: 1;
+  width: 1px;
+  min-height: 18px;
+  margin: 0.25rem 0 0;
+  background: rgba(148, 163, 184, 0.28);
+}
+
+.activity-item:last-child .activity-item__line {
+  opacity: 0;
+}
+
+.activity-item__card {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0.75rem;
+  padding: 0.8rem 0.85rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.activity-item__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.activity-item__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.activity-item__time {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.activity-item__desc {
+  margin: 0 0 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.activity-item__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.activity-item__actor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.activity-item__actor-type {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.activity-item--customer .activity-item__dot {
+  color: #0f766e;
+  background: rgba(13, 148, 136, 0.12);
+  border-color: rgba(13, 148, 136, 0.25);
+}
+
+.activity-item--workflow .activity-item__dot {
+  color: #475569;
+  background: rgba(100, 116, 139, 0.14);
+  border-color: rgba(100, 116, 139, 0.25);
+}
+
+html[data-theme='dark'] .activity-drawer,
+html[data-theme='dark'] .activity-item__card {
+  background: rgba(24, 28, 38, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme='dark'] .activity-drawer__title,
+html[data-theme='dark'] .activity-timeline__title,
+html[data-theme='dark'] .activity-item__title,
+html[data-theme='dark'] .activity-item__desc {
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .activity-drawer__backdrop {
+  background: rgba(2, 6, 23, 0.5);
+}
+
+@media (max-width: 480px) {
+  .activity-drawer {
+    width: 100vw;
+  }
+}

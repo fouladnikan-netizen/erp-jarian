@@ -17,6 +17,7 @@ import {
 import { canShowDeliveryLocationAction, canShowDeliveryOrderAction, canEnableDeliveryOrderAction } from '../../deliveryInfoService';
 import { getOrderShippingRecord } from '../../shippingService';
 import { isOrderArchived } from '../../saranjamSettlementService';
+import { History } from 'lucide-react';
 import GatewayHorizontalStepper from './gateway/GatewayHorizontalStepper';
 import OrderProfileCancelDialog from './OrderProfileCancelDialog';
 import ProformaHeaderActions from '../ProformaHeaderActions';
@@ -55,6 +56,7 @@ export default function OrderProfileChrome({
   onEditOrder,
   onNextAction,
   onOpenActivityModal,
+  onOpenActivityTimeline,
   onOpenDeliveryOrderModal,
   onOpenDeliveryModal,
   onIssueProforma,
@@ -178,6 +180,16 @@ export default function OrderProfileChrome({
         </div>
 
         <div className="order-profile-slim-header__actions">
+          <button
+            type="button"
+            className="btn btn--outline order-profile-activity-btn"
+            onClick={() => onOpenActivityTimeline?.()}
+            title="سوابق فعالیت‌ها"
+          >
+            <History size={15} strokeWidth={1.75} aria-hidden="true" />
+            سوابق فعالیت‌ها
+          </button>
+
           <button
             type="button"
             className="btn btn--outline order-profile-activity-btn"

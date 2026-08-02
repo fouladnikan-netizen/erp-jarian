@@ -41,7 +41,10 @@ import OrderProfileTimelineTab from './OrderProfileTimelineTab';
 import OrderProfileAttachmentsTab from './OrderProfileAttachmentsTab';
 import OrderActionDrawer from './OrderActionDrawer';
 import DeliveryOrderSelectionModal from './operations/DeliveryOrderSelectionModal';
+import ActivityDrawer from '../../../../components/activity/ActivityDrawer';
+import ActivityTimeline from '../../../../components/activity/ActivityTimeline';
 import { GATEWAY_PHASES } from '../../gatewayConfig';
+import { toDisplayOrderCode } from '../../orderCode';
 
 export default function OrderProfileView({
   order,
@@ -61,6 +64,7 @@ export default function OrderProfileView({
     order.status === ORDER_TABS.SUCCESS ? 'operations' : 'gateway',
   );
   const [activityModal, setActivityModal] = useState({ open: false, editActivity: null });
+  const [activityTimelineOpen, setActivityTimelineOpen] = useState(false);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [deliveryOrderModalOpen, setDeliveryOrderModalOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
@@ -249,6 +253,7 @@ export default function OrderProfileView({
           }}
           onNextAction={handleNextAction}
           onOpenActivityModal={() => openActivityModal()}
+          onOpenActivityTimeline={() => setActivityTimelineOpen(true)}
           onOpenDeliveryOrderModal={() => setDeliveryOrderModalOpen(true)}
           onOpenDeliveryModal={() => setDeliveryModalOpen(true)}
           onIssueProforma={handleIssueProforma}
@@ -289,6 +294,18 @@ export default function OrderProfileView({
         onClose={closeActivityModal}
         onSubmit={handleActivityModalSubmit}
       />
+
+      <ActivityDrawer
+        open={activityTimelineOpen}
+        onClose={() => setActivityTimelineOpen(false)}
+        title="سوابق فعالیت‌ها"
+        subtitle={`سفارش ${toDisplayOrderCode(order.code)}`}
+      >
+        <ActivityTimeline
+          entityType="ORDER"
+          entityId={order.code || order.id}
+        />
+      </ActivityDrawer>
 
       <DeliveryLocationModal
         open={deliveryModalOpen && canShowDeliveryLocationAction(order)}

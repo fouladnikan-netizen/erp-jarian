@@ -8,6 +8,7 @@ import {
   Play,
   Workflow,
   ClipboardList,
+  BarChart3,
 } from 'lucide-react';
 import {
   CAMPAIGN_STATUSES,
@@ -131,6 +132,14 @@ export default function CampaignsDashboard() {
           />
         </div>
         <div className="kampayn-toolbar__actions">
+          <button
+            type="button"
+            className="kampayn-btn kampayn-btn--ghost"
+            onClick={() => navigate('/kampayn/analytics')}
+          >
+            <BarChart3 size={16} strokeWidth={1.75} aria-hidden="true" />
+            داشبورد طنین
+          </button>
           <button
             type="button"
             className="kampayn-btn kampayn-btn--ghost"

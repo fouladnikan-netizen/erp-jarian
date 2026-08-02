@@ -12,6 +12,8 @@ import OfoqModule from './modules/ofogh/OfoqModule';
 import CalendarPage from './components/calendar/CalendarPage';
 import CampaignsDashboard from './modules/kampayn/CampaignsDashboard';
 import SurveyBuilder from './modules/kampayn/SurveyBuilder';
+import CustomerSurveyApp from './modules/tanin/survey-client/CustomerSurveyApp';
+import TaninAnalyticsDashboard from './modules/tanin/analytics/TaninAnalyticsDashboard';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { NotificationEngineProvider } from './context/NotificationEngineContext';
 import { modules, moduleData } from './modules/registry';
@@ -23,6 +25,10 @@ export default function App() {
     <NabzOrdersProvider>
       <NotificationEngineProvider>
         <Routes>
+          {/* تجربه ایزوله مشتری — بدون AppLayout / سایدبار ERP */}
+          <Route path="/survey/:surveyId" element={<CustomerSurveyApp />} />
+          <Route path="/survey" element={<Navigate to="/survey/mock-id" replace />} />
+
           <Route path="/nabz/proforma/preview" element={<ProformaPreviewPage />} />
           <Route path="/nabz/shipping/preview" element={<ShippingPreviewPage />} />
           <Route element={<AppLayout />}>
@@ -34,6 +40,7 @@ export default function App() {
             <Route path="/calendar" element={<Navigate to="/gahshomar" replace />} />
             <Route path="/kampayn" element={<CampaignsDashboard />} />
             <Route path="/kampayn/survey" element={<SurveyBuilder />} />
+            <Route path="/kampayn/analytics" element={<TaninAnalyticsDashboard />} />
             <Route path="/nabz" element={<NabzPage />} />
             <Route path="/nabz/new-order" element={<NabzPage />} />
             <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
