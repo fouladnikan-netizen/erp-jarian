@@ -1,0 +1,70 @@
+---
+description: Jarian business rules & workflow guardrails — future development only
+globs: src/**/*.{js,jsx,ts,tsx}
+alwaysApply: false
+---
+
+# Jarian Business Rules Guardrails
+
+**Applies to future development only.** Do not use these rules as a mandate to refactor existing hotspots.
+
+Before adding or changing business rules, read:
+
+1. This rule
+2. `Docs/architecture/ORDER_WORKFLOW.md`
+3. `Docs/architecture/BUSINESS_RULE_OWNERSHIP.md`
+4. `Docs/architecture/ORDER_STATUS_AUDIT.md`
+5. `Docs/architecture/BUSINESS_LOGIC_HOTSPOTS.md` (avoid growing listed gods)
+
+Do **not** redesign the Order lifecycle, invent a workflow engine, merge status models, or move VAT/settlement “while you’re here.”
+
+---
+
+## Rules
+
+### 1. No new business rules inside React JSX
+
+- Do not encode new workflow transitions, archive eligibility, operational completeness, or permission decisions as ad-hoc logic inside JSX.
+- Components may **call** existing services/domain helpers and render results/errors.
+- Touching an existing hotspot (e.g. `SaranjamTab`) to fix a bug is allowed; **adding** a new parallel rule there is not.
+
+### 2. No new financial calculations in UI components
+
+- Do not add new VAT, margin, discount, tax, balance, profit %, or settlement formulas in components/pages/drawers/modals.
+- Prefer `quotingService`, `saranjamSettlementService`, or another documented calculation owner.
+- UI may format/display amounts via Jarian presentation helpers (`formatJarianMoney`, etc.).
+
+### 3. New workflow states require documentation
+
+- Any new Order `stageId`, tab/bucket, operational phase, or gateway phase must update `Docs/architecture/ORDER_WORKFLOW.md` in the same change.
+- Do not introduce a **fourth** header status enum; see `ORDER_STATUS_AUDIT.md`.
+- Do not “quietly” overload free strings where an existing config enum exists.
+
+### 4. New permissions require an owner
+
+- New permission checks must declare an owner in the PR/doc note: Nabz `orderEditPermissions` / roles **or** Shirazeh RBAC — not a one-off boolean in a random component.
+- Do not invent a third parallel role ID space without documenting it in `BUSINESS_RULE_OWNERSHIP.md`.
+
+### 5. Business validation needs a reusable location
+
+- New reusable validations belong in a service, domain module, or shared config validator — not only inside a single modal.
+- Prefer `can*` / `validate*` functions that UI and other services can import.
+- Soft UI-only gates for brand-new critical ops rules are discouraged; if unavoidable, document the gap in `ORDER_WORKFLOW.md` / ownership map.
+
+---
+
+## Allowed
+
+- Bugfixes that preserve behavior
+- Calling existing `*Service.js` / `domain/*` APIs from UI
+- Documentation updates
+- Tests for existing rules
+
+## Not allowed (without an explicit product/architecture decision)
+
+- Rewriting Nabz workflow
+- Merging `stageId` / `ORDER_TABS` / `OrderStatus`
+- Creating a generic workflow engine
+- Moving VAT or settlement “for cleanliness”
+- Changing permission systems wholesale
+- Changing routes or UX flows under the guise of rule cleanup

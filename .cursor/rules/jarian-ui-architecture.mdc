@@ -1,0 +1,56 @@
+---
+description: Jarian UI/CSS architecture — tokens, RTL, module CSS hygiene
+globs: src/**/*.{js,jsx,css}
+alwaysApply: false
+---
+
+# Jarian UI Architecture
+
+**Applies to future development.** Complements (does not replace) `jarian-theme-tokens.mdc` and `jarian-unified-presentation.mdc`.
+
+Read with:
+
+1. `src/styles/theme-tokens.css`
+2. `Docs/architecture/SHARED_UI_INVENTORY.md`
+3. `Docs/architecture/FRONTEND_ARCHITECTURE_GUIDELINES.md`
+
+---
+
+## Rules
+
+### 1. Theme tokens only
+
+- Colors, glass, shadows, stage tints: only `var(--token)` from `theme-tokens.css`.
+- If a token is missing, add it to the token file (light + dark as needed) — do not hardcode.
+
+### 2. No hardcoded colors
+
+- No `#hex`, `rgb()`, `hsl()`, or named color values in new component CSS/JSX styles.
+- Enforced by `lint:theme` / `audit-theme-colors` on build — keep it green.
+
+### 3. No module-specific global leakage
+
+- New module styles belong in **module-scoped** CSS files imported by that module (e.g. `modules/nabz/*.css`), not dumped into global `src/styles/` unless truly app-wide.
+- Avoid new unscoped selectors that restyle `.jarian-table`, layout shell, or other modules’ roots.
+- Do not grow `nabz.css` with unrelated feature styles — prefer co-located CSS next to the feature when adding substantial UI.
+
+### 4. New components follow RTL and token rules
+
+- Default layout assumptions are **RTL** (`dir="rtl"` where appropriate); logical properties preferred (`margin-inline`, `inset-inline-start`, …) over physical left/right when practical.
+- Typography: Vazirmatn / project font tokens (`font-vazir`, `--font-primary`, `--font-numeric`) for tables and money — see unified presentation rule.
+- Surfaces: prefer existing glass/modal/drawer tokens (`--glass-*`, `--modal-bg`, `--drawer-bg`) over inventing new blur/opacity stacks.
+
+---
+
+## Allowed
+
+- Extending `theme-tokens.css` with documented tokens
+- Module-local CSS imported only by that feature
+- Using Jarian presentation helpers for tables/money
+
+## Not allowed
+
+- Hardcoded colors in new code
+- Global CSS that restyles other modules
+- Visual redesign or token theme overhaul without product ask
+- “Fixing” architecture by rewriting nabz.css wholesale in unrelated PRs

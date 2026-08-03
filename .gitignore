@@ -34,7 +34,10 @@ Assets/Font/
 
 # Design references & large binaries not needed in repo
 Assets/Invoice/
-Docs/
+# Docs: keep IA / review / binary packs local; version architecture
+Docs/*
+!Docs/architecture/
+!Docs/architecture/**
 screenshots/
 
 # Duplicate raw assets (canonical copies are in src/assets/)

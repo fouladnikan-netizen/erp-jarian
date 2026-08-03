@@ -1,0 +1,72 @@
+---
+description: Jarian security, identity, and authorization guardrails — future development only
+globs: src/**/*.{js,jsx,ts,tsx}
+alwaysApply: false
+---
+
+# Jarian Security Guardrails
+
+**Applies to future development only.** Do not use these rules to force auth providers, RBAC merges, or permission matrix rewrites.
+
+Before adding identity-, role-, or permission-related behavior, read:
+
+1. This rule
+2. `Docs/architecture/IDENTITY_MODEL.md`
+3. `Docs/architecture/AUTHORIZATION_MODEL.md`
+4. `Docs/architecture/ROLE_MATRIX.md`
+5. `Docs/architecture/DATA_ACCESS_POLICY.md`
+6. `Docs/architecture/SECURITY_RISK_REGISTER.md`
+
+Do **not** implement authentication providers or change production permission behavior “while documenting.”
+
+---
+
+## Rules
+
+### 1. New features must not use hardcoded users
+
+- Do not add new business/audit paths that stamp a literal person name or hardcode `CURRENT_USER` / a fixed role when an identity context could be threaded later.
+- Touching existing Nabz services that already use `CURRENT_USER` for bugfixes is allowed; **extending** the hardcode to new modules/features is not.
+- Prefer accepting an `actor` / `userId` parameter (even if callers still pass the legacy constant today).
+
+### 2. New permissions require documented ownership
+
+- New permission checks or role strings must be noted in `AUTHORIZATION_MODEL.md` and/or `ROLE_MATRIX.md` in the same change.
+- Do not silently add a parallel permission constant file in a random module.
+
+### 3. UI hiding is not authorization
+
+- Disabling buttons, `isAdmin` checkboxes, or CSS-only locks are **not** access control.
+- Business-critical actions need a reusable permission/policy check (service or shared helper), with server enforcement when APIs exist.
+
+### 4. Business actions require permission checks
+
+- New mutations that change Order, Company, payments, documents, or stage transitions should call an existing permission helper or a documented new one — not assume “logged in ⇒ allowed.”
+- Ofogh/Kanoon/Nabz are not exempt for new privileged actions.
+
+### 5. Audit actor must come from identity context
+
+- New audit fields (`by`, `returnedBy`, `recordedBy`, `issuedBy`) must be designed to receive the domain actor from identity/session — not a new module-level name constant.
+- Until Identity Context exists, pass actor explicitly; document the gap if still wired to legacy `CURRENT_USER`.
+
+### 6. Roles must not be invented inside modules
+
+- Do not invent new role id strings (`super_sales_v2`, …) inside a feature module.
+- Use `Docs/architecture/ROLE_MATRIX.md` product roles or existing documented vocabularies; if a new product role is required, update the matrix first.
+- ContactPerson job titles and calendar filter labels are **not** RBAC roles.
+
+---
+
+## Allowed
+
+- Documentation updates
+- Bugfixes preserving current ACL behavior
+- Parameterizing actor through call chains without changing who is passed yet
+- Using `RequireAuth` for authentication gating (not authorization)
+
+## Not allowed (without explicit architecture decision)
+
+- Adding OAuth/IdP/Auth0/etc. in an ad-hoc feature PR
+- Merging Nabz and Shirazeh role ids “for cleanup”
+- Changing default `CURRENT_USER_ROLE` or permission matrix defaults without product sign-off
+- Treating UI-only toggles as security boundaries for new features

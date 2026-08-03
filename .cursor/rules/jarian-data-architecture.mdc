@@ -1,0 +1,78 @@
+---
+description: Jarian data architecture & persistence readiness — future development only
+globs: src/**/*.{js,jsx,ts,tsx}
+alwaysApply: false
+---
+
+# Jarian Data Architecture Guardrails
+
+**Applies to future development only.** Do not use these rules to force Prisma, database, or Zustand rewrites.
+
+Before adding entities or durable-looking data paths, read:
+
+1. This rule
+2. `Docs/architecture/DATA_OWNERSHIP_MODEL.md`
+3. `Docs/architecture/ENTITY_IDENTITY_AUDIT.md`
+4. `Docs/architecture/PERSISTENCE_BOUNDARY.md`
+5. `Docs/architecture/DATA_MIGRATION_RISKS.md`
+6. Prefer `src/domain/identity` for new ids
+
+Do **not** add Prisma, a database, or replace Zustand “while documenting.”
+
+---
+
+## Rules
+
+### 1. New business entities need an ownership definition
+
+- Add the entity to `DATA_OWNERSHIP_MODEL.md` (owner aggregate, current storage, future persistence owner, risks) in the same change set.
+- If module/lifecycle ownership differs, also update `ENTITY_OWNERSHIP.md`.
+
+### 2. Do not duplicate domain entities across modules
+
+- No second Company/Customer/Supplier/Product/Order registry “for convenience.”
+- Facades that read the existing SSOT (e.g. Nabz `customers.js` / `suppliers.js`) are fine; parallel arrays are not.
+
+### 3. UI components must not become data owners
+
+- Pages/drawers/modals may hold **form drafts** and view state only.
+- Master data for Company, Order, Product, Payment must live in the documented owner (store/service today; repository later).
+- Do not grow new catalog/order SSOTs inside `useState` on a page when a shared owner already exists or is required by the ownership map.
+
+### 4. New IDs must not use array indexes
+
+- Array index / `sourceItemIndex` is a pointer, not a primary key.
+- New durable child entities need their own id (`createEntityId` or equivalent).
+
+### 5. New business data must not use `Date.now()` as identity
+
+- Do not use `Date.now()`, `Date.now() + n`, or “max(id)+1” as the sole id for new business records when adding or touching creation paths.
+- Prefer `createEntityId` / `createNumericId` (legacy numeric aggregates) / `crypto.randomUUID` as documented in `ENTITY_IDENTITY_AUDIT.md`.
+- Ephemeral UI-only keys (animation keys, file input keys) are exempt if never persisted as domain ids.
+
+### 6. Financial data requires audit consideration
+
+- New payment, invoice, settlement balance, or money-mutating fields must note how who/when/what will be recorded (event, revision, or future ledger).
+- Do not add silent mutable money fields with no trail when a service/event pattern already exists nearby.
+
+### 7. Cross-module references should use stable IDs
+
+- Link with `customerId`, `supplierId`, `productId`, `order.id` (or future UUID) — not display names, kanban indexes, or denormalized label-only joins.
+- When denormalizing a snapshot (line name, customer label), keep the stable id alongside it.
+
+---
+
+## Allowed
+
+- Documentation updates
+- Using `domain/identity` for new ids on touch points
+- Bugfixes that preserve behavior
+- Facades over existing SSOTs
+
+## Not allowed (without explicit architecture decision)
+
+- Adding Prisma / database schemas
+- Replacing Zustand as the client cache
+- Inventing parallel entity registries
+- Rewriting seed ids “for cleanliness”
+- Changing APIs, routes, or UI flows under the guise of data cleanup

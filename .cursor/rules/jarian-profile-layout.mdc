@@ -1,0 +1,17 @@
+---
+description: New entity profile pages must use shared profileLayout contract
+globs: src/**/*Profile*.{jsx,tsx,js,ts}
+alwaysApply: false
+---
+
+# Profile layout (new pages)
+
+When creating a **new** business profile / entity detail **page**:
+
+1. Read `Docs/architecture/PROFILE_LAYOUT_GUIDELINES.md`
+2. Use `src/components/profileLayout` primitives (`ProfilePageShell`, `ProfileHeader`, `ProfileSummary`, `ProfilePrimaryActions`, `ProfileTabs`, `EntityTimeline`, `ProfileRelated`)
+3. Keep section order: Header → Summary → Primary Actions → Tabs → Timeline → Related
+4. Pass module CSS classNames; do not invent a parallel visual system
+5. Do **not** redesign navigation, workspaces, or routes unless explicitly asked
+
+Do not forcibly migrate finished Order/Product UIs unless the task says so and visual parity is required.

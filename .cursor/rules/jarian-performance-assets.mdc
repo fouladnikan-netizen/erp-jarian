@@ -1,0 +1,33 @@
+---
+description: Jarian performance — assets, fonts, and dependency weight for new work
+globs: public/**/*,src/assets/**/*,Assets/**/*,**/*.{png,jpg,jpeg,webp,svg,gif,woff,woff2,ttf},package.json
+alwaysApply: false
+---
+
+# Jarian Performance — Assets
+
+**Applies to new or replaced assets and new dependencies.** Do not mass-recompress the repo or add bundler plugins under this rule.
+
+Read: `Docs/architecture/PERFORMANCE_GUIDELINES.md`, `Docs/architecture/PERFORMANCE_BUDGETS.md`, `Docs/architecture/PERFORMANCE_HOTSPOTS.md`
+
+---
+
+## Rules
+
+1. **Avoid large unoptimized images.** New rasters should stay within budgets in `PERFORMANCE_BUDGETS.md` (prefer ≤300 KB; hard review above 500 KB). Do not add multi-MB PNG/JPEG “because it looks sharper.”
+
+2. **Prefer WebP (or already-optimized) assets** for photos, stamps, signatures, and headers when quality allows. If a smaller WebP already exists beside a huge PNG, prefer the optimized path for **new** usages.
+
+3. **New assets require size consideration.** Call out approximate file size in the PR when adding binaries under `public/` or `src/assets/`. Do not duplicate the same binary across `public/`, `src/assets/`, and design `Assets/` without need.
+
+4. **Avoid duplicate fonts.** Do not add new `@font-face` families/weights that duplicate Vazirmatn/Meem roles. Do not reference font files that are not actually present under `public/assets/fonts/`. Prefer `font-display: swap` (already the project norm).
+
+5. **Avoid unnecessary dependencies.** Do not add chart, animation, icon-pack, or virtualization libraries for convenience. New runtime deps need an architecture reason (bundle cost). Prefer existing `lucide-react` named imports (tree-shake friendly) over new icon packs.
+
+---
+
+## Do not
+
+- Implement React.lazy / Vite `manualChunks` via this rule  
+- Rewrite existing CSS or recompress the whole `public/` tree in drive-by PRs  
+- Treat design-repo `Assets/` as automatically shippable to production  
