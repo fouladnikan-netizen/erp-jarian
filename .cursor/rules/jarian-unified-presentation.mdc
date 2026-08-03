@@ -11,9 +11,11 @@ alwaysApply: true
 1. این سند (قانون رسمی)
 2. `src/config/JarianUI.config.js` (منبع حقیقت توکن‌ها)
 3. `src/components/jarian/JarianPresentation.jsx` (کامپوننت‌های مشترک)
-4. `src/styles/jarian-ui.css` (استایل اجباری)
+5. `src/styles/theme-tokens.css` (RFC-001 — رنگ‌ها فقط از Theme Tokens)
+6. `.cursor/rules/jarian-theme-tokens.mdc`
 
 Improvisation ممنوع است. استایل ad-hoc برای جدول ننویسید؛ از API مشترک استفاده کنید یا پروتکل را گسترش دهید.
+هرگز رنگ هگز/rgb هاردکد نکنید — فقط `var(--token)`.
 
 ---
 
@@ -27,6 +29,7 @@ Improvisation ممنوع است. استایل ad-hoc برای جدول ننوی�
 | تأمین‌کننده | `<JarianSupplier />` — متن ساده + نقطه نوع تأمین، بدون باکس |
 | کلاس جدول | `jarian-table` (+ کلاس ماژول) |
 | فونت | Vazirmatn — `font-vazir` / `--font-primary` / `--font-numeric` |
+| رنگ‌ها | فقط Theme Tokens — `src/styles/theme-tokens.css` |
 
 ---
 
@@ -63,13 +66,13 @@ Improvisation ممنوع است. استایل ad-hoc برای جدول ننوی�
 
 ### 5. Table header background
 
-- بک‌گراند تیتر همه جداول: **`#E8FAF7`**.
-- رنگ متن تیتر: رنگ متن اصلی (نه سفید روی قرمز/آبی گروهی).
+- بک‌گراند تیتر همه جداول: **`var(--table-head-bg)`** (نه هگز ثابت).
+- رنگ متن تیتر: `var(--text-primary)`.
 
 ### 6. Zebra rows / راه‌راه سطر
 
-- سطر فرد: `#ffffff`
-- سطر زوج: `rgba(243, 244, 246, 0.85)`
+- سطر فرد: `var(--table-row-odd-bg)`
+- سطر زوج: `var(--table-row-even-bg)`
 - **هویت پس‌زمینه سطر یکسان است** — هیچ سلولی در بدنه رنگ جداگانه (آبی تأمین / سبز فروش / هایلایت تک‌سلولی) نگیرد.
 - کلاس‌های قدیمی مثل `gateway-td--supply` / `gateway-td--sale` نباید پس‌زمینهٔ متفاوت روی سلول بگذارند.
 

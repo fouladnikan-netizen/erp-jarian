@@ -89,8 +89,8 @@ function UploadIcon() {
 function CheckIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="#16A34A" />
-      <path d="M7.5 12.5l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="10" fill="var(--success)" />
+      <path d="M7.5 12.5l3 3 6-6" stroke="var(--color-white)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -197,7 +197,7 @@ function PurchaseInvoiceModal({ open, onClose, item }) {
     const win = window.open('', '_blank', 'width=900,height=700');
     if (!win) return;
     win.document.write(`<!DOCTYPE html><html dir="rtl"><head><title>${fileName}</title>
-      <style>html,body{margin:0;background:#fff}img{max-width:100%;display:block;margin:0 auto}</style>
+      <style>html,body{margin:0;background:var(--bg-paper)}img{max-width:100%;display:block;margin:0 auto}</style>
       </head><body><img src="${dataUrl}" alt="" /></body></html>`);
     win.document.close();
     win.onload = () => {

@@ -121,13 +121,13 @@ function OrganizationCanvasInner() {
         defaultEdgeOptions={{ type: 'smoothstep' }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Background gap={18} color="rgba(148, 163, 184, 0.35)" />
+        <Background gap={18} color="var(--color-neutral-400)" />
         <Controls showInteractive={false} />
         <MiniMap
           pannable
           zoomable
-          maskColor="rgba(248, 250, 252, 0.7)"
-          nodeColor={(node) => (node.type === 'orgUser' ? '#0d9488' : '#64748b')}
+          maskColor="var(--surface-overlay)"
+          nodeColor={(node) => (node.type === 'orgUser' ? 'var(--color-accent-dark)' : 'var(--status-radar)')}
         />
       </ReactFlow>
     </div>

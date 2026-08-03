@@ -18,8 +18,8 @@ const TAX_INVOICE_PRINT_CSS = `
     padding: 0;
     width: 297mm;
     min-height: 210mm;
-    background: #fff;
-    color: #111827;
+    background: var(--print-paper);
+    color: var(--print-ink);
     direction: rtl;
     font-family: 'Vazirmatn', Tahoma, sans-serif;
     -webkit-print-color-adjust: exact;
@@ -39,9 +39,9 @@ const TAX_INVOICE_PRINT_CSS = `
     max-width: none;
     margin: 0 auto;
     padding: 2mm;
-    background: #fff;
+    background: var(--print-paper);
     border: none;
-    color: #111827;
+    color: var(--print-ink);
   }
 
   .saranjam-taxdoc__top {
@@ -51,7 +51,7 @@ const TAX_INVOICE_PRINT_CSS = `
     align-items: center;
     margin-bottom: 0.55rem;
     padding-bottom: 0.45rem;
-    border-bottom: 1px solid #CBD5E1;
+    border-bottom: 1px solid var(--print-border-soft);
   }
 
   .saranjam-taxdoc__top-brand {
@@ -76,7 +76,7 @@ const TAX_INVOICE_PRINT_CSS = `
     text-align: center;
     font-size: 1.05rem;
     font-weight: 800;
-    color: #111827;
+    color: var(--print-ink);
   }
 
   .saranjam-taxdoc__top-meta {
@@ -92,9 +92,9 @@ const TAX_INVOICE_PRINT_CSS = `
   .saranjam-taxdoc__party-box {
     display: grid;
     grid-template-columns: 1.6rem 1fr;
-    border: 1px solid #94A3B8;
+    border: 1px solid var(--print-border);
     margin-bottom: 0.45rem;
-    background: #fff;
+    background: var(--print-paper);
   }
 
   .saranjam-taxdoc__party-side {
@@ -103,8 +103,8 @@ const TAX_INVOICE_PRINT_CSS = `
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #F1F5F9;
-    border-left: 1px solid #94A3B8;
+    background: var(--print-surface-muted);
+    border-left: 1px solid var(--print-border);
     font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -125,12 +125,12 @@ const TAX_INVOICE_PRINT_CSS = `
 
   .saranjam-taxdoc__k {
     font-weight: 700;
-    color: #475569;
+    color: var(--print-muted);
   }
 
   .saranjam-taxdoc__table-wrap {
     overflow: visible;
-    border: 1px solid #94A3B8;
+    border: 1px solid var(--print-border);
   }
 
   .saranjam-taxdoc__table {
@@ -141,18 +141,18 @@ const TAX_INVOICE_PRINT_CSS = `
 
   .saranjam-taxdoc__table th,
   .saranjam-taxdoc__table td {
-    border: 1px solid #94A3B8;
+    border: 1px solid var(--print-border);
     padding: 0.28rem 0.22rem;
     font-size: 0.62rem;
     text-align: center;
     vertical-align: middle;
-    background: #fff;
-    color: #111827;
+    background: var(--print-paper);
+    color: var(--print-ink);
     word-wrap: break-word;
   }
 
   .saranjam-taxdoc__table th {
-    background: #F8FAFC;
+    background: var(--print-surface);
     font-weight: 700;
     line-height: 1.35;
   }
@@ -174,7 +174,7 @@ const TAX_INVOICE_PRINT_CSS = `
   .saranjam-taxdoc__table td:nth-child(5) { width: 7%; }
 
   .saranjam-taxdoc__sum-row td {
-    background: #F8FAFC;
+    background: var(--print-surface);
     font-weight: 700;
   }
 
@@ -191,11 +191,11 @@ const TAX_INVOICE_PRINT_CSS = `
   }
 
   .saranjam-taxdoc__notes {
-    border: 1px solid #94A3B8;
+    border: 1px solid var(--print-border);
     padding: 0.45rem 0.55rem;
     font-size: 0.7rem;
     line-height: 1.55;
-    background: #fff;
+    background: var(--print-paper);
   }
 
   .saranjam-taxdoc__notes p {
@@ -203,13 +203,13 @@ const TAX_INVOICE_PRINT_CSS = `
   }
 
   .saranjam-taxdoc__sign {
-    border: 1px solid #94A3B8;
+    border: 1px solid var(--print-border);
     min-height: 5.5rem;
     padding: 0.45rem;
     text-align: center;
     font-size: 0.74rem;
     font-weight: 700;
-    background: #fff;
+    background: var(--print-paper);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -235,6 +235,26 @@ const TAX_INVOICE_PRINT_CSS = `
     page-break-inside: avoid;
   }
 `;
+
+const PRINT_TOKEN_KEYS = [
+  '--print-paper',
+  '--print-ink',
+  '--print-muted',
+  '--print-border',
+  '--print-border-soft',
+  '--print-surface',
+  '--print-surface-muted',
+];
+
+/** Snapshot live theme print tokens into an isolated print document :root. */
+function buildPrintTokenCss() {
+  const styles = getComputedStyle(document.documentElement);
+  const decls = PRINT_TOKEN_KEYS.map((key) => {
+    const value = styles.getPropertyValue(key).trim();
+    return value ? `    ${key}: ${value};` : '';
+  }).filter(Boolean);
+  return `:root {\n${decls.join('\n')}\n  }`;
+}
 
 function resolveAbsoluteUrl(href) {
   try {
@@ -300,6 +320,7 @@ function buildPrintHtml(taxdocEl) {
       font-style: normal;
       font-display: swap;
     }
+    ${buildPrintTokenCss()}
     ${TAX_INVOICE_PRINT_CSS}
   </style>
 </head>

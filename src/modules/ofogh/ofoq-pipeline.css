@@ -43,7 +43,7 @@
   gap: 0.5rem;
   padding: 0.55rem 0.75rem 0.5rem;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(4px);
   position: relative;
   overflow: hidden;
@@ -81,7 +81,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--stage-color);
-  background: color-mix(in srgb, var(--stage-color) 12%, white);
+  background: color-mix(in srgb, var(--stage-color) 12%, var(--color-white));
 }
 
 .ofoq-pipeline__column-tools {
@@ -106,7 +106,7 @@
 }
 
 .ofoq-column-filter__btn:hover {
-  background: rgba(148, 163, 184, 0.16);
+  background: var(--muted-surface);
   color: var(--text-primary);
 }
 
@@ -125,13 +125,13 @@
   gap: 0.55rem;
   padding: 0.7rem;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 6px 16px rgba(15, 23, 42, 0.12),
-    0 18px 40px rgba(15, 23, 42, 0.14);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md),
+    var(--shadow-lg);
   animation: ofoq-fade-in 0.15s ease;
 }
 
@@ -139,9 +139,9 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.45rem 0.6rem;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid var(--muted-border);
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--glass-bg-strong);
   font-family: inherit;
   font-size: 0.74rem;
   color: var(--text-primary);
@@ -177,7 +177,7 @@
 }
 
 .ofoq-column-filter__option:hover {
-  background: rgba(148, 163, 184, 0.14);
+  background: var(--muted-surface);
   color: var(--text-primary);
 }
 
@@ -194,21 +194,21 @@
 }
 
 .ofoq-column-filter__option-dot--today {
-  background: #22c55e;
+  background: var(--success);
 }
 
 .ofoq-column-filter__option-dot--overdue {
-  background: #ef4444;
+  background: var(--danger);
 }
 
 .ofoq-column-filter__option-dot--future {
-  background: #94a3b8;
+  background: var(--color-neutral-400);
 }
 
 /* —— بلوک اکسلی: انتخاب همه/بخشی آیتم‌های ستون (الگوی فیلتر فهرست نبض) —— */
 .ofoq-column-filter__divider {
   height: 1px;
-  background: rgba(148, 163, 184, 0.25);
+  background: var(--muted-border);
   margin: 0.1rem 0;
 }
 
@@ -231,7 +231,7 @@
 
 .ofoq-column-filter__master:hover,
 .ofoq-column-filter__item:hover {
-  background: rgba(148, 163, 184, 0.14);
+  background: var(--muted-surface);
 }
 
 .ofoq-column-filter__master input,
@@ -277,20 +277,20 @@
 }
 
 .ofoq-column-filter__clear:hover {
-  background: rgba(229, 57, 53, 0.08);
+  background: var(--danger-surface);
 }
 
 .ofoq-column-filter__apply {
   padding: 0.32rem 0.85rem;
   border: none;
   border-radius: 8px;
-  background: var(--color-brand-red-glossy, #e53935);
+  background: var(--color-brand-red-glossy);
   font-family: inherit;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-white);
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(229, 57, 53, 0.3);
+  box-shadow: color-mix(in srgb, var(--danger) 30%, transparent);
   transition: filter 0.15s ease, transform 0.15s ease;
 }
 
@@ -320,11 +320,11 @@
   gap: 0.45rem;
   padding: 0.75rem 0.85rem;
   border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+  background: linear-gradient(180deg, var(--color-white) 0%, var(--bg-muted) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 1px 2px rgba(15, 23, 42, 0.06),
-    0 4px 10px rgba(15, 23, 42, 0.05);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-sm),
+    var(--shadow-sm);
   cursor: grab;
   user-select: none;
   transition: box-shadow 0.18s ease, transform 0.18s ease;
@@ -333,18 +333,18 @@
 .ofoq-lead-card:hover {
   transform: translateY(-2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 4px 8px rgba(15, 23, 42, 0.08),
-    0 12px 24px rgba(15, 23, 42, 0.1);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md),
+    var(--shadow-md);
 }
 
 .ofoq-lead-card.is-dragging {
   cursor: grabbing;
   transform: rotate(1.5deg);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 18px rgba(15, 23, 42, 0.14),
-    0 22px 44px rgba(15, 23, 42, 0.18);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md),
+    var(--shadow-lg);
 }
 
 .ofoq-lead-card__row {
@@ -363,46 +363,46 @@
 
 /* —— بات صیاد: پوسیدگی بصری کارت راکد —— */
 .ofoq-lead-card.is-rotting {
-  border: 1px solid rgba(248, 113, 113, 0.5);
+  border: 1px solid var(--danger-border);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 1px 2px rgba(15, 23, 42, 0.05),
-    0 0 0 1px rgba(229, 57, 53, 0.06),
-    0 0 15px rgba(229, 57, 53, 0.28);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-sm),
+    var(--danger-border),
+    color-mix(in srgb, var(--danger) 28%, transparent);
   animation: ofoq-rotting-pulse 2.6s ease-in-out infinite;
 }
 
 .ofoq-lead-card.is-rotting:hover {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 6px 14px rgba(15, 23, 42, 0.08),
-    0 0 0 1px rgba(229, 57, 53, 0.1),
-    0 0 18px rgba(229, 57, 53, 0.34);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md),
+    var(--danger-border),
+    color-mix(in srgb, var(--danger) 34%, transparent);
 }
 
 .ofoq-lead-card.is-rotting.is-dragging {
   animation: none;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 18px rgba(15, 23, 42, 0.14),
-    0 0 16px rgba(229, 57, 53, 0.32),
-    0 22px 44px rgba(15, 23, 42, 0.18);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md),
+    color-mix(in srgb, var(--danger) 32%, transparent),
+    var(--shadow-lg);
 }
 
 @keyframes ofoq-rotting-pulse {
   0%, 100% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 1px 2px rgba(15, 23, 42, 0.05),
-      0 0 0 1px rgba(229, 57, 53, 0.05),
-      0 0 12px rgba(229, 57, 53, 0.18);
+      var(--glass-inset-highlight-strong),
+      var(--shadow-sm),
+      var(--danger-border),
+      color-mix(in srgb, var(--danger) 18%, transparent);
   }
   50% {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 1px 2px rgba(15, 23, 42, 0.05),
-      0 0 0 1px rgba(229, 57, 53, 0.12),
-      0 0 18px rgba(229, 57, 53, 0.38);
+      var(--glass-inset-highlight-strong),
+      var(--shadow-sm),
+      var(--danger-border),
+      color-mix(in srgb, var(--danger) 38%, transparent);
   }
 }
 
@@ -413,11 +413,11 @@
   width: 1.15rem;
   height: 1.15rem;
   border-radius: 999px;
-  color: #dc2626;
-  background: rgba(254, 226, 226, 0.85);
+  color: var(--danger);
+  background: var(--danger-surface);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 0 0 1px rgba(248, 113, 113, 0.28);
+    var(--glass-inset-highlight),
+    var(--danger-border);
   flex-shrink: 0;
 }
 
@@ -438,7 +438,7 @@
   font-size: 0.68rem;
   font-weight: 500;
   color: var(--text-secondary);
-  background: rgba(148, 163, 184, 0.14);
+  background: var(--muted-surface);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -462,24 +462,24 @@
 }
 
 .ofoq-pulse--overdue .ofoq-pulse__dot {
-  background: #ef4444;
-  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  background: var(--danger);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 50%, transparent);
   animation: ofoq-pulse-beat 1.6s ease-out infinite;
 }
 
 .ofoq-pulse--today .ofoq-pulse__dot {
-  background: #22c55e;
-  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+  background: var(--success);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 45%, transparent);
   animation: ofoq-pulse-beat 2.2s ease-out infinite;
 }
 
 .ofoq-pulse--future .ofoq-pulse__dot {
-  background: #cbd5e1;
+  background: var(--color-neutral-300);
 }
 
 .ofoq-pulse--none .ofoq-pulse__dot {
   background: transparent;
-  border: 1.5px dashed #cbd5e1;
+  border: 1.5px dashed var(--color-neutral-300);
 }
 
 @keyframes ofoq-pulse-beat {
@@ -488,8 +488,8 @@
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-.ofoq-pulse--overdue { color: #dc2626; }
-.ofoq-pulse--today { color: #16a34a; }
+.ofoq-pulse--overdue { color: var(--danger); }
+.ofoq-pulse--today { color: var(--success); }
 
 /* —— حالت خالی ستون —— */
 .ofoq-pipeline__empty {
@@ -497,11 +497,11 @@
   align-items: center;
   justify-content: center;
   min-height: 6.5rem;
-  border: 1.5px dashed rgba(148, 163, 184, 0.5);
+  border: 1.5px dashed var(--muted-border);
   border-radius: 14px;
   font-size: 0.75rem;
   color: var(--text-secondary);
-  background: rgba(248, 250, 252, 0.4);
+  background: var(--surface-muted);
 }
 
 /* ═══════════════════ سطوح گلس مشترک افق (Frosted Glass) ═══════════════════ */
@@ -509,22 +509,14 @@
 /* هم‌خانواده پنل مودال: بلر ۱۶، سفید نیمه‌شفاف، بوردر ظریف.
    سلکتور دوکلاسه تا بر بک‌گراند section-kpis/section-actions در layout.css غلبه کند */
 .ofoq-pipeline .ofoq-glass {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px) saturate(1.25);
   -webkit-backdrop-filter: blur(16px) saturate(1.25);
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--glass-border);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 10px 30px rgba(15, 23, 42, 0.06);
-}
-
-html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
-  background: rgba(15, 23, 42, 0.55);
-  border-color: rgba(148, 163, 184, 0.18);
-  box-shadow:
-    inset 0 1px 0 rgba(148, 163, 184, 0.12),
-    0 10px 30px rgba(2, 6, 23, 0.35);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-sm),
+    var(--shadow-md);
 }
 
 /* ═══════════════════ نوار KPI افق ═══════════════════
@@ -553,9 +545,9 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   align-items: center;
   gap: 0.45rem;
   padding: 0.5rem 0.85rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid var(--muted-border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--glass-bg-strong);
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 600;
@@ -566,13 +558,13 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 
 .ofoq-filterbar__stage-trigger:hover {
   color: var(--text-primary);
-  border-color: rgba(148, 163, 184, 0.55);
+  border-color: var(--muted-border);
 }
 
 .ofoq-filterbar__stage-trigger.is-active {
   color: var(--color-brand-red-glossy);
-  border-color: rgba(229, 57, 53, 0.45);
-  background: rgba(229, 57, 53, 0.06);
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
 }
 
 .ofoq-filterbar__stage-popover {
@@ -586,13 +578,13 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   gap: 0.1rem;
   padding: 0.55rem;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 6px 16px rgba(15, 23, 42, 0.12),
-    0 18px 40px rgba(15, 23, 42, 0.14);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md),
+    var(--shadow-lg);
   animation: ofoq-fade-in 0.15s ease;
 }
 
@@ -618,7 +610,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 }
 
 .ofoq-filterbar__stage-option:hover {
-  background: rgba(148, 163, 184, 0.14);
+  background: var(--muted-surface);
 }
 
 .ofoq-filterbar__stage-option input {
@@ -648,7 +640,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 }
 
 .ofoq-filterbar__stage-clear:hover {
-  background: rgba(229, 57, 53, 0.08);
+  background: var(--danger-surface);
 }
 
 /* ═══════════════════ مودال لید افق (Glassmorphism مرکزی) ═══════════════════ */
@@ -669,7 +661,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   border: none;
   padding: 0;
   cursor: pointer;
-  background: rgba(15, 23, 42, 0.2);
+  background: var(--overlay-scrim);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   animation: ofoq-fade-in 0.2s ease;
@@ -689,13 +681,13 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   flex-direction: column;
   overflow: hidden;
   border-radius: 22px;
-  background: linear-gradient(190deg, rgba(255, 255, 255, 0.95) 0%, rgba(246, 248, 251, 0.92) 100%);
+  background: linear-gradient(190deg, var(--glass-bg-strong) 0%, var(--bg-muted) 100%);
   backdrop-filter: blur(18px) saturate(1.35);
   -webkit-backdrop-filter: blur(18px) saturate(1.35);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 8px 24px rgba(15, 23, 42, 0.12),
-    0 28px 80px rgba(15, 23, 42, 0.22);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md),
+    var(--shadow-lg);
   animation: ofoq-modal-pop 0.24s cubic-bezier(0.32, 0.72, 0.25, 1);
 }
 
@@ -711,7 +703,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.15rem 1.35rem 0.95rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .ofoq-modal__identity {
@@ -750,14 +742,14 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   height: 2.1rem;
   border: none;
   border-radius: 10px;
-  background: rgba(148, 163, 184, 0.12);
+  background: var(--muted-surface);
   color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .ofoq-modal__close:hover {
-  background: rgba(148, 163, 184, 0.22);
+  background: var(--muted-border);
   color: var(--text-primary);
 }
 
@@ -770,7 +762,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   font-size: 0.74rem;
   font-weight: 700;
   color: var(--stage-color);
-  background: color-mix(in srgb, var(--stage-color) 11%, white);
+  background: color-mix(in srgb, var(--stage-color) 11%, var(--color-white));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--stage-color) 28%, transparent);
 }
 
@@ -802,9 +794,9 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   flex-direction: column;
   gap: 1.15rem;
   padding: 1.15rem 1.35rem 1.35rem;
-  border-inline-start: 1px solid rgba(148, 163, 184, 0.16);
+  border-inline-start: 1px solid var(--border-light);
   overflow-y: auto;
-  background: rgba(248, 250, 252, 0.55);
+  background: var(--surface-muted);
 }
 
 .ofoq-modal__main {
@@ -837,9 +829,9 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 .ofoq-modal__person-select {
   width: 100%;
   padding: 0.45rem 0.6rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid var(--muted-border);
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-bg-strong);
   font-family: inherit;
   font-size: 0.76rem;
   color: var(--text-primary);
@@ -849,7 +841,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 .ofoq-modal__person-select:focus {
   outline: none;
   border-color: var(--color-brand-red-glossy);
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .ofoq-modal__person-chip {
@@ -859,8 +851,8 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   gap: 0.5rem;
   padding: 0.5rem 0.65rem;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 1px 2px rgba(15, 23, 42, 0.05);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--glass-inset-highlight-strong), var(--shadow-sm);
 }
 
 .ofoq-modal__person-chip strong {
@@ -875,7 +867,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   color: var(--text-secondary);
   padding: 0.12rem 0.5rem;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.14);
+  background: var(--muted-surface);
   white-space: nowrap;
 }
 
@@ -891,7 +883,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.65rem 0.1rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .ofoq-modal__info-row dt {
@@ -914,10 +906,10 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   gap: 0.5rem;
   padding: 0.8rem 0.9rem;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--glass-bg-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 1px 3px rgba(15, 23, 42, 0.06);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-sm);
 }
 
 .ofoq-temperature__head {
@@ -937,9 +929,9 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   font-weight: 800;
 }
 
-.ofoq-temperature--hot .ofoq-temperature__value { color: #dc2626; }
-.ofoq-temperature--warm .ofoq-temperature__value { color: #d97706; }
-.ofoq-temperature--cold .ofoq-temperature__value { color: #0284c7; }
+.ofoq-temperature--hot .ofoq-temperature__value { color: var(--danger); }
+.ofoq-temperature--warm .ofoq-temperature__value { color: var(--warning); }
+.ofoq-temperature--cold .ofoq-temperature__value { color: var(--info); }
 
 .ofoq-temperature__bars {
   display: flex;
@@ -950,13 +942,13 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   flex: 1;
   height: 6px;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.25);
+  background: var(--muted-border);
   transition: background 0.2s ease;
 }
 
-.ofoq-temperature--hot .ofoq-temperature__bar.is-on { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.45); }
-.ofoq-temperature--warm .ofoq-temperature__bar.is-on { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
-.ofoq-temperature--cold .ofoq-temperature__bar.is-on { background: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+.ofoq-temperature--hot .ofoq-temperature__bar.is-on { background: var(--danger); box-shadow: color-mix(in srgb, var(--danger) 45%, transparent); }
+.ofoq-temperature--warm .ofoq-temperature__bar.is-on { background: var(--warning); box-shadow: color-mix(in srgb, var(--warning) 40%, transparent); }
+.ofoq-temperature--cold .ofoq-temperature__bar.is-on { background: var(--info); box-shadow: color-mix(in srgb, var(--info) 40%, transparent); }
 
 /* —— فوتر Deep Dive (گوشه پایین‌چپ بصری در RTL) —— */
 .ofoq-modal__foot {
@@ -964,7 +956,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   justify-content: flex-end; /* در RTL = سمت چپ بصری */
   align-items: center;
   padding: 0.7rem 1.2rem 0.95rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  border-top: 1px solid var(--border-light);
   flex-shrink: 0;
 }
 
@@ -974,7 +966,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   gap: 0.35rem;
   font-size: 0.76rem;
   font-weight: 700;
-  color: var(--color-accent-dark, #0f766e);
+  color: var(--color-accent-dark);
   text-decoration: none;
   padding: 0.3rem 0.55rem;
   border-radius: 999px;
@@ -982,7 +974,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 }
 
 .ofoq-modal__deep-dive:hover {
-  background: rgba(13, 148, 136, 0.1);
+  background: var(--color-accent-muted);
   transform: translateY(-1px);
 }
 
@@ -997,13 +989,13 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   border-radius: 14px;
   background: linear-gradient(
     135deg,
-    rgba(254, 242, 242, 0.92) 0%,
-    rgba(255, 255, 255, 0.72) 100%
+    var(--danger-surface) 0%,
+    var(--glass-bg-strong) 100%
   );
-  border: 1px solid rgba(248, 113, 113, 0.35);
+  border: 1px solid var(--danger-border);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 0 18px rgba(229, 57, 53, 0.12);
+    var(--glass-inset-highlight-strong),
+    color-mix(in srgb, var(--danger) 12%, transparent);
   flex-shrink: 0;
 }
 
@@ -1024,7 +1016,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   margin: 0;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #b91c1c;
+  color: var(--danger);
   line-height: 1.45;
 }
 
@@ -1034,28 +1026,28 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   gap: 0.35rem;
   flex-shrink: 0;
   padding: 0.42rem 0.8rem;
-  border: 1px solid rgba(167, 139, 250, 0.45);
+  border: 1px solid var(--info-border);
   border-radius: 999px;
   background: linear-gradient(
     180deg,
-    rgba(245, 243, 255, 0.95) 0%,
-    rgba(237, 233, 254, 0.85) 100%
+    var(--info-muted) 0%,
+    color-mix(in srgb, var(--info) 15%, var(--bg-surface)) 100%
   );
-  color: #6d28d9;
+  color: var(--info);
   font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 0 12px rgba(139, 92, 246, 0.18);
+    var(--glass-inset-highlight-strong),
+    color-mix(in srgb, var(--info) 18%, transparent);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .ofoq-rotting-banner__ai-btn:hover {
   transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 0 16px rgba(139, 92, 246, 0.28);
+    var(--glass-inset-highlight-strong),
+    color-mix(in srgb, var(--info) 28%, transparent);
 }
 
 .ofoq-modal__context {
@@ -1088,10 +1080,10 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   flex-direction: column;
   gap: 0;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--glass-bg-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 1px 3px rgba(15, 23, 42, 0.06);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-sm);
   /* overflow: visible تا پاپ‌اور دیت‌پیکر جلالی بریده نشود */
   overflow: visible;
 }
@@ -1101,7 +1093,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   flex-wrap: nowrap;
   gap: 0.15rem;
   padding: 0.55rem 0.75rem 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  border-bottom: 1px solid var(--border-light);
   overflow-x: auto;
 }
 
@@ -1145,9 +1137,9 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   resize: vertical;
   min-height: 4.2rem;
   padding: 0.6rem 0.7rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid var(--muted-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--color-white);
   font-family: inherit;
   font-size: 0.8rem;
   line-height: 1.7;
@@ -1158,7 +1150,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 .ofoq-modal__note-input:focus {
   outline: none;
   border-color: var(--color-brand-red-glossy);
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .ofoq-modal__action-row {
@@ -1191,19 +1183,19 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   border: none;
   border-radius: 9px;
   cursor: pointer;
-  color: #fff;
-  background: linear-gradient(140deg, #a78bfa 0%, #7c3aed 55%, #6d28d9 100%);
+  color: var(--color-white);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--info) 70%, var(--color-white)) 0%, var(--info) 55%, var(--info) 100%);
   box-shadow:
-    0 4px 12px rgba(109, 40, 217, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    color-mix(in srgb, var(--info) 35%, transparent),
+    var(--glass-inset-highlight);
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .ofoq-ai-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow:
-    0 7px 18px rgba(109, 40, 217, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    color-mix(in srgb, var(--info) 45%, transparent),
+    var(--glass-inset-highlight-strong);
 }
 
 .ofoq-ai-btn:active:not(:disabled) {
@@ -1225,12 +1217,12 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   justify-content: center;
   gap: 0.5rem;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--glass-bg);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   font-size: 0.74rem;
   font-weight: 700;
-  color: #6d28d9;
+  color: var(--info);
   animation: ofoq-fade-in 0.2s ease;
 }
 
@@ -1238,8 +1230,8 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   width: 1.1rem;
   height: 1.1rem;
   border-radius: 50%;
-  border: 2px solid rgba(109, 40, 217, 0.22);
-  border-top-color: #6d28d9;
+  border: 2px solid var(--info-border);
+  border-top-color: var(--info);
   animation: ofoq-ai-spin 0.75s linear infinite;
 }
 
@@ -1263,9 +1255,9 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 
 .ofoq-modal__date-field .jalali-date-picker__trigger {
   padding: 0.4rem 0.55rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid var(--muted-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-bg-strong);
   font-size: 0.76rem;
   color: var(--text-primary);
 }
@@ -1273,14 +1265,14 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 .ofoq-modal__date-field .jalali-date-picker__trigger:focus-visible {
   outline: none;
   border-color: var(--color-brand-red-glossy);
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .ofoq-modal__date-hint {
   margin: 0.45rem 0 0;
   font-size: 0.68rem;
   font-weight: 600;
-  color: #b45309;
+  color: var(--warning);
 }
 
 .ofoq-modal__submit {
@@ -1300,7 +1292,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 
   .ofoq-modal__sidebar {
     border-inline-start: none;
-    border-top: 1px solid rgba(148, 163, 184, 0.16);
+    border-top: 1px solid var(--border-light);
   }
 }
 
@@ -1327,7 +1319,7 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   top: 1rem;
   bottom: -0.1rem;
   width: 2px;
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.45), rgba(148, 163, 184, 0.12));
+  background: linear-gradient(180deg, var(--muted-border), var(--muted-surface));
 }
 
 .ofoq-timeline__item:last-child::before {
@@ -1341,16 +1333,16 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   width: 0.8rem;
   height: 0.8rem;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-white);
   box-shadow:
     inset 0 0 0 3px var(--color-brand-red-glossy),
-    0 0 0 3px rgba(229, 57, 53, 0.14);
+    var(--focus-ring);
 }
 
 .ofoq-timeline__item:not(:first-child) .ofoq-timeline__dot {
   box-shadow:
-    inset 0 0 0 3px #cbd5e1,
-    0 0 0 3px rgba(148, 163, 184, 0.12);
+    inset 0 0 0 3px var(--color-neutral-300),
+    var(--focus-ring);
 }
 
 .ofoq-timeline__content {
@@ -1391,8 +1383,8 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   border-radius: 999px;
   font-size: 0.66rem;
   font-weight: 600;
-  color: #0d9488;
-  background: rgba(13, 148, 136, 0.09);
+  color: var(--color-accent-dark);
+  background: var(--color-accent-muted);
 }
 
 /* —— چیپ نوع تعامل در تایم‌لاین —— */
@@ -1407,43 +1399,43 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
 }
 
 .ofoq-timeline__type--note {
-  color: #475569;
-  background: rgba(148, 163, 184, 0.16);
+  color: var(--text-secondary);
+  background: var(--muted-surface);
 }
 
 .ofoq-timeline__type--call {
-  color: #0369a1;
-  background: rgba(56, 189, 248, 0.14);
+  color: var(--info);
+  background: var(--info-muted);
 }
 
 .ofoq-timeline__type--message {
-  color: #0f766e;
-  background: rgba(20, 184, 166, 0.14);
+  color: var(--color-accent-dark);
+  background: var(--color-accent-muted);
 }
 
 .ofoq-timeline__type--meeting {
-  color: #be123c;
-  background: rgba(244, 63, 94, 0.12);
+  color: var(--danger);
+  background: var(--danger-muted);
 }
 
 .ofoq-timeline__type--catalog {
-  color: #7c3aed;
-  background: rgba(167, 139, 250, 0.14);
+  color: var(--info);
+  background: var(--info-muted);
 }
 
 .ofoq-timeline__type--task {
-  color: #b45309;
-  background: rgba(245, 158, 11, 0.14);
+  color: var(--warning);
+  background: var(--warning-muted);
 }
 
 .ofoq-timeline__type--system {
-  color: #6d28d9;
-  background: rgba(139, 92, 246, 0.13);
+  color: var(--info);
+  background: var(--info-muted);
 }
 
 .ofoq-timeline__type--other {
-  color: #475569;
-  background: rgba(148, 163, 184, 0.16);
+  color: var(--text-secondary);
+  background: var(--muted-surface);
 }
 
 .ofoq-modal__timeline-empty {
@@ -1452,143 +1444,6 @@ html[data-theme='dark'] .ofoq-pipeline .ofoq-glass {
   text-align: center;
   font-size: 0.78rem;
   color: var(--text-secondary);
-}
-
-/* —— حالت شب مودال و نوار فیلتر —— */
-html[data-theme='dark'] .ofoq-modal__backdrop {
-  background: rgba(2, 6, 16, 0.45);
-}
-
-html[data-theme='dark'] .ofoq-modal__panel {
-  background: linear-gradient(190deg, rgba(22, 31, 48, 0.94) 0%, rgba(15, 23, 42, 0.9) 100%);
-}
-
-html[data-theme='dark'] .ofoq-modal__sidebar {
-  background: rgba(15, 23, 42, 0.35);
-}
-
-html[data-theme='dark'] .ofoq-modal__action-box,
-html[data-theme='dark'] .ofoq-temperature {
-  background: rgba(30, 41, 59, 0.6);
-}
-
-html[data-theme='dark'] .ofoq-modal__note-input,
-html[data-theme='dark'] .ofoq-modal__date-field .jalali-date-picker__trigger,
-html[data-theme='dark'] .ofoq-modal__person-select {
-  background: rgba(15, 23, 42, 0.7);
-  border-color: rgba(148, 163, 184, 0.25);
-  color: var(--text-primary);
-}
-
-html[data-theme='dark'] .ofoq-modal__person-chip {
-  background: rgba(30, 41, 59, 0.6);
-  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.12);
-}
-
-html[data-theme='dark'] .ofoq-ai-overlay {
-  background: rgba(15, 23, 42, 0.6);
-  color: #c4b5fd;
-}
-
-html[data-theme='dark'] .ofoq-modal__stage-badge {
-  background: color-mix(in srgb, var(--stage-color) 16%, #0f172a);
-}
-
-html[data-theme='dark'] .ofoq-filterbar__stage-trigger {
-  background: rgba(30, 41, 59, 0.7);
-}
-
-html[data-theme='dark'] .ofoq-filterbar__stage-popover {
-  background: rgba(24, 34, 52, 0.88);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 6px 16px rgba(0, 0, 0, 0.35),
-    0 18px 40px rgba(0, 0, 0, 0.4);
-}
-
-html[data-theme='dark'] .ofoq-column-filter__popover {
-  background: rgba(24, 34, 52, 0.85);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 6px 16px rgba(0, 0, 0, 0.35),
-    0 18px 40px rgba(0, 0, 0, 0.4);
-}
-
-html[data-theme='dark'] .ofoq-column-filter__search {
-  background: rgba(15, 23, 42, 0.7);
-  border-color: rgba(148, 163, 184, 0.25);
-  color: var(--text-primary);
-}
-
-html[data-theme='dark'] .ofoq-column-filter__divider {
-  background: rgba(148, 163, 184, 0.18);
-}
-
-html[data-theme='dark'] .ofoq-column-filter__master:hover,
-html[data-theme='dark'] .ofoq-column-filter__item:hover {
-  background: rgba(148, 163, 184, 0.12);
-}
-
-/* —— حالت شب —— */
-html[data-theme='dark'] .ofoq-pipeline__column-head {
-  background: rgba(30, 41, 59, 0.72);
-}
-
-html[data-theme='dark'] .ofoq-lead-card {
-  background: linear-gradient(180deg, #1e293b 0%, #182234 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 4px 10px rgba(0, 0, 0, 0.25);
-}
-
-html[data-theme='dark'] .ofoq-lead-card.is-rotting {
-  border-color: rgba(248, 113, 113, 0.45);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 0 0 1px rgba(229, 57, 53, 0.12),
-    0 0 16px rgba(229, 57, 53, 0.28);
-}
-
-html[data-theme='dark'] .ofoq-rotting-badge {
-  background: rgba(127, 29, 29, 0.55);
-  color: #fca5a5;
-  box-shadow: inset 0 1px 0 rgba(248, 113, 113, 0.2);
-}
-
-html[data-theme='dark'] .ofoq-rotting-banner {
-  background: linear-gradient(
-    135deg,
-    rgba(127, 29, 29, 0.45) 0%,
-    rgba(30, 41, 59, 0.7) 100%
-  );
-  border-color: rgba(248, 113, 113, 0.35);
-}
-
-html[data-theme='dark'] .ofoq-rotting-banner__text {
-  color: #fecaca;
-}
-
-html[data-theme='dark'] .ofoq-rotting-banner__ai-btn {
-  background: linear-gradient(
-    180deg,
-    rgba(76, 29, 149, 0.55) 0%,
-    rgba(30, 41, 59, 0.7) 100%
-  );
-  border-color: rgba(167, 139, 250, 0.4);
-  color: #ddd6fe;
-}
-
-html[data-theme='dark'] .ofoq-modal__deep-dive {
-  color: #5eead4;
-}
-
-html[data-theme='dark'] .ofoq-modal__deep-dive:hover {
-  background: rgba(45, 212, 191, 0.12);
-}
-
-html[data-theme='dark'] .ofoq-pipeline__empty {
-  background: rgba(30, 41, 59, 0.3);
 }
 
 @media (max-width: 640px) {

@@ -48,6 +48,13 @@ const PIPELINE_SEED = {
 function seedContacts() {
   return initialContacts.map((contact) => ({
     ...contact,
+    relatedPersons: (contact.relatedPersons || []).map((person, index) =>
+      normalizeContactPerson({
+        ...person,
+        id: person.id || `rp-seed-${contact.id}-${index}`,
+        fullName: person.fullName || person.name,
+        isPrimary: person.isPrimary ?? index === 0,
+      })),
     lifecycle_stage: PIPELINE_SEED[contact.id]?.lifecycle_stage ?? LIFECYCLE_STAGES.COLD_LEAD,
     next_follow_up_date: PIPELINE_SEED[contact.id]?.next_follow_up_date ?? null,
     last_interaction_date:
@@ -145,4 +152,97 @@ export const useContactsStore = create((set) => ({
       )),
     }));
   },
+
+  /**
+   * افزودن رابط / فرد مرتبط به شرکت (companyId = contact.id).
+   * @returns {string|null} id of created person
+   */
+  addContactPerson: (companyId, contactData) => {
+    const fullName = String(contactData?.fullName || contactData?.name || '').trim();
+    if (!fullName) return null;
+
+    const personId = contactData?.id || `rp-${companyId}-${Date.now()}`;
+    const nextPerson = normalizeContactPerson({
+      ...contactData,
+      id: personId,
+      fullName,
+      name: fullName,
+    });
+
+    set((state) => ({
+      contacts: state.contacts.map((contact) => {
+        if (String(contact.id) !== String(companyId)) return contact;
+        let persons = [...(contact.relatedPersons || [])];
+        if (nextPerson.isPrimary) {
+          persons = persons.map((p) => ({ ...p, isPrimary: false }));
+        }
+        return { ...contact, relatedPersons: [...persons, nextPerson] };
+      }),
+    }));
+
+    return personId;
+  },
+
+  /** ویرایش رابط مرتبط. */
+  updateContactPerson: (companyId, contactId, contactData) => {
+    set((state) => ({
+      contacts: state.contacts.map((contact) => {
+        if (String(contact.id) !== String(companyId)) return contact;
+        const persons = contact.relatedPersons || [];
+        const exists = persons.some((p) => String(p.id) === String(contactId));
+        if (!exists) return contact;
+
+        const patch = { ...contactData };
+        if (patch.fullName != null) {
+          patch.fullName = String(patch.fullName).trim();
+          patch.name = patch.fullName;
+        }
+
+        let next = persons.map((person) => {
+          if (String(person.id) !== String(contactId)) return person;
+          return normalizeContactPerson({ ...person, ...patch, id: person.id });
+        });
+
+        if (patch.isPrimary === true) {
+          next = next.map((person) => ({
+            ...person,
+            isPrimary: String(person.id) === String(contactId),
+          }));
+        }
+
+        return { ...contact, relatedPersons: next };
+      }),
+    }));
+  },
+
+  /** حذف رابط مرتبط. */
+  deleteContactPerson: (companyId, contactId) => {
+    set((state) => ({
+      contacts: state.contacts.map((contact) => {
+        if (String(contact.id) !== String(companyId)) return contact;
+        return {
+          ...contact,
+          relatedPersons: (contact.relatedPersons || []).filter(
+            (person) => String(person.id) !== String(contactId),
+          ),
+        };
+      }),
+    }));
+  },
 }));
+
+/** Normalize related-person shape for UI + persistence. */
+function normalizeContactPerson(person) {
+  const fullName = String(person.fullName || person.name || '').trim();
+  return {
+    id: person.id || `rp-${Date.now()}`,
+    fullName,
+    name: fullName,
+    role: person.role || 'other',
+    mobile: String(person.mobile || '').trim(),
+    directPhone: String(person.directPhone || person.extension || '').trim(),
+    email: String(person.email || '').trim(),
+    isPrimary: Boolean(person.isPrimary),
+    notes: person.notes || '',
+  };
+}

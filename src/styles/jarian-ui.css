@@ -82,7 +82,7 @@ td .jarian-money,
   font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
-  color: #757575;
+  color: var(--text-muted);
   text-align: right;
 }
 
@@ -191,7 +191,7 @@ td:has(.jarian-product-cell) .jarian-product-cell {
   border-left: none !important;
   border-right: none !important;
   border-top: none !important;
-  border-bottom: 1px solid var(--border-default, #e5e7eb);
+  border-bottom: 1px solid var(--border);
 }
 
 .gateway-table th,
@@ -201,7 +201,7 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .nabz-proforma-table th,
 .data-table th,
 .delivery-order-modal__table th {
-  border-bottom-color: var(--border-default, #d1d5db);
+  border-bottom-color: var(--border-light);
 }
 
 /*
@@ -238,7 +238,7 @@ td:has(.jarian-product-cell) .jarian-product-cell {
 .gateway-th--sale {
   background: var(--table-head-bg) !important;
   background-color: var(--table-head-bg) !important;
-  color: var(--text-primary, #0f172a) !important;
+  color: var(--text-primary) !important;
 }
 
 .gateway-table tbody tr:last-child td,

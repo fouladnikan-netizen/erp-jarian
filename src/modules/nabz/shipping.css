@@ -1,7 +1,7 @@
 .shipping-preview-page {
   min-height: 100vh;
   padding: 2rem 1rem;
-  background: #eae7e7;
+  background: var(--bg-body);
   direction: rtl;
   font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
 }
@@ -35,7 +35,7 @@
   text-align: center;
   font-size: 1rem;
   font-weight: 800;
-  color: var(--invoice-on-surface, #1c1b1b);
+  color: var(--invoice-on-surface, var(--text-primary));
   flex-shrink: 0;
   display: table;
   width: max-content;
@@ -76,13 +76,13 @@
   margin: 0 0 0.35rem;
   font-size: 0.85rem;
   font-weight: 800;
-  color: var(--invoice-table-header, #d31120);
+  color: var(--invoice-table-header, var(--color-brand-red));
 }
 
 .shipping-doc__party .shipping-doc__section-title {
   margin: 0 0 0.45rem;
   padding-bottom: 0.3rem;
-  border-bottom: 1.5px solid #9ca3af;
+  border-bottom: 1.5px solid var(--color-neutral-400);
   width: 100%;
   box-sizing: border-box;
 }
@@ -92,7 +92,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 0.55rem 1rem;
   font-size: 0.78rem;
-  color: var(--invoice-on-surface, #1c1b1b);
+  color: var(--invoice-on-surface, var(--text-primary));
 }
 
 .shipping-doc__info-grid p {
@@ -102,7 +102,7 @@
 }
 
 .shipping-doc__info-grid span {
-  color: var(--invoice-on-surface-variant, #454742);
+  color: var(--invoice-on-surface-variant, var(--text-secondary));
   font-weight: 700;
 }
 
@@ -127,14 +127,14 @@
 
 .shipping-doc__table th,
 .shipping-doc__table td {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   padding: 0.3rem 0.4rem;
   text-align: center;
   vertical-align: middle;
 }
 
 .shipping-doc__table th {
-  background: #f3f4f6;
+  background: var(--bg-muted);
   font-weight: 700;
 }
 
@@ -154,19 +154,19 @@
   font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: var(--invoice-on-surface, #1c1b1b);
+  color: var(--invoice-on-surface, var(--text-primary));
 }
 
 .shipping-doc__product-note {
   font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
   font-size: 12px;
   font-weight: 500;
-  color: #757575;
+  color: var(--text-muted);
 }
 
 .shipping-doc__product-note::before {
   content: ' — ';
-  color: #9ca3af;
+  color: var(--color-neutral-400);
 }
 
 .shipping-doc .invoice-doc__footer {
@@ -182,7 +182,7 @@
   }
 
   body:has(.shipping-preview-page) {
-    background: #fff !important;
+    background: var(--color-white) !important;
     margin: 0;
     padding: 0 !important;
     width: 297mm;
@@ -191,7 +191,7 @@
 
   .shipping-preview-page {
     padding: 0 !important;
-    background: #fff !important;
+    background: var(--color-white) !important;
   }
 
   .shipping-doc.invoice-doc,

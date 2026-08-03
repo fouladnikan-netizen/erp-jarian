@@ -4,7 +4,7 @@ import { PIPELINE_STAGES, getPulseStatus } from './pipelineConfig';
 
 const SQ_STAGE_COLOR = PIPELINE_STAGES.find(
   (stage) => stage.id === LIFECYCLE_STAGES.SALES_QUALIFIED,
-)?.color || '#10b981';
+)?.color || 'var(--success)';
 
 /** مشتقات KPI افق — مستقیم از مخاطبین کانون (بدون state جداگانه). */
 function computeOfoqKpis(contacts) {
@@ -47,7 +47,7 @@ export default function OfoqKpis() {
       label: 'پیگیری امروز',
       value: kpis.dueToday.toLocaleString('fa-IR'),
       hint: 'سررسید امروز',
-      accent: '#E53935',
+      accent: 'var(--color-brand-red-glossy)',
     },
     {
       label: 'آستانه',
@@ -59,7 +59,7 @@ export default function OfoqKpis() {
       label: 'نرخ تبدیل',
       value: `${kpis.conversionRate.toLocaleString('fa-IR')}٪`,
       hint: `${kpis.buyers.toLocaleString('fa-IR')} خریدار از ${kpis.total.toLocaleString('fa-IR')} سرنخ`,
-      accent: '#f59e0b',
+      accent: 'var(--warning)',
     },
   ];
 

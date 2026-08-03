@@ -248,17 +248,13 @@
 .vitrin-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.2);
+  background: var(--overlay-scrim);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 500;
   display: grid;
   place-items: center;
   padding: 1rem;
-}
-
-html[data-theme='dark'] .vitrin-modal-overlay {
-  background: rgba(2, 6, 16, 0.45);
 }
 
 .vitrin-modal {
@@ -369,7 +365,7 @@ html[data-theme='dark'] .vitrin-modal-overlay {
 .vitrin-drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(11, 11, 13, 0.35);
+  background: var(--overlay-scrim);
   z-index: 450;
 }
 
@@ -381,7 +377,7 @@ html[data-theme='dark'] .vitrin-modal-overlay {
   height: 100dvh;
   background: var(--bg-surface);
   border-right: 1px solid var(--border-default);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   z-index: 460;

@@ -8,8 +8,8 @@
   max-width: 210mm;
   margin: 0 auto;
   padding: 0;
-  color: #000000;
-  background: #FFFFFF;
+  color: var(--color-neutral-900);
+  background: var(--bg-paper);
   font-family: 'Vazirmatn', var(--font-primary), Tahoma, sans-serif;
 }
 
@@ -17,7 +17,7 @@
 .printable-sooratbar *::before,
 .printable-sooratbar *::after {
   box-sizing: border-box;
-  color: #000000;
+  color: var(--color-neutral-900);
 }
 
 .printable-sooratbar .font-meem {
@@ -36,7 +36,7 @@
   gap: 0.75rem;
   align-items: start;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #000000;
+  border-bottom: 2px solid var(--color-neutral-900);
   page-break-inside: avoid;
 }
 
@@ -103,7 +103,7 @@
   gap: 0.55rem 0.85rem;
   margin-top: 0.85rem;
   padding: 0.65rem 0;
-  border-bottom: 1px solid #000000;
+  border-bottom: 1px solid var(--color-neutral-900);
   page-break-inside: avoid;
 }
 
@@ -112,8 +112,8 @@
   flex-direction: column;
   gap: 0.2rem;
   padding: 0.35rem 0.45rem;
-  border: 1px solid #000000;
-  background: #FFFFFF;
+  border: 1px solid var(--color-neutral-900);
+  background: var(--bg-paper);
 }
 
 .printable-sooratbar__entity-label {
@@ -133,8 +133,8 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.45rem;
   padding: 0.45rem 0.5rem;
-  border: 1px solid #000000;
-  background: #FFFFFF;
+  border: 1px solid var(--color-neutral-900);
+  background: var(--bg-paper);
 }
 
 .printable-sooratbar__fleet p {
@@ -157,12 +157,12 @@
 .printable-sooratbar__table th,
 .printable-sooratbar__table td {
   padding: 0.4rem 0.45rem;
-  border: 1px solid #000000;
+  border: 1px solid var(--color-neutral-900);
   text-align: right;
   font-size: 0.74rem;
   vertical-align: middle;
-  background: #FFFFFF;
-  color: #000000;
+  background: var(--bg-paper);
+  color: var(--color-neutral-900);
   word-wrap: break-word;
   overflow-wrap: anywhere;
 }
@@ -224,8 +224,8 @@
   flex-direction: column;
   min-height: 42mm;
   padding: 0.65rem 0.7rem;
-  border: 1.5px solid #000000;
-  background: #FFFFFF;
+  border: 1.5px solid var(--color-neutral-900);
+  background: var(--bg-paper);
   page-break-inside: avoid;
   break-inside: avoid;
 }
@@ -234,7 +234,7 @@
   margin: 0 0 0.4rem;
   font-size: 0.82rem;
   font-weight: 700;
-  border-bottom: 1px solid #000000;
+  border-bottom: 1px solid var(--color-neutral-900);
   padding-bottom: 0.3rem;
 }
 
@@ -249,7 +249,7 @@
 .printable-sooratbar__sign-space {
   margin-top: 1.4rem;
   padding-top: 2.4rem;
-  border-top: 1px dashed #000000;
+  border-top: 1px dashed var(--color-neutral-900);
   text-align: center;
   font-size: 0.68rem;
 }
@@ -275,8 +275,8 @@
     max-width: none;
     margin: 0;
     padding: 0;
-    background: #FFFFFF !important;
-    color: #000000 !important;
+    background: var(--bg-paper) !important;
+    color: var(--color-neutral-900) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -284,7 +284,7 @@
   body.rahsepar-printing .printable-sooratbar,
   body.rahsepar-printing .printable-sooratbar * {
     visibility: visible !important;
-    color: #000000 !important;
+    color: var(--color-neutral-900) !important;
     box-shadow: none !important;
   }
 

@@ -67,38 +67,38 @@
 }
 
 .shirazeh-users-btn--ghost {
-  border: 1px solid rgba(203, 213, 225, 0.95);
-  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
   color: var(--text-primary);
 }
 
 .shirazeh-users-btn--ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--glass-bg-strong);
 }
 
 .shirazeh-users-btn--primary {
-  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 35%, white);
-  background: color-mix(in srgb, var(--color-accent) 16%, white);
+  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 35%, var(--surface));
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--surface));
   color: var(--color-accent-dark);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 8px 20px rgba(13, 148, 136, 0.12);
+    var(--glass-inset-highlight),
+    var(--accent-shadow);
 }
 
 .shirazeh-users-btn--primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-accent) 26%, white);
+  background: color-mix(in srgb, var(--color-accent) 26%, var(--surface));
 }
 
 /* —— Glass grid —— */
 .shirazeh-users-grid {
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.52);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 10px 26px rgba(15, 23, 42, 0.07);
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
   overflow: hidden;
 }
 
@@ -118,11 +118,11 @@
   text-align: center;
   vertical-align: middle;
   border: none;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .shirazeh-users-table th {
-  background: rgba(232, 250, 247, 0.85);
+  background: var(--table-head-bg);
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -130,11 +130,11 @@
 }
 
 .shirazeh-users-table tbody tr:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--table-row-odd-bg);
 }
 
 .shirazeh-users-table tbody tr:nth-child(even) {
-  background: rgba(243, 244, 246, 0.55);
+  background: var(--table-row-even-bg);
 }
 
 .shirazeh-users-table tbody tr:last-child td {
@@ -161,7 +161,7 @@
   margin-top: 0.2rem;
   font-size: 0.7rem;
   font-weight: 600;
-  color: #b45309;
+  color: var(--warning);
 }
 
 .shirazeh-users-status {
@@ -176,15 +176,15 @@
 }
 
 .shirazeh-users-status--active {
-  color: #047857;
-  background: rgba(16, 185, 129, 0.14);
-  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: var(--status-ambassador);
+  background: var(--success-muted);
+  border: 1px solid var(--success-border);
 }
 
 .shirazeh-users-status--inactive {
-  color: #64748b;
-  background: rgba(148, 163, 184, 0.16);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: var(--text-muted);
+  background: var(--muted-surface);
+  border: 1px solid var(--muted-border);
 }
 
 .shirazeh-users-actions {
@@ -201,8 +201,8 @@
   width: 2rem;
   height: 2rem;
   border-radius: 9px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-strong);
   color: var(--text-secondary);
   cursor: pointer;
   transition:
@@ -213,18 +213,18 @@
 
 .shirazeh-users-action:hover {
   color: var(--color-accent-dark);
-  border-color: color-mix(in srgb, var(--color-accent) 35%, white);
-  background: color-mix(in srgb, var(--color-accent) 12%, white);
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--surface));
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--surface));
 }
 
 .shirazeh-users-action--warn {
-  color: #b45309;
+  color: var(--warning);
 }
 
 .shirazeh-users-action--warn:hover {
-  color: #92400e;
-  border-color: rgba(245, 158, 11, 0.45);
-  background: rgba(251, 191, 36, 0.18);
+  color: var(--status-hesitant);
+  border-color: var(--warning-border);
+  background: var(--warning-muted);
 }
 
 /* —— Glass modal —— */
@@ -235,22 +235,22 @@
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgba(15, 23, 42, 0.38);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background: var(--surface-overlay);
+  backdrop-filter: blur(var(--overlay-blur));
+  -webkit-backdrop-filter: blur(var(--overlay-blur));
 }
 
 .shirazeh-users-modal__card {
   width: min(100%, 440px);
   padding: 1.15rem 1.2rem 1.25rem;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px) saturate(1.25);
-  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.25);
+  -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.25);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 22px 48px rgba(15, 23, 42, 0.22);
+    var(--glass-inset-highlight-strong),
+    var(--shadow-lg);
 }
 
 .shirazeh-users-modal__header {
@@ -275,15 +275,15 @@
   width: 2rem;
   height: 2rem;
   border-radius: 9px;
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
   color: var(--text-secondary);
   cursor: pointer;
 }
 
 .shirazeh-users-modal__close:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-bg-strong);
 }
 
 .shirazeh-users-modal__form {
@@ -310,8 +310,8 @@
   min-height: 40px;
   padding: 0.45rem 0.7rem;
   border-radius: 10px;
-  border: 1px solid rgba(203, 213, 225, 0.95);
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--border-light);
+  background: var(--surface-input);
   color: var(--text-primary);
   font-size: 0.88rem;
   outline: none;
@@ -320,8 +320,8 @@
 
 .shirazeh-users-modal__input:focus,
 .shirazeh-users-modal__select:focus {
-  border-color: color-mix(in srgb, var(--color-accent) 45%, white);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--surface));
+  box-shadow: var(--accent-ring);
 }
 
 .shirazeh-users-modal__actions {
@@ -331,7 +331,7 @@
   gap: 0.5rem;
   margin-top: 0.35rem;
   padding-top: 0.85rem;
-  border-top: 1px solid rgba(226, 232, 240, 0.9);
+  border-top: 1px solid var(--border-light);
 }
 
 @media (max-width: 720px) {

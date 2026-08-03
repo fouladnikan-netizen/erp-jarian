@@ -257,7 +257,7 @@ html[data-theme='dark'] .sidebar__logo {
 }
 
 .sidebar__link.is-active .sidebar__icon {
-  background: rgba(13, 148, 136, 0.15);
+  background: color-mix(in srgb, var(--color-accent-dark) 15%, transparent);
   color: var(--color-accent-dark);
 }
 
@@ -294,7 +294,7 @@ html[data-theme='dark'] .sidebar__logo {
   content: attr(title);
   position: absolute;
   right: calc(var(--sidebar-width-collapsed) + 8px);
-  background: #111827;
+  background: var(--surface-overlay);
   color: var(--color-white-glossy);
   padding: 0.35rem 0.65rem;
   border-radius: var(--radius-sm);

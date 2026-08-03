@@ -2,51 +2,50 @@ import { LIFECYCLE_STAGES } from '../../stores/useContactsStore';
 
 /**
  * متادیتای ۷ ستون پایپ‌لاین افق — واژگان رسمی «جریان» (Jarian Lexicon).
- * کلیدهای store (LIFECYCLE_STAGES) ثابت می‌مانند؛ فقط برچسب نمایشی فارسی است.
- * رنگ «دمای رابطه» برای هاله بالای هر ستون.
+ * رنگ‌ها فقط از Theme Tokens (RFC-001) — هرگز هگز خام.
  */
 export const PIPELINE_STAGES = [
   {
     id: LIFECYCLE_STAGES.COLD_LEAD,
     label: 'نوپدید',
-    color: '#38bdf8',
-    glow: 'rgba(56, 189, 248, 0.45)',
+    color: 'var(--pipeline-cold)',
+    glow: 'var(--pipeline-cold-glow)',
   },
   {
     id: LIFECYCLE_STAGES.PITCHED,
     label: 'دیدار',
-    color: '#818cf8',
-    glow: 'rgba(129, 140, 248, 0.45)',
+    color: 'var(--pipeline-pitched)',
+    glow: 'var(--pipeline-pitched-glow)',
   },
   {
     id: LIFECYCLE_STAGES.NURTURING,
     label: 'رویش',
-    color: '#fb923c',
-    glow: 'rgba(251, 146, 60, 0.55)',
+    color: 'var(--pipeline-nurturing)',
+    glow: 'var(--pipeline-nurturing-glow)',
   },
   {
     id: LIFECYCLE_STAGES.SALES_QUALIFIED,
     label: 'آستانه',
-    color: '#0d9488',
-    glow: 'rgba(13, 148, 136, 0.45)',
+    color: 'var(--pipeline-qualified)',
+    glow: 'var(--pipeline-qualified-glow)',
   },
   {
     id: LIFECYCLE_STAGES.FIRST_TIME_BUYER,
     label: 'نوپیمان',
-    color: '#22c55e',
-    glow: 'rgba(34, 197, 94, 0.45)',
+    color: 'var(--pipeline-first-buyer)',
+    glow: 'var(--pipeline-first-buyer-glow)',
   },
   {
     id: LIFECYCLE_STAGES.LOYAL,
     label: 'هم‌پیمان',
-    color: '#f59e0b',
-    glow: 'rgba(245, 158, 11, 0.55)',
+    color: 'var(--pipeline-loyal)',
+    glow: 'var(--pipeline-loyal-glow)',
   },
   {
     id: LIFECYCLE_STAGES.ARCHIVED,
     label: 'سایه',
-    color: '#94a3b8',
-    glow: 'rgba(148, 163, 184, 0.35)',
+    color: 'var(--pipeline-archived)',
+    glow: 'var(--pipeline-archived-glow)',
   },
 ];
 

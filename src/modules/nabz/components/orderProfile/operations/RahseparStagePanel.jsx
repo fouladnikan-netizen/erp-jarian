@@ -46,20 +46,20 @@ const PRODUCT_ROW_STYLE = [
 const PRODUCT_NAME_STYLE = [
   'font-size: 14px !important',
   'font-weight: bold !important',
-  'color: #000000 !important',
+  'color: var(--text-primary) !important',
   'white-space: nowrap !important',
   'flex-shrink: 0 !important',
 ].join('; ');
 
 const PRODUCT_SEP_STYLE = [
-  'color: #B8BFCA !important',
+  'color: var(--color-silver-glossy) !important',
   'font-size: 14px !important',
   'flex-shrink: 0 !important',
 ].join('; ');
 
 const PRODUCT_DESC_STYLE = [
   'font-size: 12px !important',
-  'color: #666666 !important',
+  'color: var(--text-muted) !important',
   'white-space: nowrap !important',
   'overflow: hidden !important',
   'text-overflow: ellipsis !important',

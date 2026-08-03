@@ -19,6 +19,7 @@ import { getStageLabel } from '../nabz/config';
 import { BEHAVIORAL_STATUS, ENTITY_TYPES, PERSON_TYPES } from './config';
 import { getDisplayName } from './columns';
 import { getReportCard } from './reportCard';
+import ContactPersonsSection from './components/ContactPersonsSection';
 import './kanoon.css';
 import './customerProfile.css';
 
@@ -71,12 +72,12 @@ const TYPE_LABELS = {
   system: 'سیستم',
 };
 
-/* رنگ گره تایم‌لاین: قرمز = هشدار/مرجوعی، سبز = موفقیت/فروش، نقره‌ای = اطلاع/تماس */
+/* رنگ گره تایم‌لاین — فقط Theme Tokens (RFC-001) */
 function nodeColorFor(type) {
   const t = String(type || '');
-  if (t === 'فروش' || t === 'تحقق' || t === 'success' || t === 'sale') return '#16a34a';
-  if (t === 'مرجوعی' || t === 'هشدار' || t === 'alert' || t === 'return') return '#e53935';
-  return '#94a3b8';
+  if (t === 'فروش' || t === 'تحقق' || t === 'success' || t === 'sale') return 'var(--success)';
+  if (t === 'مرجوعی' || t === 'هشدار' || t === 'alert' || t === 'return') return 'var(--danger)';
+  return 'var(--color-neutral-400)';
 }
 
 function typeLabelFor(type) {
@@ -243,13 +244,11 @@ function QuickContacts({ contact }) {
     (contact.fullAddress || specs.address) && { Icon: PinIcon, label: 'آدرس', value: contact.fullAddress || specs.address, plain: true },
   ].filter(Boolean);
 
-  const persons = contact.relatedPersons || [];
-
   return (
     <section className="kprofile-glass kprofile-side-card" aria-label="تماس سریع">
       <h3 className="kprofile-side-card__title"><ContactIcon /> تماس‌ها و آدرس‌ها</h3>
 
-      {rows.length === 0 && persons.length === 0 && (
+      {rows.length === 0 && (
         <p className="kprofile-identity__meta">اطلاعات تماسی ثبت نشده است.</p>
       )}
 
@@ -262,20 +261,6 @@ function QuickContacts({ contact }) {
           </div>
         </div>
       ))}
-
-      {persons.map((person, i) => (
-        <div key={`${person.name}-${i}`} className="kprofile-contact__row">
-          <ContactIcon />
-          <div style={{ flex: 1 }}>
-            <div className="kprofile-contact__person">
-              <span>{person.name || '—'}</span>
-              <span className="kprofile-contact__person-role">{person.role}</span>
-            </div>
-            {person.mobile && <a href={`tel:${person.mobile}`}>{person.mobile}</a>}
-          </div>
-        </div>
-      ))}
-
     </section>
   );
 }
@@ -1054,6 +1039,9 @@ export default function CustomerProfilePage() {
           <IdentityCard contact={contact} />
           <FinancialCockpit contact={contact} />
           <QuickContacts contact={contact} />
+          {contact.personType === PERSON_TYPES.LEGAL ? (
+            <ContactPersonsSection companyId={contact.id} />
+          ) : null}
         </aside>
 
         {/* ستون چپ ۷۵٪ — تایم‌لاین ضربان */}

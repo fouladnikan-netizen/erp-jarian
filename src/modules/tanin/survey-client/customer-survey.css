@@ -7,9 +7,9 @@
   justify-content: center;
   padding: 1.25rem;
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(148, 163, 184, 0.12), transparent 45%),
-    radial-gradient(ellipse at 80% 90%, rgba(148, 163, 184, 0.1), transparent 40%),
-    #f4f5f7;
+    radial-gradient(ellipse at 20% 10%, var(--muted-surface), transparent 45%),
+    radial-gradient(ellipse at 80% 90%, var(--muted-surface), transparent 40%),
+    var(--bg-body);
 }
 
 .tanin-survey__shell {
@@ -19,13 +19,13 @@
   gap: 1.35rem;
   padding: 1.5rem 1.45rem 1.35rem;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.62);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(155%);
   -webkit-backdrop-filter: blur(20px) saturate(155%);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--border-light);
   box-shadow:
-    0 20px 48px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    var(--shadow-lg),
+    var(--glass-inset-highlight);
   animation: tanin-rise 0.28s ease;
 }
 
@@ -63,19 +63,19 @@
 .tanin-survey__brand {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .tanin-survey__step {
   font-size: 0.74rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .tanin-survey__bar {
   height: 3px;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.2);
+  background: var(--muted-border);
   overflow: hidden;
 }
 
@@ -83,7 +83,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #1e293b;
+  background: var(--text-primary);
   transition: width 0.25s ease;
 }
 
@@ -98,12 +98,12 @@
   margin: 0;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text-primary);
   line-height: 1.65;
 }
 
 .tanin-survey__req {
-  color: #e0342f;
+  color: var(--danger);
   margin-inline-end: 0.2rem;
 }
 
@@ -111,7 +111,7 @@
   margin: 0;
   font-size: 0.76rem;
   font-weight: 600;
-  color: #b91c1c;
+  color: var(--danger);
 }
 
 .tanin-survey__foot {
@@ -143,23 +143,23 @@
 }
 
 .tanin-survey__btn--ghost {
-  background: rgba(148, 163, 184, 0.08);
-  border-color: rgba(148, 163, 184, 0.18);
-  color: #64748b;
+  background: color-mix(in srgb, var(--color-neutral-400) 8%, transparent);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
 }
 
 .tanin-survey__btn--ghost:hover:not(:disabled) {
-  color: #334155;
-  background: rgba(148, 163, 184, 0.14);
+  color: var(--text-primary);
+  background: var(--muted-surface);
 }
 
 .tanin-survey__btn--primary {
-  background: #1e293b;
-  color: #fff;
+  background: var(--text-primary);
+  color: var(--color-white);
 }
 
 .tanin-survey__btn--primary:hover:not(:disabled) {
-  background: #0f172a;
+  background: var(--color-neutral-800);
 }
 
 .tanin-survey__success-icon {
@@ -169,16 +169,16 @@
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  color: #3f6f52;
-  background: rgba(107, 143, 113, 0.14);
-  border: 1px solid rgba(107, 143, 113, 0.2);
+  color: var(--success);
+  background: var(--success-muted);
+  border: 1px solid var(--success-border);
 }
 
 .tanin-survey__success-title {
   margin: 0.35rem 0 0;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text-primary);
   line-height: 1.55;
 }
 
@@ -187,7 +187,7 @@
   max-width: 28rem;
   font-size: 0.88rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-secondary);
   line-height: 1.7;
 }
 
@@ -207,22 +207,22 @@
   min-width: 3.1rem;
   padding: 0.55rem 0.45rem;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(255, 255, 255, 0.55);
-  color: #64748b;
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .tanin-rating__btn:hover {
-  border-color: rgba(148, 163, 184, 0.4);
-  color: #334155;
+  border-color: var(--muted-border);
+  color: var(--text-primary);
 }
 
 .tanin-rating__btn.is-selected {
-  color: #0f766e;
-  border-color: rgba(13, 148, 136, 0.35);
-  background: rgba(13, 148, 136, 0.08);
+  color: var(--color-accent-dark);
+  border-color: color-mix(in srgb, var(--color-accent-dark) 35%, transparent);
+  background: var(--color-accent-muted);
 }
 
 .tanin-boolean {
@@ -234,9 +234,9 @@
 .tanin-boolean__btn {
   padding: 0.85rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(255, 255, 255, 0.55);
-  color: #475569;
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 700;
@@ -245,22 +245,22 @@
 }
 
 .tanin-boolean__btn:hover {
-  border-color: rgba(148, 163, 184, 0.4);
+  border-color: var(--muted-border);
 }
 
 .tanin-boolean__btn.is-selected {
-  color: #1e293b;
-  border-color: rgba(30, 41, 59, 0.35);
-  background: rgba(30, 41, 59, 0.06);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+  background: var(--muted-surface);
 }
 
 .tanin-text {
   width: 100%;
   padding: 0.75rem 0.85rem;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: rgba(255, 255, 255, 0.65);
-  color: #1e293b;
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 500;
   line-height: 1.65;
@@ -270,41 +270,17 @@
 }
 
 .tanin-text:focus {
-  border-color: rgba(30, 41, 59, 0.35);
+  border-color: var(--border-light);
 }
 
 .tanin-text::placeholder {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .tanin-unsupported {
   margin: 0;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.84rem;
-}
-
-html[data-theme='dark'] .tanin-survey {
-  background:
-    radial-gradient(ellipse at 20% 10%, rgba(148, 163, 184, 0.08), transparent 45%),
-    #0f1218;
-}
-
-html[data-theme='dark'] .tanin-survey__shell {
-  background: rgba(24, 28, 38, 0.88);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme='dark'] .tanin-survey__q-label,
-html[data-theme='dark'] .tanin-survey__success-title,
-html[data-theme='dark'] .tanin-text {
-  color: #e2e8f0;
-}
-
-html[data-theme='dark'] .tanin-rating__btn,
-html[data-theme='dark'] .tanin-boolean__btn,
-html[data-theme='dark'] .tanin-text {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
 }
 
 @media (max-width: 480px) {

@@ -96,7 +96,7 @@ function ProductDescription({ name, note }) {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            color: '#757575',
+            color: 'var(--text-muted)',
             marginInlineStart: '0.25rem',
           }}
         >

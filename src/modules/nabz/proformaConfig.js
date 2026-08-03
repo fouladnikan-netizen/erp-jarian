@@ -60,15 +60,15 @@ export const DEFAULT_PROFORMA_TERMS =
 
 export const PROFORMA_PREVIEW_STORAGE_KEY = 'nabz-proforma-preview';
 
-/** رنگ‌ها و فاصله‌ها — منطبق بر Assets/Invoice/DESIGN.md */
+/** رنگ‌ها و فاصله‌ها — فقط Theme Tokens (RFC-001)؛ منطبق بر Assets/Invoice/DESIGN.md */
 export const INVOICE_THEME = {
-  primary: '#272726',
-  primaryDim: '#c8c6c3',
-  tableHeader: '#d31120',
-  surface: '#fcf9f8',
-  surfaceLow: '#f6f3f2',
-  surfaceVariant: '#e5e2e1',
-  onSurface: '#1c1b1b',
-  onSurfaceVariant: '#454742',
+  primary: 'var(--color-neutral-800)',
+  primaryDim: 'var(--color-neutral-300)',
+  tableHeader: 'var(--color-brand-red)',
+  surface: 'var(--bg-surface)',
+  surfaceLow: 'var(--bg-muted)',
+  surfaceVariant: 'var(--color-neutral-200)',
+  onSurface: 'var(--text-primary)',
+  onSurfaceVariant: 'var(--text-secondary)',
   pageMargin: '48px',
 };

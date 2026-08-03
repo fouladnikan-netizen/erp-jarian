@@ -36,13 +36,13 @@
 .shirazeh-int-health-card {
   padding: 0.85rem 0.95rem;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 8px 22px rgba(15, 23, 42, 0.07);
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
 }
 
 .shirazeh-int-health-card__head {
@@ -62,11 +62,11 @@
 }
 
 .shirazeh-int-health-card--danger .shirazeh-int-health-card__icon {
-  color: var(--color-brand-red);
+  color: var(--danger);
 }
 
 .shirazeh-int-health-card--success .shirazeh-int-health-card__icon {
-  color: #059669;
+  color: var(--success);
 }
 
 .shirazeh-int-health-card__label {
@@ -95,13 +95,13 @@
   gap: 0.75rem;
   padding: 1rem;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.58);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 10px 26px rgba(15, 23, 42, 0.07);
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
   transition:
     box-shadow 180ms ease,
     border-color 180ms ease,
@@ -109,10 +109,10 @@
 }
 
 .shirazeh-int-card--expanded {
-  border-color: color-mix(in srgb, var(--color-accent) 30%, white);
+  border-color: color-mix(in srgb, var(--color-accent) 30%, var(--surface));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 14px 32px rgba(13, 148, 136, 0.12);
+    var(--glass-inset-highlight),
+    var(--accent-shadow-strong);
 }
 
 .shirazeh-int-card__hit {
@@ -141,8 +141,8 @@
   width: 2.35rem;
   height: 2.35rem;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--border-light);
   color: var(--color-accent-dark);
   flex-shrink: 0;
 }
@@ -231,23 +231,23 @@
 }
 
 .shirazeh-btn--ghost {
-  border: 1px solid rgba(203, 213, 225, 0.95);
-  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
   color: var(--text-primary);
 }
 
 .shirazeh-btn--ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--glass-bg-strong);
 }
 
 .shirazeh-btn--primary {
-  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 35%, white);
-  background: color-mix(in srgb, var(--color-accent) 16%, white);
+  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 35%, var(--surface));
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--surface));
   color: var(--color-accent-dark);
 }
 
 .shirazeh-btn--primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-accent) 26%, white);
+  background: color-mix(in srgb, var(--color-accent) 26%, var(--surface));
 }
 
 .shirazeh-conn {
@@ -264,19 +264,19 @@
 }
 
 .shirazeh-conn--online {
-  color: #059669;
+  color: var(--success);
 }
 
 .shirazeh-conn--offline {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .shirazeh-conn--success {
-  color: #047857;
+  color: var(--status-ambassador);
 }
 
 .shirazeh-conn--error {
-  color: #b91c1c;
+  color: var(--danger);
 }
 
 .shirazeh-conn__spin {
@@ -294,7 +294,7 @@
   flex-direction: column;
   gap: 0.75rem;
   padding-top: 0.85rem;
-  border-top: 1px solid rgba(226, 232, 240, 0.9);
+  border-top: 1px solid var(--border-light);
 }
 
 .shirazeh-conn-form__field {
@@ -321,8 +321,8 @@
   padding: 0.55rem 0.8rem;
   padding-left: 2.4rem;
   border-radius: 11px;
-  border: 1px solid rgba(203, 213, 225, 0.95);
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--border-light);
+  background: var(--surface-input);
   color: var(--text-primary);
   font-size: 0.86rem;
   outline: none;
@@ -332,8 +332,8 @@
 }
 
 .shirazeh-conn-form__input:focus {
-  border-color: color-mix(in srgb, var(--color-accent-dark) 45%, white);
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+  border-color: color-mix(in srgb, var(--color-accent-dark) 45%, var(--surface));
+  box-shadow: var(--accent-ring);
 }
 
 .shirazeh-conn-form__reveal {
@@ -347,19 +347,19 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .shirazeh-conn-form__reveal:hover {
-  background: rgba(241, 245, 249, 0.9);
+  background: var(--surface-hover);
   color: var(--text-primary);
 }
 
 .shirazeh-conn-form__hint {
   margin: 0;
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .shirazeh-conn-form__actions {
@@ -384,16 +384,4 @@
     transition: none;
     animation: none;
   }
-}
-
-html[data-theme='dark'] .shirazeh-int-card,
-html[data-theme='dark'] .shirazeh-int-health-card {
-  background: rgba(28, 31, 38, 0.62);
-  border-color: rgba(58, 65, 80, 0.8);
-}
-
-html[data-theme='dark'] .shirazeh-conn-form__input {
-  background: rgba(18, 20, 26, 0.7);
-  border-color: rgba(58, 65, 80, 0.9);
-  color: var(--text-primary);
 }

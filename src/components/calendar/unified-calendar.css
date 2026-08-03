@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   padding: clamp(0.75rem, 3vw, 2.5rem);
-  background: rgba(30, 32, 40, 0.38);
+  background: var(--overlay-scrim);
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   animation: jcal-fade-in 0.25s ease;
@@ -26,13 +26,13 @@
   height: min(86vh, 820px);
   border-radius: 26px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--glass-border);
   box-shadow:
-    0 32px 80px rgba(15, 23, 42, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    var(--shadow-lg),
+    var(--glass-inset-highlight);
   animation: jcal-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -55,20 +55,20 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1.15rem 1.4rem 0.85rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .jcal-header__titles h2 {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 800;
-  color: var(--text-primary, #1f2430);
+  color: var(--text-primary);
 }
 
 .jcal-header__titles p {
   margin: 0.25rem 0 0;
   font-size: 0.78rem;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
 }
 
 .jcal-header__controls {
@@ -83,9 +83,9 @@
   gap: 0.2rem;
   padding: 0.25rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+  background: var(--glass-bg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
 }
 
 .jcal-views__btn {
@@ -96,15 +96,15 @@
   font-family: inherit;
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
 .jcal-views__btn.is-active {
-  background: linear-gradient(135deg, #e0342f, #b8231f);
-  color: #fff;
-  box-shadow: 0 6px 16px rgba(224, 52, 47, 0.35);
+  background: linear-gradient(135deg, var(--danger), var(--color-brand-red-hover));
+  color: var(--color-white);
+  box-shadow: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
 .jcal-close {
@@ -114,17 +114,17 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--text-secondary, #6b7280);
+  border: 1px solid var(--muted-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .jcal-close:hover {
-  background: rgba(224, 52, 47, 0.12);
-  color: #e0342f;
-  border-color: rgba(224, 52, 47, 0.35);
+  background: var(--danger-surface);
+  color: var(--danger);
+  border-color: var(--danger-border);
 }
 
 /* ——— نوار ابزار (ناوبری + فیلترها) ——— */
@@ -135,7 +135,7 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   padding: 0.8rem 1.4rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .jcal-nav {
@@ -151,22 +151,22 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--text-primary, #1f2430);
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .jcal-nav__btn:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--glass-bg-strong);
   transform: translateY(-1px);
 }
 
 .jcal-nav__today {
-  border: 1px solid rgba(224, 52, 47, 0.35);
-  background: rgba(224, 52, 47, 0.08);
-  color: #c02722;
+  border: 1px solid var(--danger-border);
+  background: var(--danger-surface);
+  color: var(--danger);
   border-radius: 10px;
   padding: 0.35rem 0.8rem;
   font-size: 0.78rem;
@@ -176,14 +176,14 @@
 }
 
 .jcal-nav__today:hover {
-  background: rgba(224, 52, 47, 0.16);
+  background: var(--danger-surface);
 }
 
 .jcal-nav__title {
   margin-inline-start: 0.5rem;
   font-size: 0.95rem;
   font-weight: 800;
-  color: var(--text-primary, #1f2430);
+  color: var(--text-primary);
 }
 
 .jcal-filters {
@@ -208,9 +208,9 @@
   font-family: inherit;
   font-size: 0.75rem;
   font-weight: 700;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--text-secondary, #6b7280);
+  border: 1px solid var(--muted-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
   cursor: pointer;
   opacity: 0.6;
   transition: all 0.22s ease;
@@ -219,24 +219,24 @@
 .jcal-chip.is-active { opacity: 1; }
 
 .jcal-chip--financial.is-active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(212, 175, 55, 0.18));
-  border-color: rgba(16, 185, 129, 0.45);
-  color: #047857;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18);
+  background: linear-gradient(135deg, var(--success-muted), var(--warning-muted));
+  border-color: var(--success-border);
+  color: var(--success);
+  box-shadow: color-mix(in srgb, var(--success) 18%, transparent);
 }
 
 .jcal-chip--followup.is-active {
-  background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(59, 130, 246, 0.16));
-  border-color: rgba(59, 130, 246, 0.45);
-  color: #1d4ed8;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.16);
+  background: linear-gradient(135deg, var(--muted-surface), var(--info-muted));
+  border-color: var(--info-border);
+  color: var(--info);
+  box-shadow: color-mix(in srgb, var(--info) 16%, transparent);
 }
 
 .jcal-chip--logistics.is-active {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.16), rgba(239, 68, 68, 0.14));
-  border-color: rgba(249, 115, 22, 0.5);
-  color: #c2410c;
-  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.18);
+  background: linear-gradient(135deg, var(--warning-muted), var(--danger-muted));
+  border-color: var(--warning-border);
+  color: var(--warning);
+  box-shadow: color-mix(in srgb, var(--warning) 18%, transparent);
 }
 
 .jcal-role {
@@ -244,25 +244,25 @@
   align-items: center;
   gap: 0.45rem;
   font-size: 0.75rem;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
 }
 
 .jcal-role select {
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--text-primary, #1f2430);
+  color: var(--text-primary);
   padding: 0.35rem 0.7rem;
   border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.32);
-  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--muted-border);
+  background: var(--glass-bg);
   cursor: pointer;
   transition: border-color 0.2s ease;
 }
 
 .jcal-role select:focus {
   outline: none;
-  border-color: rgba(224, 52, 47, 0.5);
+  border-color: var(--danger-border);
 }
 
 /* ——— بدنه ——— */
@@ -275,7 +275,7 @@
 
 .jcal-body::-webkit-scrollbar { width: 8px; height: 8px; }
 .jcal-body::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
+  background: var(--muted-border);
   border-radius: 999px;
 }
 .jcal-body::-webkit-scrollbar-track { background: transparent; }
@@ -301,7 +301,7 @@
   text-align: center;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
   padding: 0.3rem 0;
 }
 
@@ -315,8 +315,8 @@
   min-height: 92px;
   border-radius: 14px;
   padding: 0.4rem 0.45rem;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: var(--glass-bg);
+  border: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -325,10 +325,10 @@
 }
 
 .jcal-month__cell:hover:not(.is-empty) {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(148, 163, 184, 0.35);
+  background: var(--glass-bg-strong);
+  border-color: var(--muted-border);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .jcal-month__cell.is-empty {
@@ -338,14 +338,14 @@
 }
 
 .jcal-month__cell.is-today {
-  border-color: rgba(224, 52, 47, 0.55);
-  box-shadow: inset 0 0 0 1px rgba(224, 52, 47, 0.35), 0 6px 18px rgba(224, 52, 47, 0.12);
+  border-color: var(--danger-border);
+  box-shadow: var(--danger-border), color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 .jcal-month__daynum {
   font-size: 0.78rem;
   font-weight: 800;
-  color: var(--text-primary, #1f2430);
+  color: var(--text-primary);
 }
 
 .jcal-month__cell.is-today .jcal-month__daynum {
@@ -355,8 +355,8 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e0342f, #b8231f);
-  color: #fff;
+  background: linear-gradient(135deg, var(--danger), var(--color-brand-red-hover));
+  color: var(--color-white);
 }
 
 .jcal-month__events {
@@ -368,7 +368,7 @@
 
 .jcal-month__more {
   font-size: 0.66rem;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
   padding-inline-start: 0.3rem;
 }
 
@@ -397,7 +397,7 @@
 
 .jcal-event:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--shadow-md);
 }
 
 .jcal-event__dot {
@@ -415,27 +415,27 @@
 }
 
 .jcal-event--financial {
-  background: rgba(16, 185, 129, 0.14);
-  color: #047857;
+  background: var(--success-muted);
+  color: var(--success);
 }
 
 .jcal-event--gold {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(16, 185, 129, 0.1));
-  color: #92700c;
+  background: linear-gradient(135deg, var(--warning-muted), var(--success-muted));
+  color: var(--warning);
 }
 
 .jcal-event--followup {
-  background: rgba(59, 130, 246, 0.12);
-  color: #1d4ed8;
+  background: var(--info-muted);
+  color: var(--info);
 }
 
 .jcal-event--logistics {
-  background: rgba(249, 115, 22, 0.14);
-  color: #c2410c;
+  background: var(--warning-muted);
+  color: var(--warning);
 }
 
 .jcal-event.is-overdue {
-  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.5);
+  box-shadow: var(--danger-border);
 }
 
 /* ——— نمای هفته ——— */
@@ -453,13 +453,13 @@
   gap: 0.5rem;
   border-radius: 16px;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--border-light);
 }
 
 .jcal-week__col.is-today {
-  border-color: rgba(224, 52, 47, 0.5);
-  box-shadow: 0 8px 22px rgba(224, 52, 47, 0.1);
+  border-color: var(--danger-border);
+  box-shadow: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .jcal-week__head {
@@ -475,17 +475,17 @@
   transition: background 0.2s ease;
 }
 
-.jcal-week__head:hover { background: rgba(255, 255, 255, 0.7); }
+.jcal-week__head:hover { background: var(--glass-bg-strong); }
 
 .jcal-week__head .font-meem {
   font-size: 0.74rem;
   font-weight: 800;
-  color: var(--text-primary, #1f2430);
+  color: var(--text-primary);
 }
 
 .jcal-week__head .font-yekan {
   font-size: 0.66rem;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
 }
 
 .jcal-week__events {
@@ -496,7 +496,7 @@
 
 .jcal-empty-hint {
   text-align: center;
-  color: rgba(148, 163, 184, 0.7);
+  color: var(--text-muted);
   font-size: 0.75rem;
   padding: 0.4rem 0;
 }
@@ -515,10 +515,10 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid var(--border-light);
   border-radius: 16px;
   padding: 0.8rem 1rem;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--glass-bg);
   font-family: inherit;
   text-align: start;
   cursor: pointer;
@@ -528,25 +528,25 @@
 
 .jcal-day__card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-md);
+  background: var(--glass-bg-strong);
 }
 
-.jcal-day__card--financial { border-inline-start-color: #10b981; }
-.jcal-day__card--gold { border-inline-start-color: #d4af37; }
-.jcal-day__card--followup { border-inline-start-color: #3b82f6; }
-.jcal-day__card--logistics { border-inline-start-color: #f97316; }
+.jcal-day__card--financial { border-inline-start-color: var(--success); }
+.jcal-day__card--gold { border-inline-start-color: var(--warning); }
+.jcal-day__card--followup { border-inline-start-color: var(--info); }
+.jcal-day__card--logistics { border-inline-start-color: var(--warning); }
 
 .jcal-day__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
 .jcal-icon {
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .jcal-popover__layer {
@@ -566,18 +566,18 @@
 .jcal-day__title {
   font-size: 0.88rem;
   font-weight: 800;
-  color: var(--text-primary, #1f2430);
+  color: var(--text-primary);
 }
 
 .jcal-day__sub {
   font-size: 0.72rem;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
 }
 
 .jcal-day__empty {
   text-align: center;
   padding: 3rem 1rem;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
 }
 
 .jcal-day__empty span { font-size: 2rem; }
@@ -590,11 +590,11 @@
   width: 300px;
   border-radius: 18px;
   padding: 0.9rem 1rem;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
   animation: jcal-panel-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -609,7 +609,7 @@
 .jcal-popover__layer {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
 }
 
 .jcal-popover__priority {
@@ -621,28 +621,28 @@
 }
 
 .jcal-popover__priority.is-high {
-  background: rgba(239, 68, 68, 0.14);
-  color: #b91c1c;
-  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.35);
+  background: var(--danger-surface);
+  color: var(--danger);
+  box-shadow: var(--danger-border);
 }
 
 .jcal-popover__priority.is-medium {
-  background: rgba(245, 158, 11, 0.16);
-  color: #92610c;
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.35);
+  background: var(--warning-muted);
+  color: var(--warning);
+  box-shadow: var(--warning-border);
 }
 
 .jcal-popover__priority.is-normal {
-  background: rgba(148, 163, 184, 0.16);
-  color: #475569;
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
+  background: var(--muted-surface);
+  color: var(--text-secondary);
+  box-shadow: var(--muted-border);
 }
 
 .jcal-popover__title {
   margin: 0 0 0.6rem;
   font-size: 0.92rem;
   font-weight: 800;
-  color: var(--text-primary, #1f2430);
+  color: var(--text-primary);
 }
 
 .jcal-popover__meta {
@@ -659,11 +659,11 @@
   font-size: 0.74rem;
 }
 
-.jcal-popover__meta dt { color: var(--text-secondary, #6b7280); flex-shrink: 0; }
+.jcal-popover__meta dt { color: var(--text-secondary); flex-shrink: 0; }
 .jcal-popover__meta dd {
   margin: 0;
   font-weight: 700;
-  color: var(--text-primary, #1f2430);
+  color: var(--text-primary);
   text-align: start;
 }
 
@@ -673,120 +673,18 @@
   gap: 0.35rem;
   font-size: 0.76rem;
   font-weight: 700;
-  color: #c02722;
+  color: var(--danger);
   text-decoration: none;
   padding: 0.4rem 0.75rem;
   border-radius: 10px;
-  background: rgba(224, 52, 47, 0.08);
-  border: 1px solid rgba(224, 52, 47, 0.25);
+  background: var(--danger-surface);
+  border: 1px solid var(--danger-border);
   transition: all 0.2s ease;
 }
 
 .jcal-popover__link:hover {
-  background: rgba(224, 52, 47, 0.15);
+  background: var(--danger-surface);
   transform: translateY(-1px);
-}
-
-/* ═══════════ دارک‌مود ═══════════ */
-
-html[data-theme='dark'] .jcal-overlay {
-  background: rgba(8, 10, 16, 0.55);
-}
-
-html[data-theme='dark'] .jcal-panel {
-  background: rgba(24, 28, 38, 0.78);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-html[data-theme='dark'] .jcal-header,
-html[data-theme='dark'] .jcal-toolbar {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme='dark'] .jcal-header__titles h2,
-html[data-theme='dark'] .jcal-nav__title,
-html[data-theme='dark'] .jcal-month__daynum,
-html[data-theme='dark'] .jcal-day__title,
-html[data-theme='dark'] .jcal-week__head .font-meem,
-html[data-theme='dark'] .jcal-popover__title,
-html[data-theme='dark'] .jcal-popover__meta dd {
-  color: #e5e7eb;
-}
-
-html[data-theme='dark'] .jcal-views,
-html[data-theme='dark'] .jcal-nav__btn,
-html[data-theme='dark'] .jcal-close,
-html[data-theme='dark'] .jcal-role select {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #cbd5e1;
-}
-
-html[data-theme='dark'] .jcal-chip {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #94a3b8;
-}
-
-html[data-theme='dark'] .jcal-chip--financial.is-active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(212, 175, 55, 0.16));
-  color: #34d399;
-}
-
-html[data-theme='dark'] .jcal-chip--followup.is-active {
-  background: linear-gradient(135deg, rgba(148, 163, 184, 0.16), rgba(59, 130, 246, 0.2));
-  color: #93c5fd;
-}
-
-html[data-theme='dark'] .jcal-chip--logistics.is-active {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(239, 68, 68, 0.16));
-  color: #fdba74;
-}
-
-html[data-theme='dark'] .jcal-month__cell,
-html[data-theme='dark'] .jcal-week__col,
-html[data-theme='dark'] .jcal-day__card {
-  background: rgba(255, 255, 255, 0.045);
-  border-color: rgba(255, 255, 255, 0.09);
-}
-
-html[data-theme='dark'] .jcal-month__cell:hover:not(.is-empty),
-html[data-theme='dark'] .jcal-day__card:hover {
-  background: rgba(255, 255, 255, 0.09);
-}
-
-html[data-theme='dark'] .jcal-month__cell.is-empty {
-  background: transparent;
-  border-color: transparent;
-}
-
-html[data-theme='dark'] .jcal-event--financial { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
-html[data-theme='dark'] .jcal-event--gold { background: rgba(212, 175, 55, 0.2); color: #fbbf24; }
-html[data-theme='dark'] .jcal-event--followup { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
-html[data-theme='dark'] .jcal-event--logistics { background: rgba(249, 115, 22, 0.2); color: #fdba74; }
-
-html[data-theme='dark'] .jcal-popover {
-  background: rgba(28, 32, 44, 0.9);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-html[data-theme='dark'] .jcal-popover__link {
-  background: rgba(224, 52, 47, 0.16);
-  border-color: rgba(224, 52, 47, 0.4);
-  color: #fca5a5;
-}
-
-html[data-theme='dark'] .jcal-week__head:hover { background: rgba(255, 255, 255, 0.08); }
-
-html[data-theme='dark'] .jcal-nav__today {
-  background: rgba(224, 52, 47, 0.16);
-  color: #fca5a5;
-  border-color: rgba(224, 52, 47, 0.4);
-}
-
-html[data-theme='dark'] .jcal-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
 }
 
 /* ═══════════ واکنش‌گرایی ═══════════ */

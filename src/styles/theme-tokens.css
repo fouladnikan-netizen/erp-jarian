@@ -1,0 +1,297 @@
+/**
+ * RFC-001 — Jarian Global Theme Token Architecture
+ * SINGLE SOURCE OF TRUTH for all visual colors.
+ *
+ * Rules:
+ * - Hex / rgb / rgba / hsl / named colors may ONLY appear in this file.
+ * - Components and module CSS consume tokens via var(--token-name).
+ * - Dark mode ONLY overrides variables under html[data-theme='dark'].
+ * - Components must never branch on light/dark.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Brand / accent primitives (palette) ── */
+  --color-brand-red: #d32f2f;
+  --color-brand-red-hover: #b71c1c;
+  --color-brand-red-active: #9a1515;
+  --color-brand-red-glossy: #e53935;
+  --color-white-glossy: #ffffff;
+  --color-silver-glossy: #b8bfca;
+  --color-accent: #0ad1ba;
+  --color-accent-dark: #0d9488;
+  --color-accent-muted: rgba(10, 209, 186, 0.12);
+
+  --color-white: #ffffff;
+  --color-neutral-50: #f5f6f8;
+  --color-neutral-100: #edeff2;
+  --color-neutral-200: #e2e5ea;
+  --color-neutral-300: #cbd2da;
+  --color-neutral-400: #9ca3af;
+  --color-neutral-500: #6b7280;
+  --color-neutral-600: #4b5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #0b0b0d;
+
+  /* ── Semantic surfaces ── */
+  --bg-body: var(--color-neutral-100);
+  --bg-surface: var(--color-white);
+  --bg-sidebar: var(--color-white);
+  --bg-muted: var(--color-neutral-50);
+  --bg-elevated: var(--color-white);
+  --bg-paper: #ffffff;
+
+  --surface: var(--bg-surface);
+  --surface-elevated: var(--bg-elevated);
+  --surface-hover: color-mix(in srgb, var(--color-white) 55%, transparent);
+  --surface-overlay: color-mix(in srgb, var(--color-neutral-800) 38%, transparent);
+  --surface-muted: color-mix(in srgb, var(--bg-muted) 65%, transparent);
+  --surface-input: color-mix(in srgb, var(--color-white) 72%, transparent);
+
+  /* ── Text ── */
+  --text-primary: var(--color-neutral-800);
+  --text-secondary: var(--color-neutral-500);
+  --text-muted: #757575;
+  --text-inverse: var(--color-white);
+
+  /* ── Borders ── */
+  --border-default: var(--color-neutral-200);
+  --border: var(--border-default);
+  --border-light: color-mix(in srgb, var(--border-default) 85%, transparent);
+  --border-strong: var(--color-neutral-300);
+
+  /* ── Actions / semantic brand ── */
+  --action-primary: var(--color-brand-red);
+  --primary: var(--color-brand-red);
+  --primary-hover: var(--color-brand-red-hover);
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-dark);
+
+  /* ── Status palette ── */
+  --status-radar: #64748b;
+  --status-hesitant: #b45309;
+  --status-trial: #1f6fb2;
+  --status-ambassador: #2e8b57;
+  --status-success: #2e8b57;
+  --status-silent: #475569;
+
+  --success: var(--status-success);
+  --warning: var(--status-hesitant);
+  --danger: var(--color-brand-red);
+  --info: var(--status-trial);
+
+  --success-muted: color-mix(in srgb, var(--status-success) 14%, transparent);
+  --success-border: color-mix(in srgb, var(--status-success) 28%, transparent);
+  --warning-muted: color-mix(in srgb, var(--status-hesitant) 18%, transparent);
+  --warning-border: color-mix(in srgb, var(--status-hesitant) 45%, transparent);
+  --warning-surface: color-mix(in srgb, var(--status-hesitant) 8%, var(--bg-surface));
+  --danger-muted: color-mix(in srgb, var(--color-brand-red) 12%, transparent);
+  --danger-border: color-mix(in srgb, var(--color-brand-red) 35%, transparent);
+  --danger-surface: color-mix(in srgb, var(--color-brand-red) 8%, var(--bg-surface));
+  --danger-surface-strong: color-mix(in srgb, var(--color-brand-red) 15%, var(--bg-surface));
+  --info-muted: color-mix(in srgb, var(--status-trial) 12%, transparent);
+  --info-border: color-mix(in srgb, var(--status-trial) 28%, transparent);
+  --muted-surface: color-mix(in srgb, var(--color-neutral-400) 16%, transparent);
+  --muted-border: color-mix(in srgb, var(--color-neutral-400) 35%, transparent);
+
+  /* ── Tables ── */
+  --table-head-bg: #e8faf7;
+  --table-row-odd-bg: #ffffff;
+  --table-row-even-bg: rgba(243, 244, 246, 0.85);
+  --table-row-hover-bg: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  --table-row-selected-bg: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  --table-border: var(--border-default);
+
+  /* ── Glassmorphism (global standard) ── */
+  --glass-blur: 14px;
+  --glass-blur-strong: 16px;
+  --glass-blur-subtle: 12px;
+  --glass-blur-overlay: 18px;
+  --glass-blur-modal: 20px;
+  --overlay-blur: 5px;
+  --glass-bg: color-mix(in srgb, var(--color-white) 55%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--color-white) 72%, transparent);
+  --glass-bg-subtle: color-mix(in srgb, var(--color-white) 35%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-white) 55%, transparent);
+  --glass-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  --glass-shadow-hover: 0 14px 32px color-mix(in srgb, var(--color-neutral-800) 12%, transparent);
+  --glass-inset-highlight: inset 0 1px 0 color-mix(in srgb, var(--color-white) 55%, transparent);
+  --glass-inset-highlight-strong: inset 0 1px 0 color-mix(in srgb, var(--color-white) 60%, transparent);
+
+  /* ── Forms ── */
+  --input-bg: var(--surface-input);
+  --input-border: var(--border-default);
+  --input-border-focus: color-mix(in srgb, var(--color-accent) 45%, white);
+  --input-placeholder: var(--text-muted);
+  --focus-ring: 0 0 0 3px var(--color-accent-muted);
+
+  /* ── Overlays / dialogs ── */
+  --overlay-scrim: color-mix(in srgb, var(--color-neutral-900) 38%, transparent);
+  --modal-bg: var(--glass-bg-strong);
+  --modal-border: var(--glass-border);
+  --modal-shadow: 0 22px 48px color-mix(in srgb, var(--color-neutral-800) 22%, transparent);
+  --drawer-bg: var(--glass-bg-strong);
+  --popover-bg: var(--glass-bg-strong);
+  --tooltip-bg: var(--surface-overlay);
+  --tooltip-fg: var(--text-inverse);
+
+  /* ── Buttons (semantic) ── */
+  --btn-primary-bg: var(--color-brand-red-glossy);
+  --btn-primary-fg: var(--color-white-glossy);
+  --btn-primary-hover: var(--color-brand-red-hover);
+  --btn-secondary-bg: var(--bg-muted);
+  --btn-secondary-fg: var(--text-primary);
+  --btn-ghost-bg: transparent;
+  --btn-ghost-fg: var(--text-primary);
+  --btn-ghost-hover: var(--bg-muted);
+  --btn-danger-bg: var(--color-brand-red);
+  --btn-danger-fg: var(--color-white-glossy);
+  --btn-success-bg: var(--status-success);
+  --btn-warning-bg: var(--status-hesitant);
+
+  /* ── Shadows / motion / radius ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 22px 48px color-mix(in srgb, var(--color-neutral-800) 22%, transparent);
+  --accent-shadow: 0 4px 14px color-mix(in srgb, var(--color-accent-dark) 10%, transparent);
+  --accent-shadow-strong: 0 14px 32px color-mix(in srgb, var(--color-accent-dark) 12%, transparent);
+  --accent-ring: 0 0 0 3px var(--color-accent-muted);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius: var(--radius-md);
+
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition: var(--transition-base);
+
+  /* ── Pipeline / stage accents (consumed as var() from JS configs) ── */
+  --pipeline-cold: #38bdf8;
+  --pipeline-pitched: #818cf8;
+  --pipeline-nurturing: #fb923c;
+  --pipeline-qualified: #0d9488;
+  --pipeline-first-buyer: #22c55e;
+  --pipeline-loyal: #f59e0b;
+  --pipeline-archived: #94a3b8;
+  --pipeline-cold-glow: rgba(56, 189, 248, 0.45);
+  --pipeline-pitched-glow: rgba(129, 140, 248, 0.45);
+  --pipeline-nurturing-glow: rgba(251, 146, 60, 0.55);
+  --pipeline-qualified-glow: rgba(13, 148, 136, 0.45);
+  --pipeline-first-buyer-glow: rgba(34, 197, 94, 0.45);
+  --pipeline-loyal-glow: rgba(245, 158, 11, 0.55);
+  --pipeline-archived-glow: rgba(148, 163, 184, 0.35);
+
+  --stage-1-accent: #0ea5e9;
+  --stage-1-bg: rgba(14, 165, 233, 0.08);
+  --stage-2-accent: #0ad1ba;
+  --stage-2-bg: rgba(10, 209, 186, 0.1);
+  --stage-3-accent: #d97706;
+  --stage-3-bg: rgba(245, 158, 11, 0.09);
+  --stage-4-accent: #0d9488;
+  --stage-4-bg: rgba(13, 148, 136, 0.1);
+  --stage-5-accent: #3b82f6;
+  --stage-5-bg: rgba(59, 130, 246, 0.08);
+  --stage-7-accent: #ea580c;
+  --stage-7-bg: rgba(234, 88, 12, 0.08);
+  --stage-8-accent: #059669;
+  --stage-8-bg: rgba(5, 150, 105, 0.1);
+
+  --chart-teal-1: #0ad1ba;
+  --chart-teal-2: #0d9488;
+  --chart-teal-3: #14b8a6;
+  --chart-teal-4: #0f766e;
+  --chart-teal-5: #2dd4bf;
+
+  /* ── Print / paper documents (always paper-oriented) ── */
+  --print-paper: #ffffff;
+  --print-ink: #111827;
+  --print-muted: #475569;
+  --print-border: #94a3b8;
+  --print-border-soft: #cbd5e1;
+  --print-surface: #f8fafc;
+  --print-surface-muted: #f1f5f9;
+
+  /* ── Layout metrics (non-color) ── */
+  --header-height: 60px;
+  --sidebar-width-collapsed: 68px;
+  --sidebar-width-expanded: 252px;
+
+  /* ── Typography families ── */
+  --font-primary: 'Vazirmatn', Tahoma, sans-serif;
+  --font-numeric: 'Vazirmatn', Tahoma, sans-serif;
+  --font-secondary: 'Vazirmatn', Tahoma, sans-serif;
+  --font-body: var(--font-primary), Tahoma, sans-serif;
+}
+
+/**
+ * Dark Mode — ONLY variable overrides.
+ * No component selectors here.
+ */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-neutral-50: #1c1f26;
+  --color-neutral-100: #12141a;
+  --color-neutral-200: #2a2f38;
+  --color-neutral-300: #3a4150;
+  --color-neutral-400: #8b93a1;
+  --color-neutral-500: #a8afba;
+  --color-neutral-600: #c5cad3;
+  --color-neutral-700: #dee2e8;
+  --color-neutral-800: #f3f4f6;
+  --color-neutral-900: #fafafa;
+
+  --color-accent-muted: rgba(10, 209, 186, 0.16);
+
+  --bg-body: #0b0b0d;
+  --bg-surface: #16181d;
+  --bg-sidebar: #12141a;
+  --bg-muted: #1c1f26;
+  --bg-elevated: #1c1f26;
+  --bg-paper: #ffffff;
+
+  --text-primary: #f3f4f6;
+  --text-secondary: #a8afba;
+  --text-muted: #9ca3af;
+  --text-inverse: #0b0b0d;
+
+  --border-default: #2a2f38;
+  --border-strong: #3a4150;
+
+  --table-head-bg: #14322e;
+  --table-row-odd-bg: var(--bg-surface);
+  --table-row-even-bg: var(--bg-muted);
+  --table-row-hover-bg: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --table-row-selected-bg: color-mix(in srgb, var(--color-accent) 18%, transparent);
+
+  --surface-hover: color-mix(in srgb, var(--bg-muted) 55%, transparent);
+  --surface-overlay: color-mix(in srgb, var(--color-neutral-900) 55%, transparent);
+  --surface-muted: color-mix(in srgb, var(--bg-body) 55%, transparent);
+  --surface-input: color-mix(in srgb, var(--bg-body) 70%, transparent);
+
+  --glass-bg: color-mix(in srgb, var(--bg-muted) 55%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--bg-muted) 72%, transparent);
+  --glass-bg-subtle: color-mix(in srgb, var(--bg-body) 55%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-neutral-300) 75%, transparent);
+  --glass-shadow: 0 10px 28px color-mix(in srgb, var(--color-neutral-900) 28%, transparent);
+  --glass-shadow-hover: 0 14px 32px color-mix(in srgb, var(--color-neutral-900) 35%, transparent);
+  --glass-inset-highlight: inset 0 1px 0 color-mix(in srgb, var(--color-neutral-700) 25%, transparent);
+  --glass-inset-highlight-strong: inset 0 1px 0 color-mix(in srgb, var(--color-neutral-700) 30%, transparent);
+
+  --border-light: color-mix(in srgb, var(--border-default) 90%, transparent);
+  --danger-surface: color-mix(in srgb, var(--color-brand-red) 12%, var(--bg-surface));
+  --danger-surface-strong: color-mix(in srgb, var(--color-brand-red) 20%, var(--bg-surface));
+  --warning-surface: color-mix(in srgb, var(--status-hesitant) 12%, var(--bg-surface));
+
+  --input-border-focus: color-mix(in srgb, var(--color-accent) 45%, var(--bg-muted));
+  --overlay-scrim: color-mix(in srgb, #020617 55%, transparent);
+  --modal-shadow: 0 22px 48px color-mix(in srgb, var(--color-neutral-900) 45%, transparent);
+  --tooltip-fg: var(--color-neutral-900);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 22px 48px color-mix(in srgb, var(--color-neutral-900) 45%, transparent);
+}

@@ -1,10 +1,6 @@
 /* Shirazeh — settings layout + glass surfaces (isolated module styles) */
 
 .shirazeh-page {
-  --shirazeh-glass: rgba(255, 255, 255, 0.55);
-  --shirazeh-glass-strong: rgba(255, 255, 255, 0.72);
-  --shirazeh-border: rgba(255, 255, 255, 0.55);
-  --shirazeh-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
@@ -34,13 +30,13 @@
   position: relative;
   padding: 0.95rem 1rem;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--shirazeh-border);
-  background: var(--shirazeh-glass);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    var(--shirazeh-shadow);
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
   overflow: hidden;
   transition:
     transform var(--transition-fast),
@@ -62,18 +58,18 @@
 }
 
 .shirazeh-health-card--success::before {
-  background: linear-gradient(180deg, #34d399, #059669);
+  background: linear-gradient(180deg, var(--color-accent), var(--success));
 }
 
 .shirazeh-health-card--danger::before {
-  background: linear-gradient(180deg, var(--color-brand-red-glossy), var(--color-brand-red));
+  background: linear-gradient(180deg, var(--color-brand-red-glossy), var(--danger));
 }
 
 .shirazeh-health-card:hover {
   transform: translateY(-2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 14px 32px rgba(15, 23, 42, 0.12);
+    var(--glass-inset-highlight-strong),
+    var(--glass-shadow-hover);
 }
 
 .shirazeh-health-card__head {
@@ -121,13 +117,13 @@
 .shirazeh-nav,
 .shirazeh-content {
   border-radius: var(--radius-lg);
-  border: 1px solid var(--shirazeh-border);
-  background: var(--shirazeh-glass-strong);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.2);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    var(--shirazeh-shadow);
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
 }
 
 .shirazeh-nav {
@@ -169,14 +165,14 @@
 }
 
 .shirazeh-nav__item:hover {
-  background: rgba(255, 255, 255, 0.55);
-  border-color: rgba(226, 232, 240, 0.9);
+  background: var(--surface-hover);
+  border-color: var(--border-light);
 }
 
 .shirazeh-nav__item--active {
-  background: rgba(255, 255, 255, 0.78);
-  border-color: color-mix(in srgb, var(--color-accent) 35%, white);
-  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.1);
+  background: var(--glass-bg-strong);
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--surface));
+  box-shadow: var(--accent-shadow);
 }
 
 .shirazeh-nav__item--active .shirazeh-nav__icon {
@@ -218,7 +214,7 @@
 .shirazeh-content__header {
   margin-bottom: 1rem;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .shirazeh-content__title {
@@ -247,20 +243,20 @@
   gap: 0.55rem;
   padding: 1.15rem 1.1rem;
   border-radius: 14px;
-  border: 1px solid rgba(252, 165, 165, 0.7);
-  background: rgba(254, 242, 242, 0.85);
+  border: 1px solid var(--danger-border);
+  background: var(--danger-surface-strong);
 }
 
 .shirazeh-error-panel__icon {
   display: inline-flex;
-  color: #b91c1c;
+  color: var(--danger);
 }
 
 .shirazeh-error-panel__title {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 800;
-  color: #991b1b;
+  color: var(--color-brand-red-hover);
 }
 
 .shirazeh-error-panel__text {
@@ -268,7 +264,7 @@
   font-size: 0.82rem;
   font-weight: 500;
   line-height: 1.65;
-  color: #7f1d1d;
+  color: var(--color-brand-red-active);
 }
 
 .shirazeh-error-panel__retry {
@@ -276,9 +272,9 @@
   min-height: 36px;
   padding: 0.4rem 0.85rem;
   border-radius: 10px;
-  border: 1px solid rgba(185, 28, 28, 0.35);
-  background: rgba(255, 255, 255, 0.85);
-  color: #991b1b;
+  border: 1px solid var(--danger-border);
+  background: var(--glass-bg-strong);
+  color: var(--color-brand-red-hover);
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
@@ -287,7 +283,7 @@
 .shirazeh-section__header {
   margin-bottom: 1rem;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .shirazeh-section__title {
@@ -311,15 +307,15 @@
   gap: 0.55rem;
   padding: 1.25rem 1.15rem;
   border-radius: 14px;
-  border: 1px dashed rgba(148, 163, 184, 0.55);
-  background: rgba(248, 250, 252, 0.65);
+  border: 1px dashed var(--muted-border);
+  background: var(--surface-muted);
 }
 
 .shirazeh-placeholder__badge {
   display: inline-flex;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  background: rgba(13, 148, 136, 0.12);
+  background: var(--color-accent-muted);
   color: var(--color-accent-dark);
   font-size: 0.7rem;
   font-weight: 700;
@@ -375,16 +371,4 @@
   .shirazeh-nav__list {
     grid-template-columns: 1fr;
   }
-}
-
-html[data-theme='dark'] .shirazeh-page {
-  --shirazeh-glass: rgba(28, 31, 38, 0.55);
-  --shirazeh-glass-strong: rgba(28, 31, 38, 0.72);
-  --shirazeh-border: rgba(58, 65, 80, 0.75);
-  --shirazeh-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
-}
-
-html[data-theme='dark'] .shirazeh-placeholder {
-  background: rgba(18, 20, 26, 0.55);
-  border-color: rgba(58, 65, 80, 0.9);
 }

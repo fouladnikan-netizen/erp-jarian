@@ -10,6 +10,7 @@ import { getDisplayName } from '../columns';
 import { getReportCard } from '../reportCard';
 import { formatProductGroups } from './ProductGroupMultiSelect';
 import StatusTag from '../../../components/module/StatusTag';
+import ContactPersonsSection from './ContactPersonsSection';
 
 const OFFICIAL_SPEC_FIELDS = [
   { key: 'establishmentDate', label: 'تاریخ تاسیس' },
@@ -23,8 +24,6 @@ const OFFICIAL_SPEC_FIELDS = [
   { key: 'address', label: 'آدرس' },
   { key: 'postalCode', label: 'کدپستی' },
 ];
-
-const EMPTY_RELATED = { name: '', mobile: '', role: 'کارشناس', notes: '' };
 
 const ORDER_STAGE_TAG = {
   مظنه: 'active',
@@ -70,21 +69,6 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
   }, [contact.id, contact._initialTab]);
 
   const update = (patch) => onUpdateContact(contact.id, patch);
-
-  const addRelatedPerson = () => {
-    update({
-      relatedPersons: [...(contact.relatedPersons || []), { ...EMPTY_RELATED }],
-    });
-  };
-
-  const updateRelatedPerson = (index, patch) => {
-    const next = (contact.relatedPersons || []).map((p, i) => (i === index ? { ...p, ...patch } : p));
-    update({ relatedPersons: next });
-  };
-
-  const removeRelatedPerson = (index) => {
-    update({ relatedPersons: (contact.relatedPersons || []).filter((_, i) => i !== index) });
-  };
 
   return (
     <div className="kanoon-drawer-overlay" onClick={onClose} role="presentation">
@@ -224,81 +208,7 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
 
           {activeTab === 'related' && contact.personType === PERSON_TYPES.LEGAL && (
             <div className="kanoon-profile-panel">
-              <button type="button" className="btn btn--outline kanoon-related-add" onClick={addRelatedPerson}>
-                + افزودن شخص مرتبط جدید
-              </button>
-              {(contact.relatedPersons || []).length ? (
-                <div className="kanoon-related-table-wrap">
-                  <table className="data-table kanoon-related-table">
-                    <thead>
-                      <tr>
-                        <th>ردیف</th>
-                        <th>نام شخص</th>
-                        <th>سمت</th>
-                        <th>شماره موبایل</th>
-                        <th>توضیحات</th>
-                        <th aria-label="عملیات" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(contact.relatedPersons || []).map((person, i) => (
-                        <tr key={i}>
-                          <td>{(i + 1).toLocaleString('fa-IR')}</td>
-                          <td>
-                            <input
-                              type="text"
-                              className="kanoon-related-table__input"
-                              value={person.name || ''}
-                              placeholder="نام"
-                              onChange={(e) => updateRelatedPerson(i, { name: e.target.value })}
-                            />
-                          </td>
-                          <td>
-                            <select
-                              className="kanoon-related-table__input"
-                              value={person.role}
-                              onChange={(e) => updateRelatedPerson(i, { role: e.target.value })}
-                            >
-                              <option value="کارشناس">کارشناس</option>
-                              <option value="مدیر">مدیر</option>
-                            </select>
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              className="kanoon-related-table__input"
-                              value={person.mobile || ''}
-                              placeholder="۰۹۱۲..."
-                              onChange={(e) => updateRelatedPerson(i, { mobile: e.target.value })}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              className="kanoon-related-table__input"
-                              value={person.notes || ''}
-                              placeholder="توضیحات"
-                              onChange={(e) => updateRelatedPerson(i, { notes: e.target.value })}
-                            />
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="btn btn--ghost kanoon-related-table__remove"
-                              onClick={() => removeRelatedPerson(i)}
-                              aria-label="حذف"
-                            >
-                              ×
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="kanoon-profile-panel__empty">شخص مرتبطی ثبت نشده است.</p>
-              )}
+              <ContactPersonsSection companyId={contact.id} />
             </div>
           )}
 

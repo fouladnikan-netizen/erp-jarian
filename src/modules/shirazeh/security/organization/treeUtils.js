@@ -168,7 +168,7 @@ export function layoutOrganizationFlow(root) {
         source: node.id,
         target: child.id,
         type: 'smoothstep',
-        style: { stroke: 'rgba(100, 116, 139, 0.55)', strokeWidth: 1.5 },
+        style: { stroke: 'var(--color-neutral-400)', strokeWidth: 1.5 },
       });
       cursor += childWidth + GAP_X;
     });

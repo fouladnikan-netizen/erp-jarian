@@ -17,7 +17,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: color-mix(in srgb, var(--color-white) 40%, transparent);
   backdrop-filter: blur(10px) saturate(180%);
   -webkit-backdrop-filter: blur(10px) saturate(180%);
   opacity: 0;
@@ -37,14 +37,14 @@
   max-width: 100%;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border-right: 1px solid rgba(255, 255, 255, 0.65);
+  border-right: 1px solid color-mix(in srgb, var(--color-white) 65%, transparent);
   border-radius: 0 1.5rem 1.5rem 0;
   box-shadow:
-    8px 0 40px rgba(15, 23, 42, 0.12),
-    2px 0 8px rgba(15, 23, 42, 0.04);
+    8px 0 40px color-mix(in srgb, var(--color-neutral-800) 12%, transparent),
+    2px 0 8px color-mix(in srgb, var(--color-neutral-800) 4%, transparent);
   direction: rtl;
   transform: translateX(-104%);
   opacity: 0;
@@ -66,8 +66,8 @@
   gap: 0.75rem;
   flex-shrink: 0;
   padding: 1.25rem 1.35rem 1rem;
-  border-bottom: 1px solid rgba(229, 231, 235, 0.85);
-  background: rgba(255, 255, 255, 0.55);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-default) 85%, transparent);
+  background: var(--glass-bg);
 }
 
 .po-slideover__title {
@@ -75,7 +75,7 @@
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--text-primary, #111827);
+  color: var(--text-primary, var(--text-primary));
 }
 
 .po-slideover__heading {
@@ -101,13 +101,13 @@
   flex-shrink: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #000000;
+  color: var(--color-neutral-900);
   line-height: 1.4;
 }
 
 .po-slideover__product-sep {
   flex-shrink: 0;
-  color: #B8BFCA;
+  color: var(--color-silver-glossy);
   font-size: 14px;
   line-height: 1;
 }
@@ -118,7 +118,7 @@
   text-overflow: ellipsis;
   font-size: 12px;
   font-weight: 500;
-  color: #666666;
+  color: var(--text-muted);
   line-height: 1.4;
 }
 
@@ -131,8 +131,8 @@
   justify-content: center;
   border: none;
   border-radius: 999px;
-  background: rgba(243, 244, 246, 0.9);
-  color: var(--text-secondary, #6b7280);
+  background: color-mix(in srgb, var(--color-neutral-50) 90%, transparent);
+  color: var(--text-secondary, var(--text-secondary));
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
@@ -140,8 +140,8 @@
 }
 
 .po-slideover__close:hover {
-  background: rgba(229, 231, 235, 1);
-  color: #111827;
+  background: var(--border-default);
+  color: var(--text-primary);
 }
 
 .po-slideover__form {
@@ -167,10 +167,10 @@
   gap: 0.55rem;
   margin-top: auto;
   padding-top: 1rem;
-  border-top: 1px solid rgba(229, 231, 235, 0.85);
+  border-top: 1px solid color-mix(in srgb, var(--border-default) 85%, transparent);
   position: sticky;
   bottom: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.96));
+  background: linear-gradient(180deg, var(--glass-bg-strong), color-mix(in srgb, var(--color-white) 96%, transparent));
   backdrop-filter: blur(8px);
 }
 

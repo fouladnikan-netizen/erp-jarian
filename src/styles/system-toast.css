@@ -1,0 +1,37 @@
+/* System toast — imperative DOM toast; colors from theme tokens only (RFC-001) */
+
+.jarian-system-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 14px;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: var(--glass-shadow), var(--glass-inset-highlight-strong);
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
+  pointer-events: none;
+}
+
+.jarian-system-toast__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: var(--color-white-glossy);
+  background: var(--btn-primary-bg);
+  box-shadow: var(--shadow-sm), var(--glass-inset-highlight);
+}

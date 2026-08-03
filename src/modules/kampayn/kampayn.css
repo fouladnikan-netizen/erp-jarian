@@ -15,33 +15,33 @@
 .kampayn-kpi {
   border-radius: 16px;
   padding: 0.95rem 1.05rem;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(14px) saturate(150%);
   -webkit-backdrop-filter: blur(14px) saturate(150%);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--glass-inset-highlight);
 }
 
 .kampayn-kpi__label {
   font-size: 0.74rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .kampayn-kpi__value {
   margin-top: 0.35rem;
   font-size: 1.35rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .kampayn-page .glass-panel {
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
 }
 
 /* ——— تولبار ——— */
@@ -62,9 +62,9 @@
   min-width: 220px;
   padding: 0.45rem 0.75rem;
   border-radius: 12px;
-  background: rgba(148, 163, 184, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  color: #94a3b8;
+  background: color-mix(in srgb, var(--color-neutral-400) 8%, transparent);
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
 }
 
 .kampayn-toolbar__input {
@@ -74,10 +74,10 @@
   background: transparent;
   font-size: 0.84rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
-.kampayn-toolbar__input::placeholder { color: #94a3b8; }
+.kampayn-toolbar__input::placeholder { color: var(--text-muted); }
 
 .kampayn-toolbar__actions {
   display: inline-flex;
@@ -96,8 +96,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.9rem 1.05rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-  color: #64748b;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
 }
 
 .kampayn-table-head h2 {
@@ -105,7 +105,7 @@
   flex: 1;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .kampayn-table-count {
@@ -118,8 +118,8 @@
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 700;
-  background: rgba(148, 163, 184, 0.14);
-  color: #64748b;
+  background: var(--muted-surface);
+  color: var(--text-secondary);
 }
 
 .kampayn-table-scroll {
@@ -134,7 +134,7 @@
 .kampayn-td-name {
   text-align: right !important;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .kampayn-metric {
@@ -148,17 +148,17 @@
 .kampayn-metric__label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .kampayn-metric__value {
   font-size: 0.88rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .kampayn-metric__empty {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .kampayn-type-chip {
@@ -167,9 +167,9 @@
   border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 700;
-  color: #64748b;
-  background: rgba(148, 163, 184, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+  border: 1px solid var(--border-light);
 }
 
 .kampayn-status {
@@ -181,18 +181,18 @@
 }
 
 .kampayn-status--active {
-  color: #3f6f52;
-  background: rgba(107, 143, 113, 0.14);
+  color: var(--success);
+  background: var(--success-muted);
 }
 
 .kampayn-status--paused {
-  color: #8a7550;
-  background: rgba(168, 144, 96, 0.14);
+  color: var(--warning);
+  background: var(--warning-muted);
 }
 
 .kampayn-status--draft {
-  color: #64748b;
-  background: rgba(148, 163, 184, 0.14);
+  color: var(--text-secondary);
+  background: var(--muted-surface);
 }
 
 .kampayn-td-rule {
@@ -205,12 +205,12 @@
   gap: 0.3rem;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .kampayn-rule-line--muted {
   margin-top: 0.15rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 500;
   padding-inline-start: 1.05rem;
 }
@@ -222,16 +222,16 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(255, 255, 255, 0.6);
-  color: #64748b;
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .kampayn-icon-btn:hover {
-  color: #1e293b;
-  border-color: rgba(148, 163, 184, 0.35);
+  color: var(--text-primary);
+  border-color: var(--muted-border);
 }
 
 .kampayn-row-actions {
@@ -244,7 +244,7 @@
 .kampayn-empty {
   text-align: center !important;
   padding: 2rem !important;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* ——— دکمه‌ها ——— */
@@ -269,34 +269,34 @@
 }
 
 .kampayn-btn--ghost {
-  background: rgba(148, 163, 184, 0.08);
-  border-color: rgba(148, 163, 184, 0.18);
-  color: #64748b;
+  background: color-mix(in srgb, var(--color-neutral-400) 8%, transparent);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
 }
 
 .kampayn-btn--ghost:hover:not(:disabled) {
-  background: rgba(148, 163, 184, 0.14);
-  color: #334155;
+  background: var(--muted-surface);
+  color: var(--text-primary);
 }
 
 .kampayn-btn--primary {
-  background: #1e293b;
-  color: #fff;
+  background: var(--text-primary);
+  color: var(--color-white);
 }
 
 .kampayn-btn--primary:hover:not(:disabled) {
-  background: #0f172a;
+  background: var(--color-neutral-800);
 }
 
 .kampayn-btn--launch {
-  background: linear-gradient(135deg, #e0342f, #b8231f);
-  color: #fff;
-  box-shadow: 0 8px 22px rgba(224, 52, 47, 0.28);
+  background: linear-gradient(135deg, var(--danger), var(--color-brand-red-hover));
+  color: var(--color-white);
+  box-shadow: color-mix(in srgb, var(--danger) 28%, transparent);
 }
 
 .kampayn-btn--launch:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(224, 52, 47, 0.36);
+  box-shadow: color-mix(in srgb, var(--danger) 36%, transparent);
 }
 
 /* ═══════════ درایر سازنده ═══════════ */
@@ -313,7 +313,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  background: rgba(15, 23, 42, 0.34);
+  background: var(--overlay-scrim);
   backdrop-filter: blur(10px) saturate(120%);
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   animation: kampayn-fade 0.2s ease;
@@ -327,11 +327,11 @@
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(22px) saturate(160%);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
-  border-right: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: 14px 0 48px rgba(15, 23, 42, 0.2);
+  border-right: 1px solid var(--border-light);
+  box-shadow: var(--shadow-lg);
   animation: kampayn-drawer-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -351,20 +351,20 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 1.15rem 1.2rem 0.95rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .kampayn-drawer__title {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .kampayn-drawer__sub {
   margin: 0.25rem 0 0;
   font-size: 0.74rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .kampayn-drawer__close {
@@ -374,23 +374,23 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: rgba(148, 163, 184, 0.06);
-  color: #64748b;
+  border: 1px solid var(--border-light);
+  background: color-mix(in srgb, var(--color-neutral-400) 6%, transparent);
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
 .kampayn-drawer__close:hover {
-  color: #e0342f;
-  border-color: rgba(224, 52, 47, 0.28);
-  background: rgba(224, 52, 47, 0.08);
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
 }
 
 .kampayn-steps {
   display: flex;
   gap: 0.35rem;
   padding: 0.75rem 0.9rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid var(--border-light);
   overflow-x: auto;
 }
 
@@ -401,9 +401,9 @@
   flex-shrink: 0;
   padding: 0.4rem 0.7rem;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  background: rgba(148, 163, 184, 0.06);
-  color: #94a3b8;
+  border: 1px solid var(--border-light);
+  background: color-mix(in srgb, var(--color-neutral-400) 6%, transparent);
+  color: var(--text-muted);
   font-family: inherit;
   font-size: 0.72rem;
   font-weight: 700;
@@ -411,14 +411,14 @@
 }
 
 .kampayn-steps__item.is-active {
-  color: #1e293b;
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(148, 163, 184, 0.35);
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+  color: var(--text-primary);
+  background: var(--glass-bg-strong);
+  border-color: var(--muted-border);
+  box-shadow: var(--shadow-md);
 }
 
 .kampayn-steps__item.is-done {
-  color: #3f6f52;
+  color: var(--success);
 }
 
 .kampayn-steps__num {
@@ -429,7 +429,7 @@
   justify-content: center;
   border-radius: 50%;
   font-size: 0.62rem;
-  background: rgba(148, 163, 184, 0.16);
+  background: var(--muted-surface);
 }
 
 .kampayn-drawer__body {
@@ -444,11 +444,11 @@
 .kampayn-block {
   border-radius: 16px;
   padding: 0.95rem;
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
 }
 
 .kampayn-block__head {
@@ -456,20 +456,20 @@
   align-items: flex-start;
   gap: 0.55rem;
   margin-bottom: 0.85rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .kampayn-block__head h3 {
   margin: 0;
   font-size: 0.9rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .kampayn-block__head p {
   margin: 0.2rem 0 0;
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .kampayn-option-grid {
@@ -486,23 +486,23 @@
   text-align: start;
   padding: 0.7rem 0.8rem;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
   font-family: inherit;
   cursor: pointer;
-  color: #334155;
+  color: var(--text-primary);
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .kampayn-option:hover {
-  border-color: rgba(148, 163, 184, 0.32);
-  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--muted-border);
+  background: var(--glass-bg-strong);
 }
 
 .kampayn-option.is-selected {
-  border-color: rgba(224, 52, 47, 0.35);
-  background: rgba(224, 52, 47, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(224, 52, 47, 0.08);
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
+  box-shadow: var(--danger-border);
 }
 
 .kampayn-option__icon {
@@ -513,8 +513,8 @@
   height: 32px;
   border-radius: 10px;
   flex-shrink: 0;
-  color: #64748b;
-  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-secondary);
+  background: var(--muted-surface);
 }
 
 .kampayn-option__body {
@@ -532,11 +532,11 @@
 
 .kampayn-option__hint {
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .kampayn-option__check {
-  color: #e0342f;
+  color: var(--danger);
   flex-shrink: 0;
 }
 
@@ -550,7 +550,7 @@
 .kampayn-field label {
   font-size: 0.74rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .kampayn-select,
@@ -558,19 +558,19 @@
   width: 100%;
   padding: 0.6rem 0.75rem;
   border-radius: 11px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg-strong);
   font-family: inherit;
   font-size: 0.84rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   outline: none;
 }
 
 .kampayn-select:focus,
 .kampayn-input:focus {
-  border-color: rgba(224, 52, 47, 0.35);
-  box-shadow: 0 0 0 3px rgba(224, 52, 47, 0.08);
+  border-color: var(--danger-border);
+  box-shadow: var(--focus-ring);
 }
 
 .kampayn-survey-link {
@@ -581,7 +581,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--text-secondary);
   font-family: inherit;
   font-size: 0.74rem;
   font-weight: 700;
@@ -590,7 +590,7 @@
 }
 
 .kampayn-survey-link:hover {
-  color: #e0342f;
+  color: var(--danger);
 }
 
 .kampayn-summary {
@@ -605,15 +605,15 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid var(--border-light);
   font-size: 0.78rem;
 }
 
-.kampayn-summary dt { color: #94a3b8; }
+.kampayn-summary dt { color: var(--text-muted); }
 .kampayn-summary dd {
   margin: 0;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
   text-align: start;
 }
 
@@ -623,58 +623,10 @@
   justify-content: space-between;
   gap: 0.65rem;
   padding: 0.9rem 1.1rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  border-top: 1px solid var(--border-light);
 }
 
 /* ═══════════ دارک‌مود ═══════════ */
-
-html[data-theme='dark'] .kampayn-kpi,
-html[data-theme='dark'] .kampayn-page .glass-panel,
-html[data-theme='dark'] .kampayn-block,
-html[data-theme='dark'] .kampayn-drawer {
-  background: rgba(24, 28, 38, 0.9);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-html[data-theme='dark'] .kampayn-kpi__value,
-html[data-theme='dark'] .kampayn-table-head h2,
-html[data-theme='dark'] .kampayn-td-name,
-html[data-theme='dark'] .kampayn-metric__value,
-html[data-theme='dark'] .kampayn-drawer__title,
-html[data-theme='dark'] .kampayn-block__head h3,
-html[data-theme='dark'] .kampayn-option__title,
-html[data-theme='dark'] .kampayn-summary dd,
-html[data-theme='dark'] .kampayn-toolbar__input,
-html[data-theme='dark'] .kampayn-select,
-html[data-theme='dark'] .kampayn-input {
-  color: #e2e8f0;
-}
-
-html[data-theme='dark'] .kampayn-metric__label {
-  color: #94a3b8;
-}
-
-html[data-theme='dark'] .kampayn-toolbar__search,
-html[data-theme='dark'] .kampayn-option,
-html[data-theme='dark'] .kampayn-select,
-html[data-theme='dark'] .kampayn-input {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-html[data-theme='dark'] .kampayn-option.is-selected {
-  background: rgba(224, 52, 47, 0.1);
-  border-color: rgba(224, 52, 47, 0.35);
-}
-
-html[data-theme='dark'] .kampayn-steps__item.is-active {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-}
-
-html[data-theme='dark'] .kampayn-drawer-backdrop {
-  background: rgba(2, 6, 23, 0.5);
-}
 
 @media (max-width: 900px) {
   .kampayn-kpi-grid {

@@ -72,13 +72,13 @@ export function isActivePhase2Stage(stageId) {
   return PHASE2_STAGES.some((stage) => stage.id === stageId);
 }
 
-/** رنگ‌های ملایم مرحله — یکپارچه با پس‌زمینه کارت */
+/** رنگ‌های ملایم مرحله — فقط از Theme Tokens (RFC-001) */
 export const STAGE_TINTS = {
-  1: { bg: 'rgba(14, 165, 233, 0.08)', accent: '#0ea5e9' },
-  2: { bg: 'rgba(10, 209, 186, 0.1)', accent: '#0ad1ba' },
-  3: { bg: 'rgba(245, 158, 11, 0.09)', accent: '#d97706' },
-  4: { bg: 'rgba(13, 148, 136, 0.1)', accent: '#0d9488' },
-  5: { bg: 'rgba(59, 130, 246, 0.08)', accent: '#3b82f6' },
-  7: { bg: 'rgba(234, 88, 12, 0.08)', accent: '#ea580c' },
-  8: { bg: 'rgba(5, 150, 105, 0.1)', accent: '#059669' },
+  1: { bg: 'var(--stage-1-bg)', accent: 'var(--stage-1-accent)' },
+  2: { bg: 'var(--stage-2-bg)', accent: 'var(--stage-2-accent)' },
+  3: { bg: 'var(--stage-3-bg)', accent: 'var(--stage-3-accent)' },
+  4: { bg: 'var(--stage-4-bg)', accent: 'var(--stage-4-accent)' },
+  5: { bg: 'var(--stage-5-bg)', accent: 'var(--stage-5-accent)' },
+  7: { bg: 'var(--stage-7-bg)', accent: 'var(--stage-7-accent)' },
+  8: { bg: 'var(--stage-8-bg)', accent: 'var(--stage-8-accent)' },
 };

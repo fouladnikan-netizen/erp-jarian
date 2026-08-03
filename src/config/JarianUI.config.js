@@ -36,7 +36,7 @@ export const JARIAN_UI = Object.freeze({
     }),
     description: Object.freeze({
       fontSize: '12px',
-      color: '#757575',
+      color: 'var(--text-muted)',
       fontFamily: "'Vazirmatn', Tahoma, sans-serif",
       className: 'jarian-product-desc',
     }),
@@ -60,12 +60,12 @@ export const JARIAN_UI = Object.freeze({
     cellAlign: 'center',
     headerAlign: 'center',
     /** بک‌گراند تیتر همه جداول */
-    headerBackground: '#E8FAF7',
+    headerBackground: 'var(--table-head-bg)',
     headerColor: 'var(--text-primary)',
     /** راه‌راه سفید / طوسی روشن (شبیه پیش‌فاکتور) — بدون رنگ جداگانه روی سلول */
     zebra: true,
-    zebraOdd: '#ffffff',
-    zebraEven: 'rgba(243, 244, 246, 0.85)',
+    zebraOdd: 'var(--table-row-odd-bg)',
+    zebraEven: 'var(--table-row-even-bg)',
     uniformRowBackground: true,
     /** فقط خطوط افقی ظریف بین سطرها؛ بدون بوردر عمودی */
     verticalBorders: false,
