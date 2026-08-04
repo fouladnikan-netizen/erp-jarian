@@ -648,7 +648,7 @@
 .ofoq-modal {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: var(--z-modal-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -661,10 +661,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  background: var(--overlay-scrim);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: ofoq-fade-in 0.2s ease;
+  z-index: 0;
 }
 
 @keyframes ofoq-fade-in {

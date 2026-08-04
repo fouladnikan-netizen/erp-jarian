@@ -1,0 +1,265 @@
+/* Customer Completion Policy — compact profile badge + incomplete dialog */
+
+.company-completion-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.55rem 0 0;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+  max-width: 100%;
+  text-align: center;
+}
+
+.company-completion-badge--warn {
+  color: color-mix(in srgb, var(--warning) 85%, var(--text-primary));
+  background: color-mix(in srgb, var(--warning-surface) 75%, var(--glass-bg));
+  border: 1px solid var(--warning-border);
+}
+
+.company-completion-badge--ok {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, var(--glass-bg));
+  border: 1px solid color-mix(in srgb, var(--success) 35%, var(--glass-border));
+}
+
+/* Legacy status / warning card classes (dialog & optional reuse) */
+
+.company-completion-status,
+.company-completion-warning {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+  padding: 1.1rem 1.15rem 1.15rem;
+}
+
+.company-completion-status__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.company-completion-status__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.company-completion-status__pct {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-hover);
+}
+
+.company-completion-status__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--muted-surface);
+  overflow: hidden;
+  margin-bottom: 0.85rem;
+}
+
+.company-completion-status__bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent) 0%,
+    var(--color-accent-dark) 100%
+  );
+  transition: width 0.28s ease;
+}
+
+.company-completion-status__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.company-completion-status__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.company-completion-status__item.is-ok {
+  color: var(--success);
+}
+
+.company-completion-status__item.is-missing {
+  color: var(--warning);
+}
+
+.company-completion-status__mark {
+  width: 1.1rem;
+  text-align: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.company-completion-status__label {
+  line-height: 1.35;
+}
+
+.company-completion-warning {
+  border-color: var(--warning-border);
+  background: color-mix(in srgb, var(--warning-surface) 70%, var(--glass-bg));
+}
+
+.company-completion-warning__title {
+  margin: 0 0 0.45rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.company-completion-warning__body {
+  margin: 0 0 0.9rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.company-completion-warning__body--solo {
+  margin-bottom: 0;
+}
+
+.company-completion-warning__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0;
+  border-radius: 12px;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-inverse);
+  background: var(--action-primary);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.company-completion-warning__action:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Incomplete dialog */
+
+.company-completion-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.company-completion-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  cursor: pointer;
+  background: var(--overlay-scrim);
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
+}
+
+.company-completion-dialog__panel {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 1.35rem 1.3rem 1.2rem;
+  border-radius: 20px;
+  border: 1px solid var(--modal-border);
+  background: linear-gradient(
+    190deg,
+    var(--glass-bg-strong) 0%,
+    var(--bg-muted) 100%
+  );
+  backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.35);
+  box-shadow: var(--modal-shadow, var(--glass-shadow));
+}
+
+.company-completion-dialog__title {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.company-completion-dialog__body {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  white-space: pre-line;
+}
+
+.company-completion-dialog__hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.company-completion-dialog__actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  margin-top: 1.2rem;
+}
+
+.company-completion-dialog__primary,
+.company-completion-dialog__secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 12px;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.company-completion-dialog__primary {
+  color: var(--text-inverse);
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+}
+
+.company-completion-dialog__primary:hover {
+  background: var(--primary-hover);
+}
+
+.company-completion-dialog__secondary {
+  color: var(--text-secondary);
+  background: var(--surface-input);
+  border-color: var(--border-default);
+}
+
+.company-completion-dialog__secondary:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.contact-person-modal--elevated {
+  z-index: 130;
+}

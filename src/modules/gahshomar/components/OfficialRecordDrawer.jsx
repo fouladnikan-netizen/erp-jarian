@@ -9,18 +9,28 @@ import {
   Printer,
   FileDown,
   PenLine,
+  FileText,
+  ScrollText,
 } from 'lucide-react';
-import { DRAWER_MODE, DIRECTION_LABELS, PARTICIPANT_ROLE } from '../models/officialRecord';
+import { DRAWER_MODE, PARTICIPANT_ROLE } from '../models/officialRecord';
 import {
   getOfficialRecord,
   issueOfficialRecord,
   saveOfficialRecord,
 } from '../officialRecordFacade';
-import { ensureLetterHtml } from '../services/letterHtml';
+import { getTodayJalali } from '../../nabz/dateUtils';
+import {
+  LETTER_BISMILLAH,
+  buildDefaultEditableBody,
+  ensureEditableLetterBody,
+  formatHonorableCompany,
+  getLetterSignatory,
+} from '../services/letterDocument';
 import ContactSelector from './ContactSelector';
 import LetterRichEditor from './LetterRichEditor';
 import LetterSubjectField from './LetterSubjectField';
-import PrintableOfficialLetter from './PrintableOfficialLetter';
+import PrintableOfficialLetter, { PRINT_LETTER_VARIANT } from './PrintableOfficialLetter';
+import '../../nabz/nabz.css';
 import '../gahshomar-page.css';
 
 function MetaRow({ label, value, numeric = false }) {
@@ -32,18 +42,57 @@ function MetaRow({ label, value, numeric = false }) {
   );
 }
 
+function resolveCompanyName(party) {
+  if (!party) return '';
+  return String(party.companyName || party.name || '').trim();
+}
+
+/**
+ * Fixed letter header/footer around TipTap — one continuous sheet (not a separate card from body).
+ * Header/footer only change via form fields above.
+ */
+function LetterDocumentChrome({ companyName = '', attentionName = '', children }) {
+  const signatory = getLetterSignatory();
+  const companyLine = formatHonorableCompany(companyName);
+  const personLine = String(attentionName || '').trim();
+
+  return (
+    <div className="gahshomar-letter-doc" dir="rtl">
+      <p className="gahshomar-letter-doc__bismillah font-meem">
+        {LETTER_BISMILLAH}
+      </p>
+      {companyLine ? (
+        <p className="gahshomar-letter-doc__company font-meem">{companyLine}</p>
+      ) : null}
+      {personLine ? (
+        <p className="gahshomar-letter-doc__person font-meem">{personLine}</p>
+      ) : null}
+      <div className="gahshomar-letter-doc__editable">
+        {children}
+      </div>
+      <footer className="gahshomar-letter-doc__signatory font-meem" aria-label="پایان نامه">
+        <strong>{signatory.name}</strong>
+        <strong>{signatory.title}</strong>
+        <strong>{signatory.company}</strong>
+      </footer>
+    </div>
+  );
+}
+
 function ViewBody({ record }) {
   return (
     <>
       <dl className="gahshomar-drawer__body">
         <MetaRow label="شماره" value={record.registryNumber || record.number} numeric />
         <MetaRow label="تاریخ" value={record.date || record.recordDate || record.receivedDate} numeric />
-        <MetaRow label="جهت" value={DIRECTION_LABELS[record.direction]} />
         <MetaRow
           label={record.direction === 'INCOMING' ? 'فرستنده' : 'گیرنده'}
           value={record.displayParty}
         />
         <MetaRow label="موضوع" value={record.subject} />
+        {record.attentionName ? (
+          <MetaRow label="نام شخص" value={record.attentionName} />
+        ) : null}
         <MetaRow label="نوع" value={record.displayType} />
         {record.referenceId ? (
           <MetaRow label="ارجاع" value={record.referenceId} numeric />
@@ -61,10 +110,19 @@ function ViewBody({ record }) {
       {record.body ? (
         <div className="gahshomar-drawer__section">
           <h3 className="gahshomar-drawer__section-title font-meem">متن نامه</h3>
-          <div
-            className="gahshomar-drawer__body-text font-meem gahshomar-letter-html"
-            dangerouslySetInnerHTML={{ __html: ensureLetterHtml(record.body) }}
-          />
+          <LetterDocumentChrome
+            companyName={resolveCompanyName(
+              record.direction === 'INCOMING'
+                ? record.participants?.sender
+                : record.participants?.receiver,
+            )}
+            attentionName={record.attentionName}
+          >
+            <div
+              className="gahshomar-drawer__body-text font-meem gahshomar-letter-html"
+              dangerouslySetInnerHTML={{ __html: ensureEditableLetterBody(record.body) }}
+            />
+          </LetterDocumentChrome>
         </div>
       ) : null}
 
@@ -109,89 +167,121 @@ function EditorBody({ draft, onChange, locked }) {
 
   return (
     <form className="gahshomar-compose__editor" onSubmit={(event) => event.preventDefault()}>
-      <div className="gahshomar-compose__grid">
-        <LetterSubjectField
-          value={draft.subject}
-          onChange={(subject) => onChange({ subject })}
-          onSelectTemplate={(template) => {
-            const bodyHtml = template.bodyHtml || ensureLetterHtml(template.body);
-            onChange({
-              subject: template.subject,
-              body: bodyHtml,
-              bodyRevision: Date.now(),
-            });
-          }}
-          readOnly={locked}
-        />
-        <ContactSelector
-          label={draft.direction === 'INCOMING' ? 'فرستنده' : 'گیرنده'}
-          role={counterpartyRole}
-          value={draft.counterparty}
-          onChange={(participant) => onChange({ counterparty: participant })}
-          readOnly={locked}
-        />
-        <label className="gahshomar-modal__field font-meem">
-          تاریخ
-          <input
-            className="gahshomar-modal__input font-yekan"
-            value={draft.date}
+      <section className="gahshomar-compose__fields" aria-label="اطلاعات نامه">
+        <div className="gahshomar-compose__row gahshomar-compose__row--single">
+          <LetterSubjectField
+            value={draft.subject}
+            onChange={(subject) => onChange({ subject })}
+            onSelectTemplate={(template) => {
+              onChange({
+                subject: template.subject,
+                body: buildDefaultEditableBody(template.body),
+                bodyRevision: Date.now(),
+              });
+            }}
             readOnly={locked}
-            onChange={(event) => onChange({ date: event.target.value })}
-            placeholder="1404/01/01"
           />
-        </label>
-        <label className="gahshomar-modal__field font-meem">
-          جهت
-          <input
-            className="gahshomar-modal__input font-meem"
-            value={DIRECTION_LABELS[draft.direction] || '—'}
-            readOnly
+        </div>
+
+        <div className="gahshomar-compose__row">
+          <ContactSelector
+            label={draft.direction === 'INCOMING' ? 'فرستنده' : 'گیرنده'}
+            role={counterpartyRole}
+            value={draft.counterparty}
+            onChange={(participant) => onChange({ counterparty: participant })}
+            readOnly={locked}
+            required
           />
-        </label>
-        {locked && draft.registryNumber ? (
           <label className="gahshomar-modal__field font-meem">
-            شماره ثبت
+            نام شخص
             <input
-              className="gahshomar-modal__input font-yekan"
-              value={draft.registryNumber}
-              readOnly
+              className="gahshomar-modal__input font-meem"
+              value={draft.attentionName || ''}
+              readOnly={locked}
+              onChange={(event) => onChange({ attentionName: event.target.value })}
+              placeholder="در صورت نیاز وارد کنید…"
+              autoComplete="off"
             />
           </label>
-        ) : null}
-      </div>
-      <LetterRichEditor
-        value={draft.body}
-        contentKey={draft.bodyRevision}
-        onChange={(body) => onChange({ body })}
-        readOnly={locked}
-      />
+        </div>
+      </section>
+
+      <LetterDocumentChrome
+        companyName={resolveCompanyName(draft.counterparty)}
+        attentionName={draft.attentionName}
+      >
+        <LetterRichEditor
+          value={draft.body}
+          contentKey={draft.bodyRevision}
+          onChange={(body) => onChange({ body })}
+          readOnly={locked}
+          label=""
+          placeholder="متن نامه را بنویسید…"
+        />
+      </LetterDocumentChrome>
     </form>
   );
 }
 
 function PrintPreview({ record, onClose }) {
+  const [variant, setVariant] = useState(PRINT_LETTER_VARIANT.LETTERHEAD);
+
   useEffect(() => {
     document.body.classList.add('gahshomar-print-active');
     return () => document.body.classList.remove('gahshomar-print-active');
   }, []);
 
+  const withLetterhead = variant === PRINT_LETTER_VARIANT.LETTERHEAD;
+  const hint = withLetterhead
+    ? 'با سربرگ: نسخه الکترونیکی — تصویر سربرگ و مهر و امضا همراه نامه ارسال می‌شود.'
+    : 'بدون سربرگ: برای چاپ روی کاغذ سربرگ فیزیکی — جانمایی متن یکسان است؛ مهر و امضا چاپ نمی‌شود.';
+
   return createPortal(
     <div className="gahshomar-print-preview gahshomar-print-root" dir="rtl">
       <div className="gahshomar-print-preview__toolbar">
-        <button
-          type="button"
-          className="gahshomar-btn gahshomar-btn--primary font-meem"
-          onClick={() => window.print()}
-        >
-          <Printer size={15} strokeWidth={1.75} aria-hidden="true" />
-          چاپ
-        </button>
-        <button type="button" className="gahshomar-btn font-meem" onClick={onClose}>
-          بستن
-        </button>
+        <div className="gahshomar-print-preview__toolbar-start">
+          <div className="gahshomar-print-mode" role="group" aria-label="نوع چاپ">
+            <button
+              type="button"
+              className={`gahshomar-print-mode__btn font-meem${withLetterhead ? ' is-active' : ''}`}
+              aria-pressed={withLetterhead}
+              onClick={() => setVariant(PRINT_LETTER_VARIANT.LETTERHEAD)}
+            >
+              <ScrollText size={15} strokeWidth={1.5} aria-hidden="true" />
+              با سربرگ
+            </button>
+            <button
+              type="button"
+              className={`gahshomar-print-mode__btn font-meem${!withLetterhead ? ' is-active' : ''}`}
+              aria-pressed={!withLetterhead}
+              onClick={() => setVariant(PRINT_LETTER_VARIANT.PLAIN)}
+            >
+              <FileText size={15} strokeWidth={1.5} aria-hidden="true" />
+              بدون سربرگ
+            </button>
+          </div>
+          <p className="gahshomar-print-preview__hint font-meem">{hint}</p>
+        </div>
+        <div className="gahshomar-print-preview__toolbar-end">
+          <button
+            type="button"
+            className="gahshomar-btn gahshomar-btn--primary font-meem"
+            onClick={() => window.print()}
+          >
+            <Printer size={15} strokeWidth={1.5} aria-hidden="true" />
+            تأیید و چاپ
+          </button>
+          <button
+            type="button"
+            className="gahshomar-btn gahshomar-btn--ghost font-meem"
+            onClick={onClose}
+          >
+            بستن
+          </button>
+        </div>
       </div>
       <div className="gahshomar-print-preview__stage">
-        <PrintableOfficialLetter record={record} />
+        <PrintableOfficialLetter record={record} variant={variant} />
       </div>
     </div>,
     document.body,
@@ -229,11 +319,13 @@ export default function OfficialRecordDrawer({
       const subject = (rawSubject === 'پیش‌نویس جدید' || rawSubject === 'بدون موضوع')
         ? ''
         : rawSubject;
+      const today = getTodayJalali() || '';
       setDraft({
         subject,
+        attentionName: detail.attentionName || '',
         counterparty: counterparty?.partyId ? counterparty : null,
-        date: detail.date || detail.recordDate || detail.receivedDate || '',
-        body: ensureLetterHtml(detail.body || ''),
+        date: detail.date || detail.recordDate || detail.receivedDate || today,
+        body: ensureEditableLetterBody(detail.body || ''),
         bodyRevision: Date.now(),
         direction: detail.direction,
         registryNumber: detail.registryNumber || detail.number || '',
@@ -310,9 +402,12 @@ export default function OfficialRecordDrawer({
 
     return {
       subject: draft.subject.trim(),
-      body: ensureLetterHtml(draft.body || ''),
-      recordDate: draft.date || null,
-      receivedDate: record.direction === 'INCOMING' ? (draft.date || null) : record.receivedDate,
+      attentionName: String(draft.attentionName || '').trim() || null,
+      body: ensureEditableLetterBody(draft.body || ''),
+      recordDate: draft.date || getTodayJalali() || null,
+      receivedDate: record.direction === 'INCOMING'
+        ? (draft.date || getTodayJalali() || null)
+        : record.receivedDate,
       companyId: draft.counterparty?.companyId ?? record.companyId,
       participants,
     };
@@ -321,8 +416,8 @@ export default function OfficialRecordDrawer({
   const validateCounterparty = () => {
     if (!draft?.counterparty?.partyId || draft.counterparty.partyType !== 'CONTACT') {
       setError(record.direction === 'INCOMING'
-        ? 'فرستنده باید از مخاطبین کانن انتخاب شود.'
-        : 'گیرنده باید از مخاطبین کانن انتخاب شود.');
+        ? 'فرستنده باید از فهرست شرکت‌های کانن انتخاب شود.'
+        : 'گیرنده باید از فهرست شرکت‌های کانن انتخاب شود.');
       return false;
     }
     return true;
@@ -394,7 +489,12 @@ export default function OfficialRecordDrawer({
               <div className="gahshomar-compose-popup__header-copy">
                 <p className="gahshomar-compose-popup__eyebrow font-meem">{eyebrow}</p>
                 <div className="gahshomar-drawer__title-wrap">
-                  <Files size={20} strokeWidth={1.75} aria-hidden="true" />
+                  <Files
+                    className="gahshomar-compose-popup__title-icon"
+                    size={20}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
                   <h2 className="gahshomar-compose-popup__title font-meem">{title}</h2>
                 </div>
               </div>
@@ -404,7 +504,7 @@ export default function OfficialRecordDrawer({
                 aria-label="بستن"
                 onClick={onClose}
               >
-                <X size={20} strokeWidth={1.75} />
+                <X size={18} strokeWidth={1.5} />
               </button>
             </header>
 
@@ -416,14 +516,18 @@ export default function OfficialRecordDrawer({
             </div>
 
             <footer className="gahshomar-compose-popup__footer">
-              <button type="button" className="gahshomar-btn font-meem" onClick={onClose}>
+              <button
+                type="button"
+                className="gahshomar-btn gahshomar-btn--ghost font-meem"
+                onClick={onClose}
+              >
                 {locked ? 'بستن' : 'انصراف'}
               </button>
               {!locked ? (
                 <>
                   <button
                     type="button"
-                    className="gahshomar-btn font-meem"
+                    className="gahshomar-btn gahshomar-btn--secondary font-meem"
                     onClick={handleSave}
                   >
                     ذخیره پیش‌نویس
@@ -434,7 +538,7 @@ export default function OfficialRecordDrawer({
                       className="gahshomar-btn gahshomar-btn--primary font-meem"
                       onClick={handleIssue}
                     >
-                      <PenLine size={15} strokeWidth={1.75} aria-hidden="true" />
+                      <PenLine size={15} strokeWidth={1.5} aria-hidden="true" />
                       امضا و صدور
                     </button>
                   ) : null}
@@ -445,7 +549,7 @@ export default function OfficialRecordDrawer({
                   className="gahshomar-btn gahshomar-btn--primary font-meem"
                   onClick={handlePrint}
                 >
-                  <Printer size={15} strokeWidth={1.75} aria-hidden="true" />
+                  <Printer size={15} strokeWidth={1.5} aria-hidden="true" />
                   چاپ
                 </button>
               )}

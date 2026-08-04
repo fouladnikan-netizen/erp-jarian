@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { getEventConfig } from '../config/notificationEvents';
 import NotificationContainer from '../components/notifications/NotificationContainer';
+import { createEntityId, ENTITY_ID_PREFIX } from '../domain/identity';
 
 const EXIT_MS = 220;
 
@@ -16,7 +17,7 @@ function createNotificationId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-  return `ntf-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  return createEntityId(ENTITY_ID_PREFIX.NOTIFICATION);
 }
 
 /**

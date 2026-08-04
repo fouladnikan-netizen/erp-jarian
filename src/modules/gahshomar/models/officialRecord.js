@@ -39,8 +39,8 @@ export const TYPE_LABELS = Object.freeze({
 });
 
 export const DIRECTION_LABELS = Object.freeze({
-  INCOMING: 'دریافت کردیم',
-  OUTGOING: 'ارسال کردیم',
+  INCOMING: 'دریافتی',
+  OUTGOING: 'ارسالی',
   INTERNAL: 'داخلی',
 });
 
@@ -195,6 +195,8 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
     receivedDate: String(input.receivedDate || input.recordDate || input.letterDate || '').trim() || null,
     subject: subject || 'بدون موضوع',
     body: String(input.body || '').trim() || null,
+    /** Free-text attention person on the letter (not a Kanoon contact person). */
+    attentionName: String(input.attentionName || input.personName || '').trim() || null,
     participants,
     attachments,
     threadId,
@@ -205,6 +207,9 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
     tags: Array.isArray(input.tags) ? input.tags.map(String) : [],
     issuedAt: input.issuedAt || null,
     issuedBy: input.issuedBy != null && input.issuedBy !== '' ? String(input.issuedBy) : null,
+    issuerTitle: input.issuerTitle != null && input.issuerTitle !== ''
+      ? String(input.issuerTitle).trim()
+      : null,
     isLocked: Boolean(input.isLocked),
     createdAt: input.createdAt || new Date().toISOString(),
     updatedAt: input.updatedAt || new Date().toISOString(),

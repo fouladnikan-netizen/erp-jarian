@@ -1,21 +1,28 @@
-import { initialContacts } from '../kanoon/contactsData';
+import { useContactsStore } from '../../stores/useContactsStore';
 import { getDisplayName, getLatestInteraction } from '../kanoon/columns';
 import { BEHAVIORAL_STATUS, ENTITY_TYPES, PERSON_TYPES } from '../kanoon/config';
+import {
+  getContactPersonDisplayName,
+  normalizeContactPerson,
+} from '../../domain/contactPerson';
+import { naturalPersonSelfId } from '../../domain/identity';
 
-/** In-memory registry — supports quick-add from Nabz create-order flow */
-let contactsRegistry = initialContacts.map((contact) => ({ ...contact }));
-
-function nextContactId() {
-  return contactsRegistry.reduce((max, contact) => Math.max(max, contact.id), 0) + 1;
+/**
+ * Nabz customer helpers — facade over the shared Company SSOT (useContactsStore).
+ * Domain language: Customer ≡ Company (entityType customer).
+ * Do NOT keep a separate in-memory registry here.
+ */
+function getContacts() {
+  return useContactsStore.getState().contacts;
 }
 
 export function getCustomerById(id) {
   if (!id) return null;
-  return contactsRegistry.find((c) => c.id === id) || null;
+  return getContacts().find((c) => String(c.id) === String(id)) || null;
 }
 
 export function listCustomers() {
-  return contactsRegistry.filter(
+  return getContacts().filter(
     (c) => c.entityType === ENTITY_TYPES.CUSTOMER && c.isActive !== false,
   );
 }
@@ -40,19 +47,28 @@ export function searchCustomers(query) {
   }).slice(0, 12);
 }
 
+/**
+ * ContactPersons for a company (+ natural-person self as stable synthetic id).
+ * Synthetic self id via naturalPersonSelfId — reserved, not a DB ContactPerson.
+ */
 export function listCustomerExperts(customerId) {
   const customer = getCustomerById(customerId);
   if (!customer) return [];
 
-  const experts = [...(customer.relatedPersons || [])];
+  const experts = useContactsStore.getState().listContactPersons(customerId);
 
   if (customer.personType === PERSON_TYPES.NATURAL && customer.personName) {
-    experts.unshift({
-      name: customer.personName,
-      mobile: customer.mobile || '',
-      role: 'مشتری',
-      notes: '',
-    });
+    experts.unshift(
+      normalizeContactPerson(
+        {
+          id: naturalPersonSelfId(customer.id),
+          fullName: customer.personName,
+          mobile: customer.mobile || '',
+          jobPosition: 'مشتری',
+        },
+        customer.id,
+      ),
+    );
   }
 
   return experts;
@@ -64,7 +80,12 @@ export function searchCustomerExperts(customerId, query) {
   if (!q) return experts.slice(0, 12);
 
   return experts.filter((person) => {
-    const haystack = [person.name, person.mobile, person.role, person.notes]
+    const haystack = [
+      getContactPersonDisplayName(person),
+      person.mobile,
+      person.jobPosition,
+      person.email,
+    ]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
@@ -72,39 +93,38 @@ export function searchCustomerExperts(customerId, query) {
   }).slice(0, 12);
 }
 
+/** Stable identity — always ContactPerson.id */
 export function expertKey(person) {
-  return `${person.name}::${person.mobile || ''}`;
+  return String(person?.id || '');
 }
 
 export function findExpertByKey(customerId, key) {
   if (!key) return null;
-  return listCustomerExperts(customerId).find((person) => expertKey(person) === key) || null;
+  return listCustomerExperts(customerId).find((person) => String(person.id) === String(key)) || null;
 }
 
 export function addCustomerRecord(contact) {
-  const record = { ...contact, id: nextContactId() };
-  contactsRegistry = [...contactsRegistry, record];
-  return record;
+  const id = useContactsStore.getState().addContact({
+    ...contact,
+    relatedPersons: contact.relatedPersons || [],
+  });
+  return getCustomerById(id);
 }
 
 export function addExpertToCustomer(customerId, person) {
-  contactsRegistry = contactsRegistry.map((contact) => {
-    if (contact.id !== customerId) return contact;
-    return {
-      ...contact,
-      relatedPersons: [...(contact.relatedPersons || []), person],
-    };
+  return useContactsStore.getState().addContactPerson(customerId, {
+    fullName: person.fullName || person.name,
+    mobile: person.mobile,
+    gender: person.gender || '',
+    jobPosition: person.jobPosition || person.role || '',
+    email: person.email || '',
+    isPrimary: Boolean(person.isPrimary),
   });
-  return getCustomerById(customerId);
 }
 
-/** به‌روزرسانی عمومی پروفایل مشتری در رجیستری مشترک نبض/کانون */
 export function updateCustomer(customerId, patch) {
   if (!customerId || !patch) return null;
-  contactsRegistry = contactsRegistry.map((contact) => {
-    if (contact.id !== customerId) return contact;
-    return { ...contact, ...patch };
-  });
+  useContactsStore.getState().updateContact(customerId, patch);
   return getCustomerById(customerId);
 }
 
@@ -113,9 +133,6 @@ export function getCustomerLastUsedDeliveryInfo(customerId) {
   return customer?.lastUsedDeliveryInfo || null;
 }
 
-/**
- * Smart Persistence — آخرین اطلاعات تحویل استفاده‌شده را روی پروفایل مشتری می‌نشاند
- */
 export function updateCustomerLastUsedDeliveryInfo(customerId, lastUsedDeliveryInfo) {
   if (!customerId || !lastUsedDeliveryInfo) return null;
   return updateCustomer(customerId, {

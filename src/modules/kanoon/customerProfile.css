@@ -1,19 +1,40 @@
 /* ═══════════════════════════════════════════════════════════════════
-   پروفایل تمام‌صفحه مخاطب کانون — داشبورد دو ستونه گلس (VisionOS-style)
-   ستون راست (۲۵٪ — چسبان): هویت + کابین مالی + تماس‌ها
-   ستون چپ (۷۵٪ — اسکرول): تایم‌لاین ضربان + سفارش‌ها
-   پالت Glossy System: var(--color-white) / var(--color-silver-glossy) — بدون سایه سنگین
+   پروفایل مخاطب کانون — داشبورد دو ستونه گلس (۲۵٪ سایدبار / ۷۵٪ اصلی)
    ═══════════════════════════════════════════════════════════════════ */
 
 .kanoon-profile-page {
   gap: 1.1rem;
 }
 
-/* نوار بازگشت */
+/* نوار هدر: بازگشت (راست) + افزودن فرد مرتبط (چپ) */
 .kprofile-topbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
+  width: 100%;
+  max-width: 1680px;
+  margin-inline: auto;
+}
+
+.kprofile-topbar__add-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0;
+  border-radius: 12px;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-inverse);
+  background: var(--action-primary);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.kprofile-topbar__add-person:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
 }
 
 .kprofile-topbar__back {
@@ -118,6 +139,33 @@
   justify-content: center;
   gap: 0.35rem;
   margin-top: 0.75rem;
+}
+
+.kprofile-identity__capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.kprofile-capability-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-accent-dark);
+  background: color-mix(in srgb, var(--color-accent-muted) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 22%, transparent);
+}
+
+.kprofile-capability-tag.is-custom {
+  color: var(--text-primary);
+  background: var(--glass-bg-strong);
+  border-color: color-mix(in srgb, var(--color-silver-glossy) 45%, transparent);
 }
 
 .kprofile-chip {
@@ -411,6 +459,36 @@
   font-weight: 700;
   color: var(--text-primary);
   direction: ltr;
+}
+
+.kprofile-legal-modal__row dd.is-rtl {
+  direction: rtl;
+}
+
+/* Visual diff — fields changed vs the subsequent (newer) version */
+.kprofile-legal-modal__row.diff-changed dd,
+.kprofile-legal-modal__text.diff-changed,
+.kprofile-legal-modal__member.diff-changed,
+.kprofile-legal-modal__empty.diff-changed {
+  color: var(--danger);
+  background-color: color-mix(in srgb, var(--danger) 10%, transparent);
+  text-decoration: line-through;
+}
+
+.kprofile-legal-modal__row.diff-changed dd {
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+}
+
+.kprofile-legal-modal__text.diff-changed,
+.kprofile-legal-modal__empty.diff-changed {
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+
+.kprofile-legal-modal__member.diff-changed {
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
 }
 
 .kprofile-legal-modal__tools {
@@ -775,10 +853,276 @@
   gap: 1rem;
 }
 
+.kprofile-quick-activity {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 6;
+}
+
+.kprofile-quick-activity .kprofile-magic {
+  position: relative;
+  top: auto;
+  z-index: auto;
+}
+
 /* تب‌ها */
-.kprofile-tabs {
+/* ── Unified Customer Profile Hub ─────────────────────────────────── */
+.kprofile-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1680px;
+  margin-inline: auto;
+}
+
+.kprofile-hub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.15rem;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.kprofile-hub-header__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.kprofile-hub-header__avatar {
+  flex-shrink: 0;
   display: inline-flex;
-  align-self: flex-start;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+}
+
+.kprofile-hub-header__name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.kprofile-hub-header__meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-hub-header__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.kprofile-hub-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.kprofile-hub-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 7.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.kprofile-hub-kpi__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.kprofile-hub-kpi__value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-hub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  overflow-x: auto;
+}
+
+.kprofile-hub-tabs__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.kprofile-hub-tabs__btn .profile-tabs__icon {
+  display: inline-flex;
+  opacity: 0.85;
+}
+
+.kprofile-hub-tabs__btn.is-active {
+  color: var(--color-brand-red);
+  background: var(--glass-bg-strong);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-brand-red) 22%, transparent),
+    0 0 18px color-mix(in srgb, var(--color-brand-red) 18%, transparent);
+}
+
+.kprofile-hub-tabs__btn:hover:not(.is-active) {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-hover) 80%, transparent);
+  transform: translateY(-1px);
+}
+
+.kprofile-hub-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 18rem;
+}
+
+.kprofile-hub-base {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.kprofile-hub-base__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .kprofile-hub-base__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .kprofile-hub-base__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kprofile-orders-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kprofile-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kprofile-orders-hub__new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text-inverse);
+  background: var(--action-primary);
+  transition: background 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.kprofile-orders-hub__new:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.kprofile-coming {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 16rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.kprofile-coming__icon {
+  display: inline-flex;
+  color: color-mix(in srgb, var(--text-muted) 70%, transparent);
+  opacity: 0.55;
+}
+
+.kprofile-coming__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-coming__body {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ── تب‌های پروفایل (pill + آیکن) — هم‌عرض نوار ثبت پویش ─────────── */
+.kprofile-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-self: stretch;
+  width: 100%;
   gap: 2px;
   padding: 3px;
   border-radius: 999px;
@@ -786,15 +1130,34 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  box-sizing: border-box;
 }
 
 .kprofile-tabs__btn {
-  padding: 0.45rem 1.15rem;
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.55rem 0.5rem;
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-secondary);
+  white-space: nowrap;
   transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.kprofile-tabs__btn .profile-tabs__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.kprofile-tabs__btn .profile-tabs__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kprofile-tabs__btn.is-active {
@@ -804,6 +1167,107 @@
 }
 
 .kprofile-tabs__btn:hover:not(.is-active) { color: var(--text-primary); }
+
+@media (max-width: 1100px) {
+  .kprofile-tabs {
+    flex-wrap: wrap;
+    border-radius: 18px;
+  }
+
+  .kprofile-tabs__btn {
+    flex: 1 1 calc(33.333% - 2px);
+  }
+}
+
+/* ── هدر یکسان تب‌های پروفایل ─────────────────────────────────────── */
+.kprofile-tab-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.kprofile-tab-head__text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.kprofile-tab-head__action {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.kprofile-tab-head__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 12px;
+  color: var(--color-brand-red);
+  background: color-mix(in srgb, var(--color-brand-red) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand-red) 22%, transparent);
+}
+
+.kprofile-tab-head__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-tab-head__subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ── تایم‌لاین وقایع ─────────────────────────────────────────────── */
+.kprofile-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kprofile-events__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.kprofile-events__meta {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.kprofile-events__card {
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.kprofile-events__card:hover {
+  border-color: color-mix(in srgb, var(--color-silver-glossy) 55%, transparent);
+  box-shadow:
+    var(--glass-inset-highlight),
+    0 4px 16px color-mix(in srgb, var(--color-silver-glossy) 28%, transparent);
+}
 
 /* ── ورودی جادویی (Spotlight-style) ──────────────────────────────── */
 .kprofile-magic {
@@ -1236,6 +1700,139 @@
 
 .kprofile-specs__label { color: var(--text-secondary); flex-shrink: 0; }
 .kprofile-specs__value { color: var(--text-primary); font-weight: 600; text-align: left; }
+
+/* ── تب‌های تامین‌کننده: سفارش خرید / استعلام ─────────────────────── */
+.kprofile-supply-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kprofile-supply-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+}
+
+.kprofile-supply-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.kprofile-supply-filters__field--wide {
+  grid-column: 1 / -1;
+}
+
+.kprofile-supply-filters__input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.45rem 0.65rem;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.kprofile-supply-filters__input:focus {
+  outline: 2px solid color-mix(in srgb, var(--color-brand-red) 35%, transparent);
+  outline-offset: 1px;
+}
+
+.kprofile-supply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.kprofile-supply-list__head,
+.kprofile-supply-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(5.5rem, 0.9fr) minmax(5.5rem, 0.9fr) minmax(6rem, 1fr) minmax(4.5rem, 0.7fr);
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.kprofile-supply-list__head {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.kprofile-supply-list__head span:first-child {
+  text-align: right;
+}
+
+.kprofile-supply-row {
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-inset-highlight);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kprofile-supply-row:hover {
+  border-color: color-mix(in srgb, var(--color-silver-glossy) 55%, transparent);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--glass-inset-highlight),
+    0 4px 14px color-mix(in srgb, var(--color-silver-glossy) 24%, transparent);
+}
+
+.kprofile-supply-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: right;
+}
+
+.kprofile-supply-row__product {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-supply-row__desc {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.kprofile-supply-row__order,
+.kprofile-supply-row__date,
+.kprofile-supply-row__price,
+.kprofile-supply-row__type {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .kprofile-supply-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .kprofile-supply-list__head {
+    display: none;
+  }
+
+  .kprofile-supply-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 
 /* ── حالت شب ──────────────────────────────────────────────────────── */
 

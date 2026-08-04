@@ -17,11 +17,9 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  background-color: color-mix(in srgb, var(--color-white) 40%, transparent);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
   opacity: 0;
-  transition: opacity 0.35s ease-in-out;
+  transition: opacity var(--jarian-backdrop-duration) ease;
+  animation: none;
 }
 
 .po-slideover.is-open .po-slideover__backdrop {
@@ -38,20 +36,16 @@
   display: flex;
   flex-direction: column;
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
   border-right: 1px solid color-mix(in srgb, var(--color-white) 65%, transparent);
   border-radius: 0 1.5rem 1.5rem 0;
-  box-shadow:
-    8px 0 40px color-mix(in srgb, var(--color-neutral-800) 12%, transparent),
-    2px 0 8px color-mix(in srgb, var(--color-neutral-800) 4%, transparent);
   direction: rtl;
-  transform: translateX(-104%);
+  transform: translateX(-100%);
   opacity: 0;
   transition:
-    transform 0.4s ease-in-out,
-    opacity 0.35s ease-in-out;
+    transform var(--jarian-drawer-duration) var(--jarian-drawer-ease),
+    opacity var(--jarian-backdrop-duration) ease;
   overflow: hidden;
+  animation: none;
 }
 
 .po-slideover.is-open .po-slideover__panel {

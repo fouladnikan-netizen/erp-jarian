@@ -62,11 +62,13 @@ export default function CustomerPreviewDrawer({ customerId, stacked, onClose }) 
               <div className="nabz-customer-preview__section">
                 <h3>افراد مرتبط</h3>
                 <ul className="nabz-customer-preview__list">
-                  {customer.relatedPersons.map((person, i) => (
-                    <li key={i}>
-                      <span className="nabz-customer-preview__person-name">{person.name}</span>
+                  {customer.relatedPersons.map((person) => (
+                    <li key={person.id}>
+                      <span className="nabz-customer-preview__person-name">
+                        {person.fullName || person.name}
+                      </span>
                       <span className="nabz-customer-preview__person-meta">
-                        {person.role}
+                        {person.jobPosition || person.role}
                         {person.mobile ? ` · ${person.mobile}` : ''}
                       </span>
                     </li>

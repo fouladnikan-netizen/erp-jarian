@@ -68,22 +68,37 @@
   flex-direction: column;
 }
 
-.printable-official-letter__subject {
-  margin: 0 0 0.85rem;
-  font-size: 12pt;
-  font-weight: 700;
+.printable-official-letter__bismillah {
+  margin: 0 0 1.1rem;
+  text-align: center;
+  font-size: 14pt;
+  font-weight: 800;
   line-height: 1.7;
 }
 
-.printable-official-letter__parties {
-  margin: 0 0 1.25rem;
-  font-size: 10.5pt;
-  color: var(--text-secondary);
+.printable-official-letter__company-line,
+.printable-official-letter__person-line {
+  margin: 0;
+  text-align: right;
+  font-size: 13.5pt;
+  font-weight: 800;
+  line-height: 1.75;
+}
+
+.printable-official-letter__company-line + .printable-official-letter__person-line {
+  margin-top: 0.15rem;
+}
+
+.printable-official-letter__bismillah + .printable-official-letter__body,
+.printable-official-letter__company-line + .printable-official-letter__body,
+.printable-official-letter__person-line + .printable-official-letter__body {
+  margin-top: 1.35rem;
 }
 
 .printable-official-letter__body {
-  flex: 1;
+  flex: 0 1 auto;
   font-size: 12pt;
+  font-weight: 400;
   line-height: 2;
   text-align: justify;
 }
@@ -92,8 +107,24 @@
   margin: 0 0 0.35rem;
 }
 
+.printable-official-letter__closing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* سمت چپ صفحه در RTL */
+  gap: 0.2rem;
+  margin-top: 1.75rem;
+  text-align: left;
+  font-size: 13.5pt;
+  line-height: 1.7;
+}
+
+.printable-official-letter__closing strong {
+  font-weight: 800;
+}
+
 .printable-official-letter__seal {
-  margin-top: 2.5rem;
+  /* حداکثر ۳ سانتی‌متر از خط آخر نامه — footprint ثابت برای هر دو حالت چاپ */
+  margin-top: 3cm;
   display: flex;
   justify-content: flex-end; /* پایین-چپ در چیدمان RTL */
   align-items: flex-end;
@@ -103,31 +134,8 @@
 .printable-official-letter__sign-block {
   position: relative;
   min-width: 14rem;
+  min-height: 7rem;
   text-align: center;
-  padding-top: 7rem;
-}
-
-.printable-official-letter__sign-title {
-  font-size: 10pt;
-  font-weight: 700;
-}
-
-.printable-official-letter__issuer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  margin-top: 0.35rem;
-  font-size: 10.5pt;
-  line-height: 1.6;
-}
-
-.printable-official-letter__issuer strong {
-  font-weight: 700;
-}
-
-.printable-official-letter__issuer span {
-  color: var(--text-secondary);
-  font-size: 10pt;
 }
 
 .printable-official-letter__sign-marks {
@@ -175,17 +183,80 @@
 
 .gahshomar-print-preview__toolbar {
   display: flex;
-  justify-content: flex-start;
-  gap: 0.55rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.85rem;
   padding: 0.85rem 1.25rem;
+  background: var(--glass-bg-strong);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.gahshomar-print-preview__toolbar-start,
+.gahshomar-print-preview__toolbar-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.gahshomar-print-mode {
+  display: inline-flex;
+  padding: 0.2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--bg-muted) 45%, transparent);
+  gap: 0.15rem;
+}
+
+.gahshomar-print-mode__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 2px);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gahshomar-print-mode__btn svg {
+  color: var(--text-muted);
+}
+
+.gahshomar-print-mode__btn.is-active {
   background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-default);
+  color: var(--text-primary);
+  box-shadow: var(--glass-inset-highlight), var(--shadow-sm);
+}
+
+.gahshomar-print-mode__btn.is-active svg {
+  color: var(--text-secondary);
+}
+
+.gahshomar-print-preview__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .gahshomar-print-preview__stage {
   flex: 1;
   overflow: auto;
   padding: 1.25rem;
+}
+
+.gahshomar-print-preview__stage .printable-official-letter {
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-sm);
 }
 
 @media print {

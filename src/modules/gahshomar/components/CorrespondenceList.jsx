@@ -64,10 +64,10 @@ export default function CorrespondenceList({
   }
 
   return (
-    <section className="section-data gahshomar-list" aria-label={isIncoming ? 'فهرست دریافت کردیم' : 'فهرست ارسال کردیم'}>
+    <section className="section-data gahshomar-list" aria-label={isIncoming ? 'فهرست دریافتی' : 'فهرست ارسالی'}>
       <div className="data-table-header">
         <span className="data-table-header__title font-meem">
-          {isIncoming ? 'نامه‌هایی که دریافت کردیم' : 'نامه‌هایی که ارسال کردیم'}
+          {isIncoming ? 'نامه‌های دریافتی' : 'نامه‌های ارسالی'}
         </span>
         <span className="data-table-header__count font-yekan">
           {documents.length.toLocaleString('fa-IR')} رکورد

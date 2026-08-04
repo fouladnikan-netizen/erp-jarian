@@ -16,7 +16,8 @@ const ICON_PROPS = { size: 16, strokeWidth: 1.75 };
 
 const QUICK_ACTIONS = [
   { id: 'qa-1', label: 'ثبت پیش‌فاکتور جدید', hint: 'نبض · سفارش جدید', to: '/nabz/new-order', Icon: Zap },
-  { id: 'qa-2', label: 'مشاهده گاه‌شمار', hint: 'موتور تعهدات', to: '/gahshomar', Icon: Zap },
+  { id: 'qa-2', label: 'مشاهده پویش', hint: 'موتور تعهدات', to: '/pooyesh', Icon: Zap },
+  { id: 'qa-2b', label: 'گاه‌شمار — دبیرخانه', hint: 'مکاتبات رسمی', to: '/gahshomar', Icon: Zap },
   { id: 'qa-3', label: 'پایپ‌لاین افق', hint: 'فرصت‌های فروش', to: '/ofogh', Icon: Zap },
   { id: 'qa-4', label: 'کانون مخاطبین', hint: 'فهرست مشتریان', to: '/', Icon: Zap },
 ];

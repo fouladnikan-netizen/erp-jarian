@@ -9,6 +9,8 @@ import GroupModal from './components/GroupModal';
 import SubgroupModal from './components/SubgroupModal';
 import ProductModal from './components/ProductModal';
 import ProductProfileDrawer from './components/ProductProfileDrawer';
+import ListPageLayout from '../../components/module/ListPageLayout';
+import ListToolbar from '../../components/module/ListToolbar';
 import './vitrin.css';
 
 export default function VitrinPage() {
@@ -93,29 +95,47 @@ export default function VitrinPage() {
     : null;
 
   return (
-    <div className="module-page vitrin-page" data-module="vitrin">
-      <VitrinKpis kpis={kpis} />
-
-      <VitrinToolbar
-        search={search}
-        onSearchChange={setSearch}
-        groups={groups}
-        filterGroupId={filterGroupId}
-        onFilterGroupChange={setFilterGroupId}
-        activeGroupId={chipGroupId}
-        subgroupId={chipSubgroupId}
-        onSubgroupChange={setChipSubgroupId}
-        onAddGroup={() => setGroupModalOpen(true)}
-        onAddProduct={() => setProductModal({ product: null })}
-      />
-
-      <CategoryChips
-        groups={groups}
-        selectedGroupId={chipGroupId}
-        onSelectGroup={handleSelectGroup}
-        onAddSubgroup={(groupId) => setSubgroupModal(groupId)}
-      />
-
+    <ListPageLayout
+      moduleId="vitrin"
+      className="vitrin-page"
+      kpis={<VitrinKpis kpis={kpis} />}
+      toolbar={(
+        <ListToolbar
+          searchPlaceholder="جستجو در نام کالا، کد یا گروه..."
+          searchValue={search}
+          onSearchChange={setSearch}
+          primaryLabel="ثبت محصول جدید"
+          onPrimaryClick={() => setProductModal({ product: null })}
+          secondary={(
+            <button
+              type="button"
+              className="btn btn--outline-danger font-meem"
+              onClick={() => setGroupModalOpen(true)}
+            >
+              ثبت گروه کالا
+            </button>
+          )}
+          filters={(
+            <VitrinToolbar
+              groups={groups}
+              filterGroupId={filterGroupId}
+              onFilterGroupChange={setFilterGroupId}
+              activeGroupId={chipGroupId}
+              subgroupId={chipSubgroupId}
+              onSubgroupChange={setChipSubgroupId}
+            />
+          )}
+          belowSearch={(
+            <CategoryChips
+              groups={groups}
+              selectedGroupId={chipGroupId}
+              onSelectGroup={handleSelectGroup}
+              onAddSubgroup={(groupId) => setSubgroupModal(groupId)}
+            />
+          )}
+        />
+      )}
+    >
       <VitrinTable
         products={filtered}
         groups={groups}
@@ -157,6 +177,6 @@ export default function VitrinPage() {
           onUpdateProduct={handleUpdateProduct}
         />
       )}
-    </div>
+    </ListPageLayout>
   );
 }

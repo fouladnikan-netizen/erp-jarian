@@ -139,8 +139,8 @@ export default function CorrespondenceComposeModal({
                 onChange={(e) => setDirection(e.target.value)}
                 disabled={type === CORRESPONDENCE_TYPE.INTERNAL}
               >
-                <option value={CORRESPONDENCE_DIRECTION.INCOMING}>دریافت کردیم</option>
-                <option value={CORRESPONDENCE_DIRECTION.OUTGOING}>ارسال کردیم</option>
+                <option value={CORRESPONDENCE_DIRECTION.INCOMING}>دریافتی</option>
+                <option value={CORRESPONDENCE_DIRECTION.OUTGOING}>ارسالی</option>
               </select>
             </label>
             <label className="gahshomar-modal__field font-meem">

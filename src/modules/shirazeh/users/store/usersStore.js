@@ -1,8 +1,10 @@
 import { create } from 'zustand';
+import { createEntityId, ENTITY_ID_PREFIX } from '../../../../domain/identity';
 
 /**
  * UI store for Shirazeh → Users management.
  * Mock-only until auth/user API exists.
+ * User is platform identity — not part of Company/Order aggregates.
  */
 
 const MOCK_USERS = [
@@ -124,7 +126,7 @@ export const useUsersStore = create((set, get) => ({
     }
 
     const next = {
-      id: `u-${Date.now()}`,
+      id: createEntityId(ENTITY_ID_PREFIX.USER),
       fullName,
       mobile,
       email,

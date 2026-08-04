@@ -35,7 +35,7 @@ function seedRecords() {
       subject: 'درخواست استعلام قیمت ورق',
       body: 'با سلام، خواهشمند است قیمت ورق ST37 را اعلام فرمایید.',
       participants: {
-        sender: { name: 'صنایع فولاد پارس', companyId: 1, partyType: 'CONTACT', partyId: 'rp-1-1', role: 'SENDER' },
+        sender: { name: 'صنایع فولاد پارس', companyId: 1, partyType: 'CONTACT', partyId: '1', role: 'SENDER' },
         receiver: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'RECEIVER' },
       },
       attachments: [{ id: 'att-1', fileName: 'estelam.pdf' }],
@@ -77,13 +77,13 @@ function seedRecords() {
       participants: {
         sender: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'SENDER' },
         receiver: {
-          name: 'علی رضایی',
+          name: 'فولاد پارس',
           companyId: 1,
           companyName: 'فولاد پارس',
-          position: 'مدیر خرید',
-          mobile: '09121112233',
+          position: 'صنایع فولادی',
+          mobile: null,
           partyType: 'CONTACT',
-          partyId: 'rp-1-1',
+          partyId: '1',
           role: 'RECEIVER',
         },
       },
@@ -106,13 +106,13 @@ function seedRecords() {
       participants: {
         sender: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'SENDER' },
         receiver: {
-          name: 'محمد رضایی',
+          name: 'صنایع فلزی کرمان',
           companyId: 2,
           companyName: 'صنایع فلزی کرمان',
-          position: 'کارشناس فروش',
-          mobile: '09133445566',
+          position: 'صنایع فلزی',
+          mobile: null,
           partyType: 'CONTACT',
-          partyId: 'rp-2-1',
+          partyId: '2',
           role: 'RECEIVER',
         },
       },
@@ -192,6 +192,7 @@ export function toDetailPresentationModel(record, options = {}) {
     body: record.body,
     recordDate: record.recordDate,
     receivedDate: record.receivedDate,
+    attentionName: record.attentionName || null,
     participants: {
       sender: record.participants?.sender || { name: null },
       receiver: record.participants?.receiver || { name: null },
@@ -203,6 +204,7 @@ export function toDetailPresentationModel(record, options = {}) {
     tags: record.tags || [],
     issuedAt: record.issuedAt,
     issuedBy: record.issuedBy,
+    issuerTitle: record.issuerTitle || null,
     threadPreview: thread.map((item) => ({
       id: item.id,
       number: item.registryNumber || item.number,
@@ -304,6 +306,7 @@ export function repositoryIssueRecord(id, meta = {}) {
     recordDate: dateKey,
     issuedAt: meta.issuedAt || new Date().toISOString(),
     issuedBy: meta.issuedBy || ORG_SELF.name,
+    issuerTitle: meta.issuerTitle || existing.issuerTitle || null,
     isLocked: true,
     updatedAt: new Date().toISOString(),
   };
@@ -317,6 +320,7 @@ export function repositoryIssueRecord(id, meta = {}) {
 
 export function repositoryCreateDraft(payload = {}) {
   const direction = payload.direction || RECORD_DIRECTION.OUTGOING;
+  const today = getTodayJalali() || null;
   const record = normalizeOfficialRecord({
     ...payload,
     id: undefined,
@@ -324,6 +328,12 @@ export function repositoryCreateDraft(payload = {}) {
     type: RECORD_TYPE.OFFICIAL,
     status: payload.status || defaultStatusForDirection(direction),
     subject: payload.subject || 'پیش‌نویس جدید',
+    recordDate: payload.recordDate || today,
+    receivedDate: direction === RECORD_DIRECTION.INCOMING
+      ? (payload.receivedDate || today)
+      : payload.receivedDate,
+    attentionName: payload.attentionName || null,
+    body: payload.body || null,
     participants: payload.participants || {
       sender: direction === RECORD_DIRECTION.INCOMING
         ? { name: null, partyType: 'CONTACT', role: 'SENDER' }

@@ -9,6 +9,7 @@ import type { OrderStatus } from './order.enums';
 import type { ApprovalDecision, RevisionReasonCode } from './revision.enums';
 import type { Revision } from './revision.types';
 import { REVISION_REASON_LABELS } from './revision.constants';
+import { createEntityId, ENTITY_ID_PREFIX } from '../identity';
 
 export interface RecordReturnInput {
   returnedBy: string;
@@ -47,7 +48,7 @@ export function buildRevisionRecord(input: RecordReturnInput): Revision {
       .join(' — ');
 
   return {
-    id: input.id || `rev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: input.id || createEntityId(ENTITY_ID_PREFIX.REVISION),
     returnedBy: input.returnedBy,
     returnedAt: input.returnedAt || new Date().toISOString(),
     reasonCode,

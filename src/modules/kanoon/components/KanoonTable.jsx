@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
+import ColumnFilterHeader from '../../../components/table/ColumnFilterHeader';
 import { useResizableColumns } from '../../../hooks/useResizableColumns';
+import { useColumnExcelFilters } from '../../../hooks/useColumnExcelFilters';
 import StatusTag from '../../../components/module/StatusTag';
 import { BEHAVIORAL_STATUS, ENTITY_TYPES } from '../config';
 import {
@@ -82,8 +84,9 @@ export default function KanoonTable({
   contacts,
   entityType,
   personType,
+  audienceFilter = null,
   search,
-  columnFilters,
+  columnFilters = {},
   selectedIds,
   onSelectionChange,
   onNameClick,
@@ -104,10 +107,47 @@ export default function KanoonTable({
   ], [columns]);
 
   const { widths, startResize } = useResizableColumns(`kanoon-${viewKey}`, tableColumnDefs);
+  const {
+    columnFilters: excelFilters,
+    openFilterKey,
+    setOpenFilterKey,
+    applyFilter,
+    filterRows,
+    buildOptions,
+  } = useColumnExcelFilters({ resetKey: viewKey });
+
+  const filterableKeys = useMemo(
+    () => columns.filter((col) => col.filterable !== false && col.key !== 'row').map((col) => col.key),
+    [columns],
+  );
+
+  const getExcelRaw = (contact, key) => {
+    if (key === 'behavioralStatus') {
+      return BEHAVIORAL_STATUS[contact.behavioralStatus]?.label || '';
+    }
+    const value = getCellValue(contact, key);
+    return value == null || value === '' || value === '—' ? '' : String(value);
+  };
+
+  const baseFiltered = useMemo(
+    () => filterContacts(contacts, {
+      entityType,
+      personType,
+      search,
+      columnFilters,
+      audienceFilter,
+    }),
+    [contacts, entityType, personType, search, columnFilters, audienceFilter],
+  );
+
+  const filterOptions = useMemo(
+    () => buildOptions(baseFiltered, filterableKeys, getExcelRaw),
+    [baseFiltered, filterableKeys, buildOptions],
+  );
 
   const filtered = useMemo(
-    () => filterContacts(contacts, { entityType, personType, search, columnFilters }),
-    [contacts, entityType, personType, search, columnFilters],
+    () => filterRows(baseFiltered, getExcelRaw),
+    [baseFiltered, filterRows],
   );
 
   const sorted = useMemo(
@@ -184,9 +224,31 @@ export default function KanoonTable({
                   key={col.key}
                   columnKey={col.key}
                   onResizeStart={startResize}
-                  className="kanoon-table__sticky-th"
+                  className="kanoon-table__sticky-th font-meem"
                 >
-                  {col.sortable ? (
+                  {col.filterable !== false && col.key !== 'row' ? (
+                    <div className="kanoon-table__th-with-filter">
+                      <ColumnFilterHeader
+                        label={col.label}
+                        columnKey={col.key}
+                        options={filterOptions[col.key] || []}
+                        selected={excelFilters[col.key] || null}
+                        openKey={openFilterKey}
+                        setOpenKey={setOpenFilterKey}
+                        onApply={(value) => applyFilter(col.key, value)}
+                      />
+                      {col.sortable ? (
+                        <button
+                          type="button"
+                          className="kanoon-table__th-btn kanoon-table__th-btn--sort-only"
+                          onClick={() => toggleSort(col.key)}
+                          aria-label={`مرتب‌سازی ${col.label}`}
+                        >
+                          <SortIcon active={sortKey === col.key} dir={sortDir} />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : col.sortable ? (
                     <button
                       type="button"
                       className="kanoon-table__th-btn"

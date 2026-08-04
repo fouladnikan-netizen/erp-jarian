@@ -1,0 +1,394 @@
+/**
+ * Jarian unified overlays — Modal + Drawer global UX standard.
+ * Modules should compose these classes; legacy selectors are aliased below
+ * so existing screens inherit the same backdrop and left-only motion.
+ */
+
+/* ── TASK 1: Unified global backdrop ─────────────────────────────── */
+
+.jarian-backdrop,
+.modal-overlay,
+.nabz-drawer-overlay,
+.nabz-drawer-overlay--create,
+.kanoon-drawer-overlay,
+.kanoon-modal-overlay,
+.vitrin-drawer-overlay,
+.vitrin-modal-overlay,
+.gahshomar-drawer-overlay,
+.gahshomar-modal-overlay,
+.gahshomar-compose-overlay,
+.cmt-drawer-overlay,
+.order-action-drawer-overlay,
+.activity-drawer__backdrop,
+.po-slideover__backdrop,
+.qc-drawer__backdrop,
+.ofoq-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: var(--overlay-scrim);
+  backdrop-filter: blur(var(--jarian-backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--jarian-backdrop-blur));
+  z-index: var(--z-backdrop);
+}
+
+/* Backdrop fade — PowerPoint-adjacent calm entrance */
+.jarian-backdrop,
+.modal-overlay,
+.nabz-drawer-overlay,
+.nabz-drawer-overlay--create,
+.kanoon-drawer-overlay,
+.kanoon-modal-overlay,
+.vitrin-drawer-overlay,
+.vitrin-modal-overlay,
+.gahshomar-drawer-overlay,
+.gahshomar-modal-overlay,
+.gahshomar-compose-overlay,
+.cmt-drawer-overlay,
+.order-action-drawer-overlay,
+.activity-drawer__backdrop,
+.po-slideover__backdrop,
+.qc-drawer__backdrop,
+.ofoq-modal__backdrop {
+  animation: jarian-backdrop-fade-in var(--jarian-backdrop-duration) ease forwards;
+}
+
+.jarian-backdrop--transition,
+.gahshomar-drawer-overlay,
+.gahshomar-compose-overlay,
+.nabz-drawer-overlay--create,
+.po-slideover__backdrop {
+  opacity: 0;
+  animation: none;
+  transition: opacity var(--jarian-backdrop-duration) ease;
+}
+
+.jarian-backdrop--transition.is-open,
+.gahshomar-drawer-overlay.is-open,
+.gahshomar-compose-overlay.is-open,
+.nabz-drawer-overlay--create.is-open,
+.po-slideover.is-open .po-slideover__backdrop {
+  opacity: 1;
+}
+
+@keyframes jarian-backdrop-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal backdrops sit above standard drawers */
+.jarian-backdrop--modal,
+.modal-overlay,
+.kanoon-modal-overlay,
+.vitrin-modal-overlay,
+.gahshomar-modal-overlay,
+.gahshomar-compose-overlay,
+.ofoq-modal {
+  z-index: var(--z-modal-backdrop);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+/* Elevated / nested drawers */
+.order-action-drawer-overlay,
+.nabz-drawer-overlay--create,
+.cmt-drawer-overlay,
+.activity-drawer-root,
+.po-slideover,
+.qc-drawer {
+  z-index: var(--z-overlay-top);
+}
+
+.activity-drawer__backdrop,
+.po-slideover__backdrop,
+.qc-drawer__backdrop {
+  position: absolute;
+  z-index: 0;
+}
+
+/* Stacked secondary preview: keep interaction model, still left-origin */
+.nabz-drawer-overlay--secondary.is-stacked {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: none;
+  pointer-events: none;
+}
+
+/* ── TASK 2 + 3: Left-only drawers + PowerPoint slide ────────────── */
+
+.jarian-drawer,
+.nabz-drawer,
+.kanoon-drawer,
+.vitrin-drawer,
+.gahshomar-drawer,
+.cmt-drawer,
+.order-action-drawer,
+.activity-drawer,
+.po-slideover__panel,
+.qc-drawer__panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  bottom: 0;
+  height: 100dvh;
+  width: var(--jarian-drawer-width);
+  max-width: 96vw;
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-drawer);
+  background: var(--drawer-bg);
+  border-right: 1px solid var(--border-default);
+  border-left: none;
+  border-radius: 0;
+  box-shadow: 8px 0 32px color-mix(in srgb, var(--color-neutral-900) 14%, transparent);
+  /* Mount animation: elegant PowerPoint-style slide from left */
+  animation: jarian-drawer-slide-in var(--jarian-drawer-duration) var(--jarian-drawer-ease) both;
+}
+
+.jarian-drawer--sm {
+  width: var(--jarian-drawer-width-sm);
+}
+
+.jarian-drawer--lg,
+.nabz-drawer--create,
+.gahshomar-drawer {
+  width: var(--jarian-drawer-width-lg);
+}
+
+.nabz-drawer--order {
+  width: min(600px, 94vw);
+}
+
+.nabz-drawer--customer {
+  width: min(380px, 92vw);
+  z-index: var(--z-drawer-elevated);
+}
+
+.vitrin-drawer,
+.kanoon-drawer {
+  width: min(560px, 94vw);
+}
+
+.order-action-drawer {
+  width: min(420px, 100vw);
+  z-index: calc(var(--z-overlay-top) + 1);
+}
+
+.activity-drawer {
+  position: absolute;
+  width: min(420px, 96vw);
+  z-index: 1;
+}
+
+.po-slideover__panel {
+  position: absolute;
+  width: min(42rem, calc(100vw - 1.5rem));
+  z-index: 1;
+  animation: none;
+  transform: translateX(-100%);
+  opacity: 0;
+  transition:
+    transform var(--jarian-drawer-duration) var(--jarian-drawer-ease),
+    opacity var(--jarian-backdrop-duration) ease;
+}
+
+.po-slideover.is-open .po-slideover__panel {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.qc-drawer__panel {
+  position: absolute;
+  width: min(28rem, 100%);
+  z-index: 1;
+}
+
+/* Transition-controlled drawers (enter via .is-open) */
+.jarian-drawer--transition,
+.gahshomar-drawer,
+.nabz-drawer--create {
+  animation: none;
+  transform: translateX(-100%);
+  transition: transform var(--jarian-drawer-duration) var(--jarian-drawer-ease);
+}
+
+.jarian-drawer--transition.is-open,
+.gahshomar-drawer.is-open,
+.nabz-drawer--create.is-open {
+  transform: translateX(0);
+}
+
+@keyframes jarian-drawer-slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* Hard ban: never open drawers from right / top / bottom */
+.jarian-drawer--right,
+.jarian-drawer--top,
+.jarian-drawer--bottom,
+[data-drawer-side='right'],
+[data-drawer-side='top'],
+[data-drawer-side='bottom'] {
+  left: 0 !important;
+  right: auto !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: var(--jarian-drawer-width) !important;
+  height: 100dvh !important;
+  transform-origin: left center;
+}
+
+/* ── Centered modal shell ────────────────────────────────────────── */
+
+.jarian-modal,
+.modal-panel {
+  position: relative;
+  z-index: var(--z-modal);
+  width: min(40rem, 100%);
+  max-height: min(90vh, 48rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(190deg, var(--glass-bg-strong) 0%, var(--bg-muted) 100%);
+  backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.35);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  box-shadow:
+    var(--glass-inset-highlight-strong),
+    var(--modal-shadow);
+  animation: jarian-modal-pop 0.35s var(--jarian-drawer-ease) both;
+}
+
+.jarian-modal--sm {
+  width: min(28rem, 100%);
+}
+
+.jarian-modal--lg {
+  width: min(56rem, 96vw);
+  max-height: min(90vh, 56rem);
+}
+
+.jarian-modal--xl {
+  width: 75vw;
+  height: 75vh;
+  max-width: 75vw;
+  max-height: 75vh;
+}
+
+@keyframes jarian-modal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.jarian-modal__header,
+.jarian-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.jarian-modal__title,
+.jarian-drawer__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.jarian-drawer__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.jarian-modal__body,
+.jarian-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+}
+
+.jarian-modal__footer,
+.jarian-drawer__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.jarian-overlay-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.jarian-overlay-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-muted);
+}
+
+@media (max-width: 900px) {
+  .jarian-drawer,
+  .nabz-drawer,
+  .kanoon-drawer,
+  .vitrin-drawer,
+  .gahshomar-drawer,
+  .cmt-drawer,
+  .order-action-drawer,
+  .activity-drawer,
+  .jarian-drawer--sm,
+  .jarian-drawer--lg,
+  .nabz-drawer--create {
+    width: min(92vw, var(--jarian-drawer-width-lg));
+  }
+}
+
+@media (max-width: 640px) {
+  .jarian-drawer,
+  .nabz-drawer,
+  .kanoon-drawer,
+  .vitrin-drawer,
+  .gahshomar-drawer,
+  .cmt-drawer,
+  .order-action-drawer,
+  .activity-drawer,
+  .nabz-drawer--create,
+  .jarian-drawer--lg {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .jarian-modal--xl {
+    width: 96vw;
+    height: 90vh;
+    max-width: 96vw;
+    max-height: 90vh;
+  }
+}

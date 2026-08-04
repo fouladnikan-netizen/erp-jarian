@@ -28,6 +28,8 @@ import NabzOrderTable from './components/NabzOrderTable';
 import NabzKanban from './components/NabzKanban';
 import OrderProfileDrawer from './components/OrderProfileDrawer';
 import CustomerPreviewDrawer from './components/CustomerPreviewDrawer';
+import ListPageLayout from '../../components/module/ListPageLayout';
+import ListToolbar from '../../components/module/ListToolbar';
 import CreateOrderDrawer from './components/CreateOrderDrawer';
 import QuickInquiryModal from './components/QuickInquiryModal';
 import './nabz.css';
@@ -200,19 +202,29 @@ export default function NabzPage() {
   const listTitle = ORDER_TAB_META[activeTab].listTitle;
 
   return (
-    <div className="module-page nabz-page" data-module="nabz">
-      <NabzKpis kpis={kpis} />
-
-      <NabzToolbar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        search={search}
-        onSearchChange={setSearch}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onCreateClick={() => setCreateOpen(true)}
-      />
-
+    <ListPageLayout
+      moduleId="nabz"
+      className="nabz-page"
+      kpis={<NabzKpis kpis={kpis} />}
+      toolbar={(
+        <ListToolbar
+          className="nabz-toolbar"
+          searchPlaceholder="جستجو در سفارشات..."
+          searchValue={search}
+          onSearchChange={setSearch}
+          primaryLabel="ثبت سفارش جدید"
+          onPrimaryClick={() => setCreateOpen(true)}
+          filters={(
+            <NabzToolbar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
+          )}
+        />
+      )}
+    >
       {showKanban ? (
         <NabzKanban
           orders={kanbanOrders}
@@ -298,6 +310,6 @@ export default function NabzPage() {
           onUpdateOrder={updateOrderById}
         />
       )}
-    </div>
+    </ListPageLayout>
   );
 }

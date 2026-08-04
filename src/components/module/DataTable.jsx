@@ -1,4 +1,8 @@
+import { useMemo } from 'react';
 import StatusTag from './StatusTag';
+import ResizableColGroup from '../table/ResizableColGroup';
+import ResizableTh from '../table/ResizableTh';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 
 function isMoneyColumn(columnLabel = '') {
   return /ریال|مبلغ|ارزش|قیمت/.test(columnLabel);
@@ -14,7 +18,7 @@ function stripRialSuffix(value) {
 function TableRow({ row, columns, rowNumber }) {
   return (
     <tr data-id={row.id}>
-      <td className="jarian-td-row">{rowNumber.toLocaleString('fa-IR')}</td>
+      <td className="jarian-td-row font-yekan">{rowNumber.toLocaleString('fa-IR')}</td>
       {row.cells.map((cell, index) => {
         const moneyCol = isMoneyColumn(columns[index]);
         return (
@@ -22,34 +26,33 @@ function TableRow({ row, columns, rowNumber }) {
             key={index}
             className={moneyCol ? 'jarian-td-money' : undefined}
           >
-            {cell.startsWith('tag:') ? (
+            {String(cell).startsWith('tag:') ? (
               <StatusTag value={cell} />
             ) : moneyCol ? (
               <span className="jarian-money font-vazir">{stripRialSuffix(cell)}</span>
             ) : (
-              cell
+              <span className="font-meem">{cell}</span>
             )}
           </td>
         );
       })}
       <td>
         <div className="data-table__actions">
-          <button type="button">نمایش</button>
-          <button type="button">ویرایش</button>
+          <button type="button" className="font-meem">نمایش</button>
+          <button type="button" className="font-meem">ویرایش</button>
         </div>
       </td>
     </tr>
   );
 }
 
-function EmptyState({ data }) {
+function EmptyState({ data, colSpan }) {
   return (
     <tr>
-      <td colSpan={data.columns.length + 2}>
+      <td colSpan={colSpan}>
         <div className="empty-state">
-          <div className="empty-state__icon">📋</div>
-          <p>هنوز رکوردی ثبت نشده است.</p>
-          <button type="button" className="btn btn--primary">
+          <p className="font-meem">هنوز رکوردی ثبت نشده است.</p>
+          <button type="button" className="btn btn--primary font-meem">
             {data.primaryAction}
           </button>
         </div>
@@ -59,23 +62,46 @@ function EmptyState({ data }) {
 }
 
 export default function DataTable({ data }) {
+  const columnDefs = useMemo(() => [
+    { key: 'row', defaultWidth: 56, resizable: false },
+    ...data.columns.map((column, index) => ({
+      key: `col-${index}`,
+      defaultWidth: isMoneyColumn(column) ? 120 : 140,
+    })),
+    { key: 'actions', defaultWidth: 120, resizable: false },
+  ], [data.columns]);
+
+  const storageKey = `module-table-${data.tableTitle || 'generic'}`;
+  const { widths, startResize } = useResizableColumns(storageKey, columnDefs);
+
   return (
     <section className="section-data" aria-label="فهرست داده">
       <div className="data-table-header">
-        <span className="data-table-header__title">{data.tableTitle}</span>
-        <span className="data-table-header__count">
+        <span className="data-table-header__title font-meem">{data.tableTitle}</span>
+        <span className="data-table-header__count font-yekan">
           {data.rows.length.toLocaleString('fa-IR')} رکورد
         </span>
       </div>
       <div className="data-table-wrap">
-        <table className="data-table jarian-table">
+        <table className="data-table jarian-table data-table--resizable">
+          <ResizableColGroup columns={columnDefs} widths={widths} />
           <thead>
             <tr>
-              <th>ردیف</th>
-              {data.columns.map((column) => (
-                <th key={column}>{column}</th>
+              {columnDefs.map((col, index) => (
+                <ResizableTh
+                  key={col.key}
+                  columnKey={col.key}
+                  resizable={col.resizable !== false}
+                  onResizeStart={startResize}
+                  className="font-meem"
+                >
+                  {col.key === 'row'
+                    ? 'ردیف'
+                    : col.key === 'actions'
+                      ? 'عملیات'
+                      : data.columns[index - 1]}
+                </ResizableTh>
               ))}
-              <th>عملیات</th>
             </tr>
           </thead>
           <tbody>
@@ -88,7 +114,7 @@ export default function DataTable({ data }) {
                     rowNumber={index + 1}
                   />
                 ))
-              : <EmptyState data={data} />}
+              : <EmptyState data={data} colSpan={columnDefs.length} />}
           </tbody>
         </table>
       </div>

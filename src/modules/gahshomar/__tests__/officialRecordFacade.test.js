@@ -18,12 +18,12 @@ import { ensureLetterHtml, htmlToPlainText } from '../services/letterHtml.js';
 const contactReceiver = {
   partyType: 'CONTACT',
   role: 'RECEIVER',
-  partyId: 'rp-1-1',
-  name: 'علی رضایی',
+  partyId: '1',
+  name: 'فولاد پارس',
   companyId: 1,
   companyName: 'فولاد پارس',
-  position: 'مدیر خرید',
-  mobile: '09121112233',
+  position: 'صنایع فولادی',
+  mobile: null,
 };
 
 describe('Gahshomar officialRecordFacade (MVP)', () => {
@@ -108,16 +108,14 @@ describe('Gahshomar officialRecordFacade (MVP)', () => {
     });
   });
 
-  it('searchOfficialRecordContacts returns Kanoon contact people', () => {
-    const hits = searchOfficialRecordContacts('علی');
+  it('searchOfficialRecordContacts returns Kanoon companies (CustomerCombobox catalog)', () => {
+    const hits = searchOfficialRecordContacts('فولاد');
     expect(hits.length).toBeGreaterThan(0);
     expect(hits[0]).toMatchObject({
-      fullName: expect.any(String),
-      companyName: expect.any(String),
-      position: expect.any(String),
-      mobile: expect.any(String),
-      partyId: expect.any(String),
+      id: expect.anything(),
+      entityType: expect.any(String),
     });
+    expect(hits[0].companyName || hits[0].name || hits[0].legalName).toBeTruthy();
   });
 
   it('polishLetterText returns professional Persian HTML body only', async () => {
@@ -131,7 +129,7 @@ describe('Gahshomar officialRecordFacade (MVP)', () => {
     const draft = createDraftRecord(RECORD_DIRECTION.OUTGOING);
     const issued = issueOfficialRecord(draft.id, {
       subject: 'درخواست تحویل کالا',
-      body: '<p>متن نهایی نامه جهت صدور</p>',
+      body: '<p>با سلام و احترام</p><p>متن نهایی نامه جهت صدور</p>',
       participants: {
         sender: draft.participants.sender,
         receiver: contactReceiver,
@@ -147,7 +145,7 @@ describe('Gahshomar officialRecordFacade (MVP)', () => {
     expect(issued.canIssue).toBe(false);
     expect(issued.canPrint).toBe(true);
     expect(issued.status).toBe(RECORD_STATUS.ISSUED);
-    expect(issued.participants.receiver.partyId).toBe('rp-1-1');
+    expect(issued.participants.receiver.partyId).toBe('1');
 
     const blocked = saveOfficialRecord(issued.id, { subject: 'تغییر ممنوع' });
     expect(blocked.subject).toBe('درخواست تحویل کالا');

@@ -366,6 +366,7 @@ html[data-theme='dark'] .sidebar__logo {
 
 .section-kpis,
 .section-actions,
+.section-filters,
 .section-data {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
@@ -376,7 +377,8 @@ html[data-theme='dark'] .sidebar__logo {
   padding: 1.25rem;
 }
 
-.section-actions {
+.section-actions,
+.section-filters {
   padding: 1rem 1.25rem;
 }
 

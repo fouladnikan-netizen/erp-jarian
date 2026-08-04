@@ -1,5 +1,6 @@
 import { BEHAVIORAL_STATUS, ENTITY_TYPES } from './config';
 import { getCellValue } from './columns';
+import { getSupplierCapabilityTags } from './supplierCapabilities';
 
 const INACTIVE_STATUSES = new Set(['silent', 'stagnant']);
 
@@ -19,9 +20,27 @@ export function computeKanoonKpis(contacts) {
   ];
 }
 
-export function filterContacts(contacts, { entityType, personType, search, columnFilters }) {
+export function filterContacts(contacts, {
+  entityType,
+  personType,
+  search,
+  columnFilters = {},
+  audienceFilter = null,
+}) {
   return contacts.filter((contact) => {
-    if (contact.entityType !== entityType || contact.personType !== personType) return false;
+    if (personType && contact.personType !== personType) return false;
+
+    if (audienceFilter === 'customers' || audienceFilter === 'leads') {
+      if (contact.entityType !== ENTITY_TYPES.CUSTOMER) return false;
+    } else if (audienceFilter === 'suppliers') {
+      if (contact.entityType !== ENTITY_TYPES.SUPPLIER) return false;
+    } else if (audienceFilter === 'active') {
+      if (contact.isActive === false) return false;
+    } else if (audienceFilter === 'all') {
+      /* both entity types */
+    } else if (entityType && contact.entityType !== entityType) {
+      return false;
+    }
 
     if (search) {
       const haystack = [
@@ -36,6 +55,7 @@ export function filterContacts(contacts, { entityType, personType, search, colum
         contact.analytics?.supplyVolume,
         contact.assignee?.name,
         contact.assignee?.role,
+        ...getSupplierCapabilityTags(contact).map((tag) => tag.label),
         ...(contact.productGroups || []).flatMap((p) => [p.group, p.subgroup]),
       ]
         .filter(Boolean)
@@ -44,7 +64,7 @@ export function filterContacts(contacts, { entityType, personType, search, colum
       if (!haystack.includes(search.toLowerCase())) return false;
     }
 
-    for (const [key, value] of Object.entries(columnFilters)) {
+    for (const [key, value] of Object.entries(columnFilters || {})) {
       if (!value) continue;
       const cell = getFilterableCell(contact, key);
       const statusLabel = BEHAVIORAL_STATUS[cell]?.label || cell;
@@ -57,11 +77,8 @@ export function filterContacts(contacts, { entityType, personType, search, colum
 
 function getFilterableCell(contact, key) {
   if (key === 'assignee') return getCellValue(contact, 'assignee');
-  if (key === 'productGroup') {
-    return (contact.productGroups || []).map((p) => p.group).join('، ');
-  }
-  if (key === 'productSubgroup') {
-    return (contact.productGroups || []).map((p) => p.subgroup).join('، ');
+  if (key === 'productGroup' || key === 'productSubgroup') {
+    return getSupplierCapabilityTags(contact).map((tag) => tag.label).join('، ');
   }
   if (['interactionValue', 'supplyVolume', 'contactAge', 'lastActivity'].includes(key)) {
     return getCellValue(contact, key);

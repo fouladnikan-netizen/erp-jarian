@@ -1,39 +1,36 @@
 import { create } from 'zustand';
 import { initialContacts } from '../modules/kanoon/contactsData';
 import { BRAND_NAME, SHOW_BRAND_NAME } from '../config/brand';
+import {
+  normalizeContactPerson,
+  lookupMobile as lookupMobileDomain,
+  normalizeMobile,
+  toPossibleDuplicateMatches,
+} from '../domain/contactPerson';
+import {
+  createContactPersonId,
+  createInteractionId,
+  createNumericId,
+} from '../domain/identity';
+import {
+  LIFECYCLE_STAGES,
+  LIFECYCLE_STAGE_ORDER,
+} from '../domain/party';
 
 /**
- * چرخه حیات مخاطب — ستون‌های پایپ‌لاین افق.
- * افق دیتابیس جدا ندارد؛ همین مخاطبین کانون هستند که با این فیلد روی بورد چیده می‌شوند.
+ * Company aggregate root (runtime name: Contact).
+ * Owner: shared SSOT — Kanoon / Ofogh / Nabz must not keep a parallel registry.
+ * Opportunity = same record via lifecycle_stage (Ofogh view). Future: optional
+ * Opportunity entity; keep ContactPerson 1:N under Company until then.
+ *
+ * Lifecycle constants live in domain/party — re-exported here for stable imports.
  */
-export const LIFECYCLE_STAGES = Object.freeze({
-  COLD_LEAD: 'cold_lead',
-  PITCHED: 'pitched',
-  NURTURING: 'nurturing',
-  SALES_QUALIFIED: 'sales_qualified',
-  FIRST_TIME_BUYER: 'first_time_buyer',
-  LOYAL: 'loyal',
-  ARCHIVED: 'archived',
-});
-
-export const LIFECYCLE_STAGE_ORDER = Object.freeze([
-  LIFECYCLE_STAGES.COLD_LEAD,
-  LIFECYCLE_STAGES.PITCHED,
-  LIFECYCLE_STAGES.NURTURING,
-  LIFECYCLE_STAGES.SALES_QUALIFIED,
-  LIFECYCLE_STAGES.FIRST_TIME_BUYER,
-  LIFECYCLE_STAGES.LOYAL,
-  LIFECYCLE_STAGES.ARCHIVED,
-]);
+export { LIFECYCLE_STAGES, LIFECYCLE_STAGE_ORDER };
 
 function daysFromNow(days) {
   return new Date(Date.now() + days * 86_400_000).toISOString();
 }
 
-/**
- * Seed پایپ‌لاین برای دموی درگ‌اند‌دراپ — بعداً از سرویس/DB پر می‌شود.
- * تاریخ‌ها نسبت به امروز ساخته می‌شوند تا هر سه حالت نبض (عقب‌افتاده/امروز/آینده) دیده شود.
- */
 const PIPELINE_SEED = {
   1: { lifecycle_stage: LIFECYCLE_STAGES.LOYAL, next_follow_up_date: daysFromNow(3), last_interaction_date: daysFromNow(-3) },
   2: { lifecycle_stage: LIFECYCLE_STAGES.SALES_QUALIFIED, next_follow_up_date: daysFromNow(0), last_interaction_date: daysFromNow(-12) },
@@ -49,12 +46,14 @@ function seedContacts() {
   return initialContacts.map((contact) => ({
     ...contact,
     relatedPersons: (contact.relatedPersons || []).map((person, index) =>
-      normalizeContactPerson({
-        ...person,
-        id: person.id || `rp-seed-${contact.id}-${index}`,
-        fullName: person.fullName || person.name,
-        isPrimary: person.isPrimary ?? index === 0,
-      })),
+      normalizeContactPerson(
+        {
+          ...person,
+          id: person.id || `cp-seed-${contact.id}-${index}`,
+          isPrimary: person.isPrimary ?? index === 0,
+        },
+        contact.id,
+      )),
     lifecycle_stage: PIPELINE_SEED[contact.id]?.lifecycle_stage ?? LIFECYCLE_STAGES.COLD_LEAD,
     next_follow_up_date: PIPELINE_SEED[contact.id]?.next_follow_up_date ?? null,
     last_interaction_date:
@@ -63,10 +62,6 @@ function seedContacts() {
   }));
 }
 
-/**
- * تعاملات موجود کانون ({date, type, summary}) را به قالب واحد تایم‌لاین ({id, date, note, operator}) تبدیل می‌کند.
- * فیلد summary هم نگه داشته می‌شود چون تایم‌لاین پروفایل کانون از آن می‌خواند.
- */
 function normalizeSeedInteractions(contact) {
   return (contact.interactions || []).map((item, index) => ({
     id: item.id || `seed-${contact.id}-${index}`,
@@ -80,12 +75,23 @@ function normalizeSeedInteractions(contact) {
 }
 
 /**
- * منبع واحد حقیقت مخاطبین (کانون + لایه پایپ‌لاین افق).
+ * Single source of truth for Companies/Contacts + nested ContactPersons (1:N).
+ * Kanoon, Nabz, and Ofogh must read/write party identity through this store.
+ *
+ * Soft interactions are owned by Pooyesh (DDL-09). Persistence remains
+ * temporary on the Company aggregate (`contact.interactions`) until Activity
+ * SSOT lands. UI and projections must use `interactionFacade` — never call
+ * `addInteraction` or read `company.interactions` directly.
  */
-export const useContactsStore = create((set) => ({
+export const useContactsStore = create((set, get) => ({
   contacts: seedContacts(),
 
-  /** جابه‌جایی مخاطب بین ستون‌های پایپ‌لاین (درگ‌اند‌دراپ افق). */
+  /**
+   * Append-only audit trail for ContactPerson domain events (DDL-08).
+   * Not consumed by UI — reserved for future merge / compliance analysis.
+   */
+  contactPersonAuditLog: [],
+
   updateContactStage: (contactId, newStage) => {
     if (!LIFECYCLE_STAGE_ORDER.includes(newStage)) return;
     set((state) => ({
@@ -97,19 +103,15 @@ export const useContactsStore = create((set) => ({
     }));
   },
 
-  /**
-   * ثبت تعامل جدید (مودال لید افق) — یادداشت/تماس/وظیفه را به ابتدای تایم‌لاین اضافه می‌کند،
-   * تاریخ پیگیری بعدی را (در صورت ارسال) به‌روز و آخرین تعامل را «اکنون» می‌کند.
-   */
   addInteraction: (contactId, note, nextFollowUpDate, type = 'note') => {
     const trimmed = (note || '').trim();
     if (!trimmed) return;
     set((state) => ({
       contacts: state.contacts.map((contact) => {
-        if (contact.id !== contactId) return contact;
+        if (String(contact.id) !== String(contactId)) return contact;
         const now = new Date().toISOString();
         const entry = {
-          id: `int-${contactId}-${Date.now()}`,
+          id: createInteractionId(contactId),
           date: now,
           note: trimmed,
           summary: trimmed,
@@ -128,85 +130,170 @@ export const useContactsStore = create((set) => ({
   },
 
   /**
-   * ثبت مخاطب/فرصت جدید — از فرم کانون یا فرم «فرصت جدید» افق.
-   * هر مخاطب تازه به‌صورت خودکار کارت مرحله اول پایپ‌لاین افق (نوپدید) می‌شود.
+   * Patch a single Company-scoped interaction (Pooyesh stream).
+   * Prefer `interactionFacade.updateCompanyInteraction` from UI.
    */
+  updateInteraction: (contactId, interactionId, changes = {}) => {
+    if (contactId == null || interactionId == null) return false;
+    let updated = false;
+    set((state) => ({
+      contacts: state.contacts.map((contact) => {
+        if (String(contact.id) !== String(contactId)) return contact;
+        const list = contact.interactions || [];
+        const nextList = list.map((item) => {
+          if (String(item.id) !== String(interactionId)) return item;
+          updated = true;
+          const next = { ...item, ...changes, id: item.id };
+          if (changes.note != null && changes.summary == null) {
+            next.summary = changes.note;
+          }
+          return next;
+        });
+        if (!updated) return contact;
+        return {
+          ...contact,
+          interactions: nextList,
+          last_interaction_date: new Date().toISOString(),
+        };
+      }),
+    }));
+    return updated;
+  },
+
+  /**
+   * Remove a Company-scoped interaction (Pooyesh stream).
+   * Prefer `interactionFacade.removeCompanyInteraction` from UI.
+   */
+  removeInteraction: (contactId, interactionId) => {
+    if (contactId == null || interactionId == null) return false;
+    let removed = false;
+    set((state) => ({
+      contacts: state.contacts.map((contact) => {
+        if (String(contact.id) !== String(contactId)) return contact;
+        const list = contact.interactions || [];
+        const nextList = list.filter((item) => {
+          if (String(item.id) === String(interactionId)) {
+            removed = true;
+            return false;
+          }
+          return true;
+        });
+        if (!removed) return contact;
+        return { ...contact, interactions: nextList };
+      }),
+    }));
+    return removed;
+  },
+
   addContact: (contact) => {
+    const id = contact.id ?? createNumericId();
+    const relatedPersons = (contact.relatedPersons || []).map((person, index) =>
+      normalizeContactPerson(
+        { ...person, id: person.id || createContactPersonId(`${id}-${index}`) },
+        id,
+      ));
     const newContact = {
       lifecycle_stage: LIFECYCLE_STAGES.COLD_LEAD,
       next_follow_up_date: null,
       last_interaction_date: new Date().toISOString(),
       interactions: [],
       ...contact,
-      id: contact.id ?? Date.now(),
+      id,
+      relatedPersons,
     };
     set((state) => ({ contacts: [newContact, ...state.contacts] }));
     return newContact.id;
   },
 
-  /** ویرایش مخاطب (پروفایل کانون). */
   updateContact: (contactId, updates) => {
     set((state) => ({
-      contacts: state.contacts.map((contact) => (
-        contact.id === contactId ? { ...contact, ...updates } : contact
-      )),
+      contacts: state.contacts.map((contact) => {
+        if (contact.id !== contactId) return contact;
+        const next = { ...contact, ...updates };
+        if (updates.relatedPersons) {
+          next.relatedPersons = updates.relatedPersons.map((person) =>
+            normalizeContactPerson(person, contactId));
+        }
+        return next;
+      }),
     }));
   },
 
   /**
-   * افزودن رابط / فرد مرتبط به شرکت (companyId = contact.id).
-   * @returns {string|null} id of created person
+   * ContactPerson CRUD — child of Company (companyId = contact.id).
+   * @returns {string|null}
    */
   addContactPerson: (companyId, contactData) => {
     const fullName = String(contactData?.fullName || contactData?.name || '').trim();
-    if (!fullName) return null;
+    const mobile = String(contactData?.mobile || '').trim();
+    if (!fullName || !mobile) return null;
 
-    const personId = contactData?.id || `rp-${companyId}-${Date.now()}`;
-    const nextPerson = normalizeContactPerson({
-      ...contactData,
-      id: personId,
-      fullName,
-      name: fullName,
-    });
+    /* DDL-08 — probabilistic mobile reuse (same company + other companies) */
+    const duplicateMatches = lookupMobileDomain(get().contacts, mobile);
+    const possibleDuplicateMobile = duplicateMatches.length > 0;
+    const possibleDuplicateMatches = toPossibleDuplicateMatches(duplicateMatches);
 
-    set((state) => ({
-      contacts: state.contacts.map((contact) => {
+    const personId = String(contactData?.id || createContactPersonId(companyId));
+    const nextPerson = normalizeContactPerson(
+      {
+        ...contactData,
+        id: personId,
+        fullName,
+        mobile,
+        ...(possibleDuplicateMobile
+          ? { possibleDuplicateMobile: true, possibleDuplicateMatches }
+          : {}),
+      },
+      companyId,
+    );
+
+    set((state) => {
+      const contacts = state.contacts.map((contact) => {
         if (String(contact.id) !== String(companyId)) return contact;
         let persons = [...(contact.relatedPersons || [])];
         if (nextPerson.isPrimary) {
           persons = persons.map((p) => ({ ...p, isPrimary: false }));
         }
         return { ...contact, relatedPersons: [...persons, nextPerson] };
-      }),
-    }));
+      });
+
+      const contactPersonAuditLog = possibleDuplicateMobile
+        ? [
+            ...state.contactPersonAuditLog,
+            {
+              action: 'CREATE_CONTACT_PERSON',
+              possibleDuplicateMobile: true,
+              companyId,
+              personId,
+              mobile: normalizeMobile(mobile) || mobile,
+              possibleDuplicateMatches,
+              createdAt: new Date().toISOString(),
+            },
+          ]
+        : state.contactPersonAuditLog;
+
+      return { contacts, contactPersonAuditLog };
+    });
 
     return personId;
   },
 
-  /** ویرایش رابط مرتبط. */
-  updateContactPerson: (companyId, contactId, contactData) => {
+  updateContactPerson: (companyId, contactPersonId, contactData) => {
     set((state) => ({
       contacts: state.contacts.map((contact) => {
         if (String(contact.id) !== String(companyId)) return contact;
         const persons = contact.relatedPersons || [];
-        const exists = persons.some((p) => String(p.id) === String(contactId));
-        if (!exists) return contact;
-
-        const patch = { ...contactData };
-        if (patch.fullName != null) {
-          patch.fullName = String(patch.fullName).trim();
-          patch.name = patch.fullName;
-        }
+        if (!persons.some((p) => String(p.id) === String(contactPersonId))) return contact;
 
         let next = persons.map((person) => {
-          if (String(person.id) !== String(contactId)) return person;
-          return normalizeContactPerson({ ...person, ...patch, id: person.id });
+          if (String(person.id) !== String(contactPersonId)) return person;
+          return normalizeContactPerson({ ...person, ...contactData, id: person.id }, companyId);
         });
 
-        if (patch.isPrimary === true) {
+        if (contactData?.isPrimary === true) {
           next = next.map((person) => ({
             ...person,
-            isPrimary: String(person.id) === String(contactId),
+            isPrimary: String(person.id) === String(contactPersonId),
           }));
         }
 
@@ -215,34 +302,40 @@ export const useContactsStore = create((set) => ({
     }));
   },
 
-  /** حذف رابط مرتبط. */
-  deleteContactPerson: (companyId, contactId) => {
+  deleteContactPerson: (companyId, contactPersonId) => {
     set((state) => ({
       contacts: state.contacts.map((contact) => {
         if (String(contact.id) !== String(companyId)) return contact;
         return {
           ...contact,
           relatedPersons: (contact.relatedPersons || []).filter(
-            (person) => String(person.id) !== String(contactId),
+            (person) => String(person.id) !== String(contactPersonId),
           ),
         };
       }),
     }));
   },
-}));
 
-/** Normalize related-person shape for UI + persistence. */
-function normalizeContactPerson(person) {
-  const fullName = String(person.fullName || person.name || '').trim();
-  return {
-    id: person.id || `rp-${Date.now()}`,
-    fullName,
-    name: fullName,
-    role: person.role || 'other',
-    mobile: String(person.mobile || '').trim(),
-    directPhone: String(person.directPhone || person.extension || '').trim(),
-    email: String(person.email || '').trim(),
-    isPrimary: Boolean(person.isPrimary),
-    notes: person.notes || '',
-  };
-}
+  /** Lookup helper for cross-module use (Nabz/Ofogh). */
+  getContactPerson: (companyId, contactPersonId) => {
+    const company = get().contacts.find((c) => String(c.id) === String(companyId));
+    return (company?.relatedPersons || []).find((p) => String(p.id) === String(contactPersonId)) || null;
+  },
+
+  listContactPersons: (companyId) => {
+    const company = get().contacts.find((c) => String(c.id) === String(companyId));
+    return [...(company?.relatedPersons || [])];
+  },
+
+  /**
+   * Domain policy: find ContactPersons sharing a mobile across ALL companies.
+   * Read-only — does not mutate state or create Person entities.
+   * Edit mode may pass { excludeContactPersonId } to avoid self-match only.
+   *
+   * @param {unknown} mobile
+   * @param {{ excludeContactPersonId?: string|number }} [options]
+   */
+  lookupMobile: (mobile, options = {}) => {
+    return lookupMobileDomain(get().contacts, mobile, options);
+  },
+}));

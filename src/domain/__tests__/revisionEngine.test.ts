@@ -3,8 +3,9 @@ import {
   buildRevisionRecord,
   clearRevisionRequired,
   getLatestRevision,
+  isRevisionRequired,
   recordStageReturn,
-} from './revisionEngine';
+} from '../order/revisionEngine';
 
 const baseOrder = {
   id: 'o-1',
@@ -44,8 +45,19 @@ describe('Revision Engine', () => {
         reasonCode: undefined as unknown as 'OTHER',
         previousStage: 'PRICING',
         returnedToStage: 'INQUIRY',
-      })
+      }),
     ).toThrow(/reasonCode/);
+  });
+
+  it('rejects invalid reasonCode', () => {
+    expect(() =>
+      buildRevisionRecord({
+        returnedBy: 'x',
+        reasonCode: 'INVALID' as 'OTHER',
+        previousStage: 'PRICING',
+        returnedToStage: 'INQUIRY',
+      }),
+    ).toThrow(/invalid reasonCode/);
   });
 
   it('clears revisionRequired while keeping history', () => {
@@ -60,5 +72,26 @@ describe('Revision Engine', () => {
     expect(cleared.revisionRequired).toBe(false);
     expect(cleared.revisions).toHaveLength(1);
     expect(getLatestRevision(cleared)?.id).toBe('rev-2');
+    expect(isRevisionRequired(cleared)).toBe(false);
+    expect(isRevisionRequired(returned)).toBe(true);
+  });
+
+  it('appends multiple revisions in order', () => {
+    const first = recordStageReturn(baseOrder, {
+      returnedBy: 'a',
+      reasonCode: 'PRICE_EXCEEDED',
+      previousStage: 'PROFORMA',
+      returnedToStage: 'PRICING',
+      id: 'rev-a',
+    });
+    const second = recordStageReturn(first, {
+      returnedBy: 'b',
+      reasonCode: 'OTHER',
+      previousStage: 'PRICING',
+      returnedToStage: 'INQUIRY',
+      id: 'rev-b',
+    });
+    expect(second.revisions).toHaveLength(2);
+    expect(getLatestRevision(second)?.id).toBe('rev-b');
   });
 });

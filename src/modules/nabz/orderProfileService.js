@@ -7,6 +7,7 @@ import {
   getProformaVersions,
   buildProformaFingerprint,
 } from './proformaService';
+import { createEntityId, ENTITY_ID_PREFIX } from '../../domain/identity';
 
 let commentIdCounter = 1000;
 let attachmentIdCounter = 2000;
@@ -139,7 +140,7 @@ export function appendSignedProformaRecord(order, meta = {}) {
     events: [
       ...(withAttachment.events || []),
       {
-        id: `pf-signed-${Date.now()}`,
+        id: createEntityId(ENTITY_ID_PREFIX.PROFORMA_FILE, 'signed'),
         type: 'proforma_signed',
         at,
         summary: `پیش‌فاکتور ${meta.documentNumber || ''} مهر و امضا و در مستندات بایگانی شد`.trim(),
@@ -185,7 +186,7 @@ export function archivePreviousSignedProforma(order) {
     events: [
       ...(withAttachment.events || []),
       {
-        id: `pf-archive-${Date.now()}`,
+        id: createEntityId(ENTITY_ID_PREFIX.PROFORMA_FILE, 'archive'),
         type: 'proforma_archived',
         at,
         summary: `نسخه قبلی پیش‌فاکتور ${label} در مستندات بایگانی شد`.trim(),

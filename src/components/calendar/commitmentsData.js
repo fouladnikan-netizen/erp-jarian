@@ -5,9 +5,11 @@ import {
   toPersianDigits,
 } from '../../modules/nabz/dateUtils';
 import { PIPELINE_STAGES, getContactDisplayName } from '../../modules/ofogh/pipelineConfig';
+import { listCompanyInteractions } from '../../modules/pooyesh/interactionFacade';
 
 /**
- * موتور تعهدات (گاه‌شمار) — نمای تجمیعیِ فقط-خواندنی از تعهدات زمان‌دار سایر ماژول‌ها.
+ * موتور تعهدات (پویش) — نمای تجمیعیِ فقط-خواندنی از تعهدات زمان‌دار سایر ماژول‌ها.
+ * مسیر محصول: /pooyesh (سطح محصول سابق گاه‌شمار، بدون تغییر UI).
  * اینجا هیچ رویدادی «ساخته» نمی‌شود؛ داده از نبض، افق/کانون و مالی تجمیع می‌شود.
  */
 export const COMMITMENT_TYPES = {
@@ -263,6 +265,7 @@ export function buildCommitments(contacts, todayParts) {
       target: getContactDisplayName(contact),
       owner: contact.assignee || { name: 'شوالیه فروش', role: 'شوالیه' },
       priority: overdue ? 'high' : 'normal',
+      contactId: contact.id,
       link: `/kanoon/contact/${contact.id}`,
       details: [
         { label: 'منبع', value: 'بورد افق — چرخه فرصت' },
@@ -271,9 +274,12 @@ export function buildCommitments(contacts, todayParts) {
           value: PIPELINE_STAGES.find((s) => s.id === contact.lifecycle_stage)?.label || '—',
         },
       ],
-      note: contact.interactions?.length
-        ? `آخرین تعامل ثبت‌شده: ${contact.interactions[0]?.summary || contact.interactions[0]?.note || '—'}`
-        : null,
+      note: (() => {
+        const latest = listCompanyInteractions(contact.id)[0];
+        return latest
+          ? `آخرین تعامل ثبت‌شده: ${latest.summary || latest.note || '—'}`
+          : null;
+      })(),
     });
   });
 

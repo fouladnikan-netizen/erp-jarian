@@ -1,5 +1,7 @@
 import { ENTITY_TYPES, PERSON_TYPES } from './config';
 import { formatRelativeTime } from './relativeTime';
+import { listCompanyInteractions } from '../pooyesh/interactionFacade';
+import { getSupplierCapabilityTags } from './supplierCapabilities';
 
 export const VIEW_KEYS = {
   CUSTOMER_LEGAL: 'customer-legal',
@@ -99,9 +101,13 @@ export function getCellValue(contact, columnKey) {
     case 'mobile':
       return contact.mobile || '';
     case 'productGroup':
-      return (contact.productGroups || []).map((p) => p.group).join('، ') || '';
+      return getSupplierCapabilityTags(contact)
+        .map((tag) => tag.legacyGroup || tag.label)
+        .join('، ') || '';
     case 'productSubgroup':
-      return (contact.productGroups || []).map((p) => p.subgroup).join('، ') || '';
+      return getSupplierCapabilityTags(contact)
+        .map((tag) => tag.label)
+        .join('، ') || '';
     case 'supplierType':
       return contact.supplierType || '';
     case 'assignee':
@@ -152,9 +158,9 @@ export function getOpenOrderItems(contact) {
 }
 
 export function getLatestInteraction(contact) {
-  const list = contact.interactions || [];
+  const list = listCompanyInteractions(contact?.id);
   if (!list.length) return null;
-  return [...list].sort((a, b) => b.date.localeCompare(a.date, 'fa'))[0];
+  return [...list].sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''), 'fa'))[0];
 }
 
 export function getActivityLink(contact) {

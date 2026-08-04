@@ -11,7 +11,7 @@ export default function ResizableTh({
       className={`resizable-th${resizable ? ' resizable-th--resizable' : ''}${className ? ` ${className}` : ''}`}
       {...rest}
     >
-      {children}
+      <span className="resizable-th__label">{children}</span>
       {resizable && onResizeStart && (
         <span
           className="resizable-th__handle resizer-handle"

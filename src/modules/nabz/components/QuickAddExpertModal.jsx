@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { addExpertToCustomer, expertKey } from '../customers';
+import { addExpertToCustomer } from '../customers';
+import { CONTACT_PERSON_JOB_POSITIONS } from '../../../components/contactPerson/contactPersonRoles';
 
 function Field({ label, required, children }) {
   return (
@@ -15,16 +16,16 @@ function Field({ label, required, children }) {
 
 export default function QuickAddExpertModal({ customerId, onClose, onAdded }) {
   const [form, setForm] = useState({
-    name: '',
+    fullName: '',
     mobile: '',
-    role: 'کارشناس',
+    jobPosition: 'کارشناس فروش',
   });
   const [error, setError] = useState('');
 
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = () => {
-    if (!form.name.trim()) {
+    if (!form.fullName.trim()) {
       setError('نام کارشناس اجباری است.');
       return;
     }
@@ -33,15 +34,18 @@ export default function QuickAddExpertModal({ customerId, onClose, onAdded }) {
       return;
     }
 
-    const person = {
-      name: form.name.trim(),
+    const personId = addExpertToCustomer(customerId, {
+      fullName: form.fullName.trim(),
       mobile: form.mobile.trim(),
-      role: form.role.trim() || 'کارشناس',
-      notes: '',
-    };
+      jobPosition: form.jobPosition.trim() || 'کارشناس فروش',
+    });
 
-    addExpertToCustomer(customerId, person);
-    onAdded(expertKey(person));
+    if (!personId) {
+      setError('ثبت کارشناس ناموفق بود.');
+      return;
+    }
+
+    onAdded(personId);
     onClose();
   };
 
@@ -68,8 +72,8 @@ export default function QuickAddExpertModal({ customerId, onClose, onAdded }) {
             <input
               type="text"
               className="nabz-form__input nabz-create-input font-meem"
-              value={form.name}
-              onChange={(e) => update('name', e.target.value)}
+              value={form.fullName}
+              onChange={(e) => update('fullName', e.target.value)}
               placeholder="نام و نام خانوادگی"
             />
           </Field>
@@ -83,14 +87,18 @@ export default function QuickAddExpertModal({ customerId, onClose, onAdded }) {
               dir="ltr"
             />
           </Field>
-          <Field label="نقش">
-            <input
-              type="text"
+          <Field label="سمت">
+            <select
               className="nabz-form__input nabz-create-input font-meem"
-              value={form.role}
-              onChange={(e) => update('role', e.target.value)}
-              placeholder="کارشناس"
-            />
+              value={form.jobPosition}
+              onChange={(e) => update('jobPosition', e.target.value)}
+            >
+              {CONTACT_PERSON_JOB_POSITIONS.map((role) => (
+                <option key={role.id} value={role.label}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
           </Field>
           {error ? <p className="nabz-create-error font-meem" role="alert">{error}</p> : null}
         </div>

@@ -12,29 +12,26 @@
   position: absolute;
   inset: 0;
   border: none;
-  background: var(--overlay-scrim);
   cursor: pointer;
+  animation: jarian-backdrop-fade-in var(--jarian-backdrop-duration) ease forwards;
 }
 
 .qc-drawer__panel {
   position: absolute;
   top: 0;
   left: 0;
+  bottom: 0;
+  right: auto;
   display: flex;
   flex-direction: column;
   width: min(28rem, 100%);
   height: 100%;
   background: var(--bg-surface);
   border: none;
-  border-left: 1px solid var(--border-default);
+  border-right: 1px solid var(--border-default);
+  border-left: none;
   box-shadow: none;
-  transform: translateX(0);
-  animation: qc-drawer-in 220ms ease;
-}
-
-@keyframes qc-drawer-in {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  animation: jarian-drawer-slide-in var(--jarian-drawer-duration) var(--jarian-drawer-ease) both;
 }
 
 .qc-drawer__header {

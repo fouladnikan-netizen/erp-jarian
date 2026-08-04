@@ -137,6 +137,21 @@
   --tooltip-bg: var(--surface-overlay);
   --tooltip-fg: var(--text-inverse);
 
+  /* Unified modal/drawer shell (global UX standard) */
+  --jarian-backdrop-blur: 8px;
+  --jarian-backdrop-duration: 0.4s;
+  --jarian-drawer-duration: 0.6s;
+  --jarian-drawer-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --jarian-drawer-width: min(50vw, 40rem);
+  --jarian-drawer-width-sm: min(40vw, 28rem);
+  --jarian-drawer-width-lg: min(60vw, 56rem);
+  --z-backdrop: 450;
+  --z-drawer: 460;
+  --z-modal-backdrop: 500;
+  --z-modal: 510;
+  --z-drawer-elevated: 520;
+  --z-overlay-top: 1200;
+
   /* ── Buttons (semantic) ── */
   --btn-primary-bg: var(--color-brand-red-glossy);
   --btn-primary-fg: var(--color-white-glossy);

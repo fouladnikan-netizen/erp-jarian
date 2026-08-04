@@ -77,23 +77,10 @@
 .nabz-kpi__trend--up { color: var(--color-accent-dark); }
 .nabz-kpi__trend--down { color: var(--color-brand-red); }
 
-/* Toolbar: [Search] …spacer… [Tabs + View + CTA] */
+/* Toolbar (Row 3): status tabs + view mode */
+.nabz-toolbar.list-filter-bar,
 .nabz-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1rem;
-}
-
-.nabz-toolbar__search {
-  flex: 0 1 280px;
-  min-width: min(100%, 200px);
-  max-width: 320px;
-}
-
-.nabz-toolbar__spacer {
-  flex: 1 1 1.5rem;
-  min-width: 0.75rem;
+  display: block;
 }
 
 .nabz-toolbar__controls {
@@ -968,17 +955,13 @@
   border-top: 1px solid color-mix(in srgb, var(--color-neutral-800) 6%, transparent);
 }
 
-/* Drawer */
+/* Drawer — left-only; motion from global overlays.css */
 .nabz-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--overlay-scrim);
-  z-index: 450;
+  z-index: var(--z-backdrop);
 }
 
 .nabz-drawer-overlay--secondary {
-  background: color-mix(in srgb, var(--color-neutral-900) 15%, transparent);
-  z-index: 470;
+  z-index: var(--z-drawer-elevated);
 }
 
 .nabz-drawer-overlay--secondary.is-stacked {
@@ -991,18 +974,8 @@
 }
 
 .nabz-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
   width: min(480px, 94vw);
-  height: 100dvh;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-default);
-  box-shadow: 4px 0 24px color-mix(in srgb, var(--color-neutral-900) 12%, transparent);
-  display: flex;
-  flex-direction: column;
-  z-index: 460;
-  animation: nabzDrawerIn 0.28s ease;
+  z-index: var(--z-drawer);
 }
 
 .nabz-drawer--order {
@@ -1011,23 +984,18 @@
 
 .nabz-drawer--customer {
   width: min(380px, 92vw);
-  z-index: 480;
+  z-index: var(--z-drawer-elevated);
 }
 
 .nabz-drawer--customer.is-stacked {
   left: min(600px, 94vw);
   box-shadow: 8px 0 32px color-mix(in srgb, var(--color-neutral-900) 14%, transparent);
-  animation: nabzCustomerDrawerIn 0.24s ease;
+  animation: nabzCustomerDrawerIn 0.45s var(--jarian-drawer-ease);
 }
 
 @keyframes nabzCustomerDrawerIn {
   from { transform: translateX(-24px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes nabzDrawerIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
 }
 
 .nabz-drawer__header {
@@ -3016,14 +2984,11 @@
   align-items: center;
 }
 
-/* Create order drawer — premium glass depth */
+/* Create order drawer — premium glass depth (inherits global left slide + backdrop) */
 .nabz-drawer-overlay--create {
-  z-index: 490;
-  background: var(--surface-overlay);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  z-index: var(--z-overlay-top);
   opacity: 0;
-  transition: opacity 0.3s ease-out;
+  transition: opacity var(--jarian-backdrop-duration) ease;
 }
 
 .nabz-drawer-overlay--create.is-open {
@@ -3031,14 +2996,14 @@
 }
 
 .nabz-drawer--create {
-  width: min(56rem, 96vw);
-  z-index: 500;
+  width: var(--jarian-drawer-width-lg);
+  z-index: calc(var(--z-overlay-top) + 1);
   background: var(--bg-surface);
-  border-right: none;
+  border-right: 1px solid var(--border-default);
   box-shadow: 0 25px 50px -12px color-mix(in srgb, var(--color-neutral-900) 25%, transparent);
   animation: none;
   transform: translateX(-100%);
-  transition: transform 0.3s ease-out;
+  transition: transform var(--jarian-drawer-duration) var(--jarian-drawer-ease);
 }
 
 .nabz-drawer--create.is-open {
@@ -6369,33 +6334,14 @@
 }
 
 .order-action-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 520;
-  background: var(--overlay-scrim);
-  /* full-viewport cover; do not clip the left entrance animation */
+  z-index: var(--z-overlay-top);
   overflow: visible;
 }
 
 .order-action-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: auto;
   width: min(420px, 100vw);
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
+  z-index: calc(var(--z-overlay-top) + 1);
   background: var(--bg-surface);
-  border-right: 1px solid var(--border-default);
-  box-shadow: 8px 0 28px color-mix(in srgb, var(--color-neutral-800) 12%, transparent);
-  animation: orderActionDrawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-  z-index: 521;
-}
-
-@keyframes orderActionDrawerIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
 }
 
 .order-action-drawer__header {

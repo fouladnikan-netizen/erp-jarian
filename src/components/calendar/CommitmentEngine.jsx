@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Phone,
   CreditCard,
@@ -15,6 +15,7 @@ import {
 import { useContactsStore } from '../../stores/useContactsStore';
 import { getTodayJalaliParts, toPersianDigits } from '../../modules/nabz/dateUtils';
 import { withReturnParams } from '../navigation/SmartBackButton';
+import { useCompanyCompletionGate } from '../customerCompletion';
 import {
   COMMITMENT_TYPES,
   TYPE_ORDER,
@@ -27,8 +28,8 @@ import {
 } from './commitmentsData';
 import './commitment-engine.css';
 
-const RETURN_TO = '/gahshomar';
-const RETURN_NAME = 'گاه‌شمار';
+const RETURN_TO = '/pooyesh';
+const RETURN_NAME = 'پویش';
 
 const ICON_SIZE = 16;
 const ICON_STROKE = 1.75;
@@ -94,7 +95,7 @@ function CommitmentCard({ item, onOpen, overdue = false }) {
   );
 }
 
-function CommitmentDrawer({ item, onClose }) {
+function CommitmentDrawer({ item, onClose, onDive }) {
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === 'Escape') onClose();
@@ -110,6 +111,13 @@ function CommitmentDrawer({ item, onClose }) {
 
   const meta = COMMITMENT_TYPES[item.type];
   const priority = PRIORITY_META[item.priority] || PRIORITY_META.normal;
+  const diveHref = withReturnParams(item.link, RETURN_TO, RETURN_NAME);
+
+  const handleDiveClick = (event) => {
+    if (!item.contactId || typeof onDive !== 'function') return;
+    event.preventDefault();
+    onDive(item);
+  };
 
   return createPortal(
     <div
@@ -165,14 +173,15 @@ function CommitmentDrawer({ item, onClose }) {
           {item.note ? <p className="cmt-drawer__note">{item.note}</p> : null}
 
           <p className="cmt-drawer__readonly">
-            این تعهد از ماژول مبدأ تجمیع شده و در گاه‌شمار قابل ویرایش نیست.
+            این تعهد از ماژول مبدأ تجمیع شده و در پویش قابل ویرایش نیست.
           </p>
         </div>
 
         <footer className="cmt-drawer__foot">
           <Link
-            to={withReturnParams(item.link, RETURN_TO, RETURN_NAME)}
+            to={diveHref}
             className="cmt-drawer__dive"
+            onClick={handleDiveClick}
           >
             شیرجه به پرونده
             <ExternalLink size={14} strokeWidth={ICON_STROKE} />
@@ -186,9 +195,11 @@ function CommitmentDrawer({ item, onClose }) {
 
 export default function CommitmentEngine() {
   const contacts = useContactsStore((state) => state.contacts);
+  const navigate = useNavigate();
   const today = useMemo(() => getTodayJalaliParts(), []);
   const [activeTypes, setActiveTypes] = useState(() => new Set(TYPE_ORDER));
   const [selected, setSelected] = useState(null);
+  const { ensureOperational, gateDialog } = useCompanyCompletionGate();
 
   const allItems = useMemo(() => buildCommitments(contacts, today), [contacts, today]);
   const metrics = useMemo(() => buildTodayMetrics(allItems, today), [allItems, today]);
@@ -216,6 +227,17 @@ export default function CommitmentEngine() {
 
   const openItem = (item) => setSelected(item);
 
+  const handleDive = (item) => {
+    const href = withReturnParams(item.link, RETURN_TO, RETURN_NAME);
+    if (!item.contactId) {
+      navigate(href);
+      return;
+    }
+    ensureOperational(item.contactId, () => {
+      setSelected(null);
+      navigate(href);
+    });
+  };
   return (
     <div className="cmt-engine" dir="rtl">
       <header className="cmt-today">
@@ -316,7 +338,14 @@ export default function CommitmentEngine() {
         ) : null}
       </div>
 
-      {selected ? <CommitmentDrawer item={selected} onClose={() => setSelected(null)} /> : null}
+      {selected ? (
+        <CommitmentDrawer
+          item={selected}
+          onClose={() => setSelected(null)}
+          onDive={handleDive}
+        />
+      ) : null}
+      {gateDialog}
     </div>
   );
 }

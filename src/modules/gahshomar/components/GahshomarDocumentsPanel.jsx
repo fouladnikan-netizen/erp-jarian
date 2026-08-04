@@ -84,7 +84,7 @@ export default function GahshomarDocumentsPanel({ companyId, showHeader = true }
       <div className="gahshomar-docs__section">
         <h4 className="gahshomar-docs__section-title font-meem">
           <Inbox size={16} strokeWidth={1.75} aria-hidden="true" />
-          دریافت کردیم
+          دریافتی
         </h4>
         <ProfileTable
           records={incoming}
@@ -97,7 +97,7 @@ export default function GahshomarDocumentsPanel({ companyId, showHeader = true }
       <div className="gahshomar-docs__section">
         <h4 className="gahshomar-docs__section-title font-meem">
           <Send size={16} strokeWidth={1.75} aria-hidden="true" />
-          ارسال کردیم
+          ارسالی
         </h4>
         <ProfileTable
           records={outgoing}

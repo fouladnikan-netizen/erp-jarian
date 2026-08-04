@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContactsStore, LIFECYCLE_STAGES } from '../../stores/useContactsStore';
+import { naturalPersonSelfId } from '../../domain/identity';
 import { useNabzOrders } from '../nabz/NabzOrdersContext';
 import { showSystemToast } from '../../utils/systemToast';
 import { mockAiRewrite } from '../../utils/aiRewrite';
@@ -22,6 +23,12 @@ import {
   getContactTag,
   isCardRotting,
 } from './pipelineConfig';
+import { useCompanyCompletionGate } from '../../components/customerCompletion';
+import { isCompanyOperational } from '../../domain/customerCompletion';
+import {
+  createCompanyInteraction,
+  listCompanyInteractions,
+} from '../pooyesh/interactionFacade';
 
 /** پیام پیش‌فرض پیگیری هوش مصنوعی برای فرصت‌های راکد (بات صیاد). */
 const AI_FOLLOWUP_DRAFT =
@@ -119,7 +126,7 @@ function SparklesIcon() {
   );
 }
 
-/** انواع فعالیت به سبک دیدار — انتخاب نوع، پارامتر type در addInteraction می‌شود. */
+/** انواع فعالیت به سبک دیدار — پارامتر type در createCompanyInteraction می‌شود. */
 const ACTIVITY_TYPES = [
   { id: 'call', label: 'تماس', Icon: PhoneIcon, placeholder: 'گزارش تماس… (نتیجه مکالمه، درخواست مشتری)' },
   { id: 'message', label: 'پیام/ایمیل', Icon: MailIcon, placeholder: 'خلاصه پیام یا ایمیل… (موضوع، پاسخ مشتری)' },
@@ -215,22 +222,26 @@ function SidebarInfo({ contact }) {
   /** مخاطب اصلی + اشخاص مرتبط کانون — انتخاب شخص، اطلاعات تماس را عوض می‌کند. */
   const persons = useMemo(() => {
     const main = {
-      id: 'main',
+      id: naturalPersonSelfId(contact.id),
+      fullName: getContactDisplayName(contact),
       name: getContactDisplayName(contact),
+      jobPosition: 'مخاطب اصلی',
       role: 'مخاطب اصلی',
       mobile: contact.mobile,
     };
-    const related = (contact.relatedPersons || []).map((person, index) => ({
-      id: `person-${index}`,
-      name: person.name,
-      role: person.role || 'شخص مرتبط',
+    const related = (contact.relatedPersons || []).map((person) => ({
+      id: person.id,
+      fullName: person.fullName || person.name,
+      name: person.fullName || person.name,
+      jobPosition: person.jobPosition || person.role || 'شخص مرتبط',
+      role: person.jobPosition || person.role || 'شخص مرتبط',
       mobile: person.mobile,
     }));
     return [main, ...related];
   }, [contact]);
 
-  const [personId, setPersonId] = useState('main');
-  useEffect(() => setPersonId('main'), [contact.id]);
+  const [personId, setPersonId] = useState(naturalPersonSelfId(contact.id));
+  useEffect(() => setPersonId(naturalPersonSelfId(contact.id)), [contact.id]);
   const person = persons.find((item) => item.id === personId) || persons[0];
 
   const rows = [
@@ -277,8 +288,7 @@ function SidebarInfo({ contact }) {
   );
 }
 
-function ActionForm({ contactId, draftSeed = null }) {
-  const addInteraction = useContactsStore((state) => state.addInteraction);
+function ActionForm({ contactId, draftSeed = null, ensureOperational }) {
   const [activityType, setActivityType] = useState('call');
   const [note, setNote] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
@@ -308,12 +318,25 @@ function ActionForm({ contactId, draftSeed = null }) {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!canSubmit) return;
-    const { year, month, day } = parseJalaliDate(followUpDate);
-    const g = jalaliToGregorian(year, month, day);
-    const iso = new Date(g.year, g.month - 1, g.day, 9, 0, 0).toISOString();
-    addInteraction(contactId, trimmedNote, iso, activityType);
-    setNote('');
-    setFollowUpDate('');
+
+    const commit = () => {
+      const { year, month, day } = parseJalaliDate(followUpDate);
+      const g = jalaliToGregorian(year, month, day);
+      const iso = new Date(g.year, g.month - 1, g.day, 9, 0, 0).toISOString();
+      createCompanyInteraction(contactId, {
+        note: trimmedNote,
+        type: activityType,
+        nextFollowUpDate: iso,
+      });
+      setNote('');
+      setFollowUpDate('');
+    };
+
+    if (typeof ensureOperational === 'function') {
+      ensureOperational(contactId, commit);
+      return;
+    }
+    commit();
   };
 
   /** شبیه‌سازی فراخوانی DeepSeek — دو ثانیه لودینگ گلس، سپس جایگزینی خلاصه بازنویسی‌شده. */
@@ -461,18 +484,18 @@ function RottingWarningBanner({ onAiFollowUp }) {
 
 /**
  * مودال مرکزی لید افق — گلس‌مورفیسم، چیدمان دو ستونه سبک دیدار/هاب‌اسپات.
- * مستقیماً از useContactsStore می‌خواند/می‌نویسد (بدون دیتابیس جدا).
+ * Company identity via useContactsStore; soft interactions via Pooyesh interactionFacade (DDL-09).
  */
 export default function OfoqLeadModal({ contactId, onClose }) {
   const contact = useContactsStore(
     (state) => state.contacts.find((item) => item.id === contactId) || null,
   );
   const updateContactStage = useContactsStore((state) => state.updateContactStage);
-  const addInteraction = useContactsStore((state) => state.addInteraction);
   const { createOrderDirect } = useNabzOrders();
   const navigate = useNavigate();
   const [converting, setConverting] = useState(false);
   const [draftSeed, setDraftSeed] = useState(null);
+  const { ensureOperational, gateDialog } = useCompanyCompletionGate();
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -505,17 +528,32 @@ export default function OfoqLeadModal({ contactId, onClose }) {
   /** پل طلایی افق → نبض: ارجاع مستقیم به فرم «ثبت سفارش» با مشتری پیش‌پرشده. */
   const handleCreateProforma = async () => {
     if (converting) return;
-    setConverting(true);
-    try {
-      await Promise.resolve(createOrderDirect(contact.id));
-      updateContactStage(contact.id, LIFECYCLE_STAGES.SALES_QUALIFIED);
-      addInteraction(contact.id, 'سیستم: انتقال مستقیم به ثبت سفارش نهایی', null, 'system');
-      onClose();
-      showSystemToast('سرنخ با موفقیت به سفارش تبدیل شد');
-      navigate('/nabz/new-order');
-    } finally {
-      setConverting(false);
+
+    const proceed = async () => {
+      setConverting(true);
+      try {
+        await Promise.resolve(createOrderDirect(contact.id));
+        updateContactStage(contact.id, LIFECYCLE_STAGES.SALES_QUALIFIED);
+        createCompanyInteraction(contact.id, {
+          note: 'سیستم: انتقال مستقیم به ثبت سفارش نهایی',
+          type: 'system',
+        });
+        onClose();
+        showSystemToast('سرنخ با موفقیت به سفارش تبدیل شد');
+        navigate('/nabz/new-order');
+      } finally {
+        setConverting(false);
+      }
+    };
+
+    if (!isCompanyOperational(contact)) {
+      ensureOperational(contact, () => {
+        void proceed();
+      });
+      return;
     }
+
+    await proceed();
   };
 
   return (
@@ -560,8 +598,12 @@ export default function OfoqLeadModal({ contactId, onClose }) {
           <SidebarInfo contact={contact} />
 
           <section className="ofoq-modal__main">
-            <RecentInteractions interactions={contact.interactions || []} limit={3} />
-            <ActionForm contactId={contact.id} draftSeed={draftSeed} />
+            <RecentInteractions interactions={listCompanyInteractions(contact.id)} limit={3} />
+            <ActionForm
+              contactId={contact.id}
+              draftSeed={draftSeed}
+              ensureOperational={ensureOperational}
+            />
           </section>
         </div>
 
@@ -572,6 +614,7 @@ export default function OfoqLeadModal({ contactId, onClose }) {
           </Link>
         </footer>
       </div>
+      {gateDialog}
     </div>
   );
 }

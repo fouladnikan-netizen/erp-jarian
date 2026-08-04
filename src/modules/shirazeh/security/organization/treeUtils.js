@@ -1,7 +1,10 @@
 /**
  * Pure tree helpers for organization hierarchy.
  * Position (job title) and role (RBAC code) stay independent.
+ * Org nodes are Shirazeh-owned platform structure — not Company/Order aggregates.
  */
+
+import { createEntityId, ENTITY_ID_PREFIX } from '../../../../domain/identity';
 
 export function walkTree(node, visit, parent = null) {
   visit(node, parent);
@@ -107,7 +110,7 @@ export function moveNode(root, nodeId, newParentId) {
 
 export function createDepartmentNode(name, defaultRole = 'MEMBER') {
   return {
-    id: `dept-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: createEntityId(ENTITY_ID_PREFIX.ORG_DEPT),
     type: 'department',
     name,
     defaultRole,
@@ -117,7 +120,7 @@ export function createDepartmentNode(name, defaultRole = 'MEMBER') {
 
 export function createUserNode({ name, position, role }) {
   return {
-    id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: createEntityId(ENTITY_ID_PREFIX.ORG_USER_NODE),
     type: 'user',
     name,
     position: position || 'بدون سمت',

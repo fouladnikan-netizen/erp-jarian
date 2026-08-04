@@ -27,6 +27,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 4. [SSOT.md](./SSOT.md) — where Company / Order / ContactPerson live  
 5. [ENTITY_OWNERSHIP.md](./ENTITY_OWNERSHIP.md) — who owns which entity  
 6. [DOMAIN_DECISION_LOG.md](./DOMAIN_DECISION_LOG.md) — locked aggregate decisions before DB design  
+6b. [COMPANY_PROFILE_HUB_SESSION_PACK.md](./COMPANY_PROFILE_HUB_SESSION_PACK.md) — Customer/Supplier profile hub session (۱۰ پرامپت: architecture + file map)  
 7. [ORDER_WORKFLOW.md](./ORDER_WORKFLOW.md) — Nabz stages (as-is)  
 8. [FRONTEND_ARCHITECTURE_GUIDELINES.md](./FRONTEND_ARCHITECTURE_GUIDELINES.md) — module boundaries  
 9. [QUALITY_ENGINEERING.md](./QUALITY_ENGINEERING.md) — lint / test / CI  
@@ -45,6 +46,8 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 | [04-ENTITY_NAVIGATION_STRATEGY.md](./04-ENTITY_NAVIGATION_STRATEGY.md) | Entity graph strategy — **not implemented** |
 | [05-HARDCODED_NAVIGATION_ASSUMPTIONS.md](./05-HARDCODED_NAVIGATION_ASSUMPTIONS.md) | Inventory of magic paths / returnTo / module switches |
 | [06-FUTURE_RECOMMENDATIONS.md](./06-FUTURE_RECOMMENDATIONS.md) | Medium/high-cost items deferred |
+| [DOMAIN_DECISION_LOG.md](./DOMAIN_DECISION_LOG.md) | Locked domain decisions (DDL) before persistence |
+| [COMPANY_PROFILE_HUB_SESSION_PACK.md](./COMPANY_PROFILE_HUB_SESSION_PACK.md) | Customer/Supplier profile hub — ۱۰-prompt architecture pack + file map |
 | [PROFILE_LAYOUT_GUIDELINES.md](./PROFILE_LAYOUT_GUIDELINES.md) | Required layout for **new** profile pages |
 | [07-DOMAIN_MODEL_AUDIT.md](./07-DOMAIN_MODEL_AUDIT.md) | DDD domain audit — entities, aggregates, policies, scores |
 | [08-STATE_ARCHITECTURE_AUDIT.md](./08-STATE_ARCHITECTURE_AUDIT.md) | State management audit — stores, SSOT, coupling, scale |

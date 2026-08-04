@@ -50,7 +50,10 @@ export default function LetterSubjectField({
 
   return (
     <div className="gahshomar-modal__field font-meem" ref={rootRef}>
-      <label htmlFor={inputId}>موضوع</label>
+      <label htmlFor={inputId}>
+        موضوع
+        <span className="gahshomar-req" aria-hidden="true">*</span>
+      </label>
       <div className={`gahshomar-subject-field${open ? ' is-open' : ''}`}>
         <div className="gahshomar-subject-field__control">
           <input
@@ -59,9 +62,8 @@ export default function LetterSubjectField({
             value={open ? query : displayValue}
             disabled={disabled}
             readOnly={readOnly}
-            required={!displayValue}
             autoComplete="off"
-            placeholder="انتخاب قالب موضوع یا تایپ کنید…"
+            placeholder="موضوع دلخواه یا انتخاب از پیش‌فرض‌ها…"
             onFocus={() => {
               if (readOnly || disabled) return;
               setQuery(displayValue);

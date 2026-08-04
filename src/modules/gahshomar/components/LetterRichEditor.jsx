@@ -177,7 +177,7 @@ export default function LetterRichEditor({
   return (
     <div className={`gahshomar-modal__field gahshomar-rte${readOnly ? ' is-readonly' : ''}`}>
       <div className="gahshomar-rte__label-row">
-        <span className="font-meem">{label}</span>
+        {label ? <span className="font-meem">{label}</span> : <span />}
         {editable ? (
           <button
             type="button"

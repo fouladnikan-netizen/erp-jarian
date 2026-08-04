@@ -6,10 +6,10 @@ import {
   ENTITY_TYPES,
   IRAN_PROVINCES,
   PERSON_TYPES,
-  SUPPLIER_PRODUCT_GROUPS,
   SUPPLIER_TYPES,
 } from '../config';
-import ProductGroupMultiSelect from './ProductGroupMultiSelect';
+import { validateSupplierLegalFields } from '../supplierCapabilities';
+import SupplierCapabilityTagInput from './SupplierCapabilityTagInput';
 
 const NATIONAL_ID_MESSAGE =
   'به منظور پیشگیری از ثبت شرکت تکراری، شناسه ملی اجباری است. اگر تمایل دارید به وب سایت لینکا جهت استخراج شناسه ملی هدایت شوید';
@@ -30,8 +30,6 @@ function Field({ label, required, children }) {
     </label>
   );
 }
-
-const firstGroup = Object.keys(SUPPLIER_PRODUCT_GROUPS)[0];
 
 export default function ContactModal({
   mode,
@@ -57,9 +55,7 @@ export default function ContactModal({
     ownerName: '',
     landline: '',
     supplierType: SUPPLIER_TYPES[0],
-    productGroups: !isCustomer
-      ? [{ group: firstGroup, subgroup: SUPPLIER_PRODUCT_GROUPS[firstGroup][0] }]
-      : [],
+    capabilityTags: [],
   });
   const [nationalIdError, setNationalIdError] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -112,10 +108,11 @@ export default function ContactModal({
         ...base,
         companyName: form.companyName.trim(),
         nationalId: form.nationalId.trim(),
-        productGroups: [...form.productGroups],
+        ownerName: form.ownerName.trim(),
+        landline: form.landline.trim(),
+        capabilityTags: [...form.capabilityTags],
+        productGroups: [],
         supplierType: isFull ? form.supplierType : SUPPLIER_TYPES[0],
-        ownerName: isFull ? form.ownerName.trim() : undefined,
-        landline: isFull ? form.landline.trim() : undefined,
         mobile: isFull ? form.mobile.trim() : undefined,
         fullAddress: isFull ? form.fullAddress.trim() : undefined,
       };
@@ -125,15 +122,26 @@ export default function ContactModal({
       ...base,
       personName: form.personName.trim(),
       mobile: form.mobile.trim(),
-      productGroups: [...form.productGroups],
+      landline: form.landline.trim() || undefined,
+      capabilityTags: [...form.capabilityTags],
+      productGroups: [],
       supplierType: isFull ? form.supplierType : SUPPLIER_TYPES[0],
-      landline: isFull ? form.landline.trim() : undefined,
     };
   };
 
   const validate = () => {
     setValidationError('');
     setNationalIdError(false);
+
+    if (!isCustomer && isLegal) {
+      const result = validateSupplierLegalFields(form);
+      if (!result.ok) {
+        if (result.nationalIdMissing) setNationalIdError(true);
+        setValidationError(result.message || 'اطلاعات تامین‌کننده ناقص است.');
+        return false;
+      }
+      return true;
+    }
 
     if (isLegal) {
       if (!form.companyName.trim()) {
@@ -148,10 +156,6 @@ export default function ContactModal({
         setValidationError('حوزه فعالیت اجباری است.');
         return false;
       }
-      if (!isCustomer && form.productGroups.length === 0) {
-        setValidationError('حداقل یک گروه کالا انتخاب کنید.');
-        return false;
-      }
       return true;
     }
 
@@ -161,10 +165,6 @@ export default function ContactModal({
     }
     if (isCustomer && !form.activityDomain) {
       setValidationError('حوزه فعالیت اجباری است.');
-      return false;
-    }
-    if (!isCustomer && form.productGroups.length === 0) {
-      setValidationError('حداقل یک گروه کالا انتخاب کنید.');
       return false;
     }
     return true;
@@ -207,6 +207,7 @@ export default function ContactModal({
                   <input
                     type="text"
                     inputMode="numeric"
+                    className="font-yekan"
                     value={form.nationalId}
                     onChange={(e) => {
                       update('nationalId', e.target.value);
@@ -233,11 +234,29 @@ export default function ContactModal({
                   </Field>
                 )}
                 {!isCustomer && (
-                  <ProductGroupMultiSelect
-                    value={form.productGroups}
-                    onChange={(groups) => update('productGroups', groups)}
-                    required
-                  />
+                  <>
+                    <Field label="نام مدیر/مالک" required>
+                      <input
+                        type="text"
+                        value={form.ownerName}
+                        onChange={(e) => update('ownerName', e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <Field label="تلفن ثابت شرکت" required>
+                      <input
+                        type="tel"
+                        className="font-yekan"
+                        value={form.landline}
+                        onChange={(e) => update('landline', e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <SupplierCapabilityTagInput
+                      value={form.capabilityTags}
+                      onChange={(tags) => update('capabilityTags', tags)}
+                    />
+                  </>
                 )}
               </>
             ) : (
@@ -246,7 +265,14 @@ export default function ContactModal({
                   <input type="text" value={form.personName} onChange={(e) => update('personName', e.target.value)} required />
                 </Field>
                 <Field label="شماره موبایل" required>
-                  <input type="tel" inputMode="tel" value={form.mobile} onChange={(e) => update('mobile', e.target.value)} required />
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    className="font-yekan"
+                    value={form.mobile}
+                    onChange={(e) => update('mobile', e.target.value)}
+                    required
+                  />
                 </Field>
                 {isCustomer && (
                   <Field label="حوزه فعالیت" required>
@@ -259,11 +285,20 @@ export default function ContactModal({
                   </Field>
                 )}
                 {!isCustomer && (
-                  <ProductGroupMultiSelect
-                    value={form.productGroups}
-                    onChange={(groups) => update('productGroups', groups)}
-                    required
-                  />
+                  <>
+                    <Field label="تلفن ثابت">
+                      <input
+                        type="tel"
+                        className="font-yekan"
+                        value={form.landline}
+                        onChange={(e) => update('landline', e.target.value)}
+                      />
+                    </Field>
+                    <SupplierCapabilityTagInput
+                      value={form.capabilityTags}
+                      onChange={(tags) => update('capabilityTags', tags)}
+                    />
+                  </>
                 )}
               </>
             )}
@@ -295,16 +330,13 @@ export default function ContactModal({
                 {!isCustomer && (
                   <>
                     {isLegal && (
-                      <Field label="نام مدیر/مالک">
-                        <input type="text" value={form.ownerName} onChange={(e) => update('ownerName', e.target.value)} />
-                      </Field>
-                    )}
-                    <Field label="شماره تماس ثابت">
-                      <input type="tel" value={form.landline} onChange={(e) => update('landline', e.target.value)} />
-                    </Field>
-                    {isLegal && (
                       <Field label="شماره موبایل">
-                        <input type="tel" value={form.mobile} onChange={(e) => update('mobile', e.target.value)} />
+                        <input
+                          type="tel"
+                          className="font-yekan"
+                          value={form.mobile}
+                          onChange={(e) => update('mobile', e.target.value)}
+                        />
                       </Field>
                     )}
                     <Field label="نوع تامین‌کننده">

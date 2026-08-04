@@ -30,10 +30,12 @@ export function resolveCustomerRequester(order, customer) {
     };
   }
 
-  const related = (customer?.relatedPersons || []).find((person) => person.name);
+  const related = (customer?.relatedPersons || []).find(
+    (person) => person.isPrimary || person.fullName || person.name,
+  );
   if (related) {
     return {
-      name: related.name,
+      name: related.fullName || related.name,
       mobile: related.mobile || '—',
     };
   }

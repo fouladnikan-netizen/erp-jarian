@@ -6,7 +6,6 @@
 import { useMemo } from 'react';
 import { getTodayJalali } from '../nabz/dateUtils';
 import {
-  ORG_SELF,
   RECORD_DIRECTION,
   RECORD_STATUS,
   defaultStatusForDirection,
@@ -27,6 +26,7 @@ import {
   toListPresentationModel,
 } from './repositories/officialRecordRepository';
 import { searchLetterContacts } from './services/letterContactSearch';
+import { getLetterSignatory } from './services/letterDocument';
 import { ensureLetterHtml, htmlToPlainText, isHtmlContent, plainTextToHtml } from './services/letterHtml';
 import { useOfficialRecordStore } from './store/useOfficialRecordStore';
 
@@ -187,16 +187,14 @@ export async function polishLetterText(content) {
 
   let polishedPlain;
   if (/^با سلام/.test(cleaned)) {
-    polishedPlain = `${cleaned}${/[.؟!]$/.test(cleaned) ? '' : '.'}\n\nبا احترام`;
+    polishedPlain = `${cleaned}${/[.؟!]$/.test(cleaned) ? '' : '.'}`;
   } else {
     polishedPlain = [
-      'با سلام و احترام؛',
+      'با سلام و احترام',
       '',
       cleaned,
       '',
       'خواهشمند است دستور فرمایید اقدام لازم مبذول گردد.',
-      '',
-      'با سپاس',
     ].join('\n');
   }
 
@@ -204,7 +202,7 @@ export async function polishLetterText(content) {
 }
 
 /**
- * Search Kanoon contacts for letter recipient/sender selection.
+ * Search Kanoon companies for letter recipient/sender (same catalog shape as Nabz CustomerCombobox).
  * @param {string} [query]
  */
 export function searchOfficialRecordContacts(query = '') {
@@ -237,7 +235,8 @@ export function issueOfficialRecord(id, payload = {}) {
   }
 
   const issued = repositoryIssueRecord(id, {
-    issuedBy: payload.issuedBy || ORG_SELF.name,
+    issuedBy: payload.issuedBy || getLetterSignatory().name,
+    issuerTitle: payload.issuerTitle || getLetterSignatory().title,
     recordDate: payload.recordDate,
   });
   if (!issued) return null;
@@ -271,7 +270,7 @@ export function computeOfficialRecordKpis() {
   return [
     {
       id: 'new-incoming',
-      label: 'نامه‌های جدید دریافت کردیم',
+      label: 'نامه‌های جدید دریافتی',
       value: newIncoming.toLocaleString('fa-IR'),
       trend: 'فیلتر',
       trendDir: 'up',
@@ -287,7 +286,7 @@ export function computeOfficialRecordKpis() {
     },
     {
       id: 'issued-today',
-      label: 'ارسال کردیم امروز',
+      label: 'ارسالی امروز',
       value: issuedToday.toLocaleString('fa-IR'),
       trend: 'فیلتر',
       trendDir: 'up',

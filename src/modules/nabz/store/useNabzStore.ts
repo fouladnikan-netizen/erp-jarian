@@ -3,10 +3,12 @@ import type { Order, OrderStatus } from '@domain/order/order.types';
 import { OrderRepository } from '@api/repositories/OrderRepository';
 
 /**
- * Architecture:
- * - Store only holds and updates state.
- * - Business / financial math stays in domain & nabz services (quotingService).
- * - Do not move tax, discount, rounding, or quote calculations here.
+ * Order aggregate write surface (Nabz).
+ * Owner module: نبض. Root document embeds lines, quoting, gateway, proforma,
+ * tadarok/PO, QC, shipping, rahsepar, saranjam, CRM activities, events, revisions.
+ * Do NOT invent a parallel Order store elsewhere.
+ * Future: extract Shipment / Payment / Invoice only after persistence exists.
+ * Business / financial math stays in domain & nabz services (quotingService).
  */
 
 export interface OrderDraft {

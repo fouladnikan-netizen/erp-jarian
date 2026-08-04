@@ -4,6 +4,7 @@ import { getFulfilledPurchaseRows } from './shippingService';
 import { getQcInspectionForRow } from './qcInspectionConfig';
 import { advanceOperationalPhase } from './phase2Service';
 import { OPERATIONAL_PHASES } from './phase2Config';
+import { createEntityId, ENTITY_ID_PREFIX } from '../../domain/identity';
 
 /** Two-phase dispatch states inside one table */
 export const LOAD_ITEM_STATUS = {
@@ -408,7 +409,7 @@ export function assignDriverToItems(order, {
   }
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
-  const assignmentId = `LA-${Date.now()}`;
+  const assignmentId = createEntityId(ENTITY_ID_PREFIX.LOADING_ASSIGNMENT);
   const lineStates = getResolvedLineStates(order);
   const itemSnapshots = getAllLoadItems(order)
     .filter((item) => ids.includes(item.id))

@@ -6,13 +6,15 @@ import { showSystemToast } from '../../utils/systemToast';
 import OfoqKpis from './OfoqKpis';
 import OfoqToolbar from './OfoqToolbar';
 import OfoqPipelineBoard from './OfoqPipelineBoard';
+import ListPageLayout from '../../components/module/ListPageLayout';
+import ListToolbar from '../../components/module/ListToolbar';
 import '../kanoon/kanoon.css';
 import './ofoq-pipeline.css';
 
 /**
- * افق — پایپ‌لاین کانبان چرخه حیات مخاطبین.
- * دیتابیس جدا ندارد؛ لایه نمایشی روی مخاطبین کانون است (useContactsStore).
- * چیدمان استاندارد جریان (هم‌ریتم با نبض): هدر ماژول ← نوار KPI ← تولبار ← بورد.
+ * افق — پایپ‌لاین کانبان.
+ * چیدمان استاندارد ۳ بلوکی: KPI ← تولبار یکپارچه ← بورد.
+ * پویش از این قرارداد مستثنی است.
  */
 export default function OfoqModule() {
   const addContact = useContactsStore((state) => state.addContact);
@@ -21,7 +23,6 @@ export default function OfoqModule() {
   const [globalDue, setGlobalDue] = useState(null);
   const [leadModal, setLeadModal] = useState(null);
 
-  // «فرصت جدید» = همان فرم «ثبت مخاطب جدید» کانون؛ ذخیره در همان پایگاه داده مشترک
   const handleAddLead = () => {
     setLeadModal({ mode: 'minimal', entityType: ENTITY_TYPES.CUSTOMER, personType: PERSON_TYPES.LEGAL });
   };
@@ -33,19 +34,29 @@ export default function OfoqModule() {
   };
 
   return (
-    <div className="module-page ofoq-page ofoq-pipeline" data-module="ofogh" dir="rtl">
-      <OfoqKpis />
-
-      <OfoqToolbar
-        query={globalQuery}
-        onQueryChange={setGlobalQuery}
-        selectedStages={selectedStages}
-        onStagesChange={setSelectedStages}
-        dueFilter={globalDue}
-        onDueFilterChange={setGlobalDue}
-        onAddLead={handleAddLead}
-      />
-
+    <ListPageLayout
+      moduleId="ofogh"
+      className="ofoq-page ofoq-pipeline"
+      kpis={<OfoqKpis />}
+      toolbar={(
+        <ListToolbar
+          className="ofoq-glass"
+          searchPlaceholder="جستجو در سرنخ‌ها..."
+          searchValue={globalQuery}
+          onSearchChange={setGlobalQuery}
+          primaryLabel="فرصت جدید"
+          onPrimaryClick={handleAddLead}
+          filters={(
+            <OfoqToolbar
+              selectedStages={selectedStages}
+              onStagesChange={setSelectedStages}
+              dueFilter={globalDue}
+              onDueFilterChange={setGlobalDue}
+            />
+          )}
+        />
+      )}
+    >
       <OfoqPipelineBoard globalQuery={globalQuery} selectedStages={selectedStages} globalDue={globalDue} />
 
       {leadModal && (
@@ -58,6 +69,6 @@ export default function OfoqModule() {
           onOpenFullForm={() => setLeadModal((s) => ({ ...s, mode: 'full' }))}
         />
       )}
-    </div>
+    </ListPageLayout>
   );
 }

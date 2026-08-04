@@ -95,12 +95,23 @@
   font-size: 0.85rem;
 }
 
-/* Category chips */
-.vitrin-categories {
+/* Category chips (Block 2 — under search) */
+.list-toolbar__below-search .vitrin-categories {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  flex: 1 1 100%;
+  min-width: 0;
+  margin-bottom: 0;
+  max-width: 100%;
+}
+
+.list-toolbar__below-search .vitrin-categories__row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.15rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .vitrin-categories__row {
@@ -243,18 +254,9 @@
   background: var(--color-accent-muted);
 }
 
-/* Modals */
-/* بک‌دراپ شیشه‌ای واحد — هم‌استاندارد مودال پویش افق */
+/* Modals — unified backdrop from overlays.css */
 .vitrin-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--overlay-scrim);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 500;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
+  z-index: var(--z-modal-backdrop);
 }
 
 .vitrin-modal {
@@ -361,32 +363,14 @@
   gap: 0.75rem;
 }
 
-/* Drawer */
+/* Drawer — left-only; motion from global overlays.css */
 .vitrin-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--overlay-scrim);
-  z-index: 450;
+  z-index: var(--z-backdrop);
 }
 
 .vitrin-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
   width: min(560px, 94vw);
-  height: 100dvh;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-default);
-  box-shadow: var(--shadow-md);
-  display: flex;
-  flex-direction: column;
-  z-index: 460;
-  animation: vitrinDrawerIn 0.28s ease;
-}
-
-@keyframes vitrinDrawerIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  z-index: var(--z-drawer);
 }
 
 .vitrin-drawer__header {

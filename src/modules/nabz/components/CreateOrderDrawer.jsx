@@ -13,7 +13,7 @@ import {
   orderToEditDraft,
   validateCreateOrder,
 } from '../createOrder';
-import { expertKey, listCustomerExperts } from '../customers';
+import { expertKey, getCustomerById, listCustomerExperts } from '../customers';
 import { SENSITIVE_WIPE_CONFIRM_MESSAGE } from '../orderEditPermissions';
 import CustomerCombobox from './CustomerCombobox';
 import ExpertCombobox, { getExpertFromValue } from './ExpertCombobox';
@@ -23,6 +23,8 @@ import OrderLineItemsTable from './OrderLineItemsTable';
 import QuickAddCustomerModal from './QuickAddCustomerModal';
 import QuickAddExpertModal from './QuickAddExpertModal';
 import OrderProfileConfirmDialog from './orderProfile/OrderProfileConfirmDialog';
+import { useCompanyCompletionGate } from '../../../components/customerCompletion';
+import { isCompanyOperational } from '../../../domain/customerCompletion';
 
 function FormField({ label, children, hint, action }) {
   return (
@@ -51,7 +53,7 @@ function QuickAddLink({ children, onClick, disabled }) {
 function resolveExpertKey(customerId, requesterName, requesterMobile) {
   if (!customerId || !requesterName) return null;
   const match = listCustomerExperts(customerId).find((person) => (
-    person.name === requesterName
+    (person.fullName === requesterName || person.name === requesterName)
     && (!requesterMobile || person.mobile === requesterMobile)
   ));
   return match ? expertKey(match) : null;
@@ -70,7 +72,12 @@ export default function CreateOrderDrawer({
   const isEdit = mode === 'edit' && Boolean(order);
   const initialDraft = isEdit ? orderToEditDraft(order) : null;
 
-  const [customerId, setCustomerId] = useState(initialDraft?.customerId ?? initialCustomerId);
+  const [customerId, setCustomerId] = useState(() => {
+    if (initialDraft?.customerId) return initialDraft.customerId;
+    if (!initialCustomerId) return null;
+    const company = getCustomerById(initialCustomerId);
+    return company && isCompanyOperational(company) ? initialCustomerId : null;
+  });
   const [expertKeyValue, setExpertKeyValue] = useState(() => (
     initialDraft
       ? resolveExpertKey(
@@ -91,17 +98,39 @@ export default function CreateOrderDrawer({
   const [submitError, setSubmitError] = useState('');
   const [wipeConfirmOpen, setWipeConfirmOpen] = useState(false);
   const [entered, setEntered] = useState(false);
+  const { ensureOperational, gateDialog } = useCompanyCompletionGate();
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setEntered(true));
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  const handleCustomerChange = (nextId) => {
+  /* Incomplete company deep-linked from Ofogh — explain + one-click fix */
+  useEffect(() => {
+    if (isEdit || !initialCustomerId) return;
+    const company = getCustomerById(initialCustomerId);
+    if (!company || isCompanyOperational(company)) return;
+    ensureOperational(company, (ready) => {
+      setCustomerId(ready.id);
+      setExpertKeyValue(null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCustomerId]);
+
+  const selectCustomer = (nextId) => {
     setCustomerId(nextId);
     setExpertKeyValue(null);
   };
 
+  const handleCustomerChange = (nextId) => {
+    if (!nextId) {
+      selectCustomer(null);
+      return;
+    }
+    ensureOperational(nextId, (company) => {
+      selectCustomer(company.id);
+    });
+  };
   const validation = useMemo(
     () => validateCreateOrder({ customerId, lineItems }),
     [customerId, lineItems],
@@ -131,7 +160,7 @@ export default function CreateOrderDrawer({
     orderType,
     saleType,
     generalNotes,
-    requesterName: selectedExpert?.name,
+    requesterName: selectedExpert?.fullName || selectedExpert?.name,
     requesterMobile: selectedExpert?.mobile,
   });
 
@@ -166,7 +195,7 @@ export default function CreateOrderDrawer({
       orderType,
       saleType,
       generalNotes,
-      requesterName: selectedExpert?.name,
+      requesterName: selectedExpert?.fullName || selectedExpert?.name,
       requesterMobile: selectedExpert?.mobile,
     });
     onSubmit(nextOrder);
@@ -380,6 +409,8 @@ export default function CreateOrderDrawer({
         }}
         onCancel={() => setWipeConfirmOpen(false)}
       />
+
+      {gateDialog}
     </>
   );
 }

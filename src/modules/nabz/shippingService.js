@@ -91,10 +91,11 @@ export function getShippingRecipient(order) {
     };
   }
 
-  const primaryPerson = customer.relatedPersons?.[0];
+  const primaryPerson = (customer.relatedPersons || []).find((p) => p.isPrimary)
+    || customer.relatedPersons?.[0];
   return {
     companyName,
-    name: primaryPerson?.name || companyName,
+    name: primaryPerson?.fullName || primaryPerson?.name || companyName,
     nationalId: customer.nationalId || '—',
     phone: primaryPerson?.mobile || customer.mobile || customer.officialSpecs?.phone || '—',
     postalCode: customer.officialSpecs?.postalCode || '—',

@@ -1,5 +1,7 @@
 /** انواع بلوک و پیش‌فرض‌های فرم‌ساز نظرسنجی */
 
+import { createEntityId, ENTITY_ID_PREFIX } from '../../domain/identity';
+
 export const FIELD_TYPES = [
   {
     id: 'short_text',
@@ -42,7 +44,7 @@ export const FIELD_TYPES = [
 export function createBlock(typeId) {
   const meta = FIELD_TYPES.find((t) => t.id === typeId) || FIELD_TYPES[0];
   return {
-    id: `blk-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: createEntityId(ENTITY_ID_PREFIX.SURVEY_BLOCK),
     type: meta.id,
     question: meta.defaultQuestion,
     required: false,
@@ -52,7 +54,7 @@ export function createBlock(typeId) {
 
 export function createEmptySurvey(seed = {}) {
   return {
-    id: seed.id || `survey-${Date.now()}`,
+    id: seed.id || createEntityId(ENTITY_ID_PREFIX.SURVEY),
     title: seed.title || '',
     welcome: seed.welcome || '',
     thankYou: seed.thankYou || 'از وقتی که گذاشتید سپاسگزاریم.',

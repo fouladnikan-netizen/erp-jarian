@@ -21,6 +21,7 @@ import {
   parseMetricNumeric,
 } from './campaignsData';
 import CampaignBuilderDrawer from './CampaignBuilderDrawer';
+import { createEntityId, ENTITY_ID_PREFIX } from '../../domain/identity';
 import './kampayn.css';
 
 const ICON = { size: 16, strokeWidth: 1.75 };
@@ -83,7 +84,7 @@ export default function CampaignsDashboard() {
 
   const handleActivate = (draft) => {
     const next = {
-      id: `cmp-${Date.now()}`,
+      id: createEntityId(ENTITY_ID_PREFIX.CAMPAIGN),
       name: draft.name,
       type: draft.type,
       status: 'active',

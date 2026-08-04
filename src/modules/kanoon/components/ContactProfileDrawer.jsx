@@ -8,9 +8,11 @@ import {
 } from '../config';
 import { getDisplayName } from '../columns';
 import { getReportCard } from '../reportCard';
+import { getSupplierCapabilityTags } from '../supplierCapabilities';
 import { formatProductGroups } from './ProductGroupMultiSelect';
 import StatusTag from '../../../components/module/StatusTag';
-import ContactPersonsSection from './ContactPersonsSection';
+import ContactPersonsSection from '../../../components/contactPerson/ContactPersonsSection';
+import { listCompanyInteractions } from '../../pooyesh/interactionFacade';
 
 const OFFICIAL_SPEC_FIELDS = [
   { key: 'establishmentDate', label: 'تاریخ تاسیس' },
@@ -56,8 +58,8 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
   const legalPersons = contact.legalPersons || {};
   const report = getReportCard(contact);
 
-  const sortedInteractions = [...(contact.interactions || [])].sort(
-    (a, b) => b.date.localeCompare(a.date, 'fa'),
+  const sortedInteractions = [...listCompanyInteractions(contact.id)].sort(
+    (a, b) => String(b.date || '').localeCompare(String(a.date || ''), 'fa'),
   );
 
   const sortedOrders = [...(contact.relatedOrders || [])].sort(
@@ -174,9 +176,10 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
 
                   {contact.entityType === ENTITY_TYPES.SUPPLIER && (
                     <div className="kanoon-profile-panel__section">
-                      <h3>گروه‌های کالایی</h3>
+                      <h3>توانمندی‌های تامین</h3>
                       <p className="kanoon-profile-panel__value kanoon-profile-panel__value--block">
-                        {formatProductGroups(contact.productGroups)}
+                        {getSupplierCapabilityTags(contact).map((tag) => tag.label).join(' · ')
+                          || formatProductGroups(contact.productGroups)}
                       </p>
                     </div>
                   )}

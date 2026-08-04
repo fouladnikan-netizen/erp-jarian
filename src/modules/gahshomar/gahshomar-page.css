@@ -146,26 +146,66 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: 10px;
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-  color: var(--text-primary);
-  font-size: 0.8rem;
-  font-weight: 700;
+  gap: 0.4rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-fg);
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease;
 }
 
 .gahshomar-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.gahshomar-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+.gahshomar-btn--ghost:hover:not(:disabled) {
+  background: var(--btn-ghost-hover);
+  color: var(--text-primary);
+}
+
+.gahshomar-btn--secondary {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
+  box-shadow: var(--glass-inset-highlight);
+}
+
+.gahshomar-btn--secondary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow);
 }
 
 .gahshomar-btn--primary {
-  border-color: color-mix(in srgb, var(--color-accent-dark) 35%, transparent);
-  background: color-mix(in srgb, var(--color-accent-muted) 70%, transparent);
-  color: var(--color-accent-dark);
+  border-color: transparent;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--btn-primary-bg) 28%, transparent);
+}
+
+.gahshomar-btn--primary:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--btn-primary-bg) 34%, transparent);
 }
 
 .gahshomar-modal--wide {
@@ -308,20 +348,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.35rem;
+  height: 2.35rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   flex-shrink: 0;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
 .gahshomar-drawer__close:hover {
-  color: var(--color-neutral-800);
-  background: var(--bg-muted);
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--bg-muted) 60%, transparent);
 }
 
 .gahshomar-drawer__content {
@@ -539,7 +579,7 @@
   background: color-mix(in srgb, var(--color-accent-muted) 45%, transparent);
 }
 
-/* CREATE / EDIT — centered popup (~75% viewport), Jarian glass unity */
+/* CREATE / EDIT — centered popup (~75% viewport), Apple-like Jarian glass */
 .gahshomar-compose-overlay {
   z-index: var(--z-modal-backdrop);
   opacity: 0;
@@ -559,15 +599,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 22px;
-  background: linear-gradient(190deg, var(--glass-bg-strong) 0%, var(--bg-muted) 100%);
-  backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.35);
-  -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.35);
+  border-radius: 1.5rem; /* rounded-2xl */
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.4);
   box-shadow:
     var(--glass-inset-highlight-strong),
-    var(--shadow-md),
-    var(--shadow-lg);
-  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+    var(--glass-shadow);
+  border: 1px solid var(--glass-border);
   transform: translateY(12px) scale(0.98);
   opacity: 0;
   transition: transform 0.35s var(--jarian-drawer-ease), opacity 0.35s ease;
@@ -582,10 +621,11 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1.35rem 1.75rem 1.1rem;
-  border-bottom: 1px solid var(--border-light);
+  gap: 1.5rem;
+  padding: 1.75rem 2rem 1.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--glass-border) 70%, transparent);
   flex-shrink: 0;
+  background: color-mix(in srgb, var(--glass-bg-subtle) 55%, transparent);
 }
 
 .gahshomar-compose-popup__header-copy {
@@ -593,49 +633,288 @@
 }
 
 .gahshomar-compose-popup__eyebrow {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.4rem;
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-accent-dark);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.gahshomar-compose-popup__title-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .gahshomar-compose-popup__title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
 .gahshomar-compose-popup__body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem 1.75rem;
+  padding: 1.75rem 2rem;
 }
 
 .gahshomar-compose-popup__footer {
   display: flex;
   justify-content: flex-start;
-  gap: 0.55rem;
-  padding: 1rem 1.75rem 1.25rem;
-  border-top: 1px solid var(--border-light);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--glass-border) 70%, transparent);
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--bg-surface) 70%, transparent);
+  background: color-mix(in srgb, var(--glass-bg-subtle) 70%, transparent);
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
 }
 
 .gahshomar-compose__editor {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1.5rem; /* space-y-6 */
 }
 
-.gahshomar-compose__grid {
+.gahshomar-compose__fields {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-inset-highlight);
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
+  /* Keep dropdowns visible above the letter sheet below */
+  overflow: visible;
+}
+
+.gahshomar-compose__row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem 1.35rem;
+  gap: 1.5rem; /* gap-6 */
+  align-items: start;
 }
 
-.gahshomar-compose__grid > .gahshomar-modal__field:first-child {
-  grid-column: 1 / -1;
+.gahshomar-compose__row--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.gahshomar-compose__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* Compose labels — Meem, subtle */
+.gahshomar-compose-popup .gahshomar-modal__field {
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.gahshomar-compose-popup .gahshomar-modal__field > span,
+.gahshomar-compose-popup .gahshomar-modal__field > label,
+.gahshomar-compose-popup .jalali-date-picker > span {
+  margin-bottom: 0.15rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Magic inputs — glass, soft focus ring */
+.gahshomar-compose-popup .gahshomar-modal__input,
+.gahshomar-compose-popup .gahshomar-modal__textarea,
+.gahshomar-compose-popup .nabz-combobox .nabz-form__input,
+.gahshomar-compose-popup .jalali-date-picker__trigger {
+  width: 100%;
+  min-height: 2.85rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  border-radius: var(--radius-lg); /* rounded-xl */
+  border: 1px solid var(--input-border);
+  background: color-mix(in srgb, var(--bg-surface) 50%, transparent);
+  box-shadow: none;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.gahshomar-compose-popup .gahshomar-modal__input:hover,
+.gahshomar-compose-popup .nabz-combobox .nabz-form__input:hover,
+.gahshomar-compose-popup .jalali-date-picker__trigger:hover {
+  border-color: color-mix(in srgb, var(--input-border) 70%, var(--text-muted));
+}
+
+.gahshomar-compose-popup .gahshomar-modal__input:focus,
+.gahshomar-compose-popup .gahshomar-modal__textarea:focus,
+.gahshomar-compose-popup .nabz-combobox .nabz-form__input:focus,
+.gahshomar-compose-popup .jalali-date-picker__trigger:focus {
+  outline: none;
+  background: var(--bg-surface);
+  border-color: color-mix(in srgb, var(--input-border) 55%, var(--text-muted));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-muted) 12%, transparent);
+}
+
+.gahshomar-compose-popup .gahshomar-modal__input:read-only,
+.gahshomar-compose-popup .gahshomar-modal__input[aria-readonly='true'] {
+  background: color-mix(in srgb, var(--bg-muted) 45%, transparent);
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+.gahshomar-compose-popup .font-yekan.gahshomar-modal__input {
+  letter-spacing: 0.02em;
+}
+
+.gahshomar-compose__date .jalali-date-picker {
+  width: 100%;
+}
+
+.gahshomar-compose__date .jalali-date-picker__trigger {
+  text-align: right;
+}
+
+.gahshomar-compose-popup .nabz-combobox {
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+
+.gahshomar-compose-popup .nabz-combobox:focus-within {
+  z-index: 60;
+}
+
+/*
+ * Absolute dropdown is clipped by compose body overflow.
+ * Render list in-flow (same pattern as subject templates) so it stays visible.
+ */
+.gahshomar-compose-popup .nabz-combobox__list,
+.gahshomar-compose-popup .nabz-combobox__empty {
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+  margin-top: 0.4rem;
+  max-height: 14rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-shadow);
+  z-index: 5;
+}
+
+.gahshomar-compose-popup .gahshomar-modal__field:has(.nabz-combobox:focus-within),
+.gahshomar-compose-popup .gahshomar-modal__field:has(.gahshomar-subject-field.is-open) {
+  position: relative;
+  z-index: 50;
+}
+
+/* Fixed letter document — continuous sheet with form-driven header/footer */
+.gahshomar-letter-doc {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1.75rem 1.6rem 1.5rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-inset-highlight);
+}
+
+.gahshomar-letter-doc__bismillah {
+  margin: 0 0 0.85rem;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.7;
+  user-select: none;
+  pointer-events: none;
+}
+
+.gahshomar-letter-doc__company,
+.gahshomar-letter-doc__person {
+  margin: 0;
+  text-align: right;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.7;
+  user-select: none;
+  pointer-events: none;
+}
+
+.gahshomar-letter-doc__company + .gahshomar-letter-doc__person {
+  margin-top: 0.15rem;
+}
+
+.gahshomar-letter-doc__bismillah + .gahshomar-letter-doc__editable,
+.gahshomar-letter-doc__company + .gahshomar-letter-doc__editable,
+.gahshomar-letter-doc__person + .gahshomar-letter-doc__editable {
+  margin-top: 1.1rem;
+}
+
+.gahshomar-letter-doc__editable {
+  min-width: 0;
+}
+
+.gahshomar-letter-doc__editable .gahshomar-rte {
+  gap: 0.75rem;
+}
+
+.gahshomar-letter-doc__editable .gahshomar-rte__shell {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  min-height: 11rem;
+  padding: 0.25rem 0;
+}
+
+.gahshomar-letter-doc__signatory {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* سمت چپ در RTL */
+  gap: 0.25rem;
+  margin-top: 1.5rem;
+  text-align: left;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  user-select: none;
+  pointer-events: none;
+}
+
+.gahshomar-letter-doc__signatory strong {
+  font-weight: 800;
+}
+
+.gahshomar-compose-popup .gahshomar-modal__field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.gahshomar-req {
+  margin-inline-start: 0.2rem;
+  color: var(--danger);
+  font-weight: 700;
 }
 
 /* Subject suggestion dropdown */
@@ -660,7 +939,7 @@
 
 .gahshomar-subject-field__toggle {
   position: absolute;
-  inset-inline-end: 0.4rem;
+  inset-inline-end: 0.55rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -671,6 +950,11 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.gahshomar-subject-field__toggle:hover {
+  color: var(--text-secondary);
 }
 
 .gahshomar-subject-field__list {
@@ -678,14 +962,16 @@
   inset: auto;
   top: auto;
   z-index: 5;
-  margin: 0.35rem 0 0;
-  padding: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0.4rem;
   list-style: none;
   max-height: 14rem;
   overflow-y: auto;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--glass-shadow);
 }
 
@@ -695,13 +981,20 @@
   gap: 0.2rem;
   width: 100%;
   text-align: right;
-  padding: 0.6rem 0.7rem;
+  padding: 0.7rem 0.8rem;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-primary);
   cursor: pointer;
   font: inherit;
+  transition: background 0.2s ease;
+}
+
+.gahshomar-subject-field__option:hover,
+.gahshomar-subject-field__option:focus-visible {
+  background: color-mix(in srgb, var(--bg-muted) 55%, transparent);
+  outline: none;
 }
 
 .gahshomar-subject-field__option strong {
@@ -716,12 +1009,6 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.gahshomar-subject-field__option:hover,
-.gahshomar-subject-field__option:focus-visible {
-  background: var(--surface-hover);
-  outline: none;
 }
 
 /* AI letter body textarea */
@@ -802,17 +1089,30 @@
 .gahshomar-rte__ai-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--border-default));
-  background: color-mix(in srgb, var(--color-accent) 12%, var(--bg-surface));
-  color: var(--color-accent-dark);
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
   cursor: pointer;
   font: inherit;
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.8125rem;
+  font-weight: 500;
   flex-shrink: 0;
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.gahshomar-rte__ai-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--glass-shadow);
 }
 
 .gahshomar-rte__ai-btn:disabled {
@@ -820,35 +1120,42 @@
   cursor: not-allowed;
 }
 
+.gahshomar-rte__ai-btn svg {
+  color: var(--text-muted);
+}
+
 .gahshomar-rte__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.4rem;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-muted);
+  gap: 0.3rem;
+  padding: 0.45rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-muted) 45%, transparent);
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
 }
 
 .gahshomar-rte__tool {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.05rem;
+  height: 2.05rem;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-primary);
+  color: var(--text-muted);
   cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .gahshomar-rte__tool:hover:not(:disabled),
 .gahshomar-rte__tool.is-active {
-  background: var(--surface-hover);
-  color: var(--color-accent);
+  background: color-mix(in srgb, var(--bg-muted) 70%, transparent);
+  color: var(--text-primary);
 }
 
 .gahshomar-rte__tool:disabled {
@@ -1046,22 +1353,9 @@
   }
 }
 
-.gahshomar-compose-popup .gahshomar-modal__input,
-.gahshomar-compose-popup .gahshomar-modal__textarea {
-  min-height: 2.75rem;
-  padding: 0.7rem 0.85rem;
-  font-size: 1rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-}
-
-.gahshomar-compose-popup .gahshomar-modal__textarea {
-  min-height: 12rem;
-}
-
 @media (max-width: 900px) {
-  .gahshomar-compose__grid {
+  .gahshomar-compose__row,
+  .gahshomar-compose__pair {
     grid-template-columns: 1fr;
   }
 
@@ -1077,12 +1371,17 @@
     height: 90vh;
     max-width: 96vw;
     max-height: 90vh;
-    border-radius: 16px;
+    border-radius: 1.25rem;
   }
 
   .gahshomar-compose-popup__header,
   .gahshomar-compose-popup__body,
   .gahshomar-compose-popup__footer {
-    padding-inline: 1.1rem;
+    padding-inline: 1.25rem;
+  }
+
+  .gahshomar-compose__fields,
+  .gahshomar-letter-doc {
+    padding: 1.15rem;
   }
 }

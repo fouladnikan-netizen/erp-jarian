@@ -1,35 +1,32 @@
 /* ——— Kanoon module ——— */
 
+.list-toolbar__filter-cluster.kanoon-toolbar,
 .kanoon-toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.kanoon-toolbar__tabs {
-  display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: space-between;
   gap: 0.75rem;
 }
 
-.kanoon-toolbar__actions {
-  width: 100%;
-  align-items: center;
-}
-
-.kanoon-toolbar__actions .kanoon-toggle {
+.kanoon-toolbar .kanoon-audience-chips,
+.kanoon-toolbar .nabz-segment {
   flex-shrink: 0;
 }
 
-.kanoon-toolbar__actions .actions-bar__buttons {
-  margin-right: 0;
+/* RTL: first child (entity type) sits on the right; person type to its left */
+.kanoon-toolbar__entity-select {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
 }
 
 /* Main entity tabs */
 .kanoon-tabs {
   display: inline-flex;
+  flex-direction: row;
   background: var(--color-neutral-50);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -59,6 +56,8 @@
 /* Legal / Natural toggle */
 .kanoon-toggle {
   display: inline-flex;
+  flex-direction: row;
+  flex-shrink: 0;
   border: 1px solid var(--border-default);
   border-radius: 999px;
   overflow: hidden;
@@ -79,7 +78,8 @@
 }
 
 .kanoon-toggle__btn + .kanoon-toggle__btn {
-  border-right: 1px solid var(--border-default);
+  border-inline-start: 1px solid var(--border-default);
+  border-right: none;
 }
 
 /* Column filters popover */
@@ -203,6 +203,22 @@
 
 .kanoon-table__th-btn:hover {
   color: var(--color-accent-dark);
+}
+
+.kanoon-table__th-with-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+
+.kanoon-table__th-btn--sort-only {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.kanoon-table__th-btn--sort-only:hover {
+  opacity: 1;
 }
 
 .kanoon-table__sort {
@@ -383,24 +399,9 @@
   margin-top: 0.5rem;
 }
 
-/* Modal */
-/* بک‌دراپ شیشه‌ای واحد — عین بک‌دراپ مودال پویش افق (وحدت رویه گلس در کل سیستم) */
+/* Modal — unified backdrop from overlays.css */
 .kanoon-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--overlay-scrim);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 500;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  animation: kanoon-overlay-fade-in 0.2s ease;
-}
-
-@keyframes kanoon-overlay-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  z-index: var(--z-modal-backdrop);
 }
 
 .kanoon-modal {
@@ -515,32 +516,14 @@
   color: var(--color-brand-red);
 }
 
-/* Profile drawer — opens from left */
+/* Profile drawer — left-only; motion from global overlays.css */
 .kanoon-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--overlay-scrim);
-  z-index: 450;
+  z-index: var(--z-backdrop);
 }
 
 .kanoon-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
   width: min(560px, 94vw);
-  height: 100dvh;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-default);
-  box-shadow: var(--shadow-md);
-  display: flex;
-  flex-direction: column;
-  z-index: 460;
-  animation: kanoonDrawerIn 0.28s ease;
-}
-
-@keyframes kanoonDrawerIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  z-index: var(--z-drawer);
 }
 
 .kanoon-drawer__header {
@@ -754,6 +737,105 @@
   gap: 0.75rem;
 }
 
+.supplier-cap-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  position: relative;
+}
+
+.supplier-cap-tags__box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--glass-bg);
+}
+
+.supplier-cap-tags__selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.supplier-cap-tags__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 22%, transparent);
+  background: color-mix(in srgb, var(--color-accent-muted) 65%, transparent);
+  color: var(--color-accent-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.supplier-cap-tags__chip.is-custom {
+  background: var(--bg-muted);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.supplier-cap-tags__input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  padding: 0.2rem 0;
+}
+
+.supplier-cap-tags__menu {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 20;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-md);
+  max-height: 220px;
+  overflow: auto;
+}
+
+.supplier-cap-tags__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-align: right;
+  cursor: pointer;
+}
+
+.supplier-cap-tags__option:hover,
+.supplier-cap-tags__option.is-active {
+  background: var(--color-accent-muted);
+}
+
+.supplier-cap-tags__option.is-custom {
+  color: var(--color-accent-dark);
+}
+
+.supplier-cap-tags__option-meta {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
 .product-groups__row {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
@@ -886,7 +968,7 @@
 }
 
 @media (max-width: 640px) {
-  .kanoon-toolbar__tabs {
+  .kanoon-toolbar__entity-select {
     flex-direction: column;
     align-items: stretch;
   }

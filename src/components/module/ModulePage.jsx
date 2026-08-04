@@ -1,21 +1,54 @@
+import { useState } from 'react';
+import ListPageLayout from './ListPageLayout';
+import ListToolbar from './ListToolbar';
 import KpiCard from './KpiCard';
-import ActionsBar from './ActionsBar';
 import DataTable from './DataTable';
 
+/**
+ * Generic module list page — unified 3-block list layout.
+ */
 export default function ModulePage({ module, data }) {
-  return (
-    <div className="module-page" data-module={module.id}>
-      <section className="section-kpis" aria-label="شاخص‌های کلیدی">
-        <div className="section-label">شاخص‌های کلیدی عملکرد</div>
-        <div className="kpi-grid">
-          {data.kpis.map((kpi) => (
-            <KpiCard key={kpi.label} kpi={kpi} />
-          ))}
-        </div>
-      </section>
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState(data.filters?.[0] || null);
 
-      <ActionsBar data={data} />
+  return (
+    <ListPageLayout
+      moduleId={module.id}
+      kpis={(
+        <section className="section-kpis" aria-label="شاخص‌های کلیدی">
+          <div className="section-label">شاخص‌های عملکردی و آمار زنده</div>
+          <div className="kpi-grid">
+            {data.kpis.map((kpi) => (
+              <KpiCard key={kpi.label} kpi={kpi} />
+            ))}
+          </div>
+        </section>
+      )}
+      toolbar={(
+        <ListToolbar
+          searchPlaceholder={data.searchPlaceholder}
+          searchValue={search}
+          onSearchChange={setSearch}
+          primaryLabel={data.primaryAction || 'ثبت رکورد جدید'}
+          secondary={(data.secondaryActions || []).map((action) => (
+            <button key={action} type="button" className="btn btn--outline font-meem">
+              {action}
+            </button>
+          ))}
+          filters={(data.filters || []).map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              className={`chip font-meem${activeFilter === filter ? ' is-active' : ''}`}
+              onClick={() => setActiveFilter(filter)}
+            >
+              {filter}
+            </button>
+          ))}
+        />
+      )}
+    >
       <DataTable data={data} />
-    </div>
+    </ListPageLayout>
   );
 }

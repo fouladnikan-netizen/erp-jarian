@@ -1,6 +1,6 @@
 /* Associated contact persons — compact row list (Theme Tokens only, RFC-001) */
 
-.kanoon-cp {
+.contact-person {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -11,7 +11,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.kanoon-cp__header {
+.contact-person__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -19,21 +19,21 @@
   flex-wrap: wrap;
 }
 
-.kanoon-cp__titles {
+.contact-person__titles {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
 }
 
-.kanoon-cp__title {
+.contact-person__title {
   margin: 0;
   font-size: 0.92rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
-.kanoon-cp__subtitle {
+.contact-person__subtitle {
   margin: 0;
   font-size: 0.75rem;
   font-weight: 500;
@@ -41,7 +41,7 @@
   color: var(--text-secondary);
 }
 
-.kanoon-cp__empty {
+.contact-person__empty {
   margin: 0;
   padding: 1rem 0.25rem;
   font-size: 0.8rem;
@@ -49,133 +49,219 @@
   text-align: center;
 }
 
-/* —— Compact horizontal rows —— */
-.kanoon-cp__list {
+/* —— Duplicate mobile info panel (ADR-08 — informational only) —— */
+.contact-person-dup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.contact-person-dup__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.contact-person-dup__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 9px;
+  color: var(--color-accent-dark);
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 28%, var(--border));
+}
+
+.contact-person-dup__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.contact-person-dup__title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.contact-person-dup__body {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.contact-person-dup__list-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.contact-person-dup__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.contact-person-dup__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.contact-person-dup__check {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1rem;
+  color: var(--success);
+}
+
+.contact-person-dup__item-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.contact-person-dup__company {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.contact-person-dup__person {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.contact-person-dup__role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* —— Contact Person row (flex; info + edit — no avatar / no row delete) —— */
+.contact-person__list {
   list-style: none;
   margin: 0;
   padding: 0;
   border-top: 1px solid var(--border);
 }
 
-.kanoon-cp-row {
+.contact-person-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  min-height: 3.25rem;
-  padding: 0.65rem 0.15rem;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
   background: transparent;
 }
 
-.kanoon-cp-row:last-child {
+.contact-person-row:last-child {
   border-bottom: none;
 }
 
-.kanoon-cp-row:hover {
+.contact-person-row:hover {
   background: var(--surface-hover);
 }
 
-.kanoon-cp-row__identity {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
+/* Info stack */
+.contact-person-row__info {
+  flex-grow: 1;
   min-width: 0;
-  flex: 1 1 11rem;
-}
-
-.kanoon-cp-row__avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.15rem;
-  height: 2.15rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg-muted);
-  color: var(--text-primary);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.kanoon-cp-row__who {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
+  gap: 6px;
+}
+
+.contact-person-row__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
-.kanoon-cp-row__name {
-  font-size: 0.84rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 11rem;
+.contact-person-row__star {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  color: var(--warning);
+  line-height: 0;
 }
 
-.kanoon-cp-row__role {
+.contact-person-row__star svg {
+  fill: var(--warning);
+  color: var(--warning);
+}
+
+.contact-person-row__name {
+  font-family: 'Meem', var(--font-primary), Tahoma, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.contact-person-row__role {
+  flex-shrink: 0;
   display: inline-flex;
+  align-items: center;
   padding: 0.1rem 0.4rem;
   border-radius: 6px;
   font-size: 0.66rem;
   font-weight: 700;
+  line-height: 1.3;
   color: var(--text-secondary);
   background: var(--bg-muted);
   border: 1px solid var(--border);
-  white-space: nowrap;
 }
 
-.kanoon-cp-row__phones {
-  flex: 1 1 8rem;
-  min-width: 0;
-  text-align: center;
-  font-size: 0.8rem;
+.contact-person-row__phone {
+  font-family: 'Yekan Bakh', var(--font-numeric), Tahoma, sans-serif;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   direction: ltr;
+  unicode-bidi: plaintext;
 }
 
-.kanoon-cp-row__end {
+/* Actions — edit only */
+.contact-person-row__actions {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.45rem;
-  flex: 0 0 auto;
+  gap: 8px;
+  margin-top: 4px;
 }
 
-.kanoon-cp-row__primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 6px;
-  font-size: 0.66rem;
-  font-weight: 700;
-  color: var(--warning);
-  background: var(--warning-muted);
-  border: 1px solid var(--warning-border);
-  white-space: nowrap;
-}
-
-.kanoon-cp-row__primary-spacer {
-  display: none;
-}
-
-.kanoon-cp-row__actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-}
-
-.kanoon-cp-action {
+.contact-person-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -192,20 +278,14 @@
     border-color var(--transition-fast);
 }
 
-.kanoon-cp-action:hover {
+.contact-person-action:hover {
   color: var(--color-accent-dark);
   border-color: var(--border);
   background: var(--bg-muted);
 }
 
-.kanoon-cp-action--danger:hover {
-  color: var(--danger);
-  border-color: var(--danger-border);
-  background: var(--danger-muted);
-}
-
 /* —— Buttons —— */
-.kanoon-cp-btn {
+.contact-person-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -222,34 +302,45 @@
     opacity var(--transition-fast);
 }
 
-.kanoon-cp-btn:disabled {
+.contact-person-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.kanoon-cp-btn--ghost {
+.contact-person-btn--ghost {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-secondary);
 }
 
-.kanoon-cp-btn--ghost:hover:not(:disabled) {
+.contact-person-btn--ghost:hover:not(:disabled) {
   color: var(--text-primary);
   background: var(--bg-muted);
 }
 
-.kanoon-cp-btn--primary {
+.contact-person-btn--primary {
   border: 1px solid color-mix(in srgb, var(--color-accent-dark) 40%, var(--border));
   background: color-mix(in srgb, var(--color-accent) 18%, var(--surface));
   color: var(--color-accent-dark);
 }
 
-.kanoon-cp-btn--primary:hover:not(:disabled) {
+.contact-person-btn--primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-accent) 28%, var(--surface));
 }
 
+.contact-person-btn--danger {
+  border: 1px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  color: var(--danger);
+}
+
+.contact-person-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+  border-color: var(--danger);
+}
+
 /* —— Modal (max 480px, solid surface — no nested blur) —— */
-.kanoon-cp-modal {
+.contact-person-modal {
   position: fixed;
   inset: 0;
   z-index: 95;
@@ -257,10 +348,10 @@
   place-items: center;
   padding: 1rem;
   background: var(--overlay-scrim);
-  animation: kanoon-cp-fade-in 160ms ease;
+  animation: contact-person-fade-in 160ms ease;
 }
 
-.kanoon-cp-modal__card {
+.contact-person-modal__card {
   width: min(100%, 480px);
   max-height: min(92dvh, 720px);
   overflow: auto;
@@ -269,10 +360,10 @@
   border: 1px solid var(--border);
   background: var(--surface-elevated);
   box-shadow: var(--shadow-lg);
-  animation: kanoon-cp-rise-in 200ms ease;
+  animation: contact-person-rise-in 200ms ease;
 }
 
-.kanoon-cp-modal__header {
+.contact-person-modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -282,14 +373,14 @@
   border-bottom: 1px solid var(--border);
 }
 
-.kanoon-cp-modal__title {
+.contact-person-modal__title {
   margin: 0;
   font-size: 0.98rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
-.kanoon-cp-modal__close {
+.contact-person-modal__close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -302,31 +393,31 @@
   cursor: pointer;
 }
 
-.kanoon-cp-modal__close:hover {
+.contact-person-modal__close:hover {
   color: var(--text-primary);
   background: var(--bg-muted);
 }
 
-.kanoon-cp-modal__form {
+.contact-person-modal__form {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
 }
 
-.kanoon-cp-modal__row {
+.contact-person-modal__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.7rem;
 }
 
-.kanoon-cp-modal__field {
+.contact-person-modal__field {
   display: flex;
   flex-direction: column;
   gap: 0.32rem;
   min-width: 0;
 }
 
-.kanoon-cp-modal__label {
+.contact-person-modal__label {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -335,14 +426,14 @@
   color: var(--text-secondary);
 }
 
-.kanoon-cp-modal__optional {
+.contact-person-modal__optional {
   font-size: 0.66rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
-.kanoon-cp-modal__input,
-.kanoon-cp-modal__select {
+.contact-person-modal__input,
+.contact-person-modal__select {
   width: 100%;
   box-sizing: border-box;
   min-height: 40px;
@@ -358,13 +449,13 @@
     box-shadow var(--transition-fast);
 }
 
-.kanoon-cp-modal__input:focus,
-.kanoon-cp-modal__select:focus {
+.contact-person-modal__input:focus,
+.contact-person-modal__select:focus {
   border-color: var(--color-accent-dark);
   box-shadow: var(--focus-ring);
 }
 
-.kanoon-cp-modal__toggle-row {
+.contact-person-modal__toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -375,7 +466,7 @@
   background: var(--bg-muted);
 }
 
-.kanoon-cp-toggle {
+.contact-person-toggle {
   position: relative;
   width: 2.55rem;
   height: 1.4rem;
@@ -389,12 +480,12 @@
     border-color var(--transition-fast);
 }
 
-.kanoon-cp-toggle--on {
+.contact-person-toggle--on {
   background: color-mix(in srgb, var(--color-accent) 40%, var(--surface));
   border-color: color-mix(in srgb, var(--color-accent-dark) 40%, var(--border));
 }
 
-.kanoon-cp-toggle__knob {
+.contact-person-toggle__knob {
   position: absolute;
   top: 50%;
   inset-inline-start: 0.14rem;
@@ -407,34 +498,52 @@
   transition: inset-inline-start var(--transition-fast);
 }
 
-.kanoon-cp-toggle--on .kanoon-cp-toggle__knob {
+.contact-person-toggle--on .contact-person-toggle__knob {
   inset-inline-start: calc(100% - 1.2rem);
 }
 
-.kanoon-cp-modal__actions {
+.contact-person-modal__actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.45rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
   margin-top: 0.15rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--border);
 }
 
-.kanoon-cp-modal__actions .kanoon-cp-btn--primary {
-  min-width: 9.5rem;
+.contact-person-modal__actions-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.kanoon-cp-modal__actions .kanoon-cp-btn--ghost {
+.contact-person-modal__actions-primary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  margin-inline-start: auto;
+}
+
+.contact-person-modal__actions .contact-person-btn--primary {
+  min-width: 7.5rem;
+}
+
+.contact-person-modal__actions .contact-person-btn--ghost {
   min-width: 5.5rem;
 }
 
-@keyframes kanoon-cp-fade-in {
+.contact-person-modal__actions .contact-person-btn--danger {
+  min-width: 7.5rem;
+}
+
+@keyframes contact-person-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes kanoon-cp-rise-in {
+@keyframes contact-person-rise-in {
   from {
     opacity: 0;
     transform: translateY(8px) scale(0.985);
@@ -446,32 +555,16 @@
 }
 
 @media (max-width: 640px) {
-  .kanoon-cp__header {
+  .contact-person__header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .kanoon-cp-btn--primary {
+  .contact-person-btn--primary {
     width: 100%;
   }
 
-  .kanoon-cp-row {
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  .kanoon-cp-row__phones {
-    flex-basis: 100%;
-    order: 3;
-    text-align: right;
-    padding-inline-start: 2.7rem;
-  }
-
-  .kanoon-cp-row__end {
-    margin-inline-start: auto;
-  }
-
-  .kanoon-cp-modal__row {
+  .contact-person-modal__row {
     grid-template-columns: 1fr;
   }
 }

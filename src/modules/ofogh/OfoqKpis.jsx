@@ -65,7 +65,7 @@ export default function OfoqKpis() {
 
   return (
     <section className="section-kpis nabz-kpis ofoq-kpis" aria-label="شاخص‌های کلیدی افق">
-      <div className="section-label">شاخص‌های کلیدی</div>
+      <div className="section-label">شاخص‌های عملکردی و آمار زنده</div>
       <div className="kpi-grid nabz-kpi-grid">
         {cards.map((card) => (
           <article key={card.label} className="nabz-kpi" style={{ '--kpi-accent': card.accent }}>

@@ -28,11 +28,24 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    include: [
+      'src/**/__tests__/**/*.{test,spec}.{js,jsx,ts,tsx}',
+      'src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/modules/nabz/services/**', 'src/shared/utils/**'],
+      include: [
+        'src/domain/**',
+        'src/modules/nabz/services/**',
+        'src/modules/nabz/orderStageService.js',
+        'src/shared/utils/**',
+      ],
+      exclude: [
+        'src/**/__tests__/**',
+        'src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+      ],
+      // Thresholds deferred — see Docs/architecture/QUALITY_ENGINEERING.md
     },
   },
 });

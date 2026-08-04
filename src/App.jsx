@@ -29,6 +29,7 @@ import { DEFAULT_SETTINGS_SECTION, SHIRAZEH_BASE_PATH } from './modules/shirazeh
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { NotificationEngineProvider } from './context/NotificationEngineContext';
 import { modules, moduleData } from './modules/registry';
+import GahshomarPage from './modules/gahshomar/GahshomarPage';
 
 function ProtectedErpShell() {
   return (
@@ -61,8 +62,13 @@ export default function App() {
               <Route path="/kanoon/contact/:contactId" element={<CustomerProfilePage />} />
               <Route path="/vitrin" element={<VitrinPage />} />
               <Route path="/ofogh" element={<OfoqModule />} />
-              <Route path="/gahshomar" element={<CalendarPage />} />
-              <Route path="/calendar" element={<Navigate to="/gahshomar" replace />} />
+              {/* Product surface: CommitmentEngine under پویش */}
+              <Route path="/pooyesh" element={<CalendarPage />} />
+              <Route path="/gahshomar" element={<GahshomarPage />} />
+              {/* Legacy bookmarks that opened CommitmentEngine under گاه‌شمار / calendar */}
+              <Route path="/calendar" element={<Navigate to="/pooyesh" replace />} />
+              <Route path="/commitments" element={<Navigate to="/pooyesh" replace />} />
+              <Route path="/gahshomar/commitments" element={<Navigate to="/pooyesh" replace />} />
               <Route path="/kampayn" element={<CampaignsDashboard />} />
               <Route path="/kampayn/survey" element={<SurveyBuilder />} />
               <Route path="/kampayn/analytics" element={<TaninAnalyticsDashboard />} />
@@ -93,6 +99,7 @@ export default function App() {
                   && module.id !== 'vitrin'
                   && module.id !== 'nabz'
                   && module.id !== 'ofogh'
+                  && module.id !== 'pooyesh'
                   && module.id !== 'gahshomar'
                   && module.id !== 'kampayn'
                   && module.id !== 'shirazeh'

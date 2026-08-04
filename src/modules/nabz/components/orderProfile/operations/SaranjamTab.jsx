@@ -7,6 +7,7 @@ import { getCustomerById } from '../../../customers';
 import { getTodayJalali } from '../../../dateUtils';
 import { listCrmPaymentsAsCustomerPayments } from '../../../orderCrmService';
 import { buildSaranjamSettlementModel, getSaranjamDiscrepancy } from '../../../saranjamSettlementService';
+import { createEntityId, ENTITY_ID_PREFIX } from '../../../../../domain/identity';
 import { printTaxInvoice } from './printTaxInvoice';
 import SaranjamSettlementLayout from './SaranjamSettlementLayout';
 import './SaranjamTab.css';
@@ -871,12 +872,13 @@ export default function SaranjamTab({
 
   const buyer = useMemo(() => {
     const customer = getCustomerById(order?.customerId);
-    const primaryPerson = customer?.relatedPersons?.[0];
+    const primaryPerson = (customer?.relatedPersons || []).find((p) => p.isPrimary)
+      || customer?.relatedPersons?.[0];
     return {
       name: order?.customer || customer?.companyName || customer?.personName || 'خریدار نمونه',
       nationalId: customer?.nationalId || '—',
       economicId: customer?.economicId || customer?.nationalId || '—',
-      phone: customer?.mobile || customer?.officialSpecs?.phone || '—',
+      phone: primaryPerson?.mobile || customer?.mobile || customer?.officialSpecs?.phone || '—',
       address: customer?.fullAddress || customer?.officialSpecs?.address || '—',
       postalCode: customer?.officialSpecs?.postalCode || '—',
       registrationNumber: customer?.registrationNumber || '—',
@@ -995,7 +997,7 @@ export default function SaranjamTab({
       return;
     }
     const payment = {
-      id: `cp-${Date.now()}`,
+      id: createEntityId(ENTITY_ID_PREFIX.CUSTOMER_PAYMENT),
       date: getTodayJalali(),
       amountRial: remaining,
       note: 'فیش واریزی مشتری',
@@ -1010,7 +1012,7 @@ export default function SaranjamTab({
   const handleSupplierReceipt = (ledger, file) => {
     if (!file || !ledger || ledger.balanceRial === 0) return;
     const payment = {
-      id: `sp-${Date.now()}`,
+      id: createEntityId(ENTITY_ID_PREFIX.SUPPLIER_PAYMENT),
       supplierId: ledger.supplierId,
       supplier: ledger.supplier,
       date: '۱۴۰۴/۰۱/۱۵',
