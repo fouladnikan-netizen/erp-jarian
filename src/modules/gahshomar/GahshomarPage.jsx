@@ -68,7 +68,6 @@ export default function GahshomarPage() {
       data-domain="gahshomar"
       kpis={(
         <section className="section-kpis" aria-label="شاخص‌های فیلترشونده">
-          <div className="section-label">شاخص‌های عملکردی و آمار زنده</div>
           <div className="kpi-grid">
             {kpis.map((kpi) => (
               <KpiCard

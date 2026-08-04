@@ -4,10 +4,7 @@ import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
 import {
   ListColumnHeader,
-  ListPagination,
   ListChrome,
-  VirtualSpacerRows,
-  VirtualSpacerBottom,
   InfiniteSentinelRow,
 } from '../../../components/common/list';
 import ListStatusPill from '../../../components/module/ListStatusPill';
@@ -67,6 +64,7 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
     openFilterKey,
     setOpenFilterKey,
     applyFilter,
+    clearFilters,
     filterRows,
     buildOptions,
   } = useColumnExcelFilters({ resetKey: tab });
@@ -99,7 +97,6 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
     rows: filteredRecords,
     sortAccessors,
     sortTypes: { date: 'date' },
-    getExportValue: getRawValue,
     resetKey: tab,
     scrollRef,
     sentinelRef,
@@ -152,23 +149,16 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
         <span className="data-table-header__title font-meem">
           {isIncoming ? 'نامه‌های دریافتی' : 'نامه‌های ارسالی'}
         </span>
-        <span className="data-table-header__count font-yekan">
-          {shell.sortedRows.length.toLocaleString('fa-IR')} رکورد
-        </span>
         <div className="data-table-header__tools">
           <ListChrome
             columns={shell.columns}
             setColumnVisible={shell.setColumnVisible}
             reorderColumns={shell.reorderColumns}
             resetColumns={shell.resetColumns}
-            exportColumns={shell.exportColumns}
-            exportRows={shell.exportRows}
-            getExportValue={shell.getExportValue}
-            filenameBase={`gahshomar-${tab}`}
-            sheetName={isIncoming ? 'دریافتی' : 'ارسالی'}
-            viewMode={shell.viewMode}
-            setViewMode={shell.setViewMode}
-            onResetPreferences={shell.resetPreferences}
+            onResetPreferences={async () => {
+              await shell.resetPreferences();
+              clearFilters();
+            }}
           />
         </div>
       </div>
@@ -208,7 +198,6 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
             </tr>
           </thead>
           <tbody>
-            <VirtualSpacerRows virtual={shell.virtual} colSpan={colSpan} />
             {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={colSpan} className="font-meem">
@@ -220,12 +209,9 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
                 <tr key={record.id}>
                   {visibleColumns.map((col) => {
                     if (col.key === 'row') {
-                      const rowNo = shell.virtual
-                        ? shell.virtual.startIndex + index + 1
-                        : (shell.pagination?.rangeStart || 1) + index;
                       return (
                         <td key={col.key} className="font-yekan">
-                          {rowNo.toLocaleString('fa-IR')}
+                          {(index + 1).toLocaleString('fa-IR')}
                         </td>
                       );
                     }
@@ -282,7 +268,6 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
                 </tr>
               ))
             )}
-            <VirtualSpacerBottom virtual={shell.virtual} colSpan={colSpan} />
             <InfiniteSentinelRow
               show={shell.showInfiniteSentinel}
               sentinelRef={sentinelRef}
@@ -292,9 +277,6 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
           </tbody>
         </table>
       </div>
-      {shell.showPagination && shell.pagination ? (
-        <ListPagination {...shell.pagination} />
-      ) : null}
     </section>
   );
 }

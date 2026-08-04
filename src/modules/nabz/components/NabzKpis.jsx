@@ -1,7 +1,6 @@
 export default function NabzKpis({ kpis }) {
   return (
     <section className="section-kpis nabz-kpis" aria-label="شاخص‌های کلیدی">
-      <div className="section-label">شاخص‌های عملکردی و آمار زنده</div>
       <div className="kpi-grid nabz-kpi-grid">
         {kpis.map((kpi) => {
           const tone = kpi.tone || 'neutral';

@@ -30,7 +30,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 6b. [COMPANY_PROFILE_HUB_SESSION_PACK.md](./COMPANY_PROFILE_HUB_SESSION_PACK.md) — Customer/Supplier profile hub session (۱۰ پرامپت: architecture + file map)  
 7. [ORDER_WORKFLOW.md](./ORDER_WORKFLOW.md) — Nabz stages (as-is)  
 8. [FRONTEND_ARCHITECTURE_GUIDELINES.md](./FRONTEND_ARCHITECTURE_GUIDELINES.md) — module boundaries  
-8b. [UNIFIED_LIST_INFRASTRUCTURE.md](./UNIFIED_LIST_INFRASTRUCTURE.md) — Law #004 shared list infrastructure  
+8b. [UNIFIED_LIST_INFRASTRUCTURE.md](./UNIFIED_LIST_INFRASTRUCTURE.md) — Law #004 shared list infrastructure (Infinite Loading)  
 9. [QUALITY_ENGINEERING.md](./QUALITY_ENGINEERING.md) — lint / test / CI  
 10. Then deepen as needed: domain/state/security/performance/backend audits (`07`–`16`), [PERFORMANCE_GUIDELINES.md](./PERFORMANCE_GUIDELINES.md)
 
@@ -49,7 +49,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 | [06-FUTURE_RECOMMENDATIONS.md](./06-FUTURE_RECOMMENDATIONS.md) | Medium/high-cost items deferred |
 | [DOMAIN_DECISION_LOG.md](./DOMAIN_DECISION_LOG.md) | Locked domain decisions (DDL) before persistence |
 | [COMPANY_PROFILE_HUB_SESSION_PACK.md](./COMPANY_PROFILE_HUB_SESSION_PACK.md) | Customer/Supplier profile hub — ۱۰-prompt architecture pack + file map |
-| [UNIFIED_LIST_INFRASTRUCTURE.md](./UNIFIED_LIST_INFRASTRUCTURE.md) | Law #004 — shared lists (sort / filter / resize / pagination) |
+| [UNIFIED_LIST_INFRASTRUCTURE.md](./UNIFIED_LIST_INFRASTRUCTURE.md) | Law #004 — shared lists; Infinite Loading mandatory |
 | [PROFILE_LAYOUT_GUIDELINES.md](./PROFILE_LAYOUT_GUIDELINES.md) | Required layout for **new** profile pages |
 | [07-DOMAIN_MODEL_AUDIT.md](./07-DOMAIN_MODEL_AUDIT.md) | DDD domain audit — entities, aggregates, policies, scores |
 | [08-STATE_ARCHITECTURE_AUDIT.md](./08-STATE_ARCHITECTURE_AUDIT.md) | State management audit — stores, SSOT, coupling, scale |

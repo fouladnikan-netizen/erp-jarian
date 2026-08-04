@@ -27,12 +27,11 @@
 | ColumnFilterHeader / useColumnExcelFilters | `components/table/`, `hooks/` | Excel-style filters |
 | ListStatusPill | `components/module/ListStatusPill.jsx` | Unified list status |
 | MultiSortHeader / useMultiSort | `components/common/list/`, `hooks/list/` | Multi-column sort — Law #004 |
-| ListPagination / usePagination | `components/common/list/`, `hooks/list/` | Shared pagination — Law #004 |
 | ListColumnHeader | `components/common/list/` | Sort + filter composition |
 | ColumnManager / useColumnManager | `components/common/list/`, `hooks/list/` | Show/hide + DnD reorder |
-| useListPreferences / listPreferencesService | `hooks/list/`, `services/` | Per-user per-list prefs |
-| ListExport / listExportService | `components/common/list/`, `services/` | CSV + Excel export |
-| useVirtualList / useInfiniteLoading / useListDataProvider | `hooks/list/` | Virtual + infinite modes |
+| ListSelectionBar | `components/common/list/` | Selection count only after row select |
+| useListPreferences / listPreferencesService | `hooks/list/`, `services/` | Per-user per-list prefs (columns/sorts/filters) |
+| useInfiniteLoading / useListDataProvider | `hooks/list/` | **Mandatory** Infinite Loading |
 | ListChrome / useListShell | `components/common/list/`, `hooks/list/` | Full list orchestration |
 
 See [UNIFIED_LIST_INFRASTRUCTURE.md](./UNIFIED_LIST_INFRASTRUCTURE.md) (Architecture Law #004).

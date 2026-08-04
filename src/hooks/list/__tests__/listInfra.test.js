@@ -2,11 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { applyMultiSort, nextSorts, SORT_DIR } from '../useMultiSort';
 import { slicePage, LIST_PAGINATION_MODE } from '../usePagination';
 import {
-  buildExportMatrix,
-  toCsvString,
-  toExcelXmlString,
-} from '../../../services/listExportService';
-import {
   createEmptyPreferences,
   savePreferences,
   loadPreferences,
@@ -70,36 +65,6 @@ describe('pagination pure helpers', () => {
   });
 });
 
-describe('export service', () => {
-  const columns = [
-    { key: 'name', title: 'نام' },
-    { key: 'qty', title: 'تعداد' },
-  ];
-  const rows = [
-    { name: 'آهن', qty: 12 },
-    { name: 'مس, درجه ۱', qty: 3 },
-  ];
-
-  it('builds matrix in column order', () => {
-    const matrix = buildExportMatrix({ columns, rows });
-    expect(matrix.header).toEqual(['نام', 'تعداد']);
-    expect(matrix.body[1][0]).toBe('مس, درجه ۱');
-  });
-
-  it('creates CSV with BOM and escaped commas', () => {
-    const csv = toCsvString({ columns, rows });
-    expect(csv.startsWith('\uFEFF')).toBe(true);
-    expect(csv).toContain('"مس, درجه ۱"');
-  });
-
-  it('creates Excel SpreadsheetML', () => {
-    const xml = toExcelXmlString({ columns, rows, sheetName: 'Test' });
-    expect(xml).toContain('ss:Type="String"');
-    expect(xml).toContain('Workbook');
-    expect(xml).toContain('آهن');
-  });
-});
-
 describe('list preferences service', () => {
   const memory = new Map();
   let prev;
@@ -121,11 +86,12 @@ describe('list preferences service', () => {
     });
 
     try {
-      const prefs = { ...createEmptyPreferences(), pageSize: 100, viewMode: 'virtual' };
+      const prefs = { ...createEmptyPreferences(), sorts: [{ key: 'name', dir: 'asc' }] };
       await savePreferences('u1', 'nabz.orders.table', prefs);
       const loaded = await loadPreferences('u1', 'nabz.orders.table');
-      expect(loaded.pageSize).toBe(100);
-      expect(loaded.viewMode).toBe('virtual');
+      expect(loaded.sorts).toEqual([{ key: 'name', dir: 'asc' }]);
+      expect(loaded.viewMode).toBeUndefined();
+      expect(loaded.pageSize).toBeUndefined();
       expect(await loadPreferences('u2', 'nabz.orders.table')).toBeNull();
 
       await savePreferences('u1', 'kanoon.contacts.table', createEmptyPreferences());
@@ -139,7 +105,6 @@ describe('list preferences service', () => {
 
 describe('virtual list window', () => {
   it('windows rows with spacers', () => {
-    // Pure function path via useVirtualList algorithm — call hook logic indirectly
     const items = Array.from({ length: 1000 }, (_, i) => ({ id: i }));
     const rowHeight = 40;
     const scrollOffset = 400;

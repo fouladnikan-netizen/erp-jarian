@@ -4,10 +4,8 @@ import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
 import {
   ListColumnHeader,
-  ListPagination,
   ListChrome,
-  VirtualSpacerRows,
-  VirtualSpacerBottom,
+  ListSelectionBar,
   InfiniteSentinelRow,
 } from '../../../components/common/list';
 import { useColumnExcelFilters } from '../../../hooks/useColumnExcelFilters';
@@ -108,6 +106,7 @@ export default function KanoonTable({
     openFilterKey,
     setOpenFilterKey,
     applyFilter,
+    clearFilters,
     filterRows,
     buildOptions,
     columnFilters: excelFilters,
@@ -169,7 +168,6 @@ export default function KanoonTable({
     columnDefinitions,
     rows: filtered,
     sortAccessors,
-    getExportValue: getExcelRaw,
     resetKey: viewKey,
     scrollRef,
     sentinelRef,
@@ -239,26 +237,24 @@ export default function KanoonTable({
     <section className="section-data kanoon-table-section" aria-label="فهرست مخاطبین">
       <div className="data-table-header">
         <span className="data-table-header__title">{tableTitle}</span>
-        <span className="data-table-header__count">
-          {shell.sortedRows.length.toLocaleString('fa-IR')} رکورد
-        </span>
         <div className="data-table-header__tools">
           <ListChrome
             columns={shell.columns}
             setColumnVisible={shell.setColumnVisible}
             reorderColumns={shell.reorderColumns}
             resetColumns={shell.resetColumns}
-            exportColumns={shell.exportColumns}
-            exportRows={shell.exportRows}
-            getExportValue={shell.getExportValue}
-            filenameBase={`kanoon-${viewKey}`}
-            sheetName="مخاطبین"
-            viewMode={shell.viewMode}
-            setViewMode={shell.setViewMode}
-            onResetPreferences={shell.resetPreferences}
+            onResetPreferences={async () => {
+              await shell.resetPreferences();
+              clearFilters();
+            }}
           />
         </div>
       </div>
+      <ListSelectionBar
+        selectedCount={selectedIds.size}
+        totalCount={shell.sortedRows.length}
+        onClear={() => onSelectionChange(new Set())}
+      />
       <div className="data-table-wrap kanoon-table-wrap jarian-list-scroll" ref={scrollRef}>
         <table className="data-table kanoon-table data-table--resizable">
           <ResizableColGroup columns={resizeColumns} widths={shell.widths} />
@@ -332,7 +328,6 @@ export default function KanoonTable({
             </tr>
           </thead>
           <tbody>
-            <VirtualSpacerRows virtual={shell.virtual} colSpan={colSpan} />
             {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={colSpan}>
@@ -376,10 +371,7 @@ export default function KanoonTable({
                       );
                     }
                     if (col.key === 'row') {
-                      const rowNo = shell.virtual
-                        ? shell.virtual.startIndex + index + 1
-                        : (shell.pagination?.rangeStart || 1) + index;
-                      return <td key={col.key}>{rowNo.toLocaleString('fa-IR')}</td>;
+                      return <td key={col.key}>{(index + 1).toLocaleString('fa-IR')}</td>;
                     }
                     if (col.key === nameKey) {
                       return (
@@ -413,7 +405,6 @@ export default function KanoonTable({
                 </tr>
               ))
             )}
-            <VirtualSpacerBottom virtual={shell.virtual} colSpan={colSpan} />
             <InfiniteSentinelRow
               show={shell.showInfiniteSentinel}
               sentinelRef={sentinelRef}
@@ -423,9 +414,6 @@ export default function KanoonTable({
           </tbody>
         </table>
       </div>
-      {shell.showPagination && shell.pagination ? (
-        <ListPagination {...shell.pagination} />
-      ) : null}
     </section>
   );
 }

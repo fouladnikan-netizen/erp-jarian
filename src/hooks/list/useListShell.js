@@ -1,14 +1,14 @@
 /**
- * High-level shared list shell — preferences, columns, widths, data modes.
+ * High-level shared list shell — preferences, columns, widths, infinite loading.
  * Modules pass listKey + column definitions + scroll/sentinel refs.
+ * Rendering strategy is fixed: Filter → Sort → Infinite Loading → Render.
  */
 
 import { useCallback, useMemo, useState } from 'react';
 import { useColumnManager } from './useColumnManager';
 import { useListPreferences } from './useListPreferences';
-import { useListDataProvider } from './useListDataProvider';
+import { useListDataProvider, LIST_INFINITE_CHUNK_SIZE } from './useListDataProvider';
 import { applyMultiSort, nextSorts } from './useMultiSort';
-import { LIST_PAGE_SIZES } from './usePagination';
 
 const MIN_COL_WIDTH = 56;
 
@@ -20,15 +20,11 @@ const MIN_COL_WIDTH = 56;
  *   rows?: Array<any>,
  *   sortAccessors?: Record<string, Function>,
  *   sortTypes?: Record<string, string>,
- *   getExportValue?: (row: any, key: string) => any,
- *   mode?: 'client'|'server'|'infinite'|'virtual',
  *   resetKey?: string|number,
- *   rowHeight?: number,
+ *   chunkSize?: number,
  *   onLoadMore?: Function,
  *   hasMore?: boolean,
  *   loadingMore?: boolean,
- *   totalItems?: number,
- *   onPageChange?: Function,
  *   scrollRef: React.RefObject<HTMLElement|null>,
  *   sentinelRef: React.RefObject<HTMLElement|null>,
  * }} options
@@ -41,15 +37,11 @@ export function useListShell(options = {}) {
     rows = [],
     sortAccessors,
     sortTypes,
-    getExportValue,
-    mode: modeProp,
     resetKey,
-    rowHeight = 44,
+    chunkSize = LIST_INFINITE_CHUNK_SIZE,
     onLoadMore,
     hasMore,
     loadingMore,
-    totalItems,
-    onPageChange,
     scrollRef,
     sentinelRef,
   } = options;
@@ -60,8 +52,6 @@ export function useListShell(options = {}) {
     updatePreferences,
     resetPreferences,
   } = useListPreferences({ listKey, userId });
-
-  const viewMode = modeProp || preferences.viewMode || 'client';
 
   const onColumnStateChange = useCallback((state) => {
     updatePreferences((prev) => ({
@@ -141,45 +131,20 @@ export function useListShell(options = {}) {
     document.addEventListener('mouseup', onUp);
   }, [widths, updatePreferences]);
 
-  const pageSize = LIST_PAGE_SIZES.includes(preferences.pageSize)
-    ? preferences.pageSize
-    : 50;
-
   const data = useListDataProvider({
     items: sortedRows,
-    mode: viewMode,
-    pageSize,
-    totalItems,
+    chunkSize,
     resetKey,
-    rowHeight,
     onLoadMore,
     hasMore,
     loadingMore,
-    onPageChange,
     scrollRef,
     sentinelRef,
   });
 
-  const setPageSize = useCallback((size) => {
-    const next = LIST_PAGE_SIZES.includes(Number(size)) ? Number(size) : 50;
-    updatePreferences((prev) => ({ ...prev, pageSize: next }));
-    data.pagination?.setPageSize?.(next);
-  }, [updatePreferences, data.pagination]);
-
-  const setViewMode = useCallback((nextMode) => {
-    updatePreferences((prev) => ({ ...prev, viewMode: nextMode }));
-  }, [updatePreferences]);
-
   const setFilters = useCallback((filters) => {
     updatePreferences((prev) => ({ ...prev, filters }));
   }, [updatePreferences]);
-
-  const exportColumns = useMemo(
-    () => columnManager.visibleColumns.filter((col) => (
-      col.key !== 'actions' && col.key !== 'check' && col.key !== 'row'
-    )),
-    [columnManager.visibleColumns],
-  );
 
   const { resetColumns } = columnManager;
 
@@ -210,23 +175,11 @@ export function useListShell(options = {}) {
     toggleSort,
     clearSort,
     sortedRows,
-    viewMode,
-    setViewMode,
-    setPageSize,
-    pageSize,
     savedFilters: preferences.filters || {},
     setFilters,
-    exportColumns,
-    getExportValue,
-    exportRows: sortedRows,
     visibleRows: data.visibleRows,
     totalItems: data.totalItems,
-    pagination: data.pagination
-      ? { ...data.pagination, setPageSize }
-      : null,
     infinite: data.infinite,
-    virtual: data.virtual,
-    showPagination: data.showPagination,
     showInfiniteSentinel: data.showInfiniteSentinel,
   };
 }

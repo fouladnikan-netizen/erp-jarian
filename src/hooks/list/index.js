@@ -9,5 +9,5 @@ export { useColumnManager } from './useColumnManager';
 export { useListPreferences } from './useListPreferences';
 export { useVirtualList, useVirtualListController } from './useVirtualList';
 export { useInfiniteLoading, useInfiniteScrollSentinel } from './useInfiniteLoading';
-export { useListDataProvider, LIST_VIEW_MODE } from './useListDataProvider';
+export { useListDataProvider, LIST_INFINITE_CHUNK_SIZE } from './useListDataProvider';
 export { useListShell } from './useListShell';

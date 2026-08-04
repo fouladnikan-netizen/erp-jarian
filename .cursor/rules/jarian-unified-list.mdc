@@ -1,6 +1,6 @@
 ---
-description: Law #004 — Unified List Infrastructure; all lists use shared sort/filter/resize/pagination/columns/export/virtual
-globs: src/**/{*Table*,*List*,list/**,table/**,hooks/list/**,listPreferences*,listExport*}.{js,jsx,css}
+description: Law #004 — Unified List Infrastructure; Infinite Loading mandatory for large lists
+globs: src/**/{*Table*,*List*,list/**,table/**,hooks/list/**,listPreferences*}.{js,jsx,css}
 alwaysApply: false
 ---
 
@@ -8,11 +8,11 @@ alwaysApply: false
 
 **Full doc:** `Docs/architecture/UNIFIED_LIST_INFRASTRUCTURE.md`
 
-All ERP lists MUST use the shared list infrastructure. Per-module sort, pagination, column filter, resize, status, export, column manager, or virtual/infinite implementations are forbidden.
+All ERP lists MUST use the shared list infrastructure. Per-module sort, filter, resize, status, column manager, or infinite-loading implementations are forbidden.
 
 ---
 
-## Completed shared capabilities
+## Mandatory shared capabilities
 
 | Capability | Use |
 |---|---|
@@ -20,21 +20,22 @@ All ERP lists MUST use the shared list infrastructure. Per-module sort, paginati
 | Excel-style filters | `ColumnFilterHeader`, `useColumnExcelFilters` |
 | Unified status | `ListStatusPill` |
 | Multi-column sort | `useMultiSort` / shell sorts |
-| Pagination | `usePagination`, `ListPagination` |
-| Column management | `useColumnManager`, `ColumnManager` |
-| User preferences | `useListPreferences`, `listPreferencesService` |
-| Export CSV/Excel | `ListExport`, `listExportService` |
-| Infinite / Virtual | `useInfiniteLoading`, `useVirtualList`, `useListDataProvider` |
-| Composition | `ListColumnHeader`, `ListChrome`, `useListShell` |
+| **Infinite Loading** | `useInfiniteLoading`, `useListDataProvider`, `InfiniteSentinelRow` |
+| Column management | `useColumnManager`, `ColumnManager` — **only via** `ListChrome` More (`⋮`) menu |
+| User list preferences | `useListPreferences`, `listPreferencesService` |
+| Selection count | `ListSelectionBar` — only after row selection; never permanent header totals |
+| Composition | `ListColumnHeader`, `ListChrome` (More menu), `ListSelectionBar`, `useListShell` |
 
-Pipeline: **Filter → Sort → Data Provider (`client` \| `server` \| `infinite` \| `virtual`)**.
+Pipeline: **Filter → Sort → Infinite Loading → List Rendering**.
+
+Infinite Loading is the **only** large-list loading strategy. Do not expose pagination / virtual / mode toggles in UI or preferences.
 
 ---
 
 ## Module responsibility only
 
 - Columns
-- Rows / data source
+- Rows / data source (client array or server-fed via `onLoadMore`)
 - Business actions
 
 Wired: Nabz, Kanoon, Vitrin, Gahshomar.
@@ -44,14 +45,19 @@ Wired: Nabz, Kanoon, Vitrin, Gahshomar.
 ## Rules
 
 1. Do **not** build a new list outside this infrastructure.
-2. New list features ship once in shared code, then become available to all modules.
-3. Prefer `useListShell` + `ListChrome` for new module lists.
-4. Persist prefs via `listPreferencesService` (swap adapter for backend later).
-5. Export only through `listExportService` — no module-local CSV/Excel.
-6. Jarian CSS + theme tokens only — no Tailwind / Shadcn for list chrome.
+2. Prefer `useListShell` + `ListChrome` for new module lists.
+3. Column management and list-preference reset must **not** be always-visible header buttons — only via the More (`⋮`) menu on the left of the list header.
+4. Do **not** show permanent record/result totals in the list header. Selection count belongs in `ListSelectionBar` and only when `selectedCount > 0`.
+5. Persist only columns / order / widths / sorts / filters — never rendering strategy.
+6. Do **not** add user-facing mode selection (`client` / `server` / `infinite` / `virtual` / pagination / virtual scroll).
+7. Virtual windowing may be added **internally** later without changing module APIs.
+8. Jarian CSS + theme tokens only — no Tailwind / Shadcn for list chrome.
 
 ## Not allowed
 
-- Module-local sort / page / filter / resize / status / export / column DnD / virtual scroll
-- Bypassing preference keys (`module.entity.table`)
+- Always-visible «ستون‌ها» / column-manager buttons in the list header
+- Permanent «N رکورد» / total / result counters in the list header
+- Module-local sort / infinite / filter / resize / status / column DnD
+- Classic pagination footers on large CRM/ops lists
+- User toggles for loading strategy
 - Opportunistic third-party table kits

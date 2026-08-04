@@ -1,4 +1,4 @@
-/* Shared list infra — multi-sort + pagination (Jarian tokens only) */
+/* Shared list infra — multi-sort + infinite loading chrome (Jarian tokens only) */
 
 .jarian-multi-sort {
   display: inline-flex;
@@ -69,65 +69,30 @@
   min-width: 0;
 }
 
-/* Pagination */
+/* List header tools — physical left (RTL end) */
 
-.jarian-list-pagination {
+.data-table-header__tools {
+  margin-inline-start: auto;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.85rem 1.25rem;
-  padding: 0.85rem 1rem;
-  border-top: 1px solid var(--border-light);
-  background: color-mix(in srgb, var(--glass-bg-subtle) 70%, transparent);
+  flex-shrink: 0;
 }
 
-.jarian-list-pagination__summary {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
+/* List chrome — More (⋮) menu only; column mgr is not always visible */
 
-.jarian-list-pagination__controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1rem;
-}
-
-.jarian-list-pagination__size {
+.jarian-list-chrome {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-muted);
 }
 
-.jarian-list-pagination__size-select {
-  min-height: 2rem;
-  padding: 0.25rem 0.55rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-  color: var(--text-primary);
-  font-size: 0.8rem;
-}
-
-.jarian-list-pagination__nav {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.jarian-list-pagination__btn,
-.jarian-list-pagination__page {
+.jarian-list-chrome__more {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 0.45rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: transparent;
@@ -136,48 +101,74 @@
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.jarian-list-pagination__btn:hover:not(:disabled),
-.jarian-list-pagination__page:hover {
-  background: var(--bg-muted);
+.jarian-list-chrome__more:hover,
+.jarian-list-chrome__more.is-open {
   color: var(--text-primary);
-}
-
-.jarian-list-pagination__btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.jarian-list-pagination__page.is-active {
   border-color: var(--glass-border);
-  background: var(--bg-surface);
-  color: var(--text-primary);
-  font-weight: 700;
-  box-shadow: var(--glass-inset-highlight);
+  background: color-mix(in srgb, var(--glass-bg-subtle) 80%, var(--bg-surface));
 }
 
-@media (max-width: 720px) {
-  .jarian-list-pagination {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .jarian-list-pagination__controls {
-    justify-content: space-between;
-  }
-
-  .jarian-list-pagination__nav {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+.jarian-list-more-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  /* Chrome sits on physical left in RTL headers — open menu toward center */
+  inset-inline-end: 0;
+  inset-inline-start: auto;
+  z-index: 40;
+  min-width: min(16.5rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.35rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg, var(--radius-md));
+  background: var(--glass-bg-strong, var(--bg-surface));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur));
 }
 
-/* List chrome — columns / export / view mode */
-
-.jarian-list-chrome {
+.jarian-list-more-menu__item {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem 0.55rem;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  text-align: start;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.jarian-list-more-menu__item:hover,
+.jarian-list-more-menu__item:focus-visible {
+  background: var(--bg-muted);
+  outline: none;
+}
+
+.jarian-list-more-menu__item > svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+}
+
+.jarian-list-more-menu__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.jarian-list-more-menu__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.jarian-list-more-menu__hint {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 .jarian-list-chrome__btn {
@@ -221,12 +212,6 @@
   font-weight: 700;
 }
 
-.jarian-list-chrome__modes {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
 .jarian-list-chrome__icon-btn {
   display: inline-flex;
   align-items: center;
@@ -238,11 +223,6 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-}
-
-.jarian-list-export {
-  display: inline-flex;
-  gap: 0.35rem;
 }
 
 /* Column manager panel */
@@ -358,4 +338,48 @@
   max-height: min(70vh, 42rem);
   overflow: auto;
 }
+
+/* Selection toolbar — only when rows are selected */
+
+.jarian-list-selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.55rem 1.25rem;
+  border-bottom: 1px solid var(--info-border, var(--border-default));
+  background: var(--info-muted, var(--bg-muted));
+}
+
+.jarian-list-selection-bar__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.jarian-list-selection-bar__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.jarian-list-selection-bar__clear {
+  min-height: 1.85rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jarian-list-selection-bar__clear:hover {
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}
+
 

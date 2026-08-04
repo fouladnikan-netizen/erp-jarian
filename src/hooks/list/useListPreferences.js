@@ -1,5 +1,5 @@
 /**
- * Persistent user list preferences — widths, columns, sorts, filters, pageSize, viewMode.
+ * Persistent user list preferences — widths, columns, sorts, filters.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

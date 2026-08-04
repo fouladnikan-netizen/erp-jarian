@@ -16,7 +16,6 @@ export default function ModulePage({ module, data }) {
       moduleId={module.id}
       kpis={(
         <section className="section-kpis" aria-label="شاخص‌های کلیدی">
-          <div className="section-label">شاخص‌های عملکردی و آمار زنده</div>
           <div className="kpi-grid">
             {data.kpis.map((kpi) => (
               <KpiCard key={kpi.label} kpi={kpi} />

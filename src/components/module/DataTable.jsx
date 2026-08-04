@@ -78,9 +78,6 @@ export default function DataTable({ data }) {
     <section className="section-data" aria-label="فهرست داده">
       <div className="data-table-header">
         <span className="data-table-header__title font-meem">{data.tableTitle}</span>
-        <span className="data-table-header__count font-yekan">
-          {data.rows.length.toLocaleString('fa-IR')} رکورد
-        </span>
       </div>
       <div className="data-table-wrap">
         <table className="data-table jarian-table data-table--resizable">

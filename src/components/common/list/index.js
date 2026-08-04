@@ -1,9 +1,9 @@
 export { default as MultiSortHeader } from './MultiSortHeader';
 export { default as ListColumnHeader } from './ListColumnHeader';
-export { default as ListPagination } from './ListPagination';
 export { default as ColumnManager } from './ColumnManager';
-export { default as ListExport } from './ListExport';
 export { default as ListChrome } from './ListChrome';
+export { default as ListSelectionBar } from './ListSelectionBar';
+export { formatListSelectionLabel } from './formatListSelectionLabel';
 export {
   VirtualSpacerRows,
   VirtualSpacerBottom,

@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { isColumnFilterActive } from '../table/ColumnFilterHeader';
+import { isColumnFilterActive } from '../components/table/ColumnFilterHeader';
 
 /**
  * @param {{ resetKey?: string|number }} [options]
@@ -25,6 +25,11 @@ export function useColumnExcelFilters(options = {}) {
       else next[columnKey] = value;
       return next;
     });
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setColumnFilters({});
+    setOpenFilterKey(null);
   }, []);
 
   const filterRows = useCallback((rows, getRawValue) => {
@@ -53,6 +58,7 @@ export function useColumnExcelFilters(options = {}) {
     openFilterKey,
     setOpenFilterKey,
     applyFilter,
+    clearFilters,
     filterRows,
     buildOptions,
   };

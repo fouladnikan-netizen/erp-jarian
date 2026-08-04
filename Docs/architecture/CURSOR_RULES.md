@@ -28,7 +28,7 @@ Applied when editing matching paths or when the agent selects the rule:
 | [`jarian-data-architecture.mdc`](../../.cursor/rules/jarian-data-architecture.mdc) | Persistence readiness; no opportunistic Prisma/DB redesign |
 | [`jarian-frontend-boundaries.mdc`](../../.cursor/rules/jarian-frontend-boundaries.mdc) | Module import direction; no new shared→module leaks |
 | [`jarian-ui-architecture.mdc`](../../.cursor/rules/jarian-ui-architecture.mdc) | Tokens, RTL, module CSS hygiene |
-| [`jarian-unified-list.mdc`](../../.cursor/rules/jarian-unified-list.mdc) | Law #004 — shared list infra (sort / filter / resize / pagination) |
+| [`jarian-unified-list.mdc`](../../.cursor/rules/jarian-unified-list.mdc) | Law #004 — shared list infra (Infinite Loading mandatory) |
 | [`jarian-profile-layout.mdc`](../../.cursor/rules/jarian-profile-layout.mdc) | New profile pages use shared `profileLayout` contract |
 | [`jarian-security.mdc`](../../.cursor/rules/jarian-security.mdc) | Identity / authz guardrails for future work |
 | [`jarian-quality.mdc`](../../.cursor/rules/jarian-quality.mdc) | Tests + `npm run quality` expectations for domain/services |

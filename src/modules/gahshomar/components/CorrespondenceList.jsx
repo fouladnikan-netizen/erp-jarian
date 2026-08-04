@@ -69,9 +69,6 @@ export default function CorrespondenceList({
         <span className="data-table-header__title font-meem">
           {isIncoming ? 'نامه‌های دریافتی' : 'نامه‌های ارسالی'}
         </span>
-        <span className="data-table-header__count font-yekan">
-          {documents.length.toLocaleString('fa-IR')} رکورد
-        </span>
       </div>
       <div className="data-table-wrap gahshomar-docs__table-wrap">
         <table className="jarian-table gahshomar-docs__table data-table--resizable">

@@ -3,10 +3,7 @@ import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
 import {
   ListColumnHeader,
-  ListPagination,
   ListChrome,
-  VirtualSpacerRows,
-  VirtualSpacerBottom,
   InfiniteSentinelRow,
 } from '../../../components/common/list';
 import ListStatusPill from '../../../components/module/ListStatusPill';
@@ -228,7 +225,6 @@ export default function NabzOrderTable({
       amount: 'number',
       registeredAt: 'date',
     },
-    getExportValue: getColumnRawValue,
     resetKey: tab,
     scrollRef,
     sentinelRef,
@@ -277,23 +273,17 @@ export default function NabzOrderTable({
     <section className="section-data nabz-table-section" aria-label={listTitle}>
       <div className="data-table-header">
         <span className="data-table-header__title">{listTitle}</span>
-        <span className="data-table-header__count">
-          {shell.sortedRows.length.toLocaleString('fa-IR')} رکورد
-        </span>
         <div className="data-table-header__tools">
           <ListChrome
             columns={shell.columns}
             setColumnVisible={shell.setColumnVisible}
             reorderColumns={shell.reorderColumns}
             resetColumns={shell.resetColumns}
-            exportColumns={shell.exportColumns}
-            exportRows={shell.exportRows}
-            getExportValue={shell.getExportValue}
-            filenameBase={`nabz-orders-${tab}`}
-            sheetName="سفارشات"
-            viewMode={shell.viewMode}
-            setViewMode={shell.setViewMode}
-            onResetPreferences={shell.resetPreferences}
+            onResetPreferences={async () => {
+              await shell.resetPreferences();
+              setColumnFilters({});
+              setOpenFilterKey(null);
+            }}
           />
         </div>
       </div>
@@ -337,7 +327,6 @@ export default function NabzOrderTable({
             </>
           )}
           <tbody>
-            <VirtualSpacerRows virtual={shell.virtual} colSpan={colSpan} />
             {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={colSpan}>
@@ -370,7 +359,6 @@ export default function NabzOrderTable({
                 );
               })
             )}
-            <VirtualSpacerBottom virtual={shell.virtual} colSpan={colSpan} />
             <InfiniteSentinelRow
               show={shell.showInfiniteSentinel}
               sentinelRef={sentinelRef}
@@ -380,9 +368,6 @@ export default function NabzOrderTable({
           </tbody>
         </table>
       </div>
-      {shell.showPagination && shell.pagination ? (
-        <ListPagination {...shell.pagination} />
-      ) : null}
     </section>
   );
 }
