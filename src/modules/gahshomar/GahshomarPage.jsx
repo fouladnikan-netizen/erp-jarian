@@ -1,15 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Inbox, Send } from 'lucide-react';
-import { useContactsStore } from '../../stores/useContactsStore';
-import { getDisplayName } from '../kanoon/columns';
-import CorrespondenceList from './components/CorrespondenceList';
-import CorrespondenceComposeModal from './components/CorrespondenceComposeModal';
-import CorrespondenceDetailDrawer from './components/CorrespondenceDetailDrawer';
+import { DRAWER_MODE } from './models/officialRecord';
+import OfficialRecordList from './components/OfficialRecordList';
+import OfficialRecordDrawer from './components/OfficialRecordDrawer';
+import RecordTypePickerModal from './components/RecordTypePickerModal';
 import {
-  computeCorrespondenceKpis,
-  useCorrespondenceList,
-} from './services/correspondenceService';
-import { useCorrespondenceStore } from './store/useCorrespondenceStore';
+  createDraftRecord,
+  createReply,
+  useOfficialRecordKpis,
+  useOfficialRecordList,
+} from './officialRecordFacade';
 import ListPageLayout from '../../components/module/ListPageLayout';
 import ListToolbar from '../../components/module/ListToolbar';
 import ListFilterBar from '../../components/module/ListFilterBar';
@@ -19,40 +19,46 @@ import './gahshomar-documents.css';
 import './gahshomar-page.css';
 
 /**
- * Gahshomar — correspondence-centric secretariat (Incoming / Outgoing tabs).
- * Organization is metadata/filter only — not the navigation axis.
+ * Gahshomar MVP — List answers "What records exist?"
+ * Drawer answers "What is this record?" / editor flow.
+ * UI communicates ONLY with officialRecordFacade.
  */
 export default function GahshomarPage() {
-  const contacts = useContactsStore((state) => state.contacts);
-  const records = useCorrespondenceStore((state) => state.records);
-  const [tab, setTab] = useState('incoming');
+  const [tab, setTab] = useState('outgoing');
   const [search, setSearch] = useState('');
-  const [companyFilter, setCompanyFilter] = useState('all');
   const [kpiFilter, setKpiFilter] = useState(null);
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [detail, setDetail] = useState(null);
+  const [typePickerOpen, setTypePickerOpen] = useState(false);
+  const [drawerState, setDrawerState] = useState({ mode: null, recordId: null });
 
-  const kpis = useMemo(() => computeCorrespondenceKpis(records), [records]);
+  const kpis = useOfficialRecordKpis();
+  const records = useOfficialRecordList({ tab, search, kpiFilter });
 
-  const documents = useCorrespondenceList(tab, {
-    viewerUserId: null,
-    search,
-    companyId: companyFilter === 'all' ? null : companyFilter,
-    kpiFilter,
-  });
-
-  const detailCompanyName = useMemo(() => {
-    if (!detail?.companyId) return '';
-    const match = contacts.find((c) => String(c.id) === String(detail.companyId));
-    return match
-      ? (getDisplayName(match) || match.companyName || match.personName || '')
-      : '';
-  }, [detail, contacts]);
+  const closeDrawer = () => setDrawerState({ mode: null, recordId: null });
 
   const handleKpiClick = (kpiId) => {
     setKpiFilter((current) => (current === kpiId ? null : kpiId));
-    if (kpiId === 'new-incoming' || kpiId === 'action-needed') setTab('incoming');
-    if (kpiId === 'outgoing-today') setTab('outgoing');
+    if (kpiId === 'new-incoming' || kpiId === 'pending-action') setTab('incoming');
+    if (kpiId === 'issued-today') setTab('outgoing');
+  };
+
+  const handleTypeSelect = (direction) => {
+    setTypePickerOpen(false);
+    const draft = createDraftRecord(direction);
+    if (!draft) return;
+    setDrawerState({ mode: DRAWER_MODE.CREATE, recordId: draft.id });
+    if (direction === 'INCOMING') setTab('incoming');
+    if (direction === 'OUTGOING') setTab('outgoing');
+  };
+
+  const handleOpenDetail = (recordId) => {
+    setDrawerState({ mode: DRAWER_MODE.VIEW, recordId });
+  };
+
+  const handleReply = (recordId) => {
+    const reply = createReply(recordId);
+    if (!reply) return;
+    setTab('outgoing');
+    setDrawerState({ mode: DRAWER_MODE.EDIT, recordId: reply.id });
   };
 
   return (
@@ -77,24 +83,14 @@ export default function GahshomarPage() {
       )}
       toolbar={(
         <ListToolbar
-          searchPlaceholder="جستجو در موضوع، شماره، فرستنده یا گیرنده..."
+          searchPlaceholder="جستجو در شماره و موضوع..."
           searchValue={search}
           onSearchChange={setSearch}
           primaryLabel="ثبت مکاتبه"
-          onPrimaryClick={() => setComposeOpen(true)}
+          onPrimaryClick={() => setTypePickerOpen(true)}
           filters={(
             <ListFilterBar className="gahshomar-page__filters" ariaLabel="تب مکاتبات">
               <div className="nabz-tabs" role="tablist" aria-label="وارده و صادره">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === 'incoming'}
-                  className={`nabz-tabs__btn font-meem${tab === 'incoming' ? ' is-active' : ''}`}
-                  onClick={() => setTab('incoming')}
-                >
-                  <Inbox size={14} strokeWidth={1.75} aria-hidden="true" />
-                  وارده
-                </button>
                 <button
                   type="button"
                   role="tab"
@@ -105,46 +101,40 @@ export default function GahshomarPage() {
                   <Send size={14} strokeWidth={1.75} aria-hidden="true" />
                   صادره
                 </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'incoming'}
+                  className={`nabz-tabs__btn font-meem${tab === 'incoming' ? ' is-active' : ''}`}
+                  onClick={() => setTab('incoming')}
+                >
+                  <Inbox size={14} strokeWidth={1.75} aria-hidden="true" />
+                  وارده
+                </button>
               </div>
-
-              <select
-                className="gahshomar-page__select font-meem"
-                aria-label="فیلتر سازمان"
-                value={companyFilter}
-                onChange={(event) => setCompanyFilter(event.target.value)}
-              >
-                <option value="all">همه سازمان‌ها</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={String(contact.id)}>
-                    {getDisplayName(contact)
-                      || contact.companyName
-                      || contact.personName
-                      || `مخاطب ${contact.id}`}
-                  </option>
-                ))}
-              </select>
             </ListFilterBar>
           )}
         />
       )}
     >
-      <CorrespondenceList
+      <OfficialRecordList
         tab={tab}
-        documents={documents}
-        onOpenDetail={setDetail}
+        records={records}
+        onOpenDetail={handleOpenDetail}
       />
 
-      <CorrespondenceComposeModal
-        open={composeOpen}
-        initialDirection={tab}
-        contacts={contacts}
-        onClose={() => setComposeOpen(false)}
+      <RecordTypePickerModal
+        open={typePickerOpen}
+        onSelect={handleTypeSelect}
+        onClose={() => setTypePickerOpen(false)}
       />
 
-      <CorrespondenceDetailDrawer
-        record={detail}
-        companyName={detailCompanyName}
-        onClose={() => setDetail(null)}
+      <OfficialRecordDrawer
+        mode={drawerState.mode}
+        recordId={drawerState.recordId}
+        onClose={closeDrawer}
+        onReply={handleReply}
+        onSaved={closeDrawer}
       />
     </ListPageLayout>
   );

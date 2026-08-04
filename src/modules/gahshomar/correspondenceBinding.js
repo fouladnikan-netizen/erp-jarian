@@ -1,7 +1,6 @@
 /**
  * Gahshomar formal correspondence binding (shim).
- * Prefer `services/correspondenceService` for new code.
- * @see Docs/architecture/DOMAIN_DECISION_LOG.md DDL-12
+ * @see officialRecordFacade.js
  */
 
 export {
@@ -10,3 +9,11 @@ export {
   updateCorrespondence,
   useCompanyCorrespondence,
 } from './services/correspondenceService';
+
+export {
+  listOfficialRecords,
+  getOfficialRecord,
+  createReply,
+  useOfficialRecordList,
+  useCompanyOfficialRecords,
+} from './officialRecordFacade';
