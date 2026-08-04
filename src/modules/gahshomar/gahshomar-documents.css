@@ -1,0 +1,170 @@
+.gahshomar-docs {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gahshomar-docs__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.gahshomar-docs__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 12px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--color-silver-glossy) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
+}
+
+.gahshomar-docs__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.gahshomar-docs__subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.gahshomar-docs__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 14rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.gahshomar-docs__empty-icon {
+  display: inline-flex;
+  color: color-mix(in srgb, var(--text-muted) 70%, transparent);
+  opacity: 0.55;
+}
+
+.gahshomar-docs__empty-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.gahshomar-docs__empty-body {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.gahshomar-docs__table-wrap {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.gahshomar-docs__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.gahshomar-docs__table th,
+.gahshomar-docs__table td {
+  padding: 0.7rem 0.85rem;
+  text-align: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  font-size: 0.8rem;
+}
+
+.gahshomar-docs__table th {
+  background: #E8FAF7;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.gahshomar-docs__table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+.gahshomar-docs__table tbody tr:nth-child(even) {
+  background: rgba(243, 244, 246, 0.85);
+}
+
+.gahshomar-docs__subject {
+  text-align: right;
+  font-weight: 700;
+}
+
+.gahshomar-docs__attach-yes {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-primary);
+}
+
+.gahshomar-docs__boundary-note {
+  margin: 0;
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.gahshomar-docs__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.gahshomar-docs__section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.gahshomar-docs__empty--section {
+  min-height: 7rem;
+  padding: 1.25rem 1rem;
+}

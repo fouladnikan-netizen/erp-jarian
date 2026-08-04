@@ -1,0 +1,348 @@
+.gahshomar-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gahshomar-page__filters .gahshomar-page__select {
+  flex: 0 1 16rem;
+  min-width: 12rem;
+}
+
+.gahshomar-page__picker-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.gahshomar-page__select {
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.gahshomar-page__profile-link {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-accent-dark);
+  text-decoration: none;
+}
+
+.gahshomar-page__profile-link:hover {
+  text-decoration: underline;
+}
+
+.gahshomar-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--text-primary) 35%, transparent);
+}
+
+.gahshomar-modal {
+  width: min(32rem, 100%);
+  max-height: min(90vh, 40rem);
+  overflow: auto;
+  border-radius: 18px;
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.gahshomar-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.gahshomar-modal__title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-primary);
+}
+
+.gahshomar-modal__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.gahshomar-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.gahshomar-modal__close:hover {
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.gahshomar-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gahshomar-modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.gahshomar-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.gahshomar-modal__input,
+.gahshomar-modal__textarea {
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  resize: vertical;
+}
+
+.gahshomar-modal__error {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.gahshomar-modal__footer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.gahshomar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gahshomar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gahshomar-btn--primary {
+  border-color: color-mix(in srgb, var(--color-accent-dark) 35%, transparent);
+  background: color-mix(in srgb, var(--color-accent-muted) 70%, transparent);
+  color: var(--color-accent-dark);
+}
+
+.gahshomar-modal--wide {
+  width: min(40rem, 100%);
+}
+
+.gahshomar-modal__relations {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.gahshomar-modal__relations legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-inline: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.gahshomar-list__detail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-accent-dark);
+  cursor: pointer;
+}
+
+.gahshomar-list__detail-btn:hover {
+  background: color-mix(in srgb, var(--color-accent-muted) 55%, transparent);
+}
+
+.gahshomar-list__type-pill {
+  display: inline-block;
+  margin-inline-start: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+  vertical-align: middle;
+}
+
+.gahshomar-list__attach {
+  display: inline-flex;
+  margin-inline-start: 0.35rem;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.gahshomar-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: flex;
+  justify-content: flex-start;
+  background: color-mix(in srgb, var(--text-primary) 28%, transparent);
+}
+
+.gahshomar-drawer {
+  width: min(24rem, 92vw);
+  height: 100%;
+  overflow: auto;
+  padding: 1rem 1.1rem 1.5rem;
+  border-radius: 0;
+  border-inline-end: 1px solid var(--glass-border);
+}
+
+.gahshomar-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.gahshomar-drawer__title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.gahshomar-drawer__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.gahshomar-drawer__body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.gahshomar-drawer__row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.gahshomar-drawer__row dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.gahshomar-drawer__row dd {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.gahshomar-drawer__section {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--border-default) 80%, transparent);
+}
+
+.gahshomar-drawer__section-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.gahshomar-drawer__body-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.gahshomar-drawer__muted {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.gahshomar-drawer__attach-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gahshomar-drawer__attach-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.nabz-tabs__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+@media (max-width: 640px) {
+  .gahshomar-modal__row {
+    grid-template-columns: 1fr;
+  }
+}
