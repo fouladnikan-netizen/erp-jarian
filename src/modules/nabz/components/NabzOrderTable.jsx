@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
-import ColumnFilterHeader, { isColumnFilterActive } from '../../../components/table/ColumnFilterHeader';
+import {
+  ListColumnHeader,
+  ListPagination,
+  ListChrome,
+  VirtualSpacerRows,
+  VirtualSpacerBottom,
+  InfiniteSentinelRow,
+} from '../../../components/common/list';
 import ListStatusPill from '../../../components/module/ListStatusPill';
-import { useResizableColumns } from '../../../hooks/useResizableColumns';
+import { useListShell } from '../../../hooks/list';
+import { isColumnFilterActive } from '../../../components/table/ColumnFilterHeader';
 import { ORDER_TABS } from '../config';
 import { formatOrderAmount, formatRegisteredAt } from '../orderCode';
 import { UNPRICED_LABEL } from '../constants';
@@ -11,27 +19,6 @@ import { countOrderLineItems } from '../inquiryService';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../orderStageService';
 import OrderRowActions from './OrderRowActions';
 import ProformaRevisionTag from './ProformaRevisionTag';
-
-const NABZ_CURRENT_COLUMNS = [
-  { key: 'code', defaultWidth: 140 },
-  { key: 'registeredAt', defaultWidth: 150 },
-  { key: 'assignee', defaultWidth: 120 },
-  { key: 'customer', defaultWidth: 140 },
-  { key: 'stage', defaultWidth: 110 },
-  { key: 'itemCount', defaultWidth: 90 },
-  { key: 'amount', defaultWidth: 120 },
-  { key: 'actions', defaultWidth: 100, resizable: false },
-];
-
-const NABZ_OTHER_COLUMNS = [
-  { key: 'code', defaultWidth: 140 },
-  { key: 'registeredAt', defaultWidth: 150 },
-  { key: 'assignee', defaultWidth: 120 },
-  { key: 'customer', defaultWidth: 140 },
-  { key: 'stage', defaultWidth: 110 },
-  { key: 'itemCount', defaultWidth: 90 },
-  { key: 'amount', defaultWidth: 120 },
-];
 
 const COLUMN_LABELS = {
   code: 'شماره سفارش',
@@ -45,7 +32,32 @@ const COLUMN_LABELS = {
 };
 
 const FILTERABLE_KEYS = new Set(['code', 'registeredAt', 'assignee', 'customer', 'stage', 'itemCount', 'amount']);
+const SORTABLE_KEYS = new Set(['code', 'registeredAt', 'assignee', 'customer', 'stage', 'itemCount', 'amount']);
 const NUMERIC_FILTER_KEYS = new Set(['code', 'itemCount', 'amount', 'registeredAt']);
+
+function buildColumnDefinitions(showActions) {
+  const cols = [
+    { key: 'code', title: COLUMN_LABELS.code, defaultWidth: 140, locked: true },
+    { key: 'registeredAt', title: COLUMN_LABELS.registeredAt, defaultWidth: 150 },
+    { key: 'assignee', title: COLUMN_LABELS.assignee, defaultWidth: 120 },
+    { key: 'customer', title: COLUMN_LABELS.customer, defaultWidth: 140 },
+    { key: 'stage', title: COLUMN_LABELS.stage, defaultWidth: 110 },
+    { key: 'itemCount', title: COLUMN_LABELS.itemCount, defaultWidth: 90 },
+    { key: 'amount', title: COLUMN_LABELS.amount, defaultWidth: 120 },
+  ];
+  if (showActions) {
+    cols.push({
+      key: 'actions',
+      title: COLUMN_LABELS.actions,
+      defaultWidth: 100,
+      resizable: false,
+      locked: true,
+      sortable: false,
+      filterable: false,
+    });
+  }
+  return cols;
+}
 
 function getColumnRawValue(order, key) {
   switch (key) {
@@ -68,6 +80,95 @@ function getColumnRawValue(order, key) {
   }
 }
 
+function getSortValue(order, key) {
+  switch (key) {
+    case 'itemCount':
+      return countOrderLineItems(order);
+    case 'amount': {
+      const raw = order.totalAmount ?? order.amount ?? order.total;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : null;
+    }
+    case 'registeredAt':
+      return order.registeredAt || order.createdAt || formatRegisteredAt(order);
+    default:
+      return getColumnRawValue(order, key);
+  }
+}
+
+function renderNabzCell(col, order, ctx) {
+  switch (col.key) {
+    case 'code':
+      return (
+        <td key={col.key} className="nabz-table__code font-yekan">
+          <span className="nabz-table__code-wrap">
+            {order.code}
+            <ProformaRevisionTag order={order} className="proforma-revision-tag--table" />
+          </span>
+        </td>
+      );
+    case 'registeredAt':
+      return (
+        <td key={col.key} className="nabz-table__datetime font-yekan">
+          {formatRegisteredAt(order)}
+        </td>
+      );
+    case 'assignee':
+      return <td key={col.key}>{order.assignee}</td>;
+    case 'customer':
+      return (
+        <td key={col.key} onClick={(e) => e.stopPropagation()}>
+          {order.customerId ? (
+            <button
+              type="button"
+              className="nabz-table__customer-link"
+              onClick={() => ctx.onCustomerClick(order.customerId)}
+            >
+              {order.customer}
+            </button>
+          ) : (
+            order.customer
+          )}
+        </td>
+      );
+    case 'stage':
+      return (
+        <td key={col.key}>
+          <ListStatusPill
+            kind={getOrderDisplayStatusKind(order)}
+            label={getOrderDisplayStatus(order)}
+          />
+        </td>
+      );
+    case 'itemCount':
+      return (
+        <td key={col.key} className="nabz-table__item-count font-yekan">
+          {countOrderLineItems(order).toLocaleString('fa-IR')}
+        </td>
+      );
+    case 'amount':
+      return (
+        <td key={col.key} className="nabz-table__amount">
+          {formatOrderAmount(order) || (
+            <span className="nabz-table__unpriced">{UNPRICED_LABEL}</span>
+          )}
+        </td>
+      );
+    case 'actions':
+      return (
+        <td key={col.key} className="nabz-table__actions-cell" onClick={(e) => e.stopPropagation()}>
+          <OrderRowActions
+            orderCode={order.code}
+            showInquiry={ctx.isCurrentTab}
+            onOpenInquiry={() => ctx.onOpenInquiryModal?.(order)}
+          />
+        </td>
+      );
+    default:
+      return <td key={col.key}>—</td>;
+  }
+}
+
 export default function NabzOrderTable({
   orders,
   tab,
@@ -81,19 +182,74 @@ export default function NabzOrderTable({
   const showProfileAction = isCurrentTab || isSuccessTab;
   const useStandardColumns = tab === ORDER_TABS.CURRENT || tab === ORDER_TABS.FAILED || tab === ORDER_TABS.SUCCESS;
 
-  const columnDefs = useMemo(
-    () => (showProfileAction ? NABZ_CURRENT_COLUMNS : NABZ_OTHER_COLUMNS),
+  const columnDefinitions = useMemo(
+    () => buildColumnDefinitions(showProfileAction),
     [showProfileAction],
   );
 
-  const { widths, startResize } = useResizableColumns(`nabz-orders-${tab}`, columnDefs);
+  const sortAccessors = useMemo(() => {
+    const map = {};
+    SORTABLE_KEYS.forEach((key) => {
+      map[key] = (row) => getSortValue(row, key);
+    });
+    return map;
+  }, []);
+
   const [columnFilters, setColumnFilters] = useState({});
   const [openFilterKey, setOpenFilterKey] = useState(null);
+  const [filterEpoch, setFilterEpoch] = useState(tab);
+  const [filtersHydratedFor, setFiltersHydratedFor] = useState(null);
 
-  useEffect(() => {
+  if (filterEpoch !== tab) {
+    setFilterEpoch(tab);
     setColumnFilters({});
     setOpenFilterKey(null);
-  }, [tab]);
+    setFiltersHydratedFor(null);
+  }
+
+  const filteredOrders = useMemo(() => {
+    const entries = Object.entries(columnFilters).filter(([, value]) => isColumnFilterActive(value));
+    if (!entries.length) return orders;
+    return orders.filter((order) => (
+      entries.every(([key, values]) => values.includes(getColumnRawValue(order, key)))
+    ));
+  }, [orders, columnFilters]);
+
+  const scrollRef = useRef(null);
+  const sentinelRef = useRef(null);
+
+  const shell = useListShell({
+    listKey: `nabz.orders.${tab}.table`,
+    columnDefinitions,
+    rows: filteredOrders,
+    sortAccessors,
+    sortTypes: {
+      itemCount: 'number',
+      amount: 'number',
+      registeredAt: 'date',
+    },
+    getExportValue: getColumnRawValue,
+    resetKey: tab,
+    scrollRef,
+    sentinelRef,
+  });
+
+  if (shell.ready && filtersHydratedFor !== tab) {
+    setFiltersHydratedFor(tab);
+    if (shell.savedFilters && Object.keys(shell.savedFilters).length) {
+      setColumnFilters(shell.savedFilters);
+    }
+  }
+
+  const applyFilter = (key, value) => {
+    setColumnFilters((prev) => {
+      const next = { ...prev };
+      if (!value) delete next[key];
+      else next[key] = value;
+      shell.setFilters(next);
+      return next;
+    });
+  };
 
   const filterOptions = useMemo(() => {
     const map = {};
@@ -108,59 +264,71 @@ export default function NabzOrderTable({
     return map;
   }, [orders]);
 
-  const visibleOrders = useMemo(() => {
-    const entries = Object.entries(columnFilters).filter(([, value]) => isColumnFilterActive(value));
-    if (!entries.length) return orders;
-    return orders.filter((order) => (
-      entries.every(([key, values]) => values.includes(getColumnRawValue(order, key)))
-    ));
-  }, [orders, columnFilters]);
-
-  const colSpan = columnDefs.length;
+  const visibleColumns = shell.visibleColumns;
+  const colSpan = Math.max(visibleColumns.length, 1);
+  const pageRows = shell.visibleRows;
+  const rowCtx = {
+    onCustomerClick,
+    onOpenInquiryModal,
+    isCurrentTab,
+  };
 
   return (
     <section className="section-data nabz-table-section" aria-label={listTitle}>
       <div className="data-table-header">
         <span className="data-table-header__title">{listTitle}</span>
         <span className="data-table-header__count">
-          {visibleOrders.length.toLocaleString('fa-IR')} رکورد
+          {shell.sortedRows.length.toLocaleString('fa-IR')} رکورد
         </span>
+        <div className="data-table-header__tools">
+          <ListChrome
+            columns={shell.columns}
+            setColumnVisible={shell.setColumnVisible}
+            reorderColumns={shell.reorderColumns}
+            resetColumns={shell.resetColumns}
+            exportColumns={shell.exportColumns}
+            exportRows={shell.exportRows}
+            getExportValue={shell.getExportValue}
+            filenameBase={`nabz-orders-${tab}`}
+            sheetName="سفارشات"
+            viewMode={shell.viewMode}
+            setViewMode={shell.setViewMode}
+            onResetPreferences={shell.resetPreferences}
+          />
+        </div>
       </div>
-      <div className="data-table-wrap nabz-table-wrap">
+      <div className="data-table-wrap nabz-table-wrap jarian-list-scroll" ref={scrollRef}>
         <table className="data-table nabz-table jarian-table data-table--resizable">
           {useStandardColumns && (
             <>
-              <ResizableColGroup columns={columnDefs} widths={widths} />
+              <ResizableColGroup columns={visibleColumns} widths={shell.widths} />
               <thead className="nabz-table__head">
                 <tr>
-                  {columnDefs.map((col) => (
+                  {visibleColumns.map((col) => (
                     <ResizableTh
                       key={col.key}
                       columnKey={col.key}
                       resizable={col.resizable !== false}
-                      onResizeStart={startResize}
+                      onResizeStart={shell.startResize}
                       className={`nabz-table__sticky-th${col.key === 'actions' ? ' nabz-table__sticky-th--actions' : ''}${col.key === 'itemCount' ? ' nabz-table__th--center' : ''}`}
                     >
-                      {FILTERABLE_KEYS.has(col.key) ? (
-                        <ColumnFilterHeader
-                          label={COLUMN_LABELS[col.key]}
-                          columnKey={col.key}
-                          options={filterOptions[col.key] || []}
-                          selected={columnFilters[col.key] || null}
-                          openKey={openFilterKey}
-                          setOpenKey={setOpenFilterKey}
-                          numeric={NUMERIC_FILTER_KEYS.has(col.key)}
-                          onApply={(value) => {
-                            setColumnFilters((prev) => {
-                              const next = { ...prev };
-                              if (!value) delete next[col.key];
-                              else next[col.key] = value;
-                              return next;
-                            });
-                          }}
-                        />
+                      {col.key === 'actions' ? (
+                        col.title
                       ) : (
-                        COLUMN_LABELS[col.key]
+                        <ListColumnHeader
+                          label={col.title}
+                          columnKey={col.key}
+                          sorts={shell.sorts}
+                          onToggleSort={shell.toggleSort}
+                          sortable={SORTABLE_KEYS.has(col.key)}
+                          filterable={FILTERABLE_KEYS.has(col.key)}
+                          filterOptions={filterOptions[col.key] || []}
+                          filterSelected={columnFilters[col.key] || null}
+                          openFilterKey={openFilterKey}
+                          setOpenFilterKey={setOpenFilterKey}
+                          numeric={NUMERIC_FILTER_KEYS.has(col.key)}
+                          onApplyFilter={(value) => applyFilter(col.key, value)}
+                        />
                       )}
                     </ResizableTh>
                   ))}
@@ -169,7 +337,8 @@ export default function NabzOrderTable({
             </>
           )}
           <tbody>
-            {visibleOrders.length === 0 ? (
+            <VirtualSpacerRows virtual={shell.virtual} colSpan={colSpan} />
+            {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={colSpan}>
                   <div className="empty-state">
@@ -179,15 +348,13 @@ export default function NabzOrderTable({
                 </td>
               </tr>
             ) : (
-              visibleOrders.map((order) => {
+              pageRows.map((order) => {
                 const rowProps = isCurrentTab
                   ? {
                     className: `nabz-table__row${order.saleType === 'غیر رسمی' ? ' nabz-table__row--informal' : ''}`,
                   }
                   : isSuccessTab
-                    ? {
-                      className: 'nabz-table__row',
-                    }
+                    ? { className: 'nabz-table__row' }
                     : {
                       className: 'nabz-table__row nabz-table__row--clickable',
                       onClick: () => onOrderClick(order),
@@ -198,57 +365,24 @@ export default function NabzOrderTable({
 
                 return (
                   <tr key={order.id} {...rowProps}>
-                    <td className="nabz-table__code font-yekan">
-                      <span className="nabz-table__code-wrap">
-                        {order.code}
-                        <ProformaRevisionTag order={order} className="proforma-revision-tag--table" />
-                      </span>
-                    </td>
-                    <td className="nabz-table__datetime font-yekan">{formatRegisteredAt(order)}</td>
-                    <td>{order.assignee}</td>
-                    <td onClick={(e) => e.stopPropagation()}>
-                      {order.customerId ? (
-                        <button
-                          type="button"
-                          className="nabz-table__customer-link"
-                          onClick={() => onCustomerClick(order.customerId)}
-                        >
-                          {order.customer}
-                        </button>
-                      ) : (
-                        order.customer
-                      )}
-                    </td>
-                    <td>
-                      <ListStatusPill
-                        kind={getOrderDisplayStatusKind(order)}
-                        label={getOrderDisplayStatus(order)}
-                      />
-                    </td>
-                    <td className="nabz-table__item-count font-yekan">
-                      {countOrderLineItems(order).toLocaleString('fa-IR')}
-                    </td>
-                    <td className="nabz-table__amount">
-                      {formatOrderAmount(order) || (
-                        <span className="nabz-table__unpriced">{UNPRICED_LABEL}</span>
-                      )}
-                    </td>
-                    {showProfileAction && (
-                      <td className="nabz-table__actions-cell" onClick={(e) => e.stopPropagation()}>
-                        <OrderRowActions
-                          orderCode={order.code}
-                          showInquiry={isCurrentTab}
-                          onOpenInquiry={() => onOpenInquiryModal?.(order)}
-                        />
-                      </td>
-                    )}
+                    {visibleColumns.map((col) => renderNabzCell(col, order, rowCtx))}
                   </tr>
                 );
               })
             )}
+            <VirtualSpacerBottom virtual={shell.virtual} colSpan={colSpan} />
+            <InfiniteSentinelRow
+              show={shell.showInfiniteSentinel}
+              sentinelRef={sentinelRef}
+              colSpan={colSpan}
+              hasMore={shell.infinite?.hasMore}
+            />
           </tbody>
         </table>
       </div>
+      {shell.showPagination && shell.pagination ? (
+        <ListPagination {...shell.pagination} />
+      ) : null}
     </section>
   );
 }

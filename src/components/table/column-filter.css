@@ -8,6 +8,10 @@
   max-width: 100%;
 }
 
+.jarian-col-filter--icon-only {
+  gap: 0;
+}
+
 .jarian-col-filter__label {
   min-width: 0;
 }

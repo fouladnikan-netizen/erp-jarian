@@ -24,6 +24,18 @@
 | JarianMoney / ProductCell / Supplier | `components/jarian/JarianPresentation.jsx` | Presentation API |
 | DataTable | `components/module/DataTable.jsx` | Generic table wrapper |
 | ResizableColGroup / ResizableTh | `components/table/` | Column resize |
+| ColumnFilterHeader / useColumnExcelFilters | `components/table/`, `hooks/` | Excel-style filters |
+| ListStatusPill | `components/module/ListStatusPill.jsx` | Unified list status |
+| MultiSortHeader / useMultiSort | `components/common/list/`, `hooks/list/` | Multi-column sort — Law #004 |
+| ListPagination / usePagination | `components/common/list/`, `hooks/list/` | Shared pagination — Law #004 |
+| ListColumnHeader | `components/common/list/` | Sort + filter composition |
+| ColumnManager / useColumnManager | `components/common/list/`, `hooks/list/` | Show/hide + DnD reorder |
+| useListPreferences / listPreferencesService | `hooks/list/`, `services/` | Per-user per-list prefs |
+| ListExport / listExportService | `components/common/list/`, `services/` | CSV + Excel export |
+| useVirtualList / useInfiniteLoading / useListDataProvider | `hooks/list/` | Virtual + infinite modes |
+| ListChrome / useListShell | `components/common/list/`, `hooks/list/` | Full list orchestration |
+
+See [UNIFIED_LIST_INFRASTRUCTURE.md](./UNIFIED_LIST_INFRASTRUCTURE.md) (Architecture Law #004).
 
 ### Profiles / timeline
 

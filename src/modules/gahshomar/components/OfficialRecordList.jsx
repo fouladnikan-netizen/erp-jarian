@@ -1,11 +1,18 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Eye, Paperclip } from 'lucide-react';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
-import ColumnFilterHeader from '../../../components/table/ColumnFilterHeader';
+import {
+  ListColumnHeader,
+  ListPagination,
+  ListChrome,
+  VirtualSpacerRows,
+  VirtualSpacerBottom,
+  InfiniteSentinelRow,
+} from '../../../components/common/list';
 import ListStatusPill from '../../../components/module/ListStatusPill';
-import { useResizableColumns } from '../../../hooks/useResizableColumns';
 import { useColumnExcelFilters } from '../../../hooks/useColumnExcelFilters';
+import { useListShell } from '../../../hooks/list';
 import '../gahshomar-documents.css';
 
 const STATUS_KIND = {
@@ -16,26 +23,26 @@ const STATUS_KIND = {
 };
 
 const INCOMING_COLUMNS = [
-  { key: 'row', label: 'ردیف', defaultWidth: 56, resizable: false, filterable: false },
-  { key: 'number', label: 'شماره', defaultWidth: 120, numeric: true, filterable: true },
-  { key: 'date', label: 'تاریخ', defaultWidth: 120, numeric: true, filterable: true },
-  { key: 'displayParty', label: 'فرستنده', defaultWidth: 160, filterable: true },
-  { key: 'subject', label: 'موضوع', defaultWidth: 220, filterable: true },
-  { key: 'displayType', label: 'نوع', defaultWidth: 90, filterable: true },
-  { key: 'displayStatus', label: 'وضعیت', defaultWidth: 120, filterable: true },
-  { key: 'attachment', label: 'پیوست', defaultWidth: 72, resizable: false, filterable: false },
-  { key: 'actions', label: 'عملیات', defaultWidth: 88, resizable: false, filterable: false },
+  { key: 'row', title: 'ردیف', defaultWidth: 56, resizable: false, locked: true, sortable: false, filterable: false },
+  { key: 'number', title: 'شماره', defaultWidth: 120, locked: true, numeric: true, filterable: true },
+  { key: 'date', title: 'تاریخ', defaultWidth: 120, numeric: true, filterable: true },
+  { key: 'displayParty', title: 'فرستنده', defaultWidth: 160, filterable: true },
+  { key: 'subject', title: 'موضوع', defaultWidth: 220, locked: true, filterable: true },
+  { key: 'displayType', title: 'نوع', defaultWidth: 90, filterable: true },
+  { key: 'displayStatus', title: 'وضعیت', defaultWidth: 120, filterable: true },
+  { key: 'attachment', title: 'پیوست', defaultWidth: 72, resizable: false, filterable: false },
+  { key: 'actions', title: 'عملیات', defaultWidth: 88, resizable: false, locked: true, sortable: false, filterable: false },
 ];
 
 const OUTGOING_COLUMNS = [
-  { key: 'row', label: 'ردیف', defaultWidth: 56, resizable: false, filterable: false },
-  { key: 'number', label: 'شماره', defaultWidth: 120, numeric: true, filterable: true },
-  { key: 'date', label: 'تاریخ', defaultWidth: 120, numeric: true, filterable: true },
-  { key: 'displayParty', label: 'گیرنده', defaultWidth: 160, filterable: true },
-  { key: 'subject', label: 'موضوع', defaultWidth: 220, filterable: true },
-  { key: 'displayStatus', label: 'وضعیت', defaultWidth: 120, filterable: true },
-  { key: 'attachment', label: 'پیوست', defaultWidth: 72, resizable: false, filterable: false },
-  { key: 'actions', label: 'عملیات', defaultWidth: 88, resizable: false, filterable: false },
+  { key: 'row', title: 'ردیف', defaultWidth: 56, resizable: false, locked: true, sortable: false, filterable: false },
+  { key: 'number', title: 'شماره', defaultWidth: 120, locked: true, numeric: true, filterable: true },
+  { key: 'date', title: 'تاریخ', defaultWidth: 120, numeric: true, filterable: true },
+  { key: 'displayParty', title: 'گیرنده', defaultWidth: 160, filterable: true },
+  { key: 'subject', title: 'موضوع', defaultWidth: 220, locked: true, filterable: true },
+  { key: 'displayStatus', title: 'وضعیت', defaultWidth: 120, filterable: true },
+  { key: 'attachment', title: 'پیوست', defaultWidth: 72, resizable: false, filterable: false },
+  { key: 'actions', title: 'عملیات', defaultWidth: 88, resizable: false, locked: true, sortable: false, filterable: false },
 ];
 
 function getRawValue(record, key) {
@@ -44,21 +51,17 @@ function getRawValue(record, key) {
   return value == null || value === '' ? '' : String(value);
 }
 
-/**
- * Block 3 — answers: "What records exist?"
- * Consumes list presentation models from facade only.
- */
 export default function OfficialRecordList({ tab, records, onOpenDetail }) {
   const isIncoming = tab === 'incoming';
-  const columns = useMemo(
+  const columnDefinitions = useMemo(
     () => (isIncoming ? INCOMING_COLUMNS : OUTGOING_COLUMNS),
     [isIncoming],
   );
   const filterableKeys = useMemo(
-    () => columns.filter((col) => col.filterable !== false).map((col) => col.key),
-    [columns],
+    () => columnDefinitions.filter((col) => col.filterable !== false).map((col) => col.key),
+    [columnDefinitions],
   );
-  const { widths, startResize } = useResizableColumns(`gahshomar-records-${tab}`, columns);
+
   const {
     columnFilters,
     openFilterKey,
@@ -73,10 +76,52 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
     [records, filterableKeys, buildOptions],
   );
 
-  const visibleRecords = useMemo(
+  const filteredRecords = useMemo(
     () => filterRows(records, getRawValue),
     [records, filterRows],
   );
+
+  const sortAccessors = useMemo(() => {
+    const map = {};
+    columnDefinitions.forEach((col) => {
+      if (col.sortable === false) return;
+      map[col.key] = (row) => getRawValue(row, col.key);
+    });
+    return map;
+  }, [columnDefinitions]);
+
+  const scrollRef = useRef(null);
+  const sentinelRef = useRef(null);
+
+  const shell = useListShell({
+    listKey: `gahshomar.records.${tab}.table`,
+    columnDefinitions,
+    rows: filteredRecords,
+    sortAccessors,
+    sortTypes: { date: 'date' },
+    getExportValue: getRawValue,
+    resetKey: tab,
+    scrollRef,
+    sentinelRef,
+  });
+
+  const filtersHydrated = useRef(false);
+  useEffect(() => {
+    filtersHydrated.current = false;
+  }, [tab]);
+  useEffect(() => {
+    if (!shell.ready || filtersHydrated.current) return;
+    filtersHydrated.current = true;
+    Object.entries(shell.savedFilters || {}).forEach(([key, value]) => applyFilter(key, value));
+  }, [shell.ready, shell.savedFilters, applyFilter]);
+
+  const handleApplyFilter = (key, value) => {
+    applyFilter(key, value);
+    const next = { ...columnFilters };
+    if (!value) delete next[key];
+    else next[key] = value;
+    shell.setFilters(next);
+  };
 
   const emptyTitle = useMemo(
     () => (isIncoming ? 'هنوز نامه‌ای دریافت نکرده‌ایم' : 'هنوز نامه‌ای ارسال نکرده‌ایم'),
@@ -94,6 +139,10 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
     );
   }
 
+  const visibleColumns = shell.visibleColumns;
+  const pageRows = shell.visibleRows;
+  const colSpan = visibleColumns.length;
+
   return (
     <section
       className="section-data gahshomar-list kprofile-glass"
@@ -104,85 +153,148 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
           {isIncoming ? 'نامه‌های دریافتی' : 'نامه‌های ارسالی'}
         </span>
         <span className="data-table-header__count font-yekan">
-          {visibleRecords.length.toLocaleString('fa-IR')} رکورد
+          {shell.sortedRows.length.toLocaleString('fa-IR')} رکورد
         </span>
+        <div className="data-table-header__tools">
+          <ListChrome
+            columns={shell.columns}
+            setColumnVisible={shell.setColumnVisible}
+            reorderColumns={shell.reorderColumns}
+            resetColumns={shell.resetColumns}
+            exportColumns={shell.exportColumns}
+            exportRows={shell.exportRows}
+            getExportValue={shell.getExportValue}
+            filenameBase={`gahshomar-${tab}`}
+            sheetName={isIncoming ? 'دریافتی' : 'ارسالی'}
+            viewMode={shell.viewMode}
+            setViewMode={shell.setViewMode}
+            onResetPreferences={shell.resetPreferences}
+          />
+        </div>
       </div>
-      <div className="data-table-wrap gahshomar-docs__table-wrap">
+      <div className="data-table-wrap gahshomar-docs__table-wrap jarian-list-scroll" ref={scrollRef}>
         <table className="jarian-table gahshomar-docs__table data-table--resizable">
-          <ResizableColGroup columns={columns} widths={widths} />
+          <ResizableColGroup columns={visibleColumns} widths={shell.widths} />
           <thead>
             <tr>
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <ResizableTh
                   key={col.key}
                   columnKey={col.key}
                   resizable={col.resizable !== false}
-                  onResizeStart={startResize}
+                  onResizeStart={shell.startResize}
                   className="font-meem"
                 >
-                  {col.filterable !== false ? (
-                    <ColumnFilterHeader
-                      label={col.label}
-                      columnKey={col.key}
-                      options={filterOptions[col.key] || []}
-                      selected={columnFilters[col.key] || null}
-                      openKey={openFilterKey}
-                      setOpenKey={setOpenFilterKey}
-                      numeric={Boolean(col.numeric)}
-                      onApply={(value) => applyFilter(col.key, value)}
-                    />
+                  {col.key === 'row' || col.key === 'actions' ? (
+                    col.title
                   ) : (
-                    col.label
+                    <ListColumnHeader
+                      label={col.title}
+                      columnKey={col.key}
+                      sorts={shell.sorts}
+                      onToggleSort={shell.toggleSort}
+                      sortable={col.sortable !== false}
+                      filterable={col.filterable !== false}
+                      filterOptions={filterOptions[col.key] || []}
+                      filterSelected={columnFilters[col.key] || null}
+                      openFilterKey={openFilterKey}
+                      setOpenFilterKey={setOpenFilterKey}
+                      numeric={Boolean(col.numeric)}
+                      onApplyFilter={(value) => handleApplyFilter(col.key, value)}
+                    />
                   )}
                 </ResizableTh>
               ))}
             </tr>
           </thead>
           <tbody>
-            {visibleRecords.length === 0 ? (
+            <VirtualSpacerRows virtual={shell.virtual} colSpan={colSpan} />
+            {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="font-meem">
+                <td colSpan={colSpan} className="font-meem">
                   موردی با فیلتر فعلی یافت نشد.
                 </td>
               </tr>
             ) : (
-              visibleRecords.map((record, index) => (
+              pageRows.map((record, index) => (
                 <tr key={record.id}>
-                  <td className="font-yekan">{(index + 1).toLocaleString('fa-IR')}</td>
-                  <td className="font-yekan">{record.number || '—'}</td>
-                  <td className="font-yekan">{record.date || '—'}</td>
-                  <td className="font-meem">{record.displayParty || '—'}</td>
-                  <td className="font-meem">{record.subject || '—'}</td>
-                  {isIncoming ? (
-                    <td className="font-meem">{record.displayType || '—'}</td>
-                  ) : null}
-                  <td>
-                    <ListStatusPill
-                      kind={STATUS_KIND[record.displayStatus] || record.status?.toLowerCase() || 'pending'}
-                      label={record.displayStatus || '—'}
-                    />
-                  </td>
-                  <td className="font-yekan">
-                    {record.hasAttachments ? (
-                      <Paperclip size={16} strokeWidth={1.75} aria-label="دارای پیوست" />
-                    ) : '—'}
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="gahshomar-list__detail-btn"
-                      aria-label="مشاهده جزئیات"
-                      onClick={() => onOpenDetail?.(record.id)}
-                    >
-                      <Eye size={16} strokeWidth={1.75} />
-                    </button>
-                  </td>
+                  {visibleColumns.map((col) => {
+                    if (col.key === 'row') {
+                      const rowNo = shell.virtual
+                        ? shell.virtual.startIndex + index + 1
+                        : (shell.pagination?.rangeStart || 1) + index;
+                      return (
+                        <td key={col.key} className="font-yekan">
+                          {rowNo.toLocaleString('fa-IR')}
+                        </td>
+                      );
+                    }
+                    if (col.key === 'number') {
+                      return <td key={col.key} className="font-yekan">{record.number || '—'}</td>;
+                    }
+                    if (col.key === 'date') {
+                      return <td key={col.key} className="font-yekan">{record.date || '—'}</td>;
+                    }
+                    if (col.key === 'displayParty') {
+                      return <td key={col.key} className="font-meem">{record.displayParty || '—'}</td>;
+                    }
+                    if (col.key === 'subject') {
+                      return <td key={col.key} className="font-meem">{record.subject || '—'}</td>;
+                    }
+                    if (col.key === 'displayType') {
+                      return <td key={col.key} className="font-meem">{record.displayType || '—'}</td>;
+                    }
+                    if (col.key === 'displayStatus') {
+                      return (
+                        <td key={col.key}>
+                          <ListStatusPill
+                            kind={STATUS_KIND[record.displayStatus] || record.status?.toLowerCase() || 'pending'}
+                            label={record.displayStatus || '—'}
+                          />
+                        </td>
+                      );
+                    }
+                    if (col.key === 'attachment') {
+                      return (
+                        <td key={col.key} className="font-yekan">
+                          {record.hasAttachments ? (
+                            <Paperclip size={16} strokeWidth={1.75} aria-label="دارای پیوست" />
+                          ) : '—'}
+                        </td>
+                      );
+                    }
+                    if (col.key === 'actions') {
+                      return (
+                        <td key={col.key}>
+                          <button
+                            type="button"
+                            className="gahshomar-list__detail-btn"
+                            aria-label="مشاهده جزئیات"
+                            onClick={() => onOpenDetail?.(record.id)}
+                          >
+                            <Eye size={16} strokeWidth={1.75} />
+                          </button>
+                        </td>
+                      );
+                    }
+                    return <td key={col.key}>—</td>;
+                  })}
                 </tr>
               ))
             )}
+            <VirtualSpacerBottom virtual={shell.virtual} colSpan={colSpan} />
+            <InfiniteSentinelRow
+              show={shell.showInfiniteSentinel}
+              sentinelRef={sentinelRef}
+              colSpan={colSpan}
+              hasMore={shell.infinite?.hasMore}
+            />
           </tbody>
         </table>
       </div>
+      {shell.showPagination && shell.pagination ? (
+        <ListPagination {...shell.pagination} />
+      ) : null}
     </section>
   );
 }

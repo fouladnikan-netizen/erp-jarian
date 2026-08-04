@@ -1,10 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
-import ColumnFilterHeader from '../../../components/table/ColumnFilterHeader';
-import { useResizableColumns } from '../../../hooks/useResizableColumns';
+import {
+  ListColumnHeader,
+  ListPagination,
+  ListChrome,
+  VirtualSpacerRows,
+  VirtualSpacerBottom,
+  InfiniteSentinelRow,
+} from '../../../components/common/list';
 import { useColumnExcelFilters } from '../../../hooks/useColumnExcelFilters';
+import { useListShell } from '../../../hooks/list';
 import StatusTag from '../../../components/module/StatusTag';
 import { BEHAVIORAL_STATUS, ENTITY_TYPES } from '../config';
 import {
@@ -15,28 +22,17 @@ import {
   getActivityLink,
   getLatestInteraction,
 } from '../columns';
-import { filterContacts, sortContacts } from '../kpi';
+import { filterContacts } from '../kpi';
 import RowQuickActions from './RowQuickActions';
 import OrderPulseTally from './OrderPulseTally';
-
-function SortIcon({ active, dir }) {
-  return (
-    <span className={`kanoon-table__sort${active ? ' is-active' : ''}`} aria-hidden="true">
-      {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
-    </span>
-  );
-}
 
 function LastActivityCell({ contact }) {
   const label = getCellValue(contact, 'lastActivity');
   const href = getActivityLink(contact);
-
   if (!label || label === '—' || !href) {
     return <span className="kanoon-table__muted">—</span>;
   }
-
   const latest = getLatestInteraction(contact);
-
   return (
     <Link
       to={href}
@@ -54,7 +50,6 @@ function WarmCell({ col, contact, entityType, onOrderFallback }) {
   if (col.key === 'orderPulse' && entityType === ENTITY_TYPES.CUSTOMER) {
     return <OrderPulseTally contact={contact} onFallbackClick={onOrderFallback} />;
   }
-
   if (col.key === 'openInquiries' && entityType === ENTITY_TYPES.SUPPLIER) {
     const count = getCellValue(contact, 'openInquiries');
     if (!count) return <span className="kanoon-table__muted">—</span>;
@@ -64,19 +59,15 @@ function WarmCell({ col, contact, entityType, onOrderFallback }) {
       </span>
     );
   }
-
   if (col.key === 'interactionValue' || col.key === 'supplyVolume') {
     return <span className="kanoon-table__warm-value">{getCellValue(contact, col.key)}</span>;
   }
-
   if (col.key === 'contactAge') {
     return <span className="kanoon-table__relative-time">{getCellValue(contact, col.key)}</span>;
   }
-
   if (col.key === 'lastActivity') {
     return <LastActivityCell contact={contact} />;
   }
-
   return null;
 }
 
@@ -96,30 +87,31 @@ export default function KanoonTable({
   onOrderFallback,
 }) {
   const viewKey = getViewKey(entityType, personType);
-  const columns = TABLE_COLUMNS[viewKey];
-  const [sortKey, setSortKey] = useState(null);
-  const [sortDir, setSortDir] = useState('asc');
+  const baseColumns = TABLE_COLUMNS[viewKey];
+  const nameKey = personType === 'legal' ? 'companyName' : 'personName';
+  const warmKeys = new Set([
+    'interactionValue', 'orderPulse', 'supplyVolume', 'openInquiries', 'contactAge', 'lastActivity',
+  ]);
 
-  const tableColumnDefs = useMemo(() => [
-    { key: 'check', defaultWidth: 48, resizable: false },
-    ...columns.map((col) => ({ key: col.key, defaultWidth: col.width ?? 120 })),
-    { key: 'actions', defaultWidth: 110, resizable: false },
-  ], [columns]);
+  const columnDefinitions = useMemo(() => [
+    { key: 'check', title: 'انتخاب', defaultWidth: 48, resizable: false, locked: true, sortable: false, filterable: false },
+    ...baseColumns.map((col) => ({
+      ...col,
+      title: col.label,
+      defaultWidth: col.width ?? 120,
+      locked: col.key === 'row' || col.key === nameKey,
+    })),
+    { key: 'actions', title: 'عملیات', defaultWidth: 110, resizable: false, locked: true, sortable: false, filterable: false },
+  ], [baseColumns, nameKey]);
 
-  const { widths, startResize } = useResizableColumns(`kanoon-${viewKey}`, tableColumnDefs);
   const {
-    columnFilters: excelFilters,
     openFilterKey,
     setOpenFilterKey,
     applyFilter,
     filterRows,
     buildOptions,
+    columnFilters: excelFilters,
   } = useColumnExcelFilters({ resetKey: viewKey });
-
-  const filterableKeys = useMemo(
-    () => columns.filter((col) => col.filterable !== false && col.key !== 'row').map((col) => col.key),
-    [columns],
-  );
 
   const getExcelRaw = (contact, key) => {
     if (key === 'behavioralStatus') {
@@ -140,6 +132,11 @@ export default function KanoonTable({
     [contacts, entityType, personType, search, columnFilters, audienceFilter],
   );
 
+  const filterableKeys = useMemo(
+    () => baseColumns.filter((col) => col.filterable !== false && col.key !== 'row').map((col) => col.key),
+    [baseColumns],
+  );
+
   const filterOptions = useMemo(
     () => buildOptions(baseFiltered, filterableKeys, getExcelRaw),
     [baseFiltered, filterableKeys, buildOptions],
@@ -150,20 +147,49 @@ export default function KanoonTable({
     [baseFiltered, filterRows],
   );
 
-  const sorted = useMemo(
-    () => sortContacts(filtered, sortKey, sortDir, getCellValue),
-    [filtered, sortKey, sortDir],
-  );
+  const sortAccessors = useMemo(() => {
+    const map = {};
+    baseColumns.forEach((col) => {
+      if (col.key === 'row') return;
+      map[col.key] = (row) => {
+        if (col.key === 'behavioralStatus') {
+          return BEHAVIORAL_STATUS[row.behavioralStatus]?.label || '';
+        }
+        return getCellValue(row, col.key);
+      };
+    });
+    return map;
+  }, [baseColumns]);
 
-  const toggleSort = (key) => {
-    if (!key || key === 'row') return;
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir('asc');
-    }
-  };
+  const scrollRef = useRef(null);
+  const sentinelRef = useRef(null);
+
+  const shell = useListShell({
+    listKey: `kanoon.contacts.${viewKey}.table`,
+    columnDefinitions,
+    rows: filtered,
+    sortAccessors,
+    getExportValue: getExcelRaw,
+    resetKey: viewKey,
+    scrollRef,
+    sentinelRef,
+  });
+
+  const filtersHydrated = useRef(false);
+  useEffect(() => {
+    filtersHydrated.current = false;
+  }, [viewKey]);
+
+  useEffect(() => {
+    if (!shell.ready || filtersHydrated.current) return;
+    filtersHydrated.current = true;
+    const saved = shell.savedFilters || {};
+    Object.entries(saved).forEach(([key, value]) => applyFilter(key, value));
+  }, [shell.ready, shell.savedFilters, applyFilter]);
+
+  const visibleColumns = shell.visibleColumns;
+  const pageRows = shell.visibleRows;
+  const colSpan = visibleColumns.length;
 
   const toggleSelect = (id) => {
     const next = new Set(selectedIds);
@@ -173,17 +199,18 @@ export default function KanoonTable({
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === sorted.length) {
-      onSelectionChange(new Set());
+    if (pageRows.length > 0 && pageRows.every((c) => selectedIds.has(c.id))) {
+      const next = new Set(selectedIds);
+      pageRows.forEach((c) => next.delete(c.id));
+      onSelectionChange(next);
     } else {
-      onSelectionChange(new Set(sorted.map((c) => c.id)));
+      const next = new Set(selectedIds);
+      pageRows.forEach((c) => next.add(c.id));
+      onSelectionChange(next);
     }
   };
 
-  const nameKey = personType === 'legal' ? 'companyName' : 'personName';
-  const warmKeys = new Set([
-    'interactionValue', 'orderPulse', 'supplyVolume', 'openInquiries', 'contactAge', 'lastActivity',
-  ]);
+  const pageAllSelected = pageRows.length > 0 && pageRows.every((c) => selectedIds.has(c.id));
 
   const tableTitle =
     entityType === ENTITY_TYPES.CUSTOMER
@@ -194,87 +221,121 @@ export default function KanoonTable({
         ? 'تامین‌کنندگان حقوقی'
         : 'تامین‌کنندگان حقیقی';
 
+  const handleApplyFilter = (key, value) => {
+    applyFilter(key, value);
+    const next = { ...excelFilters };
+    if (!value) delete next[key];
+    else next[key] = value;
+    shell.setFilters(next);
+  };
+
+  const resizeColumns = visibleColumns.map((col) => ({
+    key: col.key,
+    defaultWidth: col.defaultWidth,
+    resizable: col.resizable,
+  }));
+
   return (
     <section className="section-data kanoon-table-section" aria-label="فهرست مخاطبین">
       <div className="data-table-header">
         <span className="data-table-header__title">{tableTitle}</span>
         <span className="data-table-header__count">
-          {sorted.length.toLocaleString('fa-IR')} رکورد
+          {shell.sortedRows.length.toLocaleString('fa-IR')} رکورد
         </span>
+        <div className="data-table-header__tools">
+          <ListChrome
+            columns={shell.columns}
+            setColumnVisible={shell.setColumnVisible}
+            reorderColumns={shell.reorderColumns}
+            resetColumns={shell.resetColumns}
+            exportColumns={shell.exportColumns}
+            exportRows={shell.exportRows}
+            getExportValue={shell.getExportValue}
+            filenameBase={`kanoon-${viewKey}`}
+            sheetName="مخاطبین"
+            viewMode={shell.viewMode}
+            setViewMode={shell.setViewMode}
+            onResetPreferences={shell.resetPreferences}
+          />
+        </div>
       </div>
-      <div className="data-table-wrap kanoon-table-wrap">
+      <div className="data-table-wrap kanoon-table-wrap jarian-list-scroll" ref={scrollRef}>
         <table className="data-table kanoon-table data-table--resizable">
-          <ResizableColGroup columns={tableColumnDefs} widths={widths} />
+          <ResizableColGroup columns={resizeColumns} widths={shell.widths} />
           <thead className="kanoon-table__head">
             <tr>
-              <ResizableTh
-                columnKey="check"
-                resizable={false}
-                className="kanoon-table__check-col kanoon-table__sticky-th"
-              >
-                <input
-                  type="checkbox"
-                  aria-label="انتخاب همه"
-                  checked={sorted.length > 0 && selectedIds.size === sorted.length}
-                  onChange={toggleSelectAll}
-                />
-              </ResizableTh>
-              {columns.map((col) => (
-                <ResizableTh
-                  key={col.key}
-                  columnKey={col.key}
-                  onResizeStart={startResize}
-                  className="kanoon-table__sticky-th font-meem"
-                >
-                  {col.filterable !== false && col.key !== 'row' ? (
-                    <div className="kanoon-table__th-with-filter">
-                      <ColumnFilterHeader
-                        label={col.label}
-                        columnKey={col.key}
-                        options={filterOptions[col.key] || []}
-                        selected={excelFilters[col.key] || null}
-                        openKey={openFilterKey}
-                        setOpenKey={setOpenFilterKey}
-                        onApply={(value) => applyFilter(col.key, value)}
-                      />
-                      {col.sortable ? (
-                        <button
-                          type="button"
-                          className="kanoon-table__th-btn kanoon-table__th-btn--sort-only"
-                          onClick={() => toggleSort(col.key)}
-                          aria-label={`مرتب‌سازی ${col.label}`}
-                        >
-                          <SortIcon active={sortKey === col.key} dir={sortDir} />
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : col.sortable ? (
-                    <button
-                      type="button"
-                      className="kanoon-table__th-btn"
-                      onClick={() => toggleSort(col.key)}
+              {visibleColumns.map((col) => {
+                if (col.key === 'check') {
+                  return (
+                    <ResizableTh
+                      key={col.key}
+                      columnKey="check"
+                      resizable={false}
+                      className="kanoon-table__check-col kanoon-table__sticky-th"
                     >
-                      {col.label}
-                      <SortIcon active={sortKey === col.key} dir={sortDir} />
-                    </button>
-                  ) : (
-                    col.label
-                  )}
-                </ResizableTh>
-              ))}
-              <ResizableTh
-                columnKey="actions"
-                resizable={false}
-                className="kanoon-table__actions-col kanoon-table__sticky-th"
-              >
-                عملیات
-              </ResizableTh>
+                      <input
+                        type="checkbox"
+                        aria-label="انتخاب همه"
+                        checked={pageAllSelected}
+                        onChange={toggleSelectAll}
+                      />
+                    </ResizableTh>
+                  );
+                }
+                if (col.key === 'actions') {
+                  return (
+                    <ResizableTh
+                      key={col.key}
+                      columnKey="actions"
+                      resizable={false}
+                      className="kanoon-table__actions-col kanoon-table__sticky-th"
+                    >
+                      عملیات
+                    </ResizableTh>
+                  );
+                }
+                if (col.key === 'row') {
+                  return (
+                    <ResizableTh
+                      key={col.key}
+                      columnKey={col.key}
+                      onResizeStart={shell.startResize}
+                      className="kanoon-table__sticky-th font-meem"
+                    >
+                      {col.title}
+                    </ResizableTh>
+                  );
+                }
+                return (
+                  <ResizableTh
+                    key={col.key}
+                    columnKey={col.key}
+                    onResizeStart={shell.startResize}
+                    className="kanoon-table__sticky-th font-meem"
+                  >
+                    <ListColumnHeader
+                      label={col.title}
+                      columnKey={col.key}
+                      sorts={shell.sorts}
+                      onToggleSort={shell.toggleSort}
+                      sortable={col.sortable !== false}
+                      filterable={col.filterable !== false}
+                      filterOptions={filterOptions[col.key] || []}
+                      filterSelected={excelFilters[col.key] || null}
+                      openFilterKey={openFilterKey}
+                      setOpenFilterKey={setOpenFilterKey}
+                      onApplyFilter={(value) => handleApplyFilter(col.key, value)}
+                    />
+                  </ResizableTh>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
-            {sorted.length === 0 ? (
+            <VirtualSpacerRows virtual={shell.virtual} colSpan={colSpan} />
+            {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + 2}>
+                <td colSpan={colSpan}>
                   <div className="empty-state">
                     <div className="empty-state__icon">📋</div>
                     <p>مخاطبی در این نما یافت نشد.</p>
@@ -282,23 +343,43 @@ export default function KanoonTable({
                 </td>
               </tr>
             ) : (
-              sorted.map((contact, index) => (
+              pageRows.map((contact, index) => (
                 <tr
                   key={contact.id}
                   data-id={contact.id}
                   className={`kanoon-table__row${contact.isActive === false ? ' is-inactive' : ''}`}
                 >
-                  <td className="kanoon-table__check-col">
-                    <input
-                      type="checkbox"
-                      aria-label={`انتخاب ${getDisplayName(contact)}`}
-                      checked={selectedIds.has(contact.id)}
-                      onChange={() => toggleSelect(contact.id)}
-                    />
-                  </td>
-                  {columns.map((col) => {
+                  {visibleColumns.map((col) => {
+                    if (col.key === 'check') {
+                      return (
+                        <td key={col.key} className="kanoon-table__check-col">
+                          <input
+                            type="checkbox"
+                            aria-label={`انتخاب ${getDisplayName(contact)}`}
+                            checked={selectedIds.has(contact.id)}
+                            onChange={() => toggleSelect(contact.id)}
+                          />
+                        </td>
+                      );
+                    }
+                    if (col.key === 'actions') {
+                      return (
+                        <td key={col.key} className="kanoon-table__actions-col">
+                          <RowQuickActions
+                            contact={contact}
+                            onActivity={onQuickActivity}
+                            onOrder={onQuickOrder}
+                            onEdit={onNameClick}
+                            onToggleActive={onToggleActive}
+                          />
+                        </td>
+                      );
+                    }
                     if (col.key === 'row') {
-                      return <td key={col.key}>{(index + 1).toLocaleString('fa-IR')}</td>;
+                      const rowNo = shell.virtual
+                        ? shell.virtual.startIndex + index + 1
+                        : (shell.pagination?.rangeStart || 1) + index;
+                      return <td key={col.key}>{rowNo.toLocaleString('fa-IR')}</td>;
                     }
                     if (col.key === nameKey) {
                       return (
@@ -319,9 +400,7 @@ export default function KanoonTable({
                         <td key={col.key}>
                           {meta ? (
                             <StatusTag value={`tag:${meta.tag}:${meta.label}`} />
-                          ) : (
-                            '—'
-                          )}
+                          ) : '—'}
                         </td>
                       );
                     }
@@ -331,21 +410,22 @@ export default function KanoonTable({
                     }
                     return <td key={col.key}>{getCellValue(contact, col.key) || '—'}</td>;
                   })}
-                  <td className="kanoon-table__actions-col">
-                    <RowQuickActions
-                      contact={contact}
-                      onActivity={onQuickActivity}
-                      onOrder={onQuickOrder}
-                      onEdit={onNameClick}
-                      onToggleActive={onToggleActive}
-                    />
-                  </td>
                 </tr>
               ))
             )}
+            <VirtualSpacerBottom virtual={shell.virtual} colSpan={colSpan} />
+            <InfiniteSentinelRow
+              show={shell.showInfiniteSentinel}
+              sentinelRef={sentinelRef}
+              colSpan={colSpan}
+              hasMore={shell.infinite?.hasMore}
+            />
           </tbody>
         </table>
       </div>
+      {shell.showPagination && shell.pagination ? (
+        <ListPagination {...shell.pagination} />
+      ) : null}
     </section>
   );
 }

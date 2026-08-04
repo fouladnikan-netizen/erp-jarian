@@ -19,6 +19,8 @@ export default function ColumnFilterHeader({
   openKey,
   setOpenKey,
   numeric = false,
+  /** When composed with MultiSortHeader, hide duplicate label text. */
+  hideLabel = false,
 }) {
   const triggerRef = useRef(null);
   const panelRef = useRef(null);
@@ -119,8 +121,10 @@ export default function ColumnFilterHeader({
   };
 
   return (
-    <div className="jarian-col-filter">
-      <span className="jarian-col-filter__label font-meem">{label}</span>
+    <div className={`jarian-col-filter${hideLabel ? ' jarian-col-filter--icon-only' : ''}`}>
+      {!hideLabel ? (
+        <span className="jarian-col-filter__label font-meem">{label}</span>
+      ) : null}
       <button
         ref={triggerRef}
         type="button"
