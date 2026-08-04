@@ -174,20 +174,42 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--bg-surface);
+  background: var(--table-head-bg);
   box-shadow: 0 1px 0 var(--border-default);
 }
 
 .vitrin-table__check-col {
-  width: 44px;
+  width: 3rem;
+  min-width: 3rem;
+  max-width: 3.25rem;
+  padding-inline: 0.4rem !important;
   text-align: center !important;
+  vertical-align: middle;
+  overflow: visible !important;
+}
+
+.vitrin-table__check-col.resizable-th,
+.vitrin-table__check-col .resizable-th__label {
+  overflow: visible;
+}
+
+.vitrin-table__check-col .resizable-th__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 0;
 }
 
 .vitrin-table__check-col input[type='checkbox'] {
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  flex-shrink: 0;
   accent-color: var(--color-accent-dark);
   cursor: pointer;
+  vertical-align: middle;
 }
 
 .vitrin-table__code {

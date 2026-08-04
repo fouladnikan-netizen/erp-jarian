@@ -364,7 +364,6 @@ html[data-theme='dark'] .sidebar__logo {
   margin-top: 0.25rem;
 }
 
-.section-kpis,
 .section-actions,
 .section-filters,
 .section-data {
@@ -373,8 +372,13 @@ html[data-theme='dark'] .sidebar__logo {
   border-radius: var(--radius-lg);
 }
 
+/* KPI strip: no outer box — only individual kpi cards are boxed */
 .section-kpis {
-  padding: 1.25rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .section-actions,

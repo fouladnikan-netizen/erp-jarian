@@ -102,10 +102,13 @@ export function useListShell(options = {}) {
   const widths = useMemo(() => {
     const map = {};
     columnDefinitions.forEach((col) => {
-      map[col.key] = preferences.widths?.[col.key]
-        ?? col.defaultWidth
-        ?? col.width
-        ?? 120;
+      const fallback = col.defaultWidth ?? col.width ?? 120;
+      // Non-resizable / locked columns keep their defined width (e.g. checkbox).
+      if (col.resizable === false) {
+        map[col.key] = fallback;
+        return;
+      }
+      map[col.key] = preferences.widths?.[col.key] ?? fallback;
     });
     return map;
   }, [columnDefinitions, preferences.widths]);

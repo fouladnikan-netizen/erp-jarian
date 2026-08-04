@@ -25,7 +25,7 @@ const COLUMN_LABELS = {
 };
 
 const VITRIN_COLUMN_DEFS = [
-  { key: 'check', title: COLUMN_LABELS.check, defaultWidth: 48, resizable: false, locked: true, sortable: false, filterable: false },
+  { key: 'check', title: COLUMN_LABELS.check, defaultWidth: 52, resizable: false, locked: true, sortable: false, filterable: false },
   { key: 'row', title: COLUMN_LABELS.row, defaultWidth: 56, resizable: false, locked: true, sortable: false, filterable: false },
   { key: 'code', title: COLUMN_LABELS.code, defaultWidth: 110, locked: true, filterable: true, numeric: true },
   { key: 'title', title: COLUMN_LABELS.title, defaultWidth: 200, locked: true, filterable: true },

@@ -92,7 +92,7 @@ export default function KanoonTable({
   ]);
 
   const columnDefinitions = useMemo(() => [
-    { key: 'check', title: 'انتخاب', defaultWidth: 48, resizable: false, locked: true, sortable: false, filterable: false },
+    { key: 'check', title: 'انتخاب', defaultWidth: 52, resizable: false, locked: true, sortable: false, filterable: false },
     ...baseColumns.map((col) => ({
       ...col,
       title: col.label,

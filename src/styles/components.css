@@ -112,17 +112,8 @@
   gap: 1rem;
 }
 
-/* ═══ استاندارد واحد KPI جریان — Frosted Glass در همه ماژول‌ها ═══
-   سکشن: بلر ۱۶ / سفید ۶۰٪ / بوردر ظریف — هم‌خانواده مودال افق */
-.section-kpis {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-}
-
-/* کارت گلاسی با نوار اکسنت درخشان و هاور لمسی */
+/* ═══ استاندارد واحد KPI جریان — Frosted Glass روی کارت‌ها ═══
+   سکشن بیرونی باکس ندارد؛ فقط .kpi-card / کارت‌های ماژول گلس دارند. */
 .kpi-card {
   --kpi-accent: var(--color-neutral-300);
   position: relative;
