@@ -1,0 +1,228 @@
+/* Official letter print sheet — A4 portrait on provided letterhead */
+
+.printable-official-letter {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  background: var(--bg-paper);
+  color: var(--text-primary);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.printable-official-letter__letterhead {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.printable-official-letter__meta {
+  position: absolute;
+  top: 38mm;
+  left: 18mm;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 11pt;
+  text-align: left;
+  direction: ltr;
+}
+
+.printable-official-letter__meta-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+
+.printable-official-letter__meta-row--number {
+  position: relative;
+  top: -55px;
+  left: 31px;
+}
+
+.printable-official-letter__meta-row--date {
+  position: relative;
+  top: -118px;
+  left: 24px;
+}
+
+.printable-official-letter__meta-row span {
+  font-family: var(--font-primary);
+  font-size: 10pt;
+  color: var(--text-secondary);
+}
+
+.printable-official-letter__content {
+  position: relative;
+  z-index: 1;
+  padding: 72mm 22mm 40mm;
+  box-sizing: border-box;
+  min-height: 297mm;
+  display: flex;
+  flex-direction: column;
+}
+
+.printable-official-letter__subject {
+  margin: 0 0 0.85rem;
+  font-size: 12pt;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.printable-official-letter__parties {
+  margin: 0 0 1.25rem;
+  font-size: 10.5pt;
+  color: var(--text-secondary);
+}
+
+.printable-official-letter__body {
+  flex: 1;
+  font-size: 12pt;
+  line-height: 2;
+  text-align: justify;
+}
+
+.printable-official-letter__body p {
+  margin: 0 0 0.35rem;
+}
+
+.printable-official-letter__seal {
+  margin-top: 2.5rem;
+  display: flex;
+  justify-content: flex-end; /* پایین-چپ در چیدمان RTL */
+  align-items: flex-end;
+  page-break-inside: avoid;
+}
+
+.printable-official-letter__sign-block {
+  position: relative;
+  min-width: 14rem;
+  text-align: center;
+  padding-top: 7rem;
+}
+
+.printable-official-letter__sign-title {
+  font-size: 10pt;
+  font-weight: 700;
+}
+
+.printable-official-letter__issuer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.35rem;
+  font-size: 10.5pt;
+  line-height: 1.6;
+}
+
+.printable-official-letter__issuer strong {
+  font-weight: 700;
+}
+
+.printable-official-letter__issuer span {
+  color: var(--text-secondary);
+  font-size: 10pt;
+}
+
+.printable-official-letter__sign-marks {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.printable-official-letter__sign-img {
+  --seal-sign-w: 11.76rem;
+  width: var(--seal-sign-w);
+  height: auto;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+}
+
+.printable-official-letter__stamp-img {
+  --seal-stamp-w: 10.08rem;
+  width: var(--seal-stamp-w);
+  height: auto;
+  object-fit: contain;
+  opacity: 0.92;
+  position: relative;
+  z-index: 2;
+  /* ۲۰٪ هم‌پوشانی روی امضا */
+  margin-inline-start: calc(var(--seal-sign-w) * -0.2);
+}
+
+/* Screen preview chrome */
+.gahshomar-print-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  background: var(--overlay-scrim);
+  backdrop-filter: blur(var(--jarian-backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--jarian-backdrop-blur));
+}
+
+.gahshomar-print-preview__toolbar {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.gahshomar-print-preview__stage {
+  flex: 1;
+  overflow: auto;
+  padding: 1.25rem;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .gahshomar-print-root,
+  .gahshomar-print-root * {
+    visibility: visible !important;
+  }
+
+  .gahshomar-print-preview__toolbar {
+    display: none !important;
+  }
+
+  .gahshomar-print-preview {
+    position: static;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .gahshomar-print-preview__stage {
+    padding: 0;
+    overflow: visible;
+  }
+
+  .printable-official-letter {
+    box-shadow: none;
+    margin: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

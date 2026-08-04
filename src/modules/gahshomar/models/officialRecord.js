@@ -6,6 +6,7 @@
 export const RECORD_DIRECTION = Object.freeze({
   INCOMING: 'INCOMING',
   OUTGOING: 'OUTGOING',
+  INTERNAL: 'INTERNAL',
 });
 
 export const RECORD_STATUS = Object.freeze({
@@ -38,13 +39,14 @@ export const TYPE_LABELS = Object.freeze({
 });
 
 export const DIRECTION_LABELS = Object.freeze({
-  INCOMING: 'وارده',
-  OUTGOING: 'صادره',
+  INCOMING: 'دریافت کردیم',
+  OUTGOING: 'ارسال کردیم',
+  INTERNAL: 'داخلی',
 });
 
 /** Demo org identity until Auth SSOT. */
 export const ORG_SELF = Object.freeze({
-  name: 'شرکت جریان',
+  name: 'پترو فولاد نیکان',
   userId: 'org-self',
 });
 
@@ -59,8 +61,9 @@ function createLocalId() {
 export function normalizeDirection(value) {
   const raw = String(value || '').trim().toUpperCase();
   if (DIRECTION_SET.has(raw)) return raw;
-  if (raw === 'IN' || raw === 'INBOUND') return RECORD_DIRECTION.INCOMING;
-  if (raw === 'OUT' || raw === 'OUTBOUND') return RECORD_DIRECTION.OUTGOING;
+  if (raw === 'IN' || raw === 'INBOUND' || raw === 'INCOMING') return RECORD_DIRECTION.INCOMING;
+  if (raw === 'OUT' || raw === 'OUTBOUND' || raw === 'OUTGOING') return RECORD_DIRECTION.OUTGOING;
+  if (raw === 'INT' || raw === 'INTERNAL') return RECORD_DIRECTION.INTERNAL;
   return null;
 }
 
@@ -76,12 +79,56 @@ export function normalizeType(value) {
   return RECORD_TYPE.OFFICIAL;
 }
 
-function normalizeParticipant(input = {}) {
-  if (!input || typeof input !== 'object') return { name: null, userId: null, companyId: null };
+export const PARTY_TYPE = Object.freeze({
+  CONTACT: 'CONTACT',
+  ORG: 'ORG',
+});
+
+export const PARTICIPANT_ROLE = Object.freeze({
+  SENDER: 'SENDER',
+  RECEIVER: 'RECEIVER',
+});
+
+/**
+ * Normalize RecordParticipant — CONTACT receivers must carry partyId.
+ * @param {object} input
+ * @param {'SENDER'|'RECEIVER'} [fallbackRole]
+ */
+export function normalizeParticipant(input = {}, fallbackRole = null) {
+  if (!input || typeof input !== 'object') {
+    return {
+      partyType: null,
+      role: fallbackRole,
+      partyId: null,
+      name: null,
+      userId: null,
+      companyId: null,
+      companyName: null,
+      position: null,
+      mobile: null,
+    };
+  }
+
+  const partyType = String(input.partyType || '').trim().toUpperCase() || null;
+  const role = String(input.role || fallbackRole || '').trim().toUpperCase() || fallbackRole;
+  const partyId = input.partyId != null && input.partyId !== ''
+    ? String(input.partyId)
+    : null;
+
   return {
-    name: String(input.name || '').trim() || null,
+    partyType: partyType === PARTY_TYPE.CONTACT || partyType === PARTY_TYPE.ORG
+      ? partyType
+      : (partyId ? PARTY_TYPE.CONTACT : null),
+    role: role === PARTICIPANT_ROLE.SENDER || role === PARTICIPANT_ROLE.RECEIVER
+      ? role
+      : fallbackRole,
+    partyId,
+    name: String(input.name || input.fullName || '').trim() || null,
     userId: input.userId != null && input.userId !== '' ? String(input.userId) : null,
     companyId: input.companyId != null && input.companyId !== '' ? input.companyId : null,
+    companyName: String(input.companyName || '').trim() || null,
+    position: String(input.position || input.jobPosition || '').trim() || null,
+    mobile: String(input.mobile || '').trim() || null,
   };
 }
 
@@ -115,8 +162,14 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
   if (!subject && !options.requireId && !input.id) return null;
 
   const participants = {
-    sender: normalizeParticipant(input.participants?.sender || input.sender),
-    receiver: normalizeParticipant(input.participants?.receiver || input.receiver),
+    sender: normalizeParticipant(
+      input.participants?.sender || input.sender,
+      PARTICIPANT_ROLE.SENDER,
+    ),
+    receiver: normalizeParticipant(
+      input.participants?.receiver || input.receiver,
+      PARTICIPANT_ROLE.RECEIVER,
+    ),
   };
 
   if (!participants.sender.name && input.senderName) {
@@ -136,7 +189,8 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
     direction,
     type: normalizeType(input.type),
     status: normalizeStatus(input.status),
-    number: String(input.number || input.letterNumber || '').trim() || null,
+    number: String(input.number || input.letterNumber || input.registryNumber || '').trim() || null,
+    registryNumber: String(input.registryNumber || input.number || input.letterNumber || '').trim() || null,
     recordDate: String(input.recordDate || input.letterDate || '').trim() || null,
     receivedDate: String(input.receivedDate || input.recordDate || input.letterDate || '').trim() || null,
     subject: subject || 'بدون موضوع',
@@ -149,6 +203,9 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
       : null,
     companyId: input.companyId != null && input.companyId !== '' ? input.companyId : null,
     tags: Array.isArray(input.tags) ? input.tags.map(String) : [],
+    issuedAt: input.issuedAt || null,
+    issuedBy: input.issuedBy != null && input.issuedBy !== '' ? String(input.issuedBy) : null,
+    isLocked: Boolean(input.isLocked),
     createdAt: input.createdAt || new Date().toISOString(),
     updatedAt: input.updatedAt || new Date().toISOString(),
   };

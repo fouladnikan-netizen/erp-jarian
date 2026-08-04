@@ -29,8 +29,8 @@ export const CORRESPONDENCE_PRIORITY = Object.freeze({
 });
 
 export const DIRECTION_LABELS = Object.freeze({
-  INCOMING: 'وارده',
-  OUTGOING: 'صادره',
+  INCOMING: 'دریافت کردیم',
+  OUTGOING: 'ارسال کردیم',
 });
 
 export const TYPE_LABELS = Object.freeze({

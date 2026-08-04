@@ -230,14 +230,10 @@
 }
 
 .gahshomar-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 490;
-  background: var(--surface-overlay);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  z-index: var(--z-backdrop);
   opacity: 0;
-  transition: opacity 0.3s ease-out;
+  transition: opacity var(--jarian-backdrop-duration) ease;
+  animation: none;
 }
 
 .gahshomar-drawer-overlay.is-open {
@@ -245,21 +241,12 @@
 }
 
 .gahshomar-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
   width: min(36rem, 92vw);
-  height: 100dvh;
-  z-index: 500;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  border-radius: 0;
-  border: none;
+  z-index: var(--z-drawer);
   background: var(--bg-surface);
-  box-shadow: 0 25px 50px -12px color-mix(in srgb, var(--color-neutral-900) 25%, transparent);
+  animation: none;
   transform: translateX(-100%);
-  transition: transform 0.3s ease-out;
+  transition: transform var(--jarian-drawer-duration) var(--jarian-drawer-ease);
 }
 
 .gahshomar-drawer.is-open {
@@ -554,17 +541,10 @@
 
 /* CREATE / EDIT — centered popup (~75% viewport), Jarian glass unity */
 .gahshomar-compose-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 510;
-  display: grid;
-  place-items: center;
-  padding: 1.25rem;
-  background: var(--overlay-scrim);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  z-index: var(--z-modal-backdrop);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--jarian-backdrop-duration) ease;
+  animation: none;
 }
 
 .gahshomar-compose-overlay.is-open {
@@ -581,8 +561,8 @@
   overflow: hidden;
   border-radius: 22px;
   background: linear-gradient(190deg, var(--glass-bg-strong) 0%, var(--bg-muted) 100%);
-  backdrop-filter: blur(18px) saturate(1.35);
-  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.35);
   box-shadow:
     var(--glass-inset-highlight-strong),
     var(--shadow-md),
@@ -590,7 +570,7 @@
   border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
   transform: translateY(12px) scale(0.98);
   opacity: 0;
-  transition: transform 0.24s cubic-bezier(0.32, 0.72, 0.25, 1), opacity 0.24s ease;
+  transition: transform 0.35s var(--jarian-drawer-ease), opacity 0.35s ease;
 }
 
 .gahshomar-compose-popup.is-open {
@@ -652,6 +632,418 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem 1.35rem;
+}
+
+.gahshomar-compose__grid > .gahshomar-modal__field:first-child {
+  grid-column: 1 / -1;
+}
+
+/* Subject suggestion dropdown */
+.gahshomar-subject-field {
+  position: relative;
+  z-index: 5;
+}
+
+.gahshomar-subject-field.is-open {
+  z-index: 40;
+}
+
+.gahshomar-subject-field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.gahshomar-subject-field__control .gahshomar-modal__input {
+  padding-inline-end: 2.4rem;
+}
+
+.gahshomar-subject-field__toggle {
+  position: absolute;
+  inset-inline-end: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.gahshomar-subject-field__list {
+  position: relative;
+  inset: auto;
+  top: auto;
+  z-index: 5;
+  margin: 0.35rem 0 0;
+  padding: 0.35rem;
+  list-style: none;
+  max-height: 14rem;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  box-shadow: var(--glass-shadow);
+}
+
+.gahshomar-subject-field__option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  text-align: right;
+  padding: 0.6rem 0.7rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.gahshomar-subject-field__option strong {
+  font-size: 0.95rem;
+}
+
+.gahshomar-subject-field__option span {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gahshomar-subject-field__option:hover,
+.gahshomar-subject-field__option:focus-visible {
+  background: var(--surface-hover);
+  outline: none;
+}
+
+/* AI letter body textarea */
+.gahshomar-ai-textarea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.gahshomar-ai-textarea__shell {
+  position: relative;
+}
+
+.gahshomar-ai-textarea__shell.is-readonly .gahshomar-ai-textarea__input {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+}
+
+.gahshomar-ai-textarea__input {
+  width: 100%;
+  padding-inline-end: 2.75rem;
+  resize: vertical;
+}
+
+.gahshomar-ai-textarea__btn {
+  position: absolute;
+  inset-inline-end: 0.55rem;
+  top: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  color: var(--color-accent);
+  cursor: pointer;
+  box-shadow: var(--glass-shadow);
+}
+
+.gahshomar-ai-textarea__btn:hover:not(:disabled),
+.gahshomar-ai-textarea__btn:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.gahshomar-ai-textarea__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.gahshomar-ai-textarea__spin {
+  animation: gahshomar-ai-spin 0.9s linear infinite;
+}
+
+@keyframes gahshomar-ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* TipTap rich letter editor */
+.gahshomar-rte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.gahshomar-rte__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.gahshomar-rte__ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--border-default));
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--bg-surface));
+  color: var(--color-accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.gahshomar-rte__ai-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.gahshomar-rte__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-muted);
+}
+
+.gahshomar-rte__tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.gahshomar-rte__tool:hover:not(:disabled),
+.gahshomar-rte__tool.is-active {
+  background: var(--surface-hover);
+  color: var(--color-accent);
+}
+
+.gahshomar-rte__tool:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.gahshomar-rte__sep {
+  width: 1px;
+  height: 1.25rem;
+  margin-inline: 0.2rem;
+  background: var(--border-default);
+}
+
+.gahshomar-rte__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--text-secondary);
+}
+
+.gahshomar-rte__size-select {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 0.2rem 0.35rem;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.gahshomar-rte__shell {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  min-height: 14rem;
+}
+
+.gahshomar-rte.is-readonly .gahshomar-rte__shell {
+  background: var(--bg-muted);
+}
+
+.gahshomar-rte__shell .ProseMirror {
+  min-height: 14rem;
+  padding: 0.85rem 1rem;
+  outline: none;
+  direction: rtl;
+  text-align: right;
+  line-height: 1.9;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.gahshomar-rte__shell .ProseMirror p {
+  margin: 0 0 0.65rem;
+}
+
+.gahshomar-rte__shell .ProseMirror ul,
+.gahshomar-rte__shell .ProseMirror ol {
+  margin: 0 0 0.65rem;
+  padding-inline-start: 1.4rem;
+}
+
+.gahshomar-rte__shell .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: right;
+  color: var(--text-muted);
+  pointer-events: none;
+  height: 0;
+}
+
+.gahshomar-letter-html p {
+  margin: 0 0 0.55rem;
+}
+
+.gahshomar-letter-html ul,
+.gahshomar-letter-html ol {
+  margin: 0 0 0.55rem;
+  padding-inline-start: 1.35rem;
+}
+
+/* Contact selector */
+.gahshomar-contact-selector {
+  position: relative;
+}
+
+.gahshomar-contact-selector__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.gahshomar-contact-selector__input-wrap > svg {
+  position: absolute;
+  inset-inline-start: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.gahshomar-contact-selector__input-wrap .gahshomar-modal__input {
+  padding-inline-start: 2.2rem;
+}
+
+.gahshomar-contact-selector__chip {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.gahshomar-contact-selector__chip-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.gahshomar-contact-selector__chip-copy strong {
+  font-size: 0.95rem;
+}
+
+.gahshomar-contact-selector__chip-copy span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.gahshomar-contact-selector__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.gahshomar-contact-selector__list {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 24;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  max-height: 16rem;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  box-shadow: var(--glass-shadow);
+}
+
+.gahshomar-contact-selector__option {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.9fr 0.8fr;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: right;
+  padding: 0.55rem 0.65rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.gahshomar-contact-selector__option:hover,
+.gahshomar-contact-selector__option:focus-visible {
+  background: var(--surface-hover);
+  outline: none;
+}
+
+.gahshomar-contact-selector__option span {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.gahshomar-contact-selector__empty {
+  padding: 0.75rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  .gahshomar-contact-selector__option {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
 }
 
 .gahshomar-compose-popup .gahshomar-modal__input,

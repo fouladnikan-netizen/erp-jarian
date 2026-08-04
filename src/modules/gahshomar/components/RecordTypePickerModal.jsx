@@ -37,7 +37,7 @@ export default function RecordTypePickerModal({ open, onSelect, onClose }) {
             onClick={() => onSelect?.(RECORD_DIRECTION.INCOMING)}
           >
             <Inbox size={20} strokeWidth={1.75} aria-hidden="true" />
-            <span>وارده</span>
+            <span>دریافت کردیم</span>
           </button>
           <button
             type="button"
@@ -45,7 +45,7 @@ export default function RecordTypePickerModal({ open, onSelect, onClose }) {
             onClick={() => onSelect?.(RECORD_DIRECTION.OUTGOING)}
           >
             <Send size={20} strokeWidth={1.75} aria-hidden="true" />
-            <span>صادره</span>
+            <span>ارسال کردیم</span>
           </button>
         </div>
       </div>

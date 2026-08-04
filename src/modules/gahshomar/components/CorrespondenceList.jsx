@@ -28,7 +28,7 @@ export default function CorrespondenceList({
     isIncoming
       ? [
         { key: 'row', label: 'ردیف', defaultWidth: 56, resizable: false },
-        { key: 'letterNumber', label: 'شماره وارده', defaultWidth: 120, numeric: true },
+        { key: 'letterNumber', label: 'شماره دریافت', defaultWidth: 120, numeric: true },
         { key: 'receivedDate', label: 'تاریخ دریافت', defaultWidth: 120, numeric: true },
         { key: 'senderName', label: 'فرستنده', defaultWidth: 160 },
         { key: 'subject', label: 'موضوع', defaultWidth: 200 },
@@ -38,7 +38,7 @@ export default function CorrespondenceList({
       ]
       : [
         { key: 'row', label: 'ردیف', defaultWidth: 56, resizable: false },
-        { key: 'letterNumber', label: 'شماره صادره', defaultWidth: 120, numeric: true },
+        { key: 'letterNumber', label: 'شماره ارسال', defaultWidth: 120, numeric: true },
         { key: 'letterDate', label: 'تاریخ', defaultWidth: 120, numeric: true },
         { key: 'receiverName', label: 'گیرنده', defaultWidth: 160 },
         { key: 'subject', label: 'موضوع', defaultWidth: 200 },
@@ -54,7 +54,7 @@ export default function CorrespondenceList({
     return (
       <div className="gahshomar-docs__empty gahshomar-docs__empty--section section-data">
         <p className="gahshomar-docs__empty-title font-meem">
-          {isIncoming ? 'نامه وارده‌ای نیست' : 'نامه صادره‌ای نیست'}
+          {isIncoming ? 'هنوز نامه‌ای دریافت نکرده‌ایم' : 'هنوز نامه‌ای ارسال نکرده‌ایم'}
         </p>
         <p className="gahshomar-docs__empty-body font-meem">
           مکاتبات رسمی و نامه‌های داخلی مرتبط با این نما اینجا نمایش داده می‌شوند.
@@ -64,10 +64,10 @@ export default function CorrespondenceList({
   }
 
   return (
-    <section className="section-data gahshomar-list" aria-label={isIncoming ? 'فهرست وارده' : 'فهرست صادره'}>
+    <section className="section-data gahshomar-list" aria-label={isIncoming ? 'فهرست دریافت کردیم' : 'فهرست ارسال کردیم'}>
       <div className="data-table-header">
         <span className="data-table-header__title font-meem">
-          {isIncoming ? 'نامه‌های وارده' : 'نامه‌های صادره'}
+          {isIncoming ? 'نامه‌هایی که دریافت کردیم' : 'نامه‌هایی که ارسال کردیم'}
         </span>
         <span className="data-table-header__count font-yekan">
           {documents.length.toLocaleString('fa-IR')} رکورد

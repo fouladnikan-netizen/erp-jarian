@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import { getTodayJalali } from '../nabz/dateUtils';
 import {
+  ORG_SELF,
   RECORD_DIRECTION,
   RECORD_STATUS,
   defaultStatusForDirection,
@@ -18,12 +19,15 @@ import {
   repositoryFindByCompanyId,
   repositoryFindById,
   repositoryFindByThreadId,
+  repositoryIssueRecord,
   repositoryReplaceAll,
   repositoryResetToSeed,
   repositorySave,
   toDetailPresentationModel,
   toListPresentationModel,
 } from './repositories/officialRecordRepository';
+import { searchLetterContacts } from './services/letterContactSearch';
+import { ensureLetterHtml, htmlToPlainText, isHtmlContent, plainTextToHtml } from './services/letterHtml';
 import { useOfficialRecordStore } from './store/useOfficialRecordStore';
 
 function bumpStore() {
@@ -143,6 +147,7 @@ export function createDraftRecord(direction) {
 export function saveOfficialRecord(id, payload = {}) {
   const existing = repositoryFindById(id);
   if (!existing) return null;
+  if (existing.isLocked) return getOfficialRecord(id);
 
   const direction = normalizeDirection(payload.direction) || existing.direction;
   const saved = repositorySave({
@@ -150,12 +155,94 @@ export function saveOfficialRecord(id, payload = {}) {
     ...payload,
     id,
     direction,
+    body: payload.body != null ? ensureLetterHtml(payload.body) : existing.body,
     participants: payload.participants || existing.participants,
     status: payload.status || existing.status || defaultStatusForDirection(direction),
   });
   if (!saved) return null;
   bumpStore();
   return getOfficialRecord(saved.id);
+}
+
+/**
+ * Mock DeepSeek polish — only rewrites letter body (HTML or plain).
+ * Never touches subject / parties / registry fields.
+ * @param {string} content
+ * @returns {Promise<string>} polished HTML
+ */
+export async function polishLetterText(content) {
+  const rawInput = String(content || '').trim();
+  if (!rawInput) return '';
+
+  await new Promise((resolve) => {
+    setTimeout(resolve, 650);
+  });
+
+  const asHtml = isHtmlContent(rawInput);
+  const plain = asHtml ? htmlToPlainText(rawInput) : rawInput;
+  const cleaned = plain
+    .replace(/\s+/g, ' ')
+    .replace(/\s*([،؛.!؟])\s*/g, '$1 ')
+    .trim();
+
+  let polishedPlain;
+  if (/^با سلام/.test(cleaned)) {
+    polishedPlain = `${cleaned}${/[.؟!]$/.test(cleaned) ? '' : '.'}\n\nبا احترام`;
+  } else {
+    polishedPlain = [
+      'با سلام و احترام؛',
+      '',
+      cleaned,
+      '',
+      'خواهشمند است دستور فرمایید اقدام لازم مبذول گردد.',
+      '',
+      'با سپاس',
+    ].join('\n');
+  }
+
+  return plainTextToHtml(polishedPlain);
+}
+
+/**
+ * Search Kanoon contacts for letter recipient/sender selection.
+ * @param {string} [query]
+ */
+export function searchOfficialRecordContacts(query = '') {
+  return searchLetterContacts(query);
+}
+
+/**
+ * Sign & issue outgoing letter: registry number + lock.
+ * @param {string|number} id
+ * @param {object} [payload] optional last-minute field updates before lock
+ */
+export function issueOfficialRecord(id, payload = {}) {
+  const existing = repositoryFindById(id);
+  if (!existing) return null;
+  if (existing.direction !== RECORD_DIRECTION.OUTGOING) return null;
+
+  const receiver = payload.participants?.receiver || existing.participants?.receiver;
+  if (!receiver?.partyId || receiver.partyType !== 'CONTACT') {
+    return null;
+  }
+
+  if (!existing.isLocked && Object.keys(payload).length) {
+    repositorySave({
+      ...existing,
+      ...payload,
+      id,
+      body: payload.body != null ? ensureLetterHtml(payload.body) : existing.body,
+      participants: payload.participants || existing.participants,
+    });
+  }
+
+  const issued = repositoryIssueRecord(id, {
+    issuedBy: payload.issuedBy || ORG_SELF.name,
+    recordDate: payload.recordDate,
+  });
+  if (!issued) return null;
+  bumpStore();
+  return getOfficialRecord(issued.id);
 }
 
 /**
@@ -184,7 +271,7 @@ export function computeOfficialRecordKpis() {
   return [
     {
       id: 'new-incoming',
-      label: 'نامه‌های جدید وارده',
+      label: 'نامه‌های جدید دریافت کردیم',
       value: newIncoming.toLocaleString('fa-IR'),
       trend: 'فیلتر',
       trendDir: 'up',
@@ -200,7 +287,7 @@ export function computeOfficialRecordKpis() {
     },
     {
       id: 'issued-today',
-      label: 'صادره امروز',
+      label: 'ارسال کردیم امروز',
       value: issuedToday.toLocaleString('fa-IR'),
       trend: 'فیلتر',
       trendDir: 'up',

@@ -15,6 +15,7 @@ import {
   defaultStatusForDirection,
   normalizeOfficialRecord,
 } from '../models/officialRecord';
+import { buildRegistryNumber, formatRegistryNumberFa } from '../services/letterRegistryNumber';
 
 /** @type {Array<object>} */
 let records = seedRecords();
@@ -27,14 +28,15 @@ function seedRecords() {
       direction: RECORD_DIRECTION.INCOMING,
       type: RECORD_TYPE.OFFICIAL,
       status: RECORD_STATUS.RECEIVED,
-      number: '۱۴۰۴/۱۲۳',
+      number: '۴۰۴/IN/۱۲۳',
+      registryNumber: '۴۰۴/IN/۱۲۳',
       receivedDate: '1404/01/18',
       recordDate: '1404/01/18',
       subject: 'درخواست استعلام قیمت ورق',
       body: 'با سلام، خواهشمند است قیمت ورق ST37 را اعلام فرمایید.',
       participants: {
-        sender: { name: 'صنایع فولاد پارس', companyId: 1 },
-        receiver: { name: ORG_SELF.name, userId: ORG_SELF.userId },
+        sender: { name: 'صنایع فولاد پارس', companyId: 1, partyType: 'CONTACT', partyId: 'rp-1-1', role: 'SENDER' },
+        receiver: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'RECEIVER' },
       },
       attachments: [{ id: 'att-1', fileName: 'estelam.pdf' }],
       threadId: 'thread-001',
@@ -47,14 +49,15 @@ function seedRecords() {
       direction: RECORD_DIRECTION.INCOMING,
       type: RECORD_TYPE.OFFICIAL,
       status: RECORD_STATUS.RECEIVED,
-      number: '۱۴۰۴/۱۲۸',
+      number: '۴۰۴/IN/۱۲۸',
+      registryNumber: '۴۰۴/IN/۱۲۸',
       receivedDate: '1404/01/16',
       recordDate: '1404/01/16',
       subject: 'اعلامیه قرارداد سالانه',
       body: 'پیوست قرارداد سال ۱۴۰۴ جهت بررسی و امضا.',
       participants: {
-        sender: { name: 'صنایع فلزی کرمان', companyId: 2 },
-        receiver: { name: ORG_SELF.name, userId: ORG_SELF.userId },
+        sender: { name: 'صنایع فلزی کرمان', companyId: 2, partyType: 'CONTACT', partyId: 'rp-2-1', role: 'SENDER' },
+        receiver: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'RECEIVER' },
       },
       attachments: [{ id: 'att-2', fileName: 'contract-notice.pdf' }],
       threadId: 'thread-002',
@@ -72,8 +75,17 @@ function seedRecords() {
       subject: 'پاسخ به استعلام قیمت',
       body: 'پیش‌نویس پاسخ استعلام — در انتظار تکمیل.',
       participants: {
-        sender: { name: ORG_SELF.name, userId: ORG_SELF.userId },
-        receiver: { name: 'صنایع فولاد پارس', companyId: 1 },
+        sender: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'SENDER' },
+        receiver: {
+          name: 'علی رضایی',
+          companyId: 1,
+          companyName: 'فولاد پارس',
+          position: 'مدیر خرید',
+          mobile: '09121112233',
+          partyType: 'CONTACT',
+          partyId: 'rp-1-1',
+          role: 'RECEIVER',
+        },
       },
       attachments: [],
       threadId: 'thread-001',
@@ -86,19 +98,32 @@ function seedRecords() {
       direction: RECORD_DIRECTION.OUTGOING,
       type: RECORD_TYPE.OFFICIAL,
       status: RECORD_STATUS.ISSUED,
-      number: '۱۴۰۴/۵۰۱',
+      number: '۴۰۴/OUT/۰۰۱',
+      registryNumber: '۴۰۴/OUT/۰۰۱',
       recordDate: today,
       subject: 'نامه رسمی همکاری',
-      body: 'نامه صادره جهت همکاری مشترک.',
+      body: 'نامه ارسال‌شده جهت همکاری مشترک.',
       participants: {
-        sender: { name: ORG_SELF.name, userId: ORG_SELF.userId },
-        receiver: { name: 'شرکت ماشین‌سازی تبریز', companyId: 3 },
+        sender: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'SENDER' },
+        receiver: {
+          name: 'محمد رضایی',
+          companyId: 2,
+          companyName: 'صنایع فلزی کرمان',
+          position: 'کارشناس فروش',
+          mobile: '09133445566',
+          partyType: 'CONTACT',
+          partyId: 'rp-2-1',
+          role: 'RECEIVER',
+        },
       },
       attachments: [{ id: 'att-3', fileName: 'letter-scan.pdf' }],
       threadId: 'thread-003',
       referenceId: 'JR-۵۰۱',
       companyId: 3,
       tags: ['رسمی'],
+      issuedAt: new Date().toISOString(),
+      issuedBy: ORG_SELF.name,
+      isLocked: true,
     },
   ];
 
@@ -117,10 +142,14 @@ function sortByDateDesc(a, b) {
 
 function resolveDisplayParty(record) {
   if (!record) return '—';
-  if (record.direction === RECORD_DIRECTION.INCOMING) {
-    return record.participants?.sender?.name || '—';
+  const party = record.direction === RECORD_DIRECTION.INCOMING
+    ? record.participants?.sender
+    : record.participants?.receiver;
+  if (!party) return '—';
+  if (party.companyName && party.name && party.companyName !== party.name) {
+    return `${party.name} — ${party.companyName}`;
   }
-  return record.participants?.receiver?.name || '—';
+  return party.name || party.companyName || '—';
 }
 
 /**
@@ -129,9 +158,11 @@ function resolveDisplayParty(record) {
  */
 export function toListPresentationModel(record) {
   const attachments = Array.isArray(record.attachments) ? record.attachments : [];
+  const registryNumber = formatRegistryNumberFa(record.registryNumber || record.number || '') || null;
   return {
     id: record.id,
-    number: record.number,
+    number: registryNumber,
+    registryNumber,
     date: record.direction === RECORD_DIRECTION.INCOMING
       ? (record.receivedDate || record.recordDate)
       : record.recordDate,
@@ -143,6 +174,7 @@ export function toListPresentationModel(record) {
     direction: record.direction,
     status: record.status,
     companyId: record.companyId,
+    isLocked: Boolean(record.isLocked),
   };
 }
 
@@ -169,15 +201,20 @@ export function toDetailPresentationModel(record, options = {}) {
     referenceId: record.referenceId,
     companyId: record.companyId,
     tags: record.tags || [],
+    issuedAt: record.issuedAt,
+    issuedBy: record.issuedBy,
     threadPreview: thread.map((item) => ({
       id: item.id,
-      number: item.number,
+      number: item.registryNumber || item.number,
       subject: item.subject,
       displayStatus: STATUS_LABELS[item.status] || item.status,
       direction: item.direction,
     })),
     canReply: record.direction === RECORD_DIRECTION.INCOMING
       && record.status !== RECORD_STATUS.ARCHIVED,
+    canIssue: !record.isLocked
+      && record.direction === RECORD_DIRECTION.OUTGOING,
+    canPrint: Boolean(record.isLocked || record.registryNumber || record.number),
   };
 }
 
@@ -205,8 +242,33 @@ export function repositoryFindByCompanyId(companyId) {
 }
 
 export function repositorySave(record) {
+  const existing = record?.id != null
+    ? records.find((item) => String(item.id) === String(record.id))
+    : null;
+  if (existing?.isLocked) {
+    // Locked letters are immutable except through issue path (already locked).
+    return repositoryFindById(existing.id);
+  }
+
   const next = normalizeOfficialRecord(record, { requireId: true });
   if (!next?.id) return null;
+
+  // Incoming letters receive registry number on first real persist (۴۰۵/IN/۱۲۵).
+  // Skip placeholder drafts created by createDraftRecord.
+  const isPlaceholderSubject = !next.subject
+    || next.subject === 'پیش‌نویس جدید'
+    || next.subject === 'بدون موضوع';
+  if (
+    next.direction === RECORD_DIRECTION.INCOMING
+    && !next.registryNumber
+    && !next.number
+    && !isPlaceholderSubject
+  ) {
+    const dateKey = next.receivedDate || next.recordDate || getTodayJalali() || '';
+    const registryNumber = buildRegistryNumber(RECORD_DIRECTION.INCOMING, dateKey, records);
+    next.number = registryNumber;
+    next.registryNumber = registryNumber;
+  }
 
   const index = records.findIndex((item) => String(item.id) === String(next.id));
   if (index === -1) {
@@ -217,6 +279,40 @@ export function repositorySave(record) {
     records[index] = merged;
   }
   return repositoryFindById(next.id);
+}
+
+/**
+ * Issue an outgoing letter: assign registry number (۴۰۵/OUT/۱۲۵) and lock.
+ * @param {string|number} id
+ * @param {{ issuedBy?: string, issuedAt?: string, recordDate?: string }} [meta]
+ */
+export function repositoryIssueRecord(id, meta = {}) {
+  const existing = repositoryFindById(id);
+  if (!existing) return null;
+  if (existing.direction !== RECORD_DIRECTION.OUTGOING) return null;
+  if (existing.isLocked) return existing;
+
+  const jalaliToday = getTodayJalali() || existing.recordDate || '';
+  const dateKey = meta.recordDate || existing.recordDate || jalaliToday;
+  const registryNumber = buildRegistryNumber(RECORD_DIRECTION.OUTGOING, dateKey, records);
+
+  const issued = {
+    ...existing,
+    status: RECORD_STATUS.ISSUED,
+    number: registryNumber,
+    registryNumber,
+    recordDate: dateKey,
+    issuedAt: meta.issuedAt || new Date().toISOString(),
+    issuedBy: meta.issuedBy || ORG_SELF.name,
+    isLocked: true,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const index = records.findIndex((item) => String(item.id) === String(id));
+  if (index === -1) return null;
+  records = records.slice();
+  records[index] = issued;
+  return repositoryFindById(id);
 }
 
 export function repositoryCreateDraft(payload = {}) {
@@ -230,11 +326,11 @@ export function repositoryCreateDraft(payload = {}) {
     subject: payload.subject || 'پیش‌نویس جدید',
     participants: payload.participants || {
       sender: direction === RECORD_DIRECTION.INCOMING
-        ? { name: null }
-        : { name: ORG_SELF.name, userId: ORG_SELF.userId },
+        ? { name: null, partyType: 'CONTACT', role: 'SENDER' }
+        : { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'SENDER' },
       receiver: direction === RECORD_DIRECTION.OUTGOING
-        ? { name: null }
-        : { name: ORG_SELF.name, userId: ORG_SELF.userId },
+        ? { name: null, partyType: 'CONTACT', role: 'RECEIVER' }
+        : { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'RECEIVER' },
     },
   });
   if (!record) return null;
@@ -253,8 +349,12 @@ export function repositoryCreateReply(sourceId) {
     body: '',
     recordDate: getTodayJalali() || source.recordDate,
     participants: {
-      sender: { name: ORG_SELF.name, userId: ORG_SELF.userId },
-      receiver: { ...source.participants.sender },
+      sender: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'SENDER' },
+      receiver: {
+        ...source.participants.sender,
+        role: 'RECEIVER',
+        partyType: source.participants.sender?.partyType || 'CONTACT',
+      },
     },
     threadId: source.threadId,
     referenceId: source.referenceId || source.number,

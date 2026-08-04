@@ -90,7 +90,7 @@ export default function GahshomarPage() {
           onPrimaryClick={() => setTypePickerOpen(true)}
           filters={(
             <ListFilterBar className="gahshomar-page__filters" ariaLabel="تب مکاتبات">
-              <div className="nabz-tabs" role="tablist" aria-label="وارده و صادره">
+              <div className="nabz-tabs" role="tablist" aria-label="ارسال کردیم و دریافت کردیم">
                 <button
                   type="button"
                   role="tab"
@@ -99,7 +99,7 @@ export default function GahshomarPage() {
                   onClick={() => setTab('outgoing')}
                 >
                   <Send size={14} strokeWidth={1.75} aria-hidden="true" />
-                  صادره
+                  ارسال کردیم
                 </button>
                 <button
                   type="button"
@@ -109,7 +109,7 @@ export default function GahshomarPage() {
                   onClick={() => setTab('incoming')}
                 >
                   <Inbox size={14} strokeWidth={1.75} aria-hidden="true" />
-                  وارده
+                  دریافت کردیم
                 </button>
               </div>
             </ListFilterBar>

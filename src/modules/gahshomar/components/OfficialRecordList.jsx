@@ -40,7 +40,7 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
   const { widths, startResize } = useResizableColumns(`gahshomar-records-${tab}`, columns);
 
   const emptyTitle = useMemo(
-    () => (isIncoming ? 'نامه وارده‌ای نیست' : 'نامه صادره‌ای نیست'),
+    () => (isIncoming ? 'هنوز نامه‌ای دریافت نکرده‌ایم' : 'هنوز نامه‌ای ارسال نکرده‌ایم'),
     [isIncoming],
   );
 
@@ -58,11 +58,11 @@ export default function OfficialRecordList({ tab, records, onOpenDetail }) {
   return (
     <section
       className="section-data gahshomar-list kprofile-glass"
-      aria-label={isIncoming ? 'فهرست وارده' : 'فهرست صادره'}
+      aria-label={isIncoming ? 'فهرست دریافت کردیم' : 'فهرست ارسال کردیم'}
     >
       <div className="data-table-header">
         <span className="data-table-header__title font-meem">
-          {isIncoming ? 'نامه‌های وارده' : 'نامه‌های صادره'}
+          {isIncoming ? 'نامه‌هایی که دریافت کردیم' : 'نامه‌هایی که ارسال کردیم'}
         </span>
         <span className="data-table-header__count font-yekan">
           {records.length.toLocaleString('fa-IR')} رکورد

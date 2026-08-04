@@ -84,11 +84,11 @@ export default function GahshomarDocumentsPanel({ companyId, showHeader = true }
       <div className="gahshomar-docs__section">
         <h4 className="gahshomar-docs__section-title font-meem">
           <Inbox size={16} strokeWidth={1.75} aria-hidden="true" />
-          وارده
+          دریافت کردیم
         </h4>
         <ProfileTable
           records={incoming}
-          emptyTitle="نامه وارده‌ای برای این سازمان نیست"
+          emptyTitle="هنوز نامه‌ای از این سازمان دریافت نکرده‌ایم"
           partyLabel="فرستنده"
           onOpen={(recordId) => setDrawerState({ mode: DRAWER_MODE.VIEW, recordId })}
         />
@@ -97,11 +97,11 @@ export default function GahshomarDocumentsPanel({ companyId, showHeader = true }
       <div className="gahshomar-docs__section">
         <h4 className="gahshomar-docs__section-title font-meem">
           <Send size={16} strokeWidth={1.75} aria-hidden="true" />
-          صادره
+          ارسال کردیم
         </h4>
         <ProfileTable
           records={outgoing}
-          emptyTitle="نامه صادره‌ای برای این سازمان نیست"
+          emptyTitle="هنوز نامه‌ای برای این سازمان ارسال نکرده‌ایم"
           partyLabel="گیرنده"
           onOpen={(recordId) => setDrawerState({ mode: DRAWER_MODE.VIEW, recordId })}
         />
