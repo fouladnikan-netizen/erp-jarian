@@ -38,7 +38,7 @@ Infinite Loading is the **only** large-list loading strategy. Do not expose pagi
 - Rows / data source (client array or server-fed via `onLoadMore`)
 - Business actions
 
-Wired: Nabz, Kanoon, Vitrin, Gahshomar.
+Wired: Nabz, Kanoon, Vitrin, Gahshomar, Mowj.
 
 ---
 

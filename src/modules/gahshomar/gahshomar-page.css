@@ -706,6 +706,48 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.gahshomar-compose__incoming-hint {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--info-border, var(--border-default));
+  background: var(--info-muted, var(--bg-muted));
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.gahshomar-compose__file-field {
+  gap: 0.45rem;
+}
+
+.gahshomar-compose__file-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.gahshomar-compose__file-control:hover {
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+
+.gahshomar-compose__file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .gahshomar-compose__pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

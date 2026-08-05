@@ -67,7 +67,7 @@ Before opening a PR, run at least: `npm run lint`, `npm test`, and `npm run buil
 | `ofogh` | افق | Opportunities pipeline |
 | `vitrin` | ویترین | Product catalog |
 | `gahshomar` | گاه‌شمار | Commitments calendar |
-| `kampayn` | کمپین‌ها | Campaign automation |
+| `mowj` | موج (کمپین‌ها) | Campaign Core — retention & acquisition |
 | `shirazeh` | شیرازه | Settings / users / security |
 | `pooyesh` / `ayeneh` | پویش / آینه | Placeholder surfaces |
 

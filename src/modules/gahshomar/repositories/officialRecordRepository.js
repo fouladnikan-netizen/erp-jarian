@@ -39,6 +39,8 @@ function seedRecords() {
         receiver: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'RECEIVER' },
       },
       attachments: [{ id: 'att-1', fileName: 'estelam.pdf' }],
+      assigneeUserId: 'user-current',
+      assigneeName: 'علی رضایی',
       threadId: 'thread-001',
       referenceId: 'EXT-۸۸۱',
       companyId: 1,
@@ -60,6 +62,8 @@ function seedRecords() {
         receiver: { name: ORG_SELF.name, userId: ORG_SELF.userId, partyType: 'ORG', role: 'RECEIVER' },
       },
       attachments: [{ id: 'att-2', fileName: 'contract-notice.pdf' }],
+      assigneeUserId: 'user-sara',
+      assigneeName: 'سارا موسوی',
       threadId: 'thread-002',
       referenceId: 'K-۴۴۲',
       companyId: 2,
@@ -193,6 +197,8 @@ export function toDetailPresentationModel(record, options = {}) {
     recordDate: record.recordDate,
     receivedDate: record.receivedDate,
     attentionName: record.attentionName || null,
+    assigneeUserId: record.assigneeUserId || null,
+    assigneeName: record.assigneeName || null,
     participants: {
       sender: record.participants?.sender || { name: null },
       receiver: record.participants?.receiver || { name: null },
@@ -334,6 +340,9 @@ export function repositoryCreateDraft(payload = {}) {
       : payload.receivedDate,
     attentionName: payload.attentionName || null,
     body: payload.body || null,
+    assigneeUserId: payload.assigneeUserId || null,
+    assigneeName: payload.assigneeName || null,
+    attachments: payload.attachments || [],
     participants: payload.participants || {
       sender: direction === RECORD_DIRECTION.INCOMING
         ? { name: null, partyType: 'CONTACT', role: 'SENDER' }

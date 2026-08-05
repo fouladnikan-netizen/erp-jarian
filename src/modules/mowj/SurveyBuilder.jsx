@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Type,
   AlignLeft,
@@ -12,8 +12,9 @@ import {
   GripVertical,
   Check,
 } from 'lucide-react';
-import { SURVEY_FORMS } from './campaignsData';
+import { SURVEY_FORMS } from './surveyForms';
 import { FIELD_TYPES, createBlock, createEmptySurvey } from './surveyBuilderData';
+import './mowj.css';
 import './survey-builder.css';
 
 const ICON = { size: 16, strokeWidth: 1.75 };
@@ -279,6 +280,11 @@ export default function SurveyBuilder() {
   const [savedFlash, setSavedFlash] = useState(false);
   const addBtnRef = useRef(null);
 
+  // Independent create path removed — edit only with ?id=, or create via Campaign Builder drawer.
+  if (!seedId) {
+    return <Navigate to="/mowj" replace />;
+  }
+
   const patchSurvey = (partial) => setSurvey((prev) => ({ ...prev, ...partial }));
 
   const patchBlock = (id, partial) => {
@@ -310,7 +316,7 @@ export default function SurveyBuilder() {
   return (
     <div
       className="module-page svb-page"
-      data-module="kampayn-survey"
+      data-module="mowj-survey"
       dir="rtl"
       onClick={() => {
         setActiveId(null);
@@ -320,11 +326,11 @@ export default function SurveyBuilder() {
       <div className="svb-topbar" onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
-          className="kampayn-btn kampayn-btn--ghost"
-          onClick={() => navigate('/kampayn')}
+          className="mowj-btn mowj-btn--ghost"
+          onClick={() => navigate('/mowj')}
         >
           <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
-          بازگشت به کمپین‌ها
+          بازگشت به موج
         </button>
         <div className="svb-topbar__actions">
           {savedFlash ? (
@@ -335,7 +341,7 @@ export default function SurveyBuilder() {
           ) : null}
           <button
             type="button"
-            className="kampayn-btn kampayn-btn--primary"
+            className="mowj-btn mowj-btn--primary"
             onClick={handleSave}
           >
             ذخیره فرم

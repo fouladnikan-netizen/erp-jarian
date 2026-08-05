@@ -26,6 +26,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 3. [CURSOR_RULES.md](./CURSOR_RULES.md) — mandatory theme + presentation rules  
 4. [SSOT.md](./SSOT.md) — where Company / Order / ContactPerson live  
 5. [ENTITY_OWNERSHIP.md](./ENTITY_OWNERSHIP.md) — who owns which entity  
+5b. [MOWJ_CAMPAIGN_ARCHITECTURE.md](./MOWJ_CAMPAIGN_ARCHITECTURE.md) — Mowj campaigns, automation, attribution, ports  
 6. [DOMAIN_DECISION_LOG.md](./DOMAIN_DECISION_LOG.md) — locked aggregate decisions before DB design  
 6b. [COMPANY_PROFILE_HUB_SESSION_PACK.md](./COMPANY_PROFILE_HUB_SESSION_PACK.md) — Customer/Supplier profile hub session (۱۰ پرامپت: architecture + file map)  
 7. [ORDER_WORKFLOW.md](./ORDER_WORKFLOW.md) — Nabz stages (as-is)  
@@ -48,6 +49,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 | [05-HARDCODED_NAVIGATION_ASSUMPTIONS.md](./05-HARDCODED_NAVIGATION_ASSUMPTIONS.md) | Inventory of magic paths / returnTo / module switches |
 | [06-FUTURE_RECOMMENDATIONS.md](./06-FUTURE_RECOMMENDATIONS.md) | Medium/high-cost items deferred |
 | [DOMAIN_DECISION_LOG.md](./DOMAIN_DECISION_LOG.md) | Locked domain decisions (DDL) before persistence |
+| [MOWJ_CAMPAIGN_ARCHITECTURE.md](./MOWJ_CAMPAIGN_ARCHITECTURE.md) | Mowj campaign domain, ports, ownership, automation, analytics |
 | [COMPANY_PROFILE_HUB_SESSION_PACK.md](./COMPANY_PROFILE_HUB_SESSION_PACK.md) | Customer/Supplier profile hub — ۱۰-prompt architecture pack + file map |
 | [UNIFIED_LIST_INFRASTRUCTURE.md](./UNIFIED_LIST_INFRASTRUCTURE.md) | Law #004 — shared lists; Infinite Loading mandatory |
 | [PROFILE_LAYOUT_GUIDELINES.md](./PROFILE_LAYOUT_GUIDELINES.md) | Required layout for **new** profile pages |

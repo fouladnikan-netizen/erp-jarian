@@ -4,6 +4,7 @@ import {
   ensureEditableLetterBody,
   formatHonorableCompany,
   getLetterSignatory,
+  resolveLetterRoleTitle,
 } from '../services/letterDocument';
 import './printableOfficialLetter.css';
 
@@ -27,6 +28,9 @@ function resolveCompanyName(record) {
  * - letterhead: sarbarg background + seal/signature
  * - plain: blank sheet (for physical letterhead paper), no seal/signature
  *
+ * Seal/signature follows the closing block (author name · role · org) —
+ * that block sits after the letter body, so its vertical position is content-driven.
+ *
  * @param {{ record: object, variant?: PrintLetterVariant }} props
  */
 export default function PrintableOfficialLetter({
@@ -41,7 +45,9 @@ export default function PrintableOfficialLetter({
   const showSeal = withLetterhead && Boolean(record.isLocked);
   const signatory = getLetterSignatory();
   const issuerName = record.issuedBy || signatory.name;
-  const issuerTitle = record.issuerTitle || signatory.title;
+  const issuerTitle = resolveLetterRoleTitle(record.issuerTitle)
+    || resolveLetterRoleTitle(signatory.role)
+    || signatory.title;
   const companyLine = formatHonorableCompany(resolveCompanyName(record));
   const personLine = String(record.attentionName || '').trim();
   const bodyHtml = ensureEditableLetterBody(record.body || '');
@@ -85,28 +91,41 @@ export default function PrintableOfficialLetter({
           dangerouslySetInnerHTML={{ __html: bodyHtml }}
         />
 
-        <div className="printable-official-letter__closing font-meem">
-          <strong>{issuerName}</strong>
-          <strong>{issuerTitle}</strong>
-          <strong>{signatory.company}</strong>
-        </div>
-
         {/*
-          Reserve identical footprint always so text layout never shifts.
-          Seal/stamp only rendered for electronic letterhead sends.
+          Closing + seal are one unit after the body.
+          Vertical position tracks letter length; seal overlays the signatory lines.
+          Plain/letterhead keep the same footprint so text does not jump.
         */}
         <footer
-          className="printable-official-letter__seal"
-          aria-label={showSeal ? 'مهر و امضا' : undefined}
-          aria-hidden={!showSeal}
+          className="printable-official-letter__signatory"
+          aria-label="امضا و مشخصات نویسنده"
         >
           <div className="printable-official-letter__sign-block">
-            {showSeal ? (
-              <div className="printable-official-letter__sign-marks" aria-hidden="true">
-                <img src="/assets/signature/sign.png" alt="" className="printable-official-letter__sign-img" />
-                <img src="/assets/signature/stamp.png" alt="" className="printable-official-letter__stamp-img" />
-              </div>
-            ) : null}
+            <div
+              className="printable-official-letter__sign-marks"
+              aria-hidden={!showSeal}
+              data-visible={showSeal ? 'true' : 'false'}
+            >
+              {showSeal ? (
+                <>
+                  <img
+                    src="/assets/signature/sign.png"
+                    alt=""
+                    className="printable-official-letter__sign-img"
+                  />
+                  <img
+                    src="/assets/signature/stamp.png"
+                    alt=""
+                    className="printable-official-letter__stamp-img"
+                  />
+                </>
+              ) : null}
+            </div>
+            <div className="printable-official-letter__closing font-meem">
+              <strong>{issuerName}</strong>
+              <strong>{issuerTitle}</strong>
+              <strong>{signatory.company}</strong>
+            </div>
           </div>
         </footer>
       </div>

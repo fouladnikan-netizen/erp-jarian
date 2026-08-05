@@ -133,11 +133,14 @@ New string/numeric IDs for created records use `src/domain/identity` (`createEnt
 
 | Field | Value |
 |-------|--------|
-| **Owner Module** | کمپین (Kampayn) |
-| **Aggregate** | Isolated mock roots |
-| **Current Storage** | Component state / `campaignsData` / survey builder |
-| **Lifecycle** | Create/activate in dashboard; IDs via `createEntityId` |
-| **Future Direction** | Link to Company/Order events when CRM automation is real |
+| **Owner Module** | موج (Mowj) — Campaign Core |
+| **Aggregate** | Campaign (`cmp-*`), Template, AudienceSegment, Snapshot, Execution, Intent, Result, Attribution |
+| **Current Storage** | `mowj/repositories/*` (in-memory SSOT behind repository ports) |
+| **Lifecycle** | `campaign.lifecycle.js` transitions via facade; automation evaluate → intent; executor → result |
+| **Does not own** | Contact (Kanoon), Lead/Opportunity (Ofogh), Order (Nabz), Task (Pooyesh) |
+| **Future Direction** | Persist via ports; wire ERP event producers; real channel providers behind `ChannelExecutor`; Aineh consumes `campaignAnalyticsContract` for dashboards |
+
+See [MOWJ_CAMPAIGN_ARCHITECTURE.md](./MOWJ_CAMPAIGN_ARCHITECTURE.md).
 
 ---
 

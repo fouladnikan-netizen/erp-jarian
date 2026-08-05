@@ -27,6 +27,7 @@ import {
 } from './repositories/officialRecordRepository';
 import { searchLetterContacts } from './services/letterContactSearch';
 import { getLetterSignatory } from './services/letterDocument';
+import { getDefaultAssignee } from './services/orgPeople';
 import { ensureLetterHtml, htmlToPlainText, isHtmlContent, plainTextToHtml } from './services/letterHtml';
 import { useOfficialRecordStore } from './store/useOfficialRecordStore';
 
@@ -132,7 +133,15 @@ export function createReply(recordId) {
 export function createDraftRecord(direction) {
   const normalized = normalizeDirection(direction);
   if (!normalized) return null;
-  const created = repositoryCreateDraft({ direction: normalized });
+  const draftPayload = { direction: normalized };
+  if (normalized === RECORD_DIRECTION.INCOMING) {
+    const assignee = getDefaultAssignee();
+    if (assignee) {
+      draftPayload.assigneeUserId = assignee.id;
+      draftPayload.assigneeName = assignee.name;
+    }
+  }
+  const created = repositoryCreateDraft(draftPayload);
   if (!created) return null;
   bumpStore();
   return getOfficialRecord(created.id);

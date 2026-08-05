@@ -134,10 +134,10 @@ export default function TaninAnalyticsDashboard() {
         <button
           type="button"
           className="tanin-a-back font-meem"
-          onClick={() => navigate('/kampayn')}
+          onClick={() => navigate('/mowj')}
         >
           <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
-          بازگشت به کمپین‌ها
+          بازگشت به موج
         </button>
         <div className="tanin-a-toolbar__title">
           <h2 className="tanin-a-page-title font-meem">داشبورد تحلیل طنین</h2>

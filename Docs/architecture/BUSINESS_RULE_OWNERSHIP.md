@@ -27,7 +27,9 @@
 | **Permissions (ops edit)** | `orderEditPermissions.js`, `constants.js` `USER_ROLES` / `CURRENT_USER` | Nabz hardcoded | Shirazeh RBAC (or single auth RBAC) at mutation boundary | **Critical** — 3 systems |
 | **Permissions (admin matrix)** | `permissionsStore` + `permissionsRegistry` | Shirazeh UI | Same, but must be enforced in ops | High — not consulted by Nabz |
 | **Notifications** | `NotificationEngineContext`, `config/notificationEvents.js`, `showSystemToast` | Shell / dual paths | One notification bus; domain events → dispatch | Medium |
-| **Campaign automation triggers** | `kampayn/campaignsData.js` (config only) | Kampayn mock | Executor or label as mock-only | High — false automation |
+| **Campaign automation triggers** | `mowj/domain/triggerEvaluator.js`, `campaignAutomationEngine.js` | Mowj | Keep decision engine; wire ERP producers + intent scheduler | High — evaluate/execute exist; producers not live in shell |
+| **Campaign executor** | `mowj/domain/campaignExecutor.js` + registry (Pooyesh port / mock channels) | Mowj | Keep; real providers plug into `ChannelExecutor` | Medium |
+| **Campaign attribution KPIs** | `mowj/domain/campaignKpiCalculator.js` (attribution rows only) | Mowj | Keep single calculator SSOT; no fake metrics / no ad ROI | Low |
 | **ContactPerson rules** | `domain/contactPerson` + roles config | Domain / shared UI | Keep | Low |
 | **Inquiry draft validation** | `inquiryService.js`, `createOrder.js` | Nabz services | Keep | Low–Medium |
 

@@ -143,9 +143,28 @@ function normalizeAttachments(list) {
         id: item.id != null ? String(item.id) : `att-${index}`,
         fileName,
         mimeType: item.mimeType ? String(item.mimeType) : undefined,
+        dataUrl: item.dataUrl ? String(item.dataUrl) : undefined,
+        size: Number.isFinite(Number(item.size)) ? Number(item.size) : undefined,
       };
     })
     .filter(Boolean);
+}
+
+function normalizeAssignee(input = {}) {
+  const userId = input.assigneeUserId != null && input.assigneeUserId !== ''
+    ? String(input.assigneeUserId)
+    : (input.assignee?.userId != null && input.assignee?.userId !== ''
+      ? String(input.assignee.userId)
+      : null);
+  const name = String(
+    input.assigneeName
+    || input.assignee?.name
+    || '',
+  ).trim() || null;
+  if (!userId && !name) {
+    return { assigneeUserId: null, assigneeName: null };
+  }
+  return { assigneeUserId: userId, assigneeName: name };
 }
 
 /**
@@ -180,6 +199,7 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
   }
 
   const attachments = normalizeAttachments(input.attachments);
+  const { assigneeUserId, assigneeName } = normalizeAssignee(input);
   const threadId = input.threadId != null && input.threadId !== ''
     ? String(input.threadId)
     : (input.id ? String(input.id) : createLocalId());
@@ -195,10 +215,12 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
     receivedDate: String(input.receivedDate || input.recordDate || input.letterDate || '').trim() || null,
     subject: subject || 'بدون موضوع',
     body: String(input.body || '').trim() || null,
-    /** Free-text attention person on the letter (not a Kanoon contact person). */
-    attentionName: String(input.attentionName || input.personName || '').trim() || null,
+    /** Free-text attention / signer person on the letter (not a Kanoon contact person). */
+    attentionName: String(input.attentionName || input.personName || input.signerName || '').trim() || null,
     participants,
     attachments,
+    assigneeUserId,
+    assigneeName,
     threadId,
     referenceId: input.referenceId != null && input.referenceId !== ''
       ? String(input.referenceId)

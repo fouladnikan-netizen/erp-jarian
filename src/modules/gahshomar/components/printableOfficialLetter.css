@@ -107,45 +107,38 @@
   margin: 0 0 0.35rem;
 }
 
-.printable-official-letter__closing {
+/* Signatory unit: follows end of body (variable Y). Seal sits with the three lines. */
+.printable-official-letter__signatory {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end; /* سمت چپ صفحه در RTL */
-  gap: 0.2rem;
+  justify-content: flex-end; /* سمت چپ صفحه در RTL */
   margin-top: 1.75rem;
-  text-align: left;
-  font-size: 13.5pt;
-  line-height: 1.7;
-}
-
-.printable-official-letter__closing strong {
-  font-weight: 800;
-}
-
-.printable-official-letter__seal {
-  /* حداکثر ۳ سانتی‌متر از خط آخر نامه — footprint ثابت برای هر دو حالت چاپ */
-  margin-top: 3cm;
-  display: flex;
-  justify-content: flex-end; /* پایین-چپ در چیدمان RTL */
-  align-items: flex-end;
   page-break-inside: avoid;
 }
 
 .printable-official-letter__sign-block {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   min-width: 14rem;
-  min-height: 7rem;
   text-align: center;
 }
 
 .printable-official-letter__sign-marks {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* footprint ثابت با/بدون تصویر تا چیدمان نامه جابه‌جا نشود */
+  min-height: 7rem;
+  width: 100%;
+  margin-bottom: -1.1rem; /* هم‌پوشانی ملایم روی خطوط نام/نقش/سازمان */
   pointer-events: none;
+}
+
+.printable-official-letter__sign-marks[data-visible='false'] {
+  visibility: hidden;
 }
 
 .printable-official-letter__sign-img {
@@ -165,8 +158,24 @@
   opacity: 0.92;
   position: relative;
   z-index: 2;
-  /* ۲۰٪ هم‌پوشانی روی امضا */
-  margin-inline-start: calc(var(--seal-sign-w) * -0.2);
+  /* هم‌پوشانی قوی روی محور X با تصویر امضا */
+  margin-inline-start: calc(var(--seal-sign-w) * -0.48);
+}
+
+.printable-official-letter__closing {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  text-align: center;
+  font-size: 13.5pt;
+  line-height: 1.7;
+}
+
+.printable-official-letter__closing strong {
+  font-weight: 800;
 }
 
 /* Screen preview chrome */

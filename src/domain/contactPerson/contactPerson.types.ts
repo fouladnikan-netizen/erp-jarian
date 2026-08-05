@@ -15,6 +15,10 @@ export interface ContactPerson {
   mobile: string;
   gender?: ContactPersonGender;
   jobPosition?: string;
+  /** Relation of person to company (مالک / مدیرعامل / …) */
+  relationType?: string;
+  /** active | inactive */
+  status?: string;
   email?: string;
   /** UI convenience — at most one primary per company */
   isPrimary?: boolean;

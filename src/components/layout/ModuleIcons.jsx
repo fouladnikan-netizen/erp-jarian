@@ -58,7 +58,7 @@ export function IconGahshomar() {
   );
 }
 
-export function IconKampayn() {
+export function IconMowj() {
   return (
     <svg {...iconProps}>
       <path d="m3 11 18-5v12L3 14v-3z" />
@@ -66,6 +66,9 @@ export function IconKampayn() {
     </svg>
   );
 }
+
+/** @deprecated use IconMowj — legacy Kampayn alias */
+export const IconKampayn = IconMowj;
 
 export function IconPooyesh() {
   return (
@@ -98,7 +101,8 @@ export const MODULE_ICONS = {
   nabz: IconNabz,
   vitrin: IconVitrin,
   gahshomar: IconGahshomar,
-  kampayn: IconKampayn,
+  mowj: IconMowj,
+  kampayn: IconMowj,
   pooyesh: IconPooyesh,
   ayeneh: IconAyeneh,
   shirazeh: IconShirazeh,

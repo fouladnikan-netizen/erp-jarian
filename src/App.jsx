@@ -10,8 +10,10 @@ import ProformaPreviewPage from './modules/nabz/ProformaPreviewPage';
 import ShippingPreviewPage from './modules/nabz/ShippingPreviewPage';
 import OfoqModule from './modules/ofogh/OfoqModule';
 import CalendarPage from './components/calendar/CalendarPage';
-import CampaignsDashboard from './modules/kampayn/CampaignsDashboard';
-import SurveyBuilder from './modules/kampayn/SurveyBuilder';
+import MowjPage from './modules/mowj/MowjPage';
+import CampaignDetailPage from './modules/mowj/CampaignDetailPage';
+import SurveyBuilder from './modules/mowj/SurveyBuilder';
+import TemplateManagementPage from './modules/mowj/TemplateManagementPage';
 import CustomerSurveyApp from './modules/tanin/survey-client/CustomerSurveyApp';
 import TaninAnalyticsDashboard from './modules/tanin/analytics/TaninAnalyticsDashboard';
 import LoginPage from './modules/auth/LoginPage';
@@ -69,9 +71,23 @@ export default function App() {
               <Route path="/calendar" element={<Navigate to="/pooyesh" replace />} />
               <Route path="/commitments" element={<Navigate to="/pooyesh" replace />} />
               <Route path="/gahshomar/commitments" element={<Navigate to="/pooyesh" replace />} />
-              <Route path="/kampayn" element={<CampaignsDashboard />} />
-              <Route path="/kampayn/survey" element={<SurveyBuilder />} />
-              <Route path="/kampayn/analytics" element={<TaninAnalyticsDashboard />} />
+              <Route path="/mowj" element={<MowjPage />} />
+              {/* Executive dashboards belong to آینه — Mowj exposes analytics contracts only */}
+              <Route path="/mowj/dashboard" element={<Navigate to="/ayeneh" replace />} />
+              <Route path="/mowj/campaign/:campaignId" element={<CampaignDetailPage />} />
+              <Route path="/mowj/templates" element={<TemplateManagementPage />} />
+              <Route path="/mowj/survey" element={<SurveyBuilder />} />
+              {/* Legacy survey analytics path — not a Mowj dashboard surface */}
+              <Route path="/mowj/analytics" element={<Navigate to="/tanin/analytics" replace />} />
+              <Route path="/tanin/analytics" element={<TaninAnalyticsDashboard />} />
+              {/* Legacy Kampayn bookmarks → Mowj */}
+              <Route path="/kampayn" element={<Navigate to="/mowj" replace />} />
+              <Route path="/kampayn/survey" element={<Navigate to="/mowj/survey" replace />} />
+              <Route path="/kampayn/analytics" element={<Navigate to="/tanin/analytics" replace />} />
+              <Route
+                path="/kampayn/campaign/:campaignId"
+                element={<Navigate to="/mowj" replace />}
+              />
               <Route path="/nabz" element={<NabzPage />} />
               <Route path="/nabz/new-order" element={<NabzPage />} />
               <Route path="/nabz/order/:orderCode" element={<OrderDetailPage />} />
@@ -101,6 +117,7 @@ export default function App() {
                   && module.id !== 'ofogh'
                   && module.id !== 'pooyesh'
                   && module.id !== 'gahshomar'
+                  && module.id !== 'mowj'
                   && module.id !== 'kampayn'
                   && module.id !== 'shirazeh'
                 ))

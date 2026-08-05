@@ -111,6 +111,7 @@ Modules only define: **Columns · Rows/Data · Business Actions**.
 | ✓ کانون | `KanoonTable` | `kanoon.contacts.{viewKey}.table` |
 | ✓ ویترین | `VitrinTable` | `vitrin.products.table` |
 | ✓ گاه‌شمار | `OfficialRecordList` | `gahshomar.records.{tab}.table` |
+| ✓ موج | `MowjCampaignTable` | `mowj.campaigns.table` |
 
 ---
 

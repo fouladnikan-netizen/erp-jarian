@@ -3,13 +3,33 @@
  */
 
 export const CONTACT_PERSON_JOB_POSITIONS = [
-  { id: 'purchase_manager', label: 'مدیر خرید' },
-  { id: 'finance_manager', label: 'مدیر مالی' },
-  { id: 'warehouse', label: 'انباردار' },
   { id: 'ceo', label: 'مدیرعامل' },
+  { id: 'purchase_manager', label: 'مدیر خرید' },
+  { id: 'sales_manager', label: 'مدیر فروش' },
+  { id: 'finance_manager', label: 'مدیر مالی' },
+  { id: 'purchase_expert', label: 'کارشناس خرید' },
+  { id: 'technical_expert', label: 'کارشناس فنی' },
+  { id: 'company_owner', label: 'مالک شرکت' },
+  { id: 'warehouse', label: 'انباردار' },
   { id: 'sales', label: 'کارشناس فروش' },
   { id: 'ops', label: 'کارشناس عملیات' },
   { id: 'other', label: 'غیره' },
+];
+
+/** Relation of person to company (audience / profile). */
+export const CONTACT_PERSON_RELATION_TYPES = [
+  { id: 'owner', label: 'مالک' },
+  { id: 'ceo', label: 'مدیرعامل' },
+  { id: 'purchase_manager', label: 'مدیر خرید' },
+  { id: 'finance_manager', label: 'مدیر مالی' },
+  { id: 'purchase_expert', label: 'کارشناس خرید' },
+  { id: 'technical_expert', label: 'کارشناس فنی' },
+  { id: 'other', label: 'سایر' },
+];
+
+export const CONTACT_PERSON_STATUSES = [
+  { id: 'active', label: 'فعال' },
+  { id: 'inactive', label: 'غیرفعال' },
 ];
 
 export const CONTACT_PERSON_GENDERS = [

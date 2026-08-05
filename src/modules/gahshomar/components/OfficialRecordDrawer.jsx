@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -11,8 +11,9 @@ import {
   PenLine,
   FileText,
   ScrollText,
+  Upload,
 } from 'lucide-react';
-import { DRAWER_MODE, PARTICIPANT_ROLE } from '../models/officialRecord';
+import { DRAWER_MODE, PARTICIPANT_ROLE, RECORD_DIRECTION } from '../models/officialRecord';
 import {
   getOfficialRecord,
   issueOfficialRecord,
@@ -26,6 +27,11 @@ import {
   formatHonorableCompany,
   getLetterSignatory,
 } from '../services/letterDocument';
+import {
+  getDefaultAssignee,
+  listOrgPeopleForReferral,
+  resolveAssignee,
+} from '../services/orgPeople';
 import ContactSelector from './ContactSelector';
 import LetterRichEditor from './LetterRichEditor';
 import LetterSubjectField from './LetterSubjectField';
@@ -80,22 +86,31 @@ function LetterDocumentChrome({ companyName = '', attentionName = '', children }
 }
 
 function ViewBody({ record }) {
+  const isIncoming = record.direction === RECORD_DIRECTION.INCOMING
+    || record.direction === 'INCOMING';
+
   return (
     <>
       <dl className="gahshomar-drawer__body">
         <MetaRow label="شماره" value={record.registryNumber || record.number} numeric />
         <MetaRow label="تاریخ" value={record.date || record.recordDate || record.receivedDate} numeric />
         <MetaRow
-          label={record.direction === 'INCOMING' ? 'فرستنده' : 'گیرنده'}
+          label={isIncoming ? 'شرکت فرستنده' : 'گیرنده'}
           value={record.displayParty}
         />
         <MetaRow label="موضوع" value={record.subject} />
         {record.attentionName ? (
-          <MetaRow label="نام شخص" value={record.attentionName} />
+          <MetaRow
+            label={isIncoming ? 'شخص امضاکننده' : 'نام شخص'}
+            value={record.attentionName}
+          />
+        ) : null}
+        {isIncoming && record.assigneeName ? (
+          <MetaRow label="ارجاع به" value={record.assigneeName} />
         ) : null}
         <MetaRow label="نوع" value={record.displayType} />
         {record.referenceId ? (
-          <MetaRow label="ارجاع" value={record.referenceId} numeric />
+          <MetaRow label="شماره نامه طرف مقابل" value={record.referenceId} numeric />
         ) : null}
       </dl>
 
@@ -107,15 +122,11 @@ function ViewBody({ record }) {
         </div>
       ) : null}
 
-      {record.body ? (
+      {!isIncoming && record.body ? (
         <div className="gahshomar-drawer__section">
           <h3 className="gahshomar-drawer__section-title font-meem">متن نامه</h3>
           <LetterDocumentChrome
-            companyName={resolveCompanyName(
-              record.direction === 'INCOMING'
-                ? record.participants?.sender
-                : record.participants?.receiver,
-            )}
+            companyName={resolveCompanyName(record.participants?.receiver)}
             attentionName={record.attentionName}
           >
             <div
@@ -127,7 +138,9 @@ function ViewBody({ record }) {
       ) : null}
 
       <div className="gahshomar-drawer__section">
-        <h3 className="gahshomar-drawer__section-title font-meem">پیوست‌ها</h3>
+        <h3 className="gahshomar-drawer__section-title font-meem">
+          {isIncoming ? 'فایل نامه' : 'پیوست‌ها'}
+        </h3>
         {record.attachments?.length ? (
           <ul className="gahshomar-drawer__attach-list">
             {record.attachments.map((att) => (
@@ -138,7 +151,9 @@ function ViewBody({ record }) {
             ))}
           </ul>
         ) : (
-          <p className="gahshomar-drawer__muted font-meem">پیوستی ثبت نشده است.</p>
+          <p className="gahshomar-drawer__muted font-meem">
+            {isIncoming ? 'فایلی بارگذاری نشده است.' : 'پیوستی ثبت نشده است.'}
+          </p>
         )}
       </div>
 
@@ -160,10 +175,155 @@ function ViewBody({ record }) {
   );
 }
 
+function IncomingEditorBody({ draft, onChange, locked }) {
+  const people = useMemo(() => listOrgPeopleForReferral(), []);
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      onChange({ attachments: [] });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      onChange({
+        attachments: [{
+          id: `att-${Date.now().toString(36)}`,
+          fileName: file.name,
+          mimeType: file.type || undefined,
+          size: file.size,
+          dataUrl: typeof reader.result === 'string' ? reader.result : undefined,
+        }],
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAssigneeChange = (userId) => {
+    const person = resolveAssignee(userId);
+    onChange({
+      assigneeUserId: person?.id || userId,
+      assigneeName: person?.name || '',
+    });
+  };
+
+  return (
+    <form className="gahshomar-compose__editor gahshomar-compose__editor--incoming" onSubmit={(event) => event.preventDefault()}>
+      <section className="gahshomar-compose__fields" aria-label="ثبت نامه دریافتی">
+        <p className="gahshomar-compose__incoming-hint font-meem">
+          نامه دریافتی نوشته نمی‌شود — موضوع، مشخصات فرستنده، فایل و ارجاع را ثبت کنید.
+          پس از ذخیره، شماره دبیرخانه با مولفه ثابت
+          {' '}
+          <span className="font-yekan">IN</span>
+          {' '}
+          به‌صورت خودکار تخصیص می‌یابد.
+        </p>
+
+        <div className="gahshomar-compose__row gahshomar-compose__row--single">
+          <label className="gahshomar-modal__field font-meem">
+            موضوع نامه
+            <span className="gahshomar-req" aria-hidden="true">*</span>
+            <input
+              className="gahshomar-modal__input font-meem"
+              value={draft.subject || ''}
+              readOnly={locked}
+              onChange={(event) => onChange({ subject: event.target.value })}
+              placeholder="موضوع نامه را کامل وارد کنید…"
+              autoComplete="off"
+              required
+            />
+          </label>
+        </div>
+
+        <div className="gahshomar-compose__row">
+          <label className="gahshomar-modal__field font-meem">
+            تاریخ نامه
+            <span className="gahshomar-req" aria-hidden="true">*</span>
+            <input
+              className="gahshomar-modal__input font-yekan"
+              value={draft.date || ''}
+              readOnly={locked}
+              onChange={(event) => onChange({ date: event.target.value })}
+              placeholder="1404/01/01"
+              autoComplete="off"
+              required
+            />
+          </label>
+          <ContactSelector
+            label="شرکت فرستنده نامه"
+            role={PARTICIPANT_ROLE.SENDER}
+            value={draft.counterparty}
+            onChange={(participant) => onChange({ counterparty: participant })}
+            readOnly={locked}
+            required
+          />
+        </div>
+
+        <div className="gahshomar-compose__row">
+          <label className="gahshomar-modal__field font-meem">
+            شخص امضاکننده نامه
+            <span className="gahshomar-req" aria-hidden="true">*</span>
+            <input
+              className="gahshomar-modal__input font-meem"
+              value={draft.attentionName || ''}
+              readOnly={locked}
+              onChange={(event) => onChange({ attentionName: event.target.value })}
+              placeholder="نام امضاکننده روی نامه…"
+              autoComplete="off"
+              required
+            />
+          </label>
+          <label className="gahshomar-modal__field font-meem">
+            ارجاع به
+            <span className="gahshomar-req" aria-hidden="true">*</span>
+            <select
+              className="gahshomar-modal__input font-meem"
+              value={draft.assigneeUserId || ''}
+              disabled={locked}
+              onChange={(event) => handleAssigneeChange(event.target.value)}
+              required
+            >
+              {people.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.isCurrent
+                    ? `${person.name} (خودم)`
+                    : `${person.name}${person.position ? ` — ${person.position}` : ''}`}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="gahshomar-compose__row gahshomar-compose__row--single">
+          <label className="gahshomar-modal__field font-meem gahshomar-compose__file-field">
+            فایل نامه
+            <span className="gahshomar-req" aria-hidden="true">*</span>
+            <span className="gahshomar-compose__file-control">
+              <Upload size={16} strokeWidth={1.75} aria-hidden="true" />
+              <input
+                type="file"
+                className="gahshomar-compose__file-input"
+                disabled={locked}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,image/*,application/pdf"
+                onChange={handleFileChange}
+              />
+              <span className="font-meem">
+                {draft.attachments?.[0]?.fileName || 'انتخاب فایل نامه…'}
+              </span>
+            </span>
+          </label>
+        </div>
+      </section>
+    </form>
+  );
+}
+
 function EditorBody({ draft, onChange, locked }) {
-  const counterpartyRole = draft.direction === 'INCOMING'
-    ? PARTICIPANT_ROLE.SENDER
-    : PARTICIPANT_ROLE.RECEIVER;
+  if (draft.direction === RECORD_DIRECTION.INCOMING || draft.direction === 'INCOMING') {
+    return <IncomingEditorBody draft={draft} onChange={onChange} locked={locked} />;
+  }
+
+  const counterpartyRole = PARTICIPANT_ROLE.RECEIVER;
 
   return (
     <form className="gahshomar-compose__editor" onSubmit={(event) => event.preventDefault()}>
@@ -185,7 +345,7 @@ function EditorBody({ draft, onChange, locked }) {
 
         <div className="gahshomar-compose__row">
           <ContactSelector
-            label={draft.direction === 'INCOMING' ? 'فرستنده' : 'گیرنده'}
+            label="گیرنده"
             role={counterpartyRole}
             value={draft.counterparty}
             onChange={(participant) => onChange({ counterparty: participant })}
@@ -233,8 +393,8 @@ function PrintPreview({ record, onClose }) {
 
   const withLetterhead = variant === PRINT_LETTER_VARIANT.LETTERHEAD;
   const hint = withLetterhead
-    ? 'با سربرگ: نسخه الکترونیکی — تصویر سربرگ و مهر و امضا همراه نامه ارسال می‌شود.'
-    : 'بدون سربرگ: برای چاپ روی کاغذ سربرگ فیزیکی — جانمایی متن یکسان است؛ مهر و امضا چاپ نمی‌شود.';
+    ? 'با سربرگ: نسخه الکترونیکی — مهر و امضا کنار نام، نقش و سازمان نویسنده درج می‌شود.'
+    : 'بدون سربرگ: برای چاپ روی کاغذ سربرگ فیزیکی — جای متن و بلوک امضا یکسان است؛ مهر و امضا چاپ نمی‌شود.';
 
   return createPortal(
     <div className="gahshomar-print-preview gahshomar-print-root" dir="rtl">
@@ -320,6 +480,11 @@ export default function OfficialRecordDrawer({
         ? ''
         : rawSubject;
       const today = getTodayJalali() || '';
+      const defaultAssignee = getDefaultAssignee();
+      const assignee = resolveAssignee(
+        detail.assigneeUserId,
+        detail.assigneeName || defaultAssignee?.name,
+      ) || defaultAssignee;
       setDraft({
         subject,
         attentionName: detail.attentionName || '',
@@ -329,6 +494,9 @@ export default function OfficialRecordDrawer({
         bodyRevision: Date.now(),
         direction: detail.direction,
         registryNumber: detail.registryNumber || detail.number || '',
+        attachments: Array.isArray(detail.attachments) ? detail.attachments : [],
+        assigneeUserId: assignee?.id || defaultAssignee?.id || '',
+        assigneeName: assignee?.name || defaultAssignee?.name || '',
       });
     } else {
       setDraft(null);
@@ -360,8 +528,16 @@ export default function OfficialRecordDrawer({
 
   const title = mode === DRAWER_MODE.VIEW
     ? 'جزئیات نامه'
-    : (locked ? 'نامه صادر شده' : (mode === DRAWER_MODE.CREATE ? 'ثبت مکاتبه رسمی' : 'ویرایش / پاسخ'));
+    : (locked
+      ? 'نامه صادر شده'
+      : (mode === DRAWER_MODE.CREATE
+        ? (record.direction === RECORD_DIRECTION.INCOMING || record.direction === 'INCOMING'
+          ? 'ثبت نامه دریافتی'
+          : 'ثبت مکاتبه رسمی')
+        : 'ویرایش / پاسخ'));
   const eyebrow = 'دبیرخانه گاه‌شمار';
+  const isIncomingCompose = useComposeUi
+    && (record.direction === RECORD_DIRECTION.INCOMING || record.direction === 'INCOMING');
 
   const handleDraftChange = (patch) => {
     if (locked) return;
@@ -403,21 +579,48 @@ export default function OfficialRecordDrawer({
     return {
       subject: draft.subject.trim(),
       attentionName: String(draft.attentionName || '').trim() || null,
-      body: ensureEditableLetterBody(draft.body || ''),
+      body: record.direction === RECORD_DIRECTION.INCOMING
+        || record.direction === 'INCOMING'
+        ? null
+        : ensureEditableLetterBody(draft.body || ''),
       recordDate: draft.date || getTodayJalali() || null,
       receivedDate: record.direction === 'INCOMING'
+        || record.direction === RECORD_DIRECTION.INCOMING
         ? (draft.date || getTodayJalali() || null)
         : record.receivedDate,
       companyId: draft.counterparty?.companyId ?? record.companyId,
       participants,
+      attachments: Array.isArray(draft.attachments) ? draft.attachments : [],
+      assigneeUserId: draft.assigneeUserId || null,
+      assigneeName: draft.assigneeName || null,
     };
   };
 
   const validateCounterparty = () => {
     if (!draft?.counterparty?.partyId || draft.counterparty.partyType !== 'CONTACT') {
-      setError(record.direction === 'INCOMING'
-        ? 'فرستنده باید از فهرست شرکت‌های کانن انتخاب شود.'
+      setError(record.direction === 'INCOMING' || record.direction === RECORD_DIRECTION.INCOMING
+        ? 'شرکت فرستنده باید از فهرست شرکت‌های کانن انتخاب شود.'
         : 'گیرنده باید از فهرست شرکت‌های کانن انتخاب شود.');
+      return false;
+    }
+    return true;
+  };
+
+  const validateIncoming = () => {
+    if (!String(draft?.date || '').trim()) {
+      setError('تاریخ نامه الزامی است.');
+      return false;
+    }
+    if (!String(draft?.attentionName || '').trim()) {
+      setError('شخص امضاکننده نامه الزامی است.');
+      return false;
+    }
+    if (!draft?.attachments?.length) {
+      setError('فایل نامه را بارگذاری کنید.');
+      return false;
+    }
+    if (!draft?.assigneeUserId || !draft?.assigneeName) {
+      setError('ارجاع نامه به یک نفر در پترو فولاد نیکان الزامی است.');
       return false;
     }
     return true;
@@ -430,6 +633,9 @@ export default function OfficialRecordDrawer({
       return;
     }
     if (!validateCounterparty()) return;
+    const isIncoming = record.direction === RECORD_DIRECTION.INCOMING
+      || record.direction === 'INCOMING';
+    if (isIncoming && !validateIncoming()) return;
     const saved = saveOfficialRecord(recordId, buildPayload());
     if (!saved) {
       setError('ذخیره ناموفق بود.');
@@ -527,12 +733,12 @@ export default function OfficialRecordDrawer({
                 <>
                   <button
                     type="button"
-                    className="gahshomar-btn gahshomar-btn--secondary font-meem"
+                    className={`gahshomar-btn font-meem${isIncomingCompose ? ' gahshomar-btn--primary' : ' gahshomar-btn--secondary'}`}
                     onClick={handleSave}
                   >
-                    ذخیره پیش‌نویس
+                    {isIncomingCompose ? 'ثبت نامه دریافتی' : 'ذخیره پیش‌نویس'}
                   </button>
-                  {record.direction === 'OUTGOING' ? (
+                  {record.direction === 'OUTGOING' || record.direction === RECORD_DIRECTION.OUTGOING ? (
                     <button
                       type="button"
                       className="gahshomar-btn gahshomar-btn--primary font-meem"

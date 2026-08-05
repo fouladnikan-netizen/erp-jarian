@@ -21,6 +21,8 @@ export function normalizeContactPerson(person, companyId) {
     mobile: String(person?.mobile || '').trim(),
     gender: person?.gender || '',
     jobPosition: String(person?.jobPosition || person?.role || '').trim(),
+    relationType: String(person?.relationType || person?.relationshipType || '').trim(),
+    status: String(person?.status || (person?.isActive === false ? 'inactive' : 'active')).trim() || 'active',
     email: String(person?.email || '').trim(),
     isPrimary: Boolean(person?.isPrimary),
   };

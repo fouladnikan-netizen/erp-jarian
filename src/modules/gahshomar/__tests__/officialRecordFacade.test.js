@@ -125,6 +125,42 @@ describe('Gahshomar officialRecordFacade (MVP)', () => {
     expect(htmlToPlainText(polished)).toContain('لطفا قیمت را اعلام کنید');
   });
 
+  it('incoming save assigns IN registry number, attachment, and default assignee', () => {
+    const draft = createDraftRecord(RECORD_DIRECTION.INCOMING);
+    expect(draft.assigneeUserId).toBeTruthy();
+    expect(draft.assigneeName).toBeTruthy();
+
+    const saved = saveOfficialRecord(draft.id, {
+      subject: 'نامه دریافتی تست دبیرخانه',
+      attentionName: 'محمد امیری',
+      recordDate: '1405/01/15',
+      receivedDate: '1405/01/15',
+      assigneeUserId: draft.assigneeUserId,
+      assigneeName: draft.assigneeName,
+      attachments: [{ id: 'att-test', fileName: 'incoming-letter.pdf', mimeType: 'application/pdf' }],
+      participants: {
+        sender: {
+          partyType: 'CONTACT',
+          role: 'SENDER',
+          partyId: '1',
+          name: 'فولاد پارس',
+          companyId: 1,
+          companyName: 'فولاد پارس',
+        },
+        receiver: draft.participants.receiver,
+      },
+    });
+
+    expect(saved).toBeTruthy();
+    expect(saved.registryNumber).toMatch(/^[۰-۹]{3}\/IN\/[۰-۹]{3}$/);
+    expect(saved.number).toBe(saved.registryNumber);
+    expect(saved.status).toBe(RECORD_STATUS.RECEIVED);
+    expect(saved.assigneeName).toBe(draft.assigneeName);
+    expect(saved.attentionName).toBe('محمد امیری');
+    expect(saved.attachments?.[0]?.fileName).toBe('incoming-letter.pdf');
+    expect(saved.isLocked).toBe(false);
+  });
+
   it('issueOfficialRecord assigns registry number and locks the letter', () => {
     const draft = createDraftRecord(RECORD_DIRECTION.OUTGOING);
     const issued = issueOfficialRecord(draft.id, {
