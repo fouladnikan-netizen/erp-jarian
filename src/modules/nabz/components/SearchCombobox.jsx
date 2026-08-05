@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Search } from 'lucide-react';
 
+/**
+ * Live Search / Autocomplete — Google-like UX, Jarian Design System tokens.
+ * Consumers: CustomerCombobox, ExpertCombobox, Gahshomar ContactSelector.
+ */
 export default function SearchCombobox({
   value,
   onChange,
@@ -67,42 +72,68 @@ export default function SearchCombobox({
     if (!e.target.value.trim()) onChange(null);
   };
 
+  const showList = open && !disabled && filtered.length > 0;
+  const showEmpty = open && !disabled && query.trim() && filtered.length === 0;
+
   return (
-    <div className={`nabz-combobox${disabled ? ' is-disabled' : ''}`} ref={wrapRef}>
-      <input
-        type="search"
-        className="nabz-form__input nabz-create-input font-meem"
-        placeholder={placeholder}
-        value={query}
-        onChange={handleInput}
-        onFocus={() => !disabled && setOpen(true)}
-        aria-label={ariaLabel}
-        autoComplete="off"
-        disabled={disabled}
-      />
-      {open && !disabled && filtered.length > 0 && (
+    <div
+      className={`nabz-combobox${disabled ? ' is-disabled' : ''}${open && !disabled ? ' is-open' : ''}`}
+      ref={wrapRef}
+    >
+      <div className="nabz-combobox__field">
+        <input
+          type="search"
+          className="nabz-combobox__input font-meem"
+          placeholder={placeholder}
+          value={query}
+          onChange={handleInput}
+          onFocus={() => !disabled && setOpen(true)}
+          aria-label={ariaLabel}
+          aria-expanded={open && !disabled}
+          aria-autocomplete="list"
+          role="combobox"
+          autoComplete="off"
+          disabled={disabled}
+        />
+      </div>
+
+      {showList && (
         <ul className="nabz-combobox__list" role="listbox">
           {filtered.map((option) => {
             const key = getOptionKey(option);
+            const isSelected = value === key;
             return (
-              <li key={key}>
+              <li key={key} role="presentation">
                 <button
                   type="button"
-                  className={`nabz-combobox__option${value === key ? ' is-selected' : ''}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  className={`nabz-combobox__option${isSelected ? ' is-selected' : ''}`}
                   onClick={() => pick(option)}
                 >
-                  <span className="nabz-combobox__name font-meem">{getOptionLabel(option)}</span>
-                  {getOptionMeta?.(option) ? (
-                    <span className="nabz-combobox__meta font-meem">{getOptionMeta(option)}</span>
-                  ) : null}
+                  <Search
+                    className="nabz-combobox__option-icon"
+                    size={16}
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                  />
+                  <span className="nabz-combobox__option-body">
+                    <span className="nabz-combobox__name font-meem">{getOptionLabel(option)}</span>
+                    {getOptionMeta?.(option) ? (
+                      <span className="nabz-combobox__meta font-meem">{getOptionMeta(option)}</span>
+                    ) : null}
+                  </span>
                 </button>
               </li>
             );
           })}
         </ul>
       )}
-      {open && !disabled && query.trim() && filtered.length === 0 && (
-        <div className="nabz-combobox__empty font-meem">{emptyMessage}</div>
+
+      {showEmpty && (
+        <div className="nabz-combobox__empty font-meem" role="status">
+          {emptyMessage}
+        </div>
       )}
     </div>
   );
