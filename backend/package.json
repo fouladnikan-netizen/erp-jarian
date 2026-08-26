@@ -1,0 +1,26 @@
+{
+  "name": "jarian-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Jarian ERP API — Auth, RBAC, Company, Order (v1)",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "migrate": "node src/db/migrate.js",
+    "seed": "node src/db/seed.js",
+    "setup": "node src/db/migrate.js && node src/db/seed.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3",
+    "zod": "^4.4.3"
+  }
+}

@@ -18,6 +18,8 @@ Jarian ERP connects CRM (parties, opportunities, campaigns) with order operation
 | Validation | Zod (islands) |
 | Quality | ESLint, Stylelint (theme tokens), Vitest, TypeScript `noEmit` |
 | Icons | lucide-react |
+| Backend (v1) | Express + PostgreSQL 16 · JWT Auth · RBAC |
+| API | `backend/` → `http://localhost:3100` |
 
 Node **20** is what CI uses (`.github/workflows/quality.yml`).
 
@@ -31,11 +33,22 @@ npm ci
 npm run dev
 ```
 
-Optional mock/API server:
+### Backend API (PostgreSQL)
+
+بعد از `git pull` / `npm ci` روی هر ماشین:
 
 ```bash
-npm run server
+# Postgres باید از قبل در دسترس باشد؛ سپس:
+cp backend/.env.example backend/.env   # مقادیر DB را تنظیم کنید
+npm run setup                          # migrate + seed
+npm run server                         # http://localhost:3100
 ```
+
+جزئیات: [`backend/README.md`](./backend/README.md) · [`Docs/architecture/BACKEND_V1.md`](./Docs/architecture/BACKEND_V1.md)
+
+کاربر seed: `admin` / `Admin123!` — در production عوض شود.
+
+فرانت با `VITE_USE_MOCK_API=false` به لاگین واقعی وصل می‌شود (پیش‌فرض `.env.example`).
 
 Env (see `.env.example`):
 

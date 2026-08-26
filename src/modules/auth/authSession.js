@@ -31,14 +31,12 @@ export function clearAuthSession() {
   localStorage.removeItem(AUTH_USER_KEY);
   localStorage.removeItem('token');
   localStorage.removeItem('authToken');
+  localStorage.removeItem('jarian_auth_profile');
 }
 
 /**
- * Future integration point:
- *   const { data } = await apiClient.post('/auth/login', { username, password });
- *   setAuthSession({ token: data.accessToken, username });
- *
- * Mock path keeps UX working until the backend auth endpoint is live.
+ * Real backend: POST /api/v1/auth/login (Vite proxies /api → :3100).
+ * Set VITE_USE_MOCK_API=true to keep offline mock login.
  */
 export async function authenticate({ username, password }) {
   const trimmedUser = String(username || '').trim();
@@ -50,7 +48,37 @@ export async function authenticate({ username, password }) {
     throw error;
   }
 
-  // --- MOCK (replace with API call) ---
+  const useMock = String(import.meta.env.VITE_USE_MOCK_API || '').toLowerCase() === 'true';
+
+  if (!useMock) {
+    const response = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: trimmedUser, password: trimmedPass }),
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+
+    if (!response.ok) {
+      const error = new Error(data?.message || 'ورود ناموفق بود.');
+      error.code = data?.error || 'LOGIN_FAILED';
+      throw error;
+    }
+
+    const token = data.accessToken;
+    const displayName = data.user?.displayName || trimmedUser;
+    setAuthSession({ token, username: displayName });
+    if (data.user) {
+      localStorage.setItem('jarian_auth_profile', JSON.stringify(data.user));
+    }
+    return { token, username: displayName, user: data.user };
+  }
+
   await new Promise((resolve) => {
     window.setTimeout(resolve, 420);
   });

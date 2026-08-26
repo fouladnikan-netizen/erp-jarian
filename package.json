@@ -18,7 +18,11 @@
     "test:coverage": "vitest --coverage",
     "preview": "vite preview",
     "start": "vite",
-    "server": "node src/server/server.js",
+    "postinstall": "npm install --prefix backend",
+    "setup": "npm run server:setup",
+    "server": "npm run start --prefix backend",
+    "server:dev": "npm run dev --prefix backend",
+    "server:setup": "npm run setup --prefix backend",
     "quality": "npm run lint:theme && npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {

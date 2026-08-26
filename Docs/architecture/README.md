@@ -63,6 +63,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 | [14-PERFORMANCE_ARCHITECTURE_AUDIT.md](./14-PERFORMANCE_ARCHITECTURE_AUDIT.md) | Bundle, render, data, state, assets — scale readiness |
 | [15-DX_MAINTAINABILITY_AUDIT.md](./15-DX_MAINTAINABILITY_AUDIT.md) | Developer experience, onboarding, maintainability, team scale |
 | [16-BACKEND_READINESS_AUDIT.md](./16-BACKEND_READINESS_AUDIT.md) | Backend boundary, APIs, repos, DTOs, TX, multi-user readiness |
+| [BACKEND_V1.md](./BACKEND_V1.md) | **Implemented** Auth/Company/Order API + Postgres scaffold |
 | [QUALITY_ENGINEERING.md](./QUALITY_ENGINEERING.md) | Quality foundation — scripts, CI, test ownership, coverage targets |
 | [FRONTEND_ARCHITECTURE_GUIDELINES.md](./FRONTEND_ARCHITECTURE_GUIDELINES.md) | Current FE patterns + future ownership / deps |
 | [FRONTEND_COMPONENT_HOTSPOTS.md](./FRONTEND_COMPONENT_HOTSPOTS.md) | God components ≥500 LOC — no splits this phase |
