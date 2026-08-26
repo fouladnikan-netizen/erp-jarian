@@ -1,31 +1,53 @@
 import type { Order, OrderStatus } from '@domain/order/order.types';
 import { apiClient } from '../client';
+import { orderFromApi, orderToApi } from '../mappers/orderMapper';
+import { useMockApi } from '../useMockApi';
 import { ORDERS_MOCK } from '../../mockData/orders';
 
-const useMockApi = () => String(import.meta.env.VITE_USE_MOCK_API).toLowerCase() === 'true';
-
-/**
- * Cast network/mock payloads to domain Order.
- * Runtime shape may still include transitional Nabz fields until API is fully typed;
- * Zod (order.schemas) will validate at the boundary in a later phase.
- */
 function asOrders(source: unknown): Order[] {
   return Array.isArray(source) ? (source as Order[]) : [];
 }
 
-/**
- * Switchable Order repository — MOCK vs REAL API via VITE_USE_MOCK_API.
- * UI and Zustand store must only talk to this layer, never to mock files directly.
- */
 export const OrderRepository = {
   async getOrders(): Promise<Order[]> {
     if (useMockApi()) {
-      return Promise.resolve(asOrders(ORDERS_MOCK).map((order) => ({ ...order })));
+      return asOrders(ORDERS_MOCK).map((order) => ({ ...order }));
     }
 
-    const { data } = await apiClient.get<Order[] | { data: Order[] }>('/orders');
-    if (Array.isArray(data)) return data;
-    return asOrders((data as { data: Order[] }).data);
+    const { data } = await apiClient.get<{ items: unknown[] }>('/orders');
+    return (data.items || []).map((row) => orderFromApi(row) as Order);
+  },
+
+  async getOrderById(id: string): Promise<Order | null> {
+    if (useMockApi()) {
+      const found = asOrders(ORDERS_MOCK).find(
+        (order) => String(order.id) === String(id) || String(order.code) === String(id),
+      );
+      return found ? { ...found } : null;
+    }
+
+    const { data } = await apiClient.get<{ order: unknown }>(`/orders/${id}`);
+    return orderFromApi(data.order) as Order | null;
+  },
+
+  async createOrder(order: Partial<Order>): Promise<Order> {
+    if (useMockApi()) {
+      return order as Order;
+    }
+    const { data } = await apiClient.post<{ order: unknown }>('/orders', orderToApi(order));
+    return orderFromApi(data.order) as Order;
+  },
+
+  async saveOrder(order: Partial<Order>): Promise<Order> {
+    if (useMockApi()) {
+      return order as Order;
+    }
+    const id = order.id || order.code;
+    if (!id) {
+      throw new Error('Order id or code required for save');
+    }
+    const { data } = await apiClient.patch<{ order: unknown }>(`/orders/${id}`, orderToApi(order));
+    return orderFromApi(data.order) as Order;
   },
 
   async updateOrderStatus(id: string, status: OrderStatus): Promise<Order | void> {
@@ -33,18 +55,8 @@ export const OrderRepository = {
       return Promise.resolve();
     }
 
-    const { data } = await apiClient.patch<Order>(`/orders/${id}`, { status });
-    return data;
-  },
-
-  async getOrderById(id: string): Promise<Order | null> {
-    if (useMockApi()) {
-      const found = asOrders(ORDERS_MOCK).find((order) => String(order.id) === String(id));
-      return Promise.resolve(found ? { ...found } : null);
-    }
-
-    const { data } = await apiClient.get<Order>(`/orders/${id}`);
-    return data;
+    const { data } = await apiClient.patch<{ order: unknown }>(`/orders/${id}`, { status });
+    return orderFromApi(data.order) as Order;
   },
 };
 

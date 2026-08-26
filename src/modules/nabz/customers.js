@@ -18,12 +18,16 @@ function getContacts() {
 
 export function getCustomerById(id) {
   if (!id) return null;
-  return getContacts().find((c) => String(c.id) === String(id)) || null;
+  const contact = getContacts().find((c) => String(c.id) === String(id)) || null;
+  if (contact?.recordType === 'LEAD') return null;
+  return contact;
 }
 
 export function listCustomers() {
   return getContacts().filter(
-    (c) => c.entityType === ENTITY_TYPES.CUSTOMER && c.isActive !== false,
+    (c) => c.entityType === ENTITY_TYPES.CUSTOMER
+      && c.isActive !== false
+      && c.recordType !== 'LEAD',
   );
 }
 
@@ -103,8 +107,8 @@ export function findExpertByKey(customerId, key) {
   return listCustomerExperts(customerId).find((person) => String(person.id) === String(key)) || null;
 }
 
-export function addCustomerRecord(contact) {
-  const id = useContactsStore.getState().addContact({
+export async function addCustomerRecord(contact) {
+  const id = await useContactsStore.getState().addContactAsync({
     ...contact,
     relatedPersons: contact.relatedPersons || [],
   });

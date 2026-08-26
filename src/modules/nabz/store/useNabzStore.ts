@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Order, OrderStatus } from '@domain/order/order.types';
 import { OrderRepository } from '@api/repositories/OrderRepository';
+import { diffAndScheduleOrders } from '@api/orderPersistence';
 
 /**
  * Order aggregate write surface (Nabz).
@@ -50,12 +51,23 @@ export const useNabzStore = create<NabzState>((set, get) => ({
   },
 
   setOrders: (ordersOrUpdater) =>
-    set((state) => ({
-      orders:
+    set((state) => {
+      const nextOrders =
         typeof ordersOrUpdater === 'function'
           ? ordersOrUpdater(state.orders)
-          : ordersOrUpdater,
-    })),
+          : ordersOrUpdater;
+
+      diffAndScheduleOrders(state.orders, nextOrders, (prevOrder, saved) => {
+        useNabzStore.setState((current) => ({
+          orders: current.orders.map((item) => {
+            if (String(item.id) !== String(prevOrder.id)) return item;
+            return { ...item, ...saved, id: saved.id };
+          }),
+        }));
+      });
+
+      return { orders: nextOrders };
+    }),
 
   selectOrder: (id) => set({ selectedOrderId: id }),
 
@@ -77,6 +89,3 @@ export const useNabzStore = create<NabzState>((set, get) => ({
 
   clearOrderDraft: () => set({ orderDraft: null }),
 }));
-
-/** Bootstrap orders through the repository (mock or real) on first store load. */
-void useNabzStore.getState().fetchOrders();

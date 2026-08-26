@@ -16,6 +16,12 @@ import {
   LIFECYCLE_STAGES,
   LIFECYCLE_STAGE_ORDER,
 } from '../domain/party';
+import {
+  resolveContactLifecycleStage,
+  relationshipStageFromPipelineStage,
+} from '../domain/party/relationshipLifecycle.js';
+import CompanyRepository from '../api/repositories/CompanyRepository';
+import { useMockApi } from '../api/useMockApi';
 
 /**
  * Company aggregate root (runtime name: Contact).
@@ -24,8 +30,22 @@ import {
  * Opportunity entity; keep ContactPerson 1:N under Company until then.
  *
  * Lifecycle constants live in domain/party — re-exported here for stable imports.
+ *
+ * Raw Leads are NOT stored here — see useLeadsStore (Ofogh ownership).
  */
 export { LIFECYCLE_STAGES, LIFECYCLE_STAGE_ORDER };
+export { RELATIONSHIP_LIFECYCLE_STAGES } from '../domain/party/relationshipLifecycle.constants.js';
+
+/**
+ * Contact recordType — SSOT inside Kanoon aggregate.
+ * Owner semantics:
+ * - LEAD: created from Ofoq (raw opportunity, not verified)
+ * - CUSTOMER: verified official contact (officially usable)
+ */
+export const CONTACT_RECORD_TYPES = Object.freeze({
+  LEAD: 'LEAD',
+  CUSTOMER: 'CUSTOMER',
+});
 
 function daysFromNow(days) {
   return new Date(Date.now() + days * 86_400_000).toISOString();
@@ -43,23 +63,34 @@ const PIPELINE_SEED = {
 };
 
 function seedContacts() {
-  return initialContacts.map((contact) => ({
-    ...contact,
-    relatedPersons: (contact.relatedPersons || []).map((person, index) =>
-      normalizeContactPerson(
-        {
-          ...person,
-          id: person.id || `cp-seed-${contact.id}-${index}`,
-          isPrimary: person.isPrimary ?? index === 0,
-        },
-        contact.id,
-      )),
-    lifecycle_stage: PIPELINE_SEED[contact.id]?.lifecycle_stage ?? LIFECYCLE_STAGES.COLD_LEAD,
-    next_follow_up_date: PIPELINE_SEED[contact.id]?.next_follow_up_date ?? null,
-    last_interaction_date:
-      PIPELINE_SEED[contact.id]?.last_interaction_date ?? contact.lastActivityAt ?? contact.createdAt,
-    interactions: normalizeSeedInteractions(contact),
-  }));
+  return initialContacts.map((contact) => {
+    const lifecycle_stage = PIPELINE_SEED[contact.id]?.lifecycle_stage ?? LIFECYCLE_STAGES.COLD_LEAD;
+    const recordType = contact.recordType || CONTACT_RECORD_TYPES.CUSTOMER;
+    const base = {
+      ...contact,
+      recordType,
+      relatedPersons: (contact.relatedPersons || []).map((person, index) =>
+        normalizeContactPerson(
+          {
+            ...person,
+            id: person.id || `cp-seed-${contact.id}-${index}`,
+            isPrimary: person.isPrimary ?? index === 0,
+          },
+          contact.id,
+        )),
+      lifecycle_stage,
+      lifecycleStage: contact.lifecycleStage || resolveContactLifecycleStage({
+        ...contact,
+        recordType,
+        lifecycle_stage,
+      }),
+      next_follow_up_date: PIPELINE_SEED[contact.id]?.next_follow_up_date ?? null,
+      last_interaction_date:
+        PIPELINE_SEED[contact.id]?.last_interaction_date ?? contact.lastActivityAt ?? contact.createdAt,
+      interactions: normalizeSeedInteractions(contact),
+    };
+    return base;
+  });
 }
 
 function normalizeSeedInteractions(contact) {
@@ -74,38 +105,74 @@ function normalizeSeedInteractions(contact) {
   }));
 }
 
+async function persistContactSnapshot(contact) {
+  if (useMockApi() || !contact?.id) return contact;
+  return CompanyRepository.update(contact.id, contact);
+}
+
 /**
  * Single source of truth for Companies/Contacts + nested ContactPersons (1:N).
  * Kanoon, Nabz, and Ofogh must read/write party identity through this store.
  *
- * Soft interactions are owned by Pooyesh (DDL-09). Persistence remains
- * temporary on the Company aggregate (`contact.interactions`) until Activity
- * SSOT lands. UI and projections must use `interactionFacade` — never call
- * `addInteraction` or read `company.interactions` directly.
+ * When VITE_USE_MOCK_API=false, reads/writes go to PostgreSQL via CompanyRepository.
  */
 export const useContactsStore = create((set, get) => ({
-  contacts: seedContacts(),
+  contacts: useMockApi() ? seedContacts() : [],
+  loading: false,
+  hydrated: useMockApi(),
+  error: null,
+
+  fetchContacts: async () => {
+    if (useMockApi()) {
+      set({ contacts: seedContacts(), hydrated: true, loading: false, error: null });
+      return;
+    }
+    set({ loading: true, error: null });
+    try {
+      const contacts = await CompanyRepository.list();
+      set({ contacts, loading: false, hydrated: true });
+    } catch (error) {
+      console.error('[contacts-store] fetchContacts failed', error);
+      set({
+        loading: false,
+        hydrated: false,
+        error: error?.message || 'بارگذاری مخاطبین ناموفق بود.',
+      });
+    }
+  },
 
   /**
    * Append-only audit trail for ContactPerson domain events (DDL-08).
-   * Not consumed by UI — reserved for future merge / compliance analysis.
    */
   contactPersonAuditLog: [],
 
   updateContactStage: (contactId, newStage) => {
     if (!LIFECYCLE_STAGE_ORDER.includes(newStage)) return;
+    const lifecycleStage = relationshipStageFromPipelineStage(newStage);
+    let nextContact = null;
     set((state) => ({
-      contacts: state.contacts.map((contact) => (
-        contact.id === contactId
-          ? { ...contact, lifecycle_stage: newStage, last_interaction_date: new Date().toISOString() }
-          : contact
-      )),
+      contacts: state.contacts.map((contact) => {
+        if (contact.id !== contactId) return contact;
+        nextContact = {
+          ...contact,
+          lifecycle_stage: newStage,
+          lifecycleStage,
+          last_interaction_date: new Date().toISOString(),
+        };
+        return nextContact;
+      }),
     }));
+    if (nextContact && !useMockApi()) {
+      void persistContactSnapshot(nextContact).catch((error) => {
+        console.error('[contacts-store] updateContactStage persist failed', error);
+      });
+    }
   },
 
   addInteraction: (contactId, note, nextFollowUpDate, type = 'note') => {
     const trimmed = (note || '').trim();
     if (!trimmed) return;
+    let nextContact = null;
     set((state) => ({
       contacts: state.contacts.map((contact) => {
         if (String(contact.id) !== String(contactId)) return contact;
@@ -119,14 +186,20 @@ export const useContactsStore = create((set, get) => ({
           nextFollowUp: nextFollowUpDate || null,
           operator: contact.assignee?.name || (SHOW_BRAND_NAME ? `کاربر ${BRAND_NAME}` : 'کاربر سامانه'),
         };
-        return {
+        nextContact = {
           ...contact,
           interactions: [entry, ...(contact.interactions || [])],
           next_follow_up_date: nextFollowUpDate || contact.next_follow_up_date,
           last_interaction_date: now,
         };
+        return nextContact;
       }),
     }));
+    if (nextContact && !useMockApi()) {
+      void persistContactSnapshot(nextContact).catch((error) => {
+        console.error('[contacts-store] addInteraction persist failed', error);
+      });
+    }
   },
 
   /**
@@ -136,6 +209,7 @@ export const useContactsStore = create((set, get) => ({
   updateInteraction: (contactId, interactionId, changes = {}) => {
     if (contactId == null || interactionId == null) return false;
     let updated = false;
+    let nextContact = null;
     set((state) => ({
       contacts: state.contacts.map((contact) => {
         if (String(contact.id) !== String(contactId)) return contact;
@@ -150,23 +224,26 @@ export const useContactsStore = create((set, get) => ({
           return next;
         });
         if (!updated) return contact;
-        return {
+        nextContact = {
           ...contact,
           interactions: nextList,
           last_interaction_date: new Date().toISOString(),
         };
+        return nextContact;
       }),
     }));
+    if (updated && nextContact && !useMockApi()) {
+      void persistContactSnapshot(nextContact).catch((error) => {
+        console.error('[contacts-store] updateInteraction persist failed', error);
+      });
+    }
     return updated;
   },
 
-  /**
-   * Remove a Company-scoped interaction (Pooyesh stream).
-   * Prefer `interactionFacade.removeCompanyInteraction` from UI.
-   */
   removeInteraction: (contactId, interactionId) => {
     if (contactId == null || interactionId == null) return false;
     let removed = false;
+    let nextContact = null;
     set((state) => ({
       contacts: state.contacts.map((contact) => {
         if (String(contact.id) !== String(contactId)) return contact;
@@ -179,33 +256,69 @@ export const useContactsStore = create((set, get) => ({
           return true;
         });
         if (!removed) return contact;
-        return { ...contact, interactions: nextList };
+        nextContact = { ...contact, interactions: nextList };
+        return nextContact;
       }),
     }));
+    if (removed && nextContact && !useMockApi()) {
+      void persistContactSnapshot(nextContact).catch((error) => {
+        console.error('[contacts-store] removeInteraction persist failed', error);
+      });
+    }
     return removed;
   },
 
   addContact: (contact) => {
+    if (contact?.recordType === CONTACT_RECORD_TYPES.LEAD) {
+      return null;
+    }
+    if (useMockApi()) {
+      return get().addContactAsync(contact);
+    }
+    void get().addContactAsync(contact);
+    return null;
+  },
+
+  addContactAsync: async (contact) => {
     const id = contact.id ?? createNumericId();
     const relatedPersons = (contact.relatedPersons || []).map((person, index) =>
       normalizeContactPerson(
         { ...person, id: person.id || createContactPersonId(`${id}-${index}`) },
         id,
       ));
+    const recordType = CONTACT_RECORD_TYPES.CUSTOMER;
+    const lifecycle_stage = contact.lifecycle_stage ?? LIFECYCLE_STAGES.COLD_LEAD;
+    const lifecycleStage = contact.lifecycleStage
+      ?? relationshipStageFromPipelineStage(lifecycle_stage);
     const newContact = {
-      lifecycle_stage: LIFECYCLE_STAGES.COLD_LEAD,
       next_follow_up_date: null,
       last_interaction_date: new Date().toISOString(),
       interactions: [],
       ...contact,
+      recordType,
+      lifecycle_stage,
+      lifecycleStage,
       id,
       relatedPersons,
     };
-    set((state) => ({ contacts: [newContact, ...state.contacts] }));
-    return newContact.id;
+
+    if (useMockApi()) {
+      set((state) => ({ contacts: [newContact, ...state.contacts] }));
+      return newContact.id;
+    }
+
+    try {
+      const saved = await CompanyRepository.create(newContact);
+      set((state) => ({ contacts: [saved, ...state.contacts] }));
+      return saved.id;
+    } catch (error) {
+      console.error('[contacts-store] addContact failed', error);
+      throw error;
+    }
   },
 
   updateContact: (contactId, updates) => {
+    let nextContact = null;
     set((state) => ({
       contacts: state.contacts.map((contact) => {
         if (contact.id !== contactId) return contact;
@@ -214,9 +327,24 @@ export const useContactsStore = create((set, get) => ({
           next.relatedPersons = updates.relatedPersons.map((person) =>
             normalizeContactPerson(person, contactId));
         }
+        nextContact = next;
         return next;
       }),
     }));
+
+    if (nextContact && !useMockApi()) {
+      void persistContactSnapshot(nextContact)
+        .then((saved) => {
+          if (saved) {
+            set((state) => ({
+              contacts: state.contacts.map((c) => (c.id === contactId ? saved : c)),
+            }));
+          }
+        })
+        .catch((error) => {
+          console.error('[contacts-store] updateContact persist failed', error);
+        });
+    }
   },
 
   /**
@@ -228,7 +356,6 @@ export const useContactsStore = create((set, get) => ({
     const mobile = String(contactData?.mobile || '').trim();
     if (!fullName || !mobile) return null;
 
-    /* DDL-08 — probabilistic mobile reuse (same company + other companies) */
     const duplicateMatches = lookupMobileDomain(get().contacts, mobile);
     const possibleDuplicateMobile = duplicateMatches.length > 0;
     const possibleDuplicateMatches = toPossibleDuplicateMatches(duplicateMatches);
@@ -247,6 +374,7 @@ export const useContactsStore = create((set, get) => ({
       companyId,
     );
 
+    let nextContact = null;
     set((state) => {
       const contacts = state.contacts.map((contact) => {
         if (String(contact.id) !== String(companyId)) return contact;
@@ -254,7 +382,8 @@ export const useContactsStore = create((set, get) => ({
         if (nextPerson.isPrimary) {
           persons = persons.map((p) => ({ ...p, isPrimary: false }));
         }
-        return { ...contact, relatedPersons: [...persons, nextPerson] };
+        nextContact = { ...contact, relatedPersons: [...persons, nextPerson] };
+        return nextContact;
       });
 
       const contactPersonAuditLog = possibleDuplicateMobile
@@ -275,10 +404,17 @@ export const useContactsStore = create((set, get) => ({
       return { contacts, contactPersonAuditLog };
     });
 
+    if (nextContact && !useMockApi()) {
+      void persistContactSnapshot(nextContact).catch((error) => {
+        console.error('[contacts-store] addContactPerson persist failed', error);
+      });
+    }
+
     return personId;
   },
 
   updateContactPerson: (companyId, contactPersonId, contactData) => {
+    let nextContact = null;
     set((state) => ({
       contacts: state.contacts.map((contact) => {
         if (String(contact.id) !== String(companyId)) return contact;
@@ -297,23 +433,38 @@ export const useContactsStore = create((set, get) => ({
           }));
         }
 
-        return { ...contact, relatedPersons: next };
+        nextContact = { ...contact, relatedPersons: next };
+        return nextContact;
       }),
     }));
+
+    if (nextContact && !useMockApi()) {
+      void persistContactSnapshot(nextContact).catch((error) => {
+        console.error('[contacts-store] updateContactPerson persist failed', error);
+      });
+    }
   },
 
   deleteContactPerson: (companyId, contactPersonId) => {
+    let nextContact = null;
     set((state) => ({
       contacts: state.contacts.map((contact) => {
         if (String(contact.id) !== String(companyId)) return contact;
-        return {
+        nextContact = {
           ...contact,
           relatedPersons: (contact.relatedPersons || []).filter(
             (person) => String(person.id) !== String(contactPersonId),
           ),
         };
+        return nextContact;
       }),
     }));
+
+    if (nextContact && !useMockApi()) {
+      void persistContactSnapshot(nextContact).catch((error) => {
+        console.error('[contacts-store] deleteContactPerson persist failed', error);
+      });
+    }
   },
 
   /** Lookup helper for cross-module use (Nabz/Ofogh). */

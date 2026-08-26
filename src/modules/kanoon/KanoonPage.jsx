@@ -48,7 +48,7 @@ export default function KanoonPage() {
   }, [audienceFilter, personType]);
 
   const handleAddContact = (contact) => {
-    addContact(contact);
+    void addContact(contact);
     setModalState(null);
   };
 

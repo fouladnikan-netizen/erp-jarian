@@ -76,6 +76,8 @@ export async function authenticate({ username, password }) {
     if (data.user) {
       localStorage.setItem('jarian_auth_profile', JSON.stringify(data.user));
     }
+    const { default: hydrateErpData } = await import('../../api/bootstrap.js');
+    await hydrateErpData();
     return { token, username: displayName, user: data.user };
   }
 

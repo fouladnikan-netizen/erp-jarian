@@ -19,9 +19,19 @@
 ## Not yet (honest)
 
 - Full Nabz stage machines / financial ledger
-- Migrating Zustand SoR → API for all modules
+- **Leads** (`useLeadsStore`) — still browser-only
 - Activity unify (DDL-05)
 - Production hardening (refresh tokens, rate limit, HTTPS deploy)
+
+## Frontend wiring (2026-08-26)
+
+When `VITE_USE_MOCK_API=false`:
+
+- `useContactsStore.fetchContacts()` → `GET /api/v1/companies`
+- Contact mutations persist via `CompanyRepository` (payload JSONB)
+- `useNabzStore.fetchOrders()` → `GET /api/v1/orders`
+- `setOrders` debounces persist → `POST/PATCH /api/v1/orders`
+- Login + `ErpDataBootstrap` hydrate data after auth
 
 ## Run
 

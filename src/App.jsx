@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
+import ErpDataBootstrap from './components/layout/ErpDataBootstrap';
 import ModulePage from './components/module/ModulePage';
 import KanoonPage from './modules/kanoon/KanoonPage';
 import CustomerProfilePage from './modules/kanoon/CustomerProfilePage';
@@ -59,7 +60,7 @@ export default function App() {
           <Route path="/nabz/shipping/preview" element={<ShippingPreviewPage />} />
 
           <Route element={<ProtectedErpShell />}>
-            <Route element={<AppLayout />}>
+            <Route element={<ErpDataBootstrap><AppLayout /></ErpDataBootstrap>}>
               <Route path="/" element={<KanoonPage />} />
               <Route path="/kanoon/contact/:contactId" element={<CustomerProfilePage />} />
               <Route path="/vitrin" element={<VitrinPage />} />
