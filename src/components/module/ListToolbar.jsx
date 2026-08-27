@@ -12,6 +12,7 @@ export default function ListToolbar({
   primaryLabel = 'ثبت رکورد جدید',
   onPrimaryClick,
   primaryDisabled = false,
+  primaryTitle,
   secondary = null,
   filters = null,
   belowSearch = null,
@@ -33,7 +34,7 @@ export default function ListToolbar({
             value={searchValue}
             onChange={(event) => onSearchChange?.(event.target.value)}
           />
-          <Search className="actions-bar__search-icon" size={18} strokeWidth={2} aria-hidden="true" />
+          <Search className="actions-bar__search-icon" size={16} strokeWidth={2} aria-hidden="true" />
         </div>
 
         {filters != null ? (
@@ -44,14 +45,17 @@ export default function ListToolbar({
 
         <div className="list-toolbar__buttons">
           {secondary}
-          <button
-            type="button"
-            className="btn btn--primary font-meem"
-            disabled={primaryDisabled}
-            onClick={onPrimaryClick}
-          >
-            {primaryLabel}
-          </button>
+          {primaryLabel ? (
+            <button
+              type="button"
+              className="btn btn--primary font-meem"
+              disabled={primaryDisabled || typeof onPrimaryClick !== 'function'}
+              onClick={typeof onPrimaryClick === 'function' ? onPrimaryClick : undefined}
+              title={primaryTitle}
+            >
+              {primaryLabel}
+            </button>
+          ) : null}
         </div>
       </div>
 

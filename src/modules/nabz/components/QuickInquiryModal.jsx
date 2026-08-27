@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ORDER_TABS } from '../config';
 import { useOrderPipelineView } from '../hooks/useOrderPipelineView';
 import { OPERATIONAL_PHASES } from '../phase2Config';
-import { getOrderOperationalPhase } from '../phase2Service';
+import { getOrderOperationalPhase, shouldShowOperationalPhases } from '../phase2Service';
 import GatewayHorizontalStepper from './orderProfile/gateway/GatewayHorizontalStepper';
 import GatewayDecisionPanel from './orderProfile/gateway/GatewayDecisionPanel';
 import ParvaneStagePanel from './orderProfile/operations/ParvaneStagePanel';
@@ -435,16 +435,16 @@ export default function QuickInquiryModal({
   const [decisionOpen, setDecisionOpen] = useState(false);
   const [marginDrafts, setMarginDrafts] = useState({});
   const activeOperationalPhase = pipeline.operationalViewPhase || getOrderOperationalPhase(order);
-  const showParvanePanel = order.status === ORDER_TABS.SUCCESS
+  const showParvanePanel = shouldShowOperationalPhases(order)
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.PARVANE;
-  const showTadarokPanel = order.status === ORDER_TABS.SUCCESS
+  const showTadarokPanel = shouldShowOperationalPhases(order)
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.TADAROK;
-  const showRahseparPanel = order.status === ORDER_TABS.SUCCESS
+  const showRahseparPanel = shouldShowOperationalPhases(order)
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.RAHESPAR;
-  const showSaranjamPanel = order.status === ORDER_TABS.SUCCESS
+  const showSaranjamPanel = (shouldShowOperationalPhases(order) || order.status === ORDER_TABS.SUCCESS)
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.SARANJAM;
   const archivedReadOnly = isOrderArchived(order);

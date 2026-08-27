@@ -8,7 +8,7 @@ import {
   getGatewayCurrentStage,
   sendProformaToCustomer,
 } from '../../gatewayLifecycleService';
-import { getOrderOperationalPhase } from '../../phase2Service';
+import { getOrderOperationalPhase, shouldShowOperationalPhases } from '../../phase2Service';
 import { markOrderCancelled, appendProfileAttachment, appendSignedProformaRecord, archivePreviousSignedProforma } from '../../orderProfileService';
 import { issueProforma, updateProforma, getLatestProformaVersion } from '../../proformaService';
 import {
@@ -17,9 +17,9 @@ import {
   PROFORMA_SIGNED_MESSAGE_TYPE,
 } from '../../proformaPrint';
 import {
-  appendCrmActivity,
-  updateCrmActivity,
-} from '../../orderCrmService';
+  createOrderActivity,
+  updateOrderActivity,
+} from '../../orderActivityBridge';
 import { canEditWholeOrder } from '../../orderEditPermissions';
 import {
   markGatewayDecisionFailed,
@@ -61,7 +61,9 @@ export default function OrderProfileView({
   const [viewPhase, setViewPhase] = useState(orderPhase);
   const [operationalViewPhase, setOperationalViewPhase] = useState(operationalPhase);
   const [viewMode, setViewMode] = useState(
-    order.status === ORDER_TABS.SUCCESS ? 'operations' : 'gateway',
+    shouldShowOperationalPhases(order) || order.status === ORDER_TABS.SUCCESS
+      ? 'operations'
+      : 'gateway',
   );
   const [activityModal, setActivityModal] = useState({ open: false, editActivity: null });
   const [activityTimelineOpen, setActivityTimelineOpen] = useState(false);
@@ -79,21 +81,21 @@ export default function OrderProfileView({
   }, [order.id, operationalPhase]);
 
   useEffect(() => {
-    if (order.status === ORDER_TABS.SUCCESS) {
+    if (shouldShowOperationalPhases(order) || order.status === ORDER_TABS.SUCCESS) {
       setViewMode('operations');
       setOperationalViewPhase(getOrderOperationalPhase(order));
     } else {
       setViewMode('gateway');
     }
-  }, [order.id, order.status, order.stageId]);
+  }, [order.id, order.status, order.stageId, order.phase2EnteredAt, order.gatewayDecision?.outcome]);
 
   const updateOrder = (orderUpdater) => {
     onUpdateOrder((prev) => prev.map((item) => {
       if (item.id !== order.id) return item;
       const next = orderUpdater(item);
-      if (next.stageId !== item.stageId || next.status !== item.status) {
+      if (next.stageId !== item.stageId || next.status !== item.status || next.phase2EnteredAt !== item.phase2EnteredAt) {
         setOperationalViewPhase(getOrderOperationalPhase(next));
-        if (next.status === ORDER_TABS.SUCCESS && item.status !== ORDER_TABS.SUCCESS) {
+        if (shouldShowOperationalPhases(next) || next.status === ORDER_TABS.SUCCESS) {
           setViewMode('operations');
         }
       }
@@ -104,7 +106,7 @@ export default function OrderProfileView({
   const handleGatewayAdvance = (nextOrder) => {
     updateOrder(() => nextOrder);
     setViewPhase(getOrderGatewayPhase(nextOrder));
-    if (nextOrder.status === ORDER_TABS.SUCCESS) {
+    if (shouldShowOperationalPhases(nextOrder) || nextOrder.status === ORDER_TABS.SUCCESS) {
       setOperationalViewPhase(getOrderOperationalPhase(nextOrder));
       setViewMode('operations');
     }
@@ -139,14 +141,18 @@ export default function OrderProfileView({
 
   const handleActivityModalSubmit = (input) => {
     if (input.id) {
-      updateOrder((current) => updateCrmActivity(current, input.id, {
+      const { updater, async } = updateOrderActivity(order, input.id, {
         type: input.type,
         body: input.body,
         followUp: input.followUp,
         payment: input.payment,
-      }));
+      });
+      if (updater) updateOrder(updater);
+      if (async) void async;
     } else {
-      updateOrder((current) => appendCrmActivity(current, input));
+      const { updater, async } = createOrderActivity(order, input);
+      if (updater) updateOrder(updater);
+      if (async) void async;
     }
     closeActivityModal();
   };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Save, X } from 'lucide-react';
+import SmartTemplateBuilder from './components/SmartTemplateBuilder';
 import {
   TEMPLATE_STATUS,
   TEMPLATE_TYPE,
@@ -127,20 +128,20 @@ export default function TemplateQuickCreateDrawer({
               <label className="mowj-field font-meem">
                 موضوع (اختیاری)
                 <input
-                  className="mowj-input"
+                  className="mowj-input font-meem"
                   value={content.subject || ''}
                   onChange={(e) => patchContent({ subject: e.target.value })}
                 />
               </label>
-              <label className="mowj-field font-meem">
-                متن پیام
-                <textarea
-                  className="mowj-input mowj-textarea"
-                  rows={5}
-                  value={content.body || ''}
-                  onChange={(e) => patchContent({ body: e.target.value })}
-                />
-              </label>
+              <SmartTemplateBuilder
+                templateType={lockedType}
+                value={content.body || ''}
+                onChange={(body) => patchContent({ body })}
+                label="متن پیام"
+                placeholder={'سلام {{personFirstName}}\n\nسفارش شماره {{orderNumber}}…'}
+                rows={8}
+                id="tpl-quick-body"
+              />
             </>
           ) : null}
 
@@ -149,7 +150,7 @@ export default function TemplateQuickCreateDrawer({
               <label className="mowj-field font-meem">
                 فرم نظرسنجی
                 <select
-                  className="mowj-select"
+                  className="mowj-select font-meem"
                   value={content.surveyFormId || ''}
                   onChange={(e) => patchContent({ surveyFormId: e.target.value })}
                 >
@@ -158,15 +159,15 @@ export default function TemplateQuickCreateDrawer({
                   ))}
                 </select>
               </label>
-              <label className="mowj-field font-meem">
-                مقدمه (اختیاری)
-                <textarea
-                  className="mowj-input mowj-textarea"
-                  rows={3}
-                  value={content.intro || ''}
-                  onChange={(e) => patchContent({ intro: e.target.value })}
-                />
-              </label>
+              <SmartTemplateBuilder
+                templateType={lockedType}
+                value={content.intro || ''}
+                onChange={(intro) => patchContent({ intro })}
+                label="مقدمه (اختیاری)"
+                placeholder="متن مقدمه نظرسنجی…"
+                rows={5}
+                id="tpl-quick-intro"
+              />
             </>
           ) : null}
 
@@ -175,20 +176,20 @@ export default function TemplateQuickCreateDrawer({
               <label className="mowj-field font-meem">
                 عنوان وظیفه
                 <input
-                  className="mowj-input"
+                  className="mowj-input font-meem"
                   value={content.title || ''}
                   onChange={(e) => patchContent({ title: e.target.value })}
                 />
               </label>
-              <label className="mowj-field font-meem">
-                شرح
-                <textarea
-                  className="mowj-input mowj-textarea"
-                  rows={4}
-                  value={content.description || ''}
-                  onChange={(e) => patchContent({ description: e.target.value })}
-                />
-              </label>
+              <SmartTemplateBuilder
+                templateType={lockedType}
+                value={content.description || ''}
+                onChange={(description) => patchContent({ description })}
+                label="شرح وظیفه"
+                placeholder="شرح وظیفه با متغیر…"
+                rows={5}
+                id="tpl-quick-task-desc"
+              />
             </>
           ) : null}
 

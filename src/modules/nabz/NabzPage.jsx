@@ -32,6 +32,8 @@ import ListPageLayout from '../../components/module/ListPageLayout';
 import ListToolbar from '../../components/module/ListToolbar';
 import CreateOrderDrawer from './components/CreateOrderDrawer';
 import QuickInquiryModal from './components/QuickInquiryModal';
+import { useCan } from '../../stores/useSessionStore';
+import { PERMISSIONS } from '../../auth/permissions.catalog.js';
 import './nabz.css';
 
 export default function NabzPage() {
@@ -41,6 +43,7 @@ export default function NabzPage() {
   const selectOrder = useNabzStore((s) => s.selectOrder);
   const orderDraft = useNabzStore((s) => s.orderDraft);
   const clearOrderDraft = useNabzStore((s) => s.clearOrderDraft);
+  const canWriteOrders = useCan(PERMISSIONS.ORDERS_WRITE);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -97,14 +100,19 @@ export default function NabzPage() {
 
   useEffect(() => {
     setSearch('');
-    if (activeTab === ORDER_TABS.FAILED) {
+    if (activeTab === ORDER_TABS.FAILED || activeTab === ORDER_TABS.CLOSED) {
       setViewMode(VIEW_MODES.LIST);
     }
   }, [activeTab]);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab === ORDER_TABS.FAILED || tab === ORDER_TABS.CURRENT || tab === ORDER_TABS.SUCCESS) {
+    if (
+      tab === ORDER_TABS.FAILED
+      || tab === ORDER_TABS.CURRENT
+      || tab === ORDER_TABS.SUCCESS
+      || tab === ORDER_TABS.CLOSED
+    ) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -198,7 +206,9 @@ export default function NabzPage() {
     [orders, inquiryModalOrderId],
   );
 
-  const showKanban = activeTab !== ORDER_TABS.FAILED && viewMode === VIEW_MODES.KANBAN;
+  const showKanban = activeTab !== ORDER_TABS.FAILED
+    && activeTab !== ORDER_TABS.CLOSED
+    && viewMode === VIEW_MODES.KANBAN;
   const listTitle = ORDER_TAB_META[activeTab].listTitle;
 
   return (
@@ -214,6 +224,8 @@ export default function NabzPage() {
           onSearchChange={setSearch}
           primaryLabel="ثبت سفارش جدید"
           onPrimaryClick={() => setCreateOpen(true)}
+          primaryDisabled={!canWriteOrders}
+          primaryTitle={canWriteOrders ? undefined : 'شما مجوز ایجاد سفارش را ندارید.'}
           filters={(
             <NabzToolbar
               activeTab={activeTab}
@@ -232,7 +244,7 @@ export default function NabzPage() {
           tab={activeTab}
           onOrderClick={(order) => selectOrder(order.id)}
           onCustomerClick={openCustomerPreview}
-          onStageChange={changeOrderStage}
+          onStageChange={canWriteOrders ? changeOrderStage : undefined}
           onStageReject={setStageRejectMessage}
           stageRejectMessage={stageRejectMessage}
         />
@@ -254,7 +266,7 @@ export default function NabzPage() {
           onCustomerClick={openCustomerPreview}
           onAddInquiry={addInquiry}
           onSetTargetInquiry={setTargetInquiry}
-          onStageChange={changeOrderStage}
+          onStageChange={canWriteOrders ? changeOrderStage : undefined}
           onUpdateOrder={updateOrderById}
         />
       )}

@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, History, ArrowRight, FileText, Filter, Trash2 } from 'lucide-react';
+import SmartTemplateBuilder from './components/SmartTemplateBuilder';
 import {
   TEMPLATE_STATUS,
   TEMPLATE_STATUS_LABELS,
   TEMPLATE_TYPE,
   TEMPLATE_TYPE_LABELS,
-  TEMPLATE_VARIABLE_CATALOG,
 } from './domain';
 import {
   createTemplateVersion,
@@ -262,21 +262,19 @@ export default function TemplateManagementPage() {
                 <label className="font-meem" htmlFor="tpl-subject">موضوع</label>
                 <input
                   id="tpl-subject"
-                  className="mowj-input"
+                  className="mowj-input font-meem"
                   value={form.content.subject || ''}
                   onChange={(e) => patchContent({ subject: e.target.value })}
                 />
               </div>
-              <div className="mowj-field">
-                <label className="font-meem" htmlFor="tpl-body">متن</label>
-                <textarea
-                  id="tpl-body"
-                  className="mowj-input mowj-textarea"
-                  rows={5}
-                  value={form.content.body || ''}
-                  onChange={(e) => patchContent({ body: e.target.value })}
-                />
-              </div>
+              <SmartTemplateBuilder
+                templateType={form.type}
+                value={form.content.body || ''}
+                onChange={(body) => patchContent({ body })}
+                label="متن پیام"
+                rows={8}
+                id="tpl-body"
+              />
             </>
           ) : null}
 
@@ -291,16 +289,14 @@ export default function TemplateManagementPage() {
                   onChange={(e) => patchContent({ surveyFormId: e.target.value })}
                 />
               </div>
-              <div className="mowj-field">
-                <label className="font-meem" htmlFor="tpl-intro">مقدمه</label>
-                <textarea
-                  id="tpl-intro"
-                  className="mowj-input mowj-textarea"
-                  rows={3}
-                  value={form.content.intro || ''}
-                  onChange={(e) => patchContent({ intro: e.target.value })}
-                />
-              </div>
+              <SmartTemplateBuilder
+                templateType={form.type}
+                value={form.content.intro || ''}
+                onChange={(intro) => patchContent({ intro })}
+                label="مقدمه"
+                rows={5}
+                id="tpl-intro"
+              />
             </>
           ) : null}
 
@@ -315,16 +311,14 @@ export default function TemplateManagementPage() {
                   onChange={(e) => patchContent({ title: e.target.value })}
                 />
               </div>
-              <div className="mowj-field">
-                <label className="font-meem" htmlFor="tpl-desc">توضیح</label>
-                <textarea
-                  id="tpl-desc"
-                  className="mowj-input mowj-textarea"
-                  rows={3}
-                  value={form.content.description || ''}
-                  onChange={(e) => patchContent({ description: e.target.value })}
-                />
-              </div>
+              <SmartTemplateBuilder
+                templateType={form.type}
+                value={form.content.description || ''}
+                onChange={(description) => patchContent({ description })}
+                label="توضیح"
+                rows={5}
+                id="tpl-desc"
+              />
             </>
           ) : null}
 
@@ -351,12 +345,6 @@ export default function TemplateManagementPage() {
               </div>
             </>
           ) : null}
-
-          <p className="mowj-detail-hint font-meem">
-            متغیرهای مجاز:
-            {' '}
-            {TEMPLATE_VARIABLE_CATALOG.map((v) => v.token).join(' · ')}
-          </p>
 
           <div className="mowj-detail-actions">
             <button type="button" className="mowj-btn mowj-btn--launch" onClick={handleSave}>

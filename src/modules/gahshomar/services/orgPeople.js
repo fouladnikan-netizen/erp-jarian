@@ -3,7 +3,7 @@
  * Letter / compose only — not a global directory API.
  */
 
-import { CURRENT_USER } from '../../nabz/constants';
+import { getCurrentUser } from '../../nabz/constants';
 import { ORGANIZATION_TREE } from '../../shirazeh/security/organization/mockData/organizationTree';
 import { walkTree } from '../../shirazeh/security/organization/treeUtils';
 import { ORG_SELF } from '../models/officialRecord';
@@ -33,14 +33,14 @@ export function listOrgPeopleForReferral() {
   const currentTitle = resolveLetterRoleTitle('leader') || 'مدیر فروش';
   const current = {
     id: CURRENT_ASSIGNEE_ID,
-    name: CURRENT_USER,
+    name: getCurrentUser(),
     position: currentTitle,
     isCurrent: true,
     company,
   };
 
   const others = collectOrgUsers()
-    .filter((person) => person.name !== CURRENT_USER)
+    .filter((person) => person.name !== getCurrentUser())
     .map((person) => ({ ...person, company }));
 
   return [current, ...others];

@@ -70,7 +70,7 @@ export default function NabzKanban({
   };
 
   return (
-    <section className="nabz-kanban-section" aria-label="نمای کانبان سفارشات">
+    <section className="section-data nabz-kanban-section" aria-label="نمای کانبان سفارشات">
       <div className="nabz-kanban-header">
         <span className="nabz-kanban-header__title">
           {isSalesBoard ? 'کارزار فروش — فاز پیش‌کش' : isPhase2Only ? 'کانبان فاز تحقق' : 'کانبان سفارشات'}

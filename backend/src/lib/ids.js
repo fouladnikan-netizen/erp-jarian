@@ -1,11 +1,19 @@
 import { query } from '../db/pool.js';
 
-export async function writeAudit({ actorUserId, action, entityType, entityId, detail = {} }) {
-  await query(
-    `INSERT INTO audit_log (actor_user_id, action, entity_type, entity_id, detail)
-     VALUES ($1, $2, $3, $4, $5::jsonb)`,
-    [actorUserId || null, action, entityType, entityId || null, JSON.stringify(detail)],
-  );
+/**
+ * @param {object} entry
+ * @param {import('pg').PoolClient} [client] optional — use inside withTransaction
+ */
+export async function writeAudit(entry, client = null) {
+  const { actorUserId, action, entityType, entityId, detail = {} } = entry;
+  const sql = `INSERT INTO audit_log (actor_user_id, action, entity_type, entity_id, detail)
+     VALUES ($1, $2, $3, $4, $5::jsonb)`;
+  const params = [actorUserId || null, action, entityType, entityId || null, JSON.stringify(detail)];
+  if (client) {
+    await client.query(sql, params);
+  } else {
+    await query(sql, params);
+  }
 }
 
 export function newEntityId(prefix) {

@@ -112,17 +112,17 @@
 }
 
 .gahshomar-docs__table th {
-  background: #E8FAF7;
+  background: var(--table-head-bg);
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .gahshomar-docs__table tbody tr:nth-child(odd) {
-  background: #ffffff;
+  background: var(--table-row-odd-bg);
 }
 
 .gahshomar-docs__table tbody tr:nth-child(even) {
-  background: rgba(243, 244, 246, 0.85);
+  background: var(--table-row-even-bg);
 }
 
 .gahshomar-docs__subject {

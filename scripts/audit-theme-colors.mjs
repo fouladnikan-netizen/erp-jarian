@@ -40,6 +40,8 @@ for (const file of walk(join(ROOT, 'src'))) {
     if (ALLOWED_CSS.has(r)) continue;
     const lines = readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('/*') || trimmed.startsWith('*') || trimmed.startsWith('//')) return;
       if (CSS_COLOR_RE.test(line)) {
         violations.push(`${r}:${i + 1}: CSS hardcoded color — ${line.trim().slice(0, 120)}`);
       }

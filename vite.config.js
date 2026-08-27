@@ -27,6 +27,10 @@ export default defineConfig({
     },
   },
   test: {
+    /** Tests always use mock SoR — never local .env or live backend. */
+    env: {
+      VITE_USE_MOCK_API: 'true',
+    },
     environment: 'node',
     include: [
       'src/**/__tests__/**/*.{test,spec}.{js,jsx,ts,tsx}',

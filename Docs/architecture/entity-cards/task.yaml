@@ -1,0 +1,35 @@
+id: task
+name: Task
+tier: A
+status: active
+ownerModule: pooyesh
+aggregateRoot: Task
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "OPEN | IN_PROGRESS | COMPLETED | CANCELLED. Soft-delete archive. Task ≠ Activity (DDL-16)."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - tasks:read
+  - tasks:write
+databaseTable: tasks
+apiBasePath: /api/v1/tasks
+backendRepository: backend/src/repositories/taskRepository.js
+frontendRepository: src/api/repositories/TaskRepository.js
+dependencies:
+  - company
+  - raw-lead
+  - auth-user
+integrationPorts:
+  - subject-entity-port
+  - pooyesh-task-facade
+  - mowj-pooyesh-task-port
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-16
+  - DDL-14
+  - DDL-09
+  - DDL-20
+  - DDL-22
+migrationSafety: "005_tasks.sql expand-only; soft-delete + append-only audit. Application-level subject integrity. Assignment validates users.id when set. 011_activity_task_followup_linkage.sql adds source_activity_id TEXT REFERENCES activities(id) + idx_tasks_source_activity (expand-only)."
+notes: "DDL-16. Independent Pooyesh aggregate. SubjectReference COMPANY|RAW_LEAD. Mowj CREATE_TASK via PooyeshTaskPort → taskFacade only. Mock mode keeps in-memory array for offline/unit tests. source_activity_id links a Task auto-created from an Activity follow-up date (DDL-20), idempotent, never resurrected once COMPLETED/CANCELLED. update/changeStatus/complete/archive ownership-scoped via ownershipGate (DDL-22)."

@@ -75,5 +75,9 @@ curl -s http://127.0.0.1:3100/api/v1/companies \
 - ContactPerson جدول فرزند Company (DDL-02)
 - Order = aggregate عملیاتی؛ جزئیات مرحله در `payload` JSONB تا تثبیت schema جزئی (DDL-03)
 - Activity یکپارچه عمداً در v1 نیست (DDL-05)
+- Lead/API جدول `leads` تا قبل از DDL Gate ممنوع است
 
-فرانت هنوز می‌تواند با mock کار کند؛ اتصال تدریجی به این API مرحله بعد است.
+قوانین تحویل Entity: `Docs/architecture/ENTITY_DELIVERY_PIPELINE.md`  
+بکاپ/ریستور: `backend/scripts/backup-pg.sh`, `restore-pg.sh`
+
+فرانت با `VITE_USE_MOCK_API=false` از این API می‌خواند؛ Zustand فقط cache است.

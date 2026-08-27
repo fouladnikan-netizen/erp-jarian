@@ -103,23 +103,6 @@
   text-align: center;
 }
 
-.kprofile-identity__avatar {
-  width: 76px;
-  height: 76px;
-  margin: 0 auto 0.8rem;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--color-brand-red);
-  background: linear-gradient(180deg, var(--color-white) 0%, var(--bg-muted) 100%);
-  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 45%, transparent);
-  box-shadow:
-    var(--glass-inset-highlight-strong),
-    0 4px 14px color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
-}
-
 .kprofile-identity__name {
   margin: 0;
   font-size: 1.2rem;
@@ -192,6 +175,92 @@
 .kprofile-identity__assignee strong {
   color: var(--text-primary);
   font-weight: 700;
+}
+
+/* منشأ مشتری — Lead origin (Ofogh relationship, read-only) */
+.kprofile-origin {
+  padding: 0.95rem 1.05rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.kprofile-origin__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-origin__title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-origin__list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.kprofile-origin__row {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 38%) 1fr;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+
+.kprofile-origin__row dt {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.kprofile-origin__row dd {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.kprofile-origin__muted {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.kprofile-origin__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.kprofile-origin__link {
+  align-self: flex-start;
+  margin-top: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text-primary);
+  background: var(--surface-raised, var(--glass-bg-strong));
+  border: 1px solid var(--glass-border);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.kprofile-origin__link:hover {
+  transform: translateY(-1px);
+  background: var(--glass-bg-strong);
 }
 
 /* عنوان بخش‌های ستون کناری */

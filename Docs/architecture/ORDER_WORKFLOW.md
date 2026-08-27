@@ -4,14 +4,26 @@
 > **No redesign.** Do not treat this as a target architecture.  
 > **Related:** [ORDER_STATUS_AUDIT.md](./ORDER_STATUS_AUDIT.md), [09-BUSINESS_RULES_WORKFLOW_AUDIT.md](./09-BUSINESS_RULES_WORKFLOW_AUDIT.md)
 
-Runtime primary keys: `order.stageId` (1–8) + `order.status` as `ORDER_TABS` (`current` | `success` | `failed`).  
+Runtime primary keys: `order.stageId` (1–8) + Outcome `order.status` (`current` | `success` | `failed`) + Closure `payload.closure` (`open` | `closed`).
+
+**DDL-18(B)** (supersedes DDL-18(A)):
+- `current` = pre commercial decision (کاوش/مظنه/پیش‌کش)
+- `success` = sale committed (gateway / quotation accept). May still run تدارک/رهسپار/سرانجام while `closure=open`. **SUCCESS ≠ CLOSED.**
+- `failed` = failed before SUCCESS; `failReason` required; terminal for outcome
+- `closure=closed` = only after SUCCESS + saranjam/settlement gates
+- UI: جاری=`CURRENT+OPEN`; موفق=`SUCCESS+OPEN`; ناموفق=`FAILED`; بسته‌شده=`SUCCESS+CLOSED`
+- Successful Purchase Event = becoming **SUCCESS** (not CLOSED)
+
 Domain `OrderStatus` exists but is **not** the primary runtime driver — see status audit.
+
+**Authority:** Backend `orderService` enforces transitions via shared SSOT `src/domain/order/orderOutcomeClosure.js` (re-exported by `orderLifecycle.js`). Frontend services are UX mirrors only.
 
 Stage catalog: `src/modules/nabz/config.js`.
 
 ```
 کاوش (1) → مظنه (2) → پیش‌کش (3) → [Gateway decision]
-                                      ├─ success → ماشه تأمین (4) → تدارک (5) → رهسپار (7) → سرانجام (8)
+                                      ├─ SUCCESS+OPEN → ماشه (4) → تدارک (5) → رهسپار (7) → سرانجام (8)
+                                      │                                                         └─ saranjam archive → closure=closed (status stays success)
                                       └─ failed
 Legacy stage id 6 (تجهیز) maps to رهسپار for old data.
 ```
@@ -62,11 +74,11 @@ Legacy stage id 6 (تجهیز) maps to رهسپار for old data.
 | Field | Current fact |
 |-------|----------------|
 | **Purpose** | Confirm purchase mandate after successful deal decision; enter Phase 2 |
-| **Entry conditions** | `ORDER_TABS.SUCCESS` + `enterPhase2FromDecision` after gateway success |
-| **Exit conditions** | `issueParvaneSupplyPermit` → تدارک; or `returnParvaneToPishkesh` → پیش‌کش + revision |
-| **Allowed transitions** | → تدارک; → پیش‌کش (return). Phase2 kanban may allow other jumps when status=success (see risks) |
+| **Entry conditions** | Gateway accept → status=`success` + closure=`open`; `enterPhase2FromDecision` |
+| **Exit conditions** | `issueParvaneSupplyPermit` → تدارک; or `returnParvaneToPishkesh` → پیش‌کش + clear commitment |
+| **Allowed transitions** | → تدارک; → پیش‌کش (return). Phase2 kanban allows jumps among active Phase-2 stages while SUCCESS+OPEN |
 | **Implementation** | `parvaneStageService.js`, `phase2Service.js`, `phase2Config.js` |
-| **Known risks** | `tryChangePhase2Stage` does not enforce strict sequential gates once status is success |
+| **Known risks** | Free Phase-2 jumps once committed (not strictly sequential) |
 
 ---
 

@@ -9,6 +9,9 @@
 export const BRAND_NAME = 'جریان';
 export const SHOW_BRAND_NAME = false;
 
+/** Product tagline — login footer + global app footer */
+export const JARIAN_PRODUCT_TAGLINE = 'Jarian | AI-Native ERCM for Order-Driven B2B Commerce';
+
 /** پسوند عنوان تب مرورگر — در حالت مخفی فقط نام ماژول نمایش داده می‌شود */
 export function buildDocumentTitle(moduleName) {
   return SHOW_BRAND_NAME ? `${moduleName} | ${BRAND_NAME}` : moduleName;

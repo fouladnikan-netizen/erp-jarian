@@ -1,204 +1,248 @@
-import { z } from 'zod';
-import { query } from '../db/pool.js';
+import { withTransaction } from '../db/pool.js';
+import { fromZodError, notFoundError, conflictError, validationError } from '../lib/errors.js';
 import { newEntityId, writeAudit } from '../lib/ids.js';
+import * as orderRepo from '../repositories/orderRepository.js';
+import { assertOrderPartyIsCompany } from '../domain/rawLeadGate.js';
+import {
+  assertOrderLifecycleUpdate,
+  assertOrderArchiveAllowed,
+  normalizeCreateDefaults,
+} from '../domain/order/orderRules.js';
+import { z } from 'zod';
+import * as companyRepo from '../repositories/companyRepository.js';
+import { assertLegalCustomerHasNationalId } from '../domain/order/nationalIdOrderGate.js';
+import { assertCompanyAllowedForOrder } from '../domain/order/supplierOrderGate.js';
+import { assertOrderTaxPolicy } from '../domain/order/taxPolicy.js';
+import { recomputeCustomerLifecycle } from './customerLifecycleService.js';
+import { ORDER_STATUS } from '../domain/order/orderRules.js';
 
 const createSchema = z.object({
   code: z.string().trim().min(1).optional(),
   companyId: z.string().trim().min(1).optional().nullable(),
   title: z.string().trim().optional().nullable(),
-  stageId: z.string().trim().default('inquiry'),
-  status: z.string().trim().default('open'),
+  stageId: z.union([z.string(), z.number()]).optional(),
+  status: z.string().trim().optional(),
   payload: z.record(z.string(), z.any()).optional(),
 });
 
 const updateSchema = z.object({
   companyId: z.string().trim().optional().nullable(),
   title: z.string().trim().optional().nullable(),
-  stageId: z.string().trim().optional(),
+  stageId: z.union([z.string(), z.number()]).optional(),
   status: z.string().trim().optional(),
   payload: z.record(z.string(), z.any()).optional(),
-  version: z.number().int().positive().optional(),
+  /** Required for optimistic concurrency — stale client → 409 VERSION_CONFLICT */
+  version: z.number().int().positive(),
 });
 
-function mapOrder(row) {
-  return {
-    id: row.id,
-    code: row.code,
-    companyId: row.company_id,
-    title: row.title,
-    stageId: row.stage_id,
-    status: row.status,
-    payload: row.payload,
-    version: row.version,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
+export async function listOrders(filters = {}) {
+  return orderRepo.findMany(filters);
 }
 
-async function nextOrderCode() {
-  const res = await query(
-    `SELECT COUNT(*)::int AS n FROM orders WHERE code LIKE 'JR-%'`,
-  );
-  const n = (res.rows[0]?.n || 0) + 1;
-  return `JR-${String(n).padStart(6, '0')}`;
-}
-
-export async function listOrders({ q, companyId, stageId, status, limit = 50, offset = 0 } = {}) {
-  const clauses = [];
-  const params = [];
-  let i = 1;
-
-  if (q) {
-    clauses.push(`(code ILIKE $${i} OR COALESCE(title, '') ILIKE $${i})`);
-    params.push(`%${q}%`);
-    i += 1;
+export async function getOrder(id, options = {}) {
+  const order = await orderRepo.findByIdOrCode(id, options);
+  if (!order) {
+    throw notFoundError('سفارش یافت نشد.');
   }
-  if (companyId) {
-    clauses.push(`company_id = $${i}`);
-    params.push(companyId);
-    i += 1;
-  }
-  if (stageId) {
-    clauses.push(`stage_id = $${i}`);
-    params.push(stageId);
-    i += 1;
-  }
-  if (status) {
-    clauses.push(`status = $${i}`);
-    params.push(status);
-    i += 1;
-  }
-
-  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-  params.push(Math.min(Number(limit) || 50, 200), Number(offset) || 0);
-
-  const res = await query(
-    `SELECT * FROM orders ${where}
-     ORDER BY updated_at DESC
-     LIMIT $${i} OFFSET $${i + 1}`,
-    params,
-  );
-  return res.rows.map(mapOrder);
-}
-
-export async function getOrder(id) {
-  const res = await query(`SELECT * FROM orders WHERE id = $1 OR code = $1`, [id]);
-  if (!res.rows[0]) {
-    const err = new Error('سفارش یافت نشد.');
-    err.status = 404;
-    err.code = 'NOT_FOUND';
-    throw err;
-  }
-  return mapOrder(res.rows[0]);
+  return order;
 }
 
 export async function createOrder(body, actorUserId) {
+  assertOrderPartyIsCompany(body);
+
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    const err = new Error('داده‌های سفارش نامعتبر است.');
-    err.status = 400;
-    err.code = 'VALIDATION';
-    err.details = parsed.error.flatten();
-    throw err;
+    throw fromZodError(parsed, 'داده‌های سفارش نامعتبر است.');
   }
 
-  const data = parsed.data;
-  if (data.companyId) {
-    const company = await query(`SELECT id FROM companies WHERE id = $1`, [data.companyId]);
-    if (!company.rows[0]) {
-      const err = new Error('شرکت سفارش یافت نشد.');
-      err.status = 400;
-      err.code = 'INVALID_COMPANY';
-      throw err;
-    }
-  }
-
+  const data = normalizeCreateDefaults(parsed.data);
   const id = newEntityId('ord');
-  const code = data.code || (await nextOrderCode());
 
-  await query(
-    `INSERT INTO orders (
-      id, code, company_id, title, stage_id, status, payload, created_by, updated_by
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$8)`,
-    [
+  let createPayload = data.payload;
+  if (createPayload) {
+    createPayload = assertOrderTaxPolicy(createPayload).payload;
+  }
+
+  await withTransaction(async (client) => {
+    if (data.companyId) {
+      const company = await companyRepo.findById(data.companyId, {}, client);
+      if (!company) {
+        throw validationError('شرکت سفارش یافت نشد.', { companyId: ['INVALID'] });
+      }
+      assertCompanyAllowedForOrder(company);
+      assertLegalCustomerHasNationalId(company);
+    }
+
+    const code = data.code || (await orderRepo.nextOrderCode(client));
+
+    await orderRepo.insert({
       id,
       code,
-      data.companyId || null,
-      data.title || null,
-      data.stageId,
-      data.status,
-      JSON.stringify(data.payload || {}),
+      companyId: data.companyId,
+      title: data.title,
+      stageId: data.stageId,
+      status: data.status,
+      payload: createPayload,
       actorUserId,
-    ],
-  );
+    }, client);
 
-  await writeAudit({
-    actorUserId,
-    action: 'order.create',
-    entityType: 'order',
-    entityId: id,
-    detail: { code },
+    await writeAudit({
+      actorUserId,
+      action: 'order.create',
+      entityType: 'order',
+      entityId: id,
+      detail: { code, stageId: data.stageId, status: data.status },
+    }, client);
   });
+
+  if (data.companyId) {
+    try {
+      await recomputeCustomerLifecycle(data.companyId, {
+        actorUserId,
+        trigger: 'order_create',
+      });
+    } catch {
+      /* lifecycle must not fail order create after persist */
+    }
+  }
 
   return getOrder(id);
 }
 
 export async function updateOrder(id, body, actorUserId) {
-  const current = await query(`SELECT * FROM orders WHERE id = $1 OR code = $1`, [id]);
-  const row = current.rows[0];
+  assertOrderPartyIsCompany(body);
+
+  const row = await orderRepo.findRawActive(id);
   if (!row) {
-    const err = new Error('سفارش یافت نشد.');
-    err.status = 404;
-    err.code = 'NOT_FOUND';
-    throw err;
+    throw notFoundError('سفارش یافت نشد.');
   }
 
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    const err = new Error('داده‌های سفارش نامعتبر است.');
-    err.status = 400;
-    err.code = 'VALIDATION';
-    err.details = parsed.error.flatten();
-    throw err;
+    throw fromZodError(parsed, 'داده‌های سفارش نامعتبر است.');
   }
 
   const data = parsed.data;
-  if (data.version != null && data.version !== row.version) {
-    const err = new Error('نسخه سفارش تغییر کرده است. دوباره بارگذاری کنید.');
-    err.status = 409;
-    err.code = 'VERSION_CONFLICT';
-    throw err;
+  if (data.version !== row.version) {
+    throw conflictError('نسخه سفارش تغییر کرده است. دوباره بارگذاری کنید.', {
+      expected: row.version,
+      received: data.version,
+    });
   }
 
-  await query(
-    `UPDATE orders SET
-      company_id = COALESCE($2, company_id),
-      title = COALESCE($3, title),
-      stage_id = COALESCE($4, stage_id),
-      status = COALESCE($5, status),
-      payload = COALESCE($6::jsonb, payload),
-      version = version + 1,
-      updated_by = $7,
-      updated_at = NOW()
-     WHERE id = $1`,
-    [
-      row.id,
-      data.companyId === undefined ? null : data.companyId,
-      data.title === undefined ? null : data.title,
-      data.stageId ?? null,
-      data.status ?? null,
-      data.payload ? JSON.stringify(data.payload) : null,
-      actorUserId,
-    ],
-  );
-
-  await writeAudit({
-    actorUserId,
-    action: 'order.update',
-    entityType: 'order',
-    entityId: row.id,
-    detail: { stageId: data.stageId, status: data.status },
+  // Lifecycle rules BEFORE versioned write (no PATCH backdoor)
+  const lifecycle = assertOrderLifecycleUpdate(row, {
+    stageId: data.stageId,
+    status: data.status,
+    payload: data.payload,
   });
 
-  return getOrder(row.id);
+  // Always apply lifecycle stage/status/closure payload (DDL-18B).
+  const writeData = { ...data };
+  writeData.stageId = lifecycle.stageId;
+  writeData.status = lifecycle.status;
+  if (lifecycle.payload) {
+    writeData.payload = lifecycle.payload;
+  }
+
+  if (writeData.payload) {
+    writeData.payload = assertOrderTaxPolicy(writeData.payload).payload;
+  }
+
+  const previousStatus = String(row.status || '').toLowerCase();
+  const nextStatus = String(lifecycle.status || writeData.status || '').toLowerCase();
+  const becameSuccess = previousStatus !== ORDER_STATUS.SUCCESS
+    && nextStatus === ORDER_STATUS.SUCCESS;
+
+  await withTransaction(async (client) => {
+    if (writeData.companyId) {
+      const company = await companyRepo.findById(writeData.companyId, {}, client);
+      if (!company) {
+        throw validationError('شرکت سفارش یافت نشد.', { companyId: ['INVALID'] });
+      }
+      assertCompanyAllowedForOrder(company);
+      assertLegalCustomerHasNationalId(company);
+    }
+
+    const affected = await orderRepo.update(row.id, writeData, actorUserId, data.version, client);
+    if (affected === 0) {
+      throw conflictError('نسخه سفارش تغییر کرده است. دوباره بارگذاری کنید.', {
+        expected: data.version,
+      });
+    }
+
+    await writeAudit({
+      actorUserId,
+      action: 'order.update',
+      entityType: 'order',
+      entityId: row.id,
+      detail: {
+        stageId: writeData.stageId,
+        status: writeData.status,
+        versionFrom: data.version,
+        versionTo: data.version + 1,
+      },
+    }, client);
+
+    for (const audit of lifecycle.audits) {
+      await writeAudit({
+        actorUserId,
+        action: audit.action,
+        entityType: 'order',
+        entityId: row.id,
+        detail: {
+          orderId: row.id,
+          from: audit.from,
+          to: audit.to,
+          actorId: actorUserId,
+          version: data.version + 1,
+        },
+      }, client);
+    }
+  });
+
+  const updated = await getOrder(row.id);
+  const companyId = updated?.companyId || row.company_id;
+  // Successful Purchase Event = becoming SUCCESS (DDL-18B; CLOSED does not re-count)
+  if (companyId && becameSuccess) {
+    try {
+      await recomputeCustomerLifecycle(companyId, {
+        actorUserId,
+        trigger: 'order_successful_purchase',
+      });
+    } catch {
+      /* lifecycle must not fail order update after persist */
+    }
+  }
+
+  return updated;
+}
+
+/** Soft-delete (archive) */
+export async function archiveOrder(id, actorUserId) {
+  const row = await orderRepo.findRawActive(id);
+  if (!row) {
+    throw notFoundError('سفارش یافت نشد.');
+  }
+
+  assertOrderArchiveAllowed(row);
+
+  await withTransaction(async (client) => {
+    await orderRepo.softDelete(row.id, actorUserId, client);
+    await writeAudit({
+      actorUserId,
+      action: 'order.archive',
+      entityType: 'order',
+      entityId: row.id,
+      detail: {
+        orderId: row.id,
+        stageId: row.stage_id,
+        status: row.status,
+        actorId: actorUserId,
+        version: row.version,
+      },
+    }, client);
+  });
+
+  return { id: row.id, archived: true };
 }

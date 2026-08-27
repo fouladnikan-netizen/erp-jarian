@@ -128,25 +128,39 @@ export function createCampaignExecutor(
       };
     }
 
-    const result = normalizeExecutionResult({
-      executionIntentId: intent.id,
-      campaignId: intent.campaignId,
-      actionType,
-      status: outcome?.status || EXECUTION_RESULT_STATUS.FAILED,
-      referenceId: outcome?.referenceId || null,
-      error: outcome?.error || null,
-      payload: outcome?.payload || null,
-    });
+    const finalize = (resolvedOutcome) => {
+      const result = normalizeExecutionResult({
+        executionIntentId: intent.id,
+        campaignId: intent.campaignId,
+        actionType,
+        status: resolvedOutcome?.status || EXECUTION_RESULT_STATUS.FAILED,
+        referenceId: resolvedOutcome?.referenceId || null,
+        error: resolvedOutcome?.error || null,
+        payload: resolvedOutcome?.payload || null,
+      });
 
-    const saved = results.save(result);
-    markConsumed(intent);
+      const saved = results.save(result);
+      markConsumed(intent);
 
-    return {
-      ok: Boolean(outcome?.ok) && saved?.status === EXECUTION_RESULT_STATUS.SUCCESS,
-      result: saved,
-      taskCreationIntent: outcome?.payload?.taskCreationIntent || null,
-      error: saved?.error || undefined,
+      return {
+        ok: Boolean(resolvedOutcome?.ok) && saved?.status === EXECUTION_RESULT_STATUS.SUCCESS,
+        result: saved,
+        taskCreationIntent: resolvedOutcome?.payload?.taskCreationIntent || null,
+        error: saved?.error || undefined,
+      };
     };
+
+    if (outcome && typeof outcome.then === 'function') {
+      return outcome.then(finalize).catch((err) => finalize({
+        ok: false,
+        status: EXECUTION_RESULT_STATUS.FAILED,
+        referenceId: null,
+        error: err?.message || 'خطای داخلی Executor.',
+        payload: null,
+      }));
+    }
+
+    return finalize(outcome);
   }
 
   function markConsumed(intent) {

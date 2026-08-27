@@ -83,7 +83,7 @@ export default function CampaignDetailPage() {
       purpose: campaign.purpose,
       campaignType: campaign.campaignType,
       executionChannelId: campaign.executionChannelId,
-      triggerRuleId: campaign.triggerRule?.id,
+      triggerRule: campaign.triggerRule || null,
       kpiMetricKey: campaign.kpiDefinition?.metricKey,
       surveyFormId: campaign.surveyFormId,
       audienceSegmentId: campaign.audienceSegmentId || null,

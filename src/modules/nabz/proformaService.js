@@ -4,7 +4,7 @@ import { calculateQuotingPreview, resolveOrderIsOfficial } from './quotingServic
 import { getTodayJalali, getNowTimeFa, toPersianDigits } from './dateUtils';
 import { formatAmountRialWords } from './numberToPersianWords';
 import { DEFAULT_PROFORMA_TERMS } from './proformaConfig';
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { ORDER_TABS, STAGE_KAVOSH_ID, getStageLabel } from './config';
 import { getEffectiveStageId } from './orderStageService';
 import { applyRevisionReturn } from './services/revisionService';
@@ -221,7 +221,7 @@ export function issueProforma(order, options = {}) {
     documentNumber,
     contentHash: fingerprint,
     issuedAt,
-    issuedBy: CURRENT_USER,
+    issuedBy: getCurrentUser(),
     viewModel,
     terms,
     termsCustom,
@@ -262,7 +262,7 @@ export function issueProforma(order, options = {}) {
         id: proformaEventIdCounter++,
         type: forceRevision ? 'proforma_updated' : 'proforma_issued',
         at: issuedAt,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: revision <= 1
           ? `صدور پیش‌فاکتور ${documentNumber}`
           : `به‌روزرسانی پیش‌فاکتور — نسخه ${documentNumber}`,
@@ -324,7 +324,7 @@ export function updateProforma(order) {
         id: proformaEventIdCounter++,
         type: 'proforma_update_reset_to_kavosh',
         at,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `به‌روزرسانی پیش‌فاکتور — بازگشت به «${getStageLabel(STAGE_KAVOSH_ID)}» برای استعلام مجدد`,
         revision: result.order.proforma?.revision,
       },

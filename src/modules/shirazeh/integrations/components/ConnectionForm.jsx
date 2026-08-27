@@ -32,6 +32,10 @@ export default function ConnectionForm({ integration }) {
 
   return (
     <form className="shirazeh-conn-form" onSubmit={handleSave}>
+      {integration.backendOnly && integration.configHint ? (
+        <p className="shirazeh-conn-form__hint font-meem">{integration.configHint}</p>
+      ) : null}
+
       {integration.fields.map((field) => {
         const value = draft[field.key] ?? '';
         const isSecret = field.type === 'secret';
@@ -84,15 +88,17 @@ export default function ConnectionForm({ integration }) {
       })}
 
       <div className="shirazeh-conn-form__actions">
-        <button
-          type="submit"
-          className="shirazeh-btn shirazeh-btn--ghost font-meem"
-          disabled={saving}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <Save size={15} strokeWidth={1.75} aria-hidden="true" />
-          {saving ? 'در حال ذخیره…' : 'ذخیره اعتبارنامه'}
-        </button>
+        {!integration.backendOnly ? (
+          <button
+            type="submit"
+            className="shirazeh-btn shirazeh-btn--ghost font-meem"
+            disabled={saving}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Save size={15} strokeWidth={1.75} aria-hidden="true" />
+            {saving ? 'در حال ذخیره…' : 'ذخیره اعتبارنامه'}
+          </button>
+        ) : null}
       </div>
     </form>
   );

@@ -3,6 +3,12 @@ import { DEFAULT_SALE_TYPE, SALES_TYPES } from '../constants';
 import { parseMoneyInput } from '../orderCode';
 import { canEditProfitMargin } from '../orderEditPermissions';
 import { multiplyMoney, roundMoney } from '../../../shared/utils/money';
+import {
+  CANONICAL_VAT_RATE,
+  deriveFormalSellingDisplay,
+  splitInclusiveUnitPrice,
+  buildQuotationTaxSnapshot,
+} from '../../../domain/order/taxPolicy.js';
 
 function parseNumber(value) {
   if (value === '' || value == null) return null;
@@ -92,8 +98,10 @@ export function resolveOrderIsOfficial(order) {
   return isOfficialSaleType(order?.saleType || DEFAULT_SALE_TYPE);
 }
 
-const VAT_MULTIPLIER = 1.1;
-const VAT_RATE = 0.1;
+const VAT_MULTIPLIER = 1 + CANONICAL_VAT_RATE;
+/** Official Iran VAT rate for formal sales (SSOT — do not duplicate as 0.09 elsewhere). */
+export const OFFICIAL_VAT_RATE = CANONICAL_VAT_RATE;
+const VAT_RATE = OFFICIAL_VAT_RATE;
 
 export function getOrderQuoting(order) {
   return { ...getDefaultQuoting(), ...(order.quoting || {}) };
@@ -175,42 +183,65 @@ function computeRowUnitProfit(quoting, index, quotePrice) {
   return 0;
 }
 
-/** محاسبه سطح سطر طبق شبه‌کد رسمی/غیررسمی */
-function calculateRowPricing({ quotePrice, profit, qty, saleType }) {
-  const qPrice = toNumber(quotePrice);
+/**
+ * Two real prices only:
+ *   purchasePrice = quote/cost (VAT-inclusive commercial)
+ *   sellingPrice  = purchasePrice + profit (VAT-inclusive commercial)
+ * Formal/Informal does not change those — only selling display:
+ *   Informal display = sellingPrice
+ *   Formal display   = round(sellingPrice / 1.1)  (derived, not SoR)
+ */
+function calculateRowPricing({ quotePrice, profit, qty, isOfficial }) {
+  const purchasePrice = toNumber(quotePrice);
   const unitProfit = toNumber(profit);
   const q = toNumber(qty);
-
-  // BasePrice (قبل از مالیات): مبنای Visual Math برای هر دو حالت نمایش
-  const rawBasePrice = isOfficialSaleType(saleType)
-    ? (qPrice + unitProfit) / VAT_MULTIPLIER
-    : qPrice + unitProfit;
-  const basePrice = Math.round(rawBasePrice);
+  const sellingPrice = purchasePrice + unitProfit;
+  const split = deriveFormalSellingDisplay({
+    sellingPrice,
+    qty: q,
+    vatRate: VAT_RATE,
+  });
+  const displaySellingUnitPrice = isOfficial
+    ? (split.ok ? split.displaySellingUnitPrice : roundRial(sellingPrice / VAT_MULTIPLIER))
+    : sellingPrice;
+  const economicLine = split.ok ? split.economicLine : roundRial(q * sellingPrice);
+  const lineExVat = isOfficial
+    ? (split.ok ? split.lineExVat : roundRial(q * displaySellingUnitPrice))
+    : economicLine;
+  const vatAmount = isOfficial ? (economicLine - lineExVat) : 0;
 
   return {
-    basePrice,
-    lineProfitRial: Math.round(unitProfit * q),
+    purchasePrice,
+    sellingPrice,
+    /** @deprecated alias — same as sellingPrice */
+    sellingPriceInclVat: sellingPrice,
+    displaySellingUnitPrice,
+    basePrice: displaySellingUnitPrice,
+    unitExVat: displaySellingUnitPrice,
+    unitInclVat: sellingPrice,
+    lineExVat,
+    lineVatAmount: vatAmount,
+    economicLine,
+    lineProfitRial: roundRial(unitProfit * q),
     unitMarginRial: unitProfit,
   };
 }
 
 /**
- * Visual Math — جمع آنچه در جدول دیده می‌شود باید دقیقاً با جمع کل یکی باشد.
- *
- * Inclusive (روشن): unit = round(base×1.1)، row = round(qty×unit)، grand = Σ rows
- * Exclusive (خاموش): unit = round(base)، row = round(qty×unit)،
- *   subtotal = Σ rows، tax = round(subtotal×0.1)، grand = subtotal + tax
+ * Visual Math — grand total equals economic VAT-inclusive commercial total.
+ * Formal exclusive display: Σ unitEx × qty + VAT = economic (never economic + 10%).
+ * Informal: Σ unitIncl × qty = economic; VAT = 0.
  */
 export function calculateQuotingPreview(order, options = {}) {
   const quoting = getOrderQuoting(order);
   const items = order.items || [];
   const saleType = order.saleType || DEFAULT_SALE_TYPE;
   const isOfficial = resolveOrderIsOfficial(order);
-  // Official exclusive mode only; unofficial always rolls 10% VAT into unit price.
+  // Legacy flag: exclusive display is the formal default; inclusive roll is informal only.
   const vatInclusive = options.forceVatExclusive
     ? false
-    : Boolean(quoting.vatInclusive) && isOfficial;
-  const rollVatIntoUnit = !isOfficial || vatInclusive;
+    : (!isOfficial || Boolean(quoting.vatInclusive));
+  const showVatBreakdown = isOfficial && !options.forceVatInclusiveDisplay;
 
   const lines = items.map((item, index) => {
     const target = getTargetInquiry(item);
@@ -221,20 +252,26 @@ export function calculateQuotingPreview(order, options = {}) {
       quotePrice,
       profit: unitProfit,
       qty,
-      saleType: isOfficial ? SALES_TYPES[0] : (saleType || 'غیر رسمی'),
+      isOfficial,
     });
 
-    const saleUnitPrice = rollVatIntoUnit
-      ? Math.round(pricing.basePrice * VAT_MULTIPLIER)
-      : pricing.basePrice;
-    const lineTotal = Math.round(qty * saleUnitPrice);
+    const saleUnitPrice = showVatBreakdown
+      ? pricing.displaySellingUnitPrice
+      : pricing.sellingPrice;
+    const lineTotal = showVatBreakdown
+      ? pricing.lineExVat
+      : pricing.economicLine;
 
     return {
       itemIndex: index,
       name: item.name,
       qty,
       targetUnitPrice: quotePrice,
-      baseTotal: Math.round(quotePrice * qty),
+      purchasePrice: pricing.purchasePrice,
+      sellingPrice: pricing.sellingPrice,
+      sellingPriceInclVat: pricing.sellingPrice,
+      displaySellingUnitPrice: pricing.displaySellingUnitPrice,
+      baseTotal: roundRial(quotePrice * qty),
       marginInputValue: getLineMarginInputValue(quoting, index, unitProfit),
       marginTotalRial: pricing.lineProfitRial,
       unitMarginRial: pricing.unitMarginRial,
@@ -242,16 +279,32 @@ export function calculateQuotingPreview(order, options = {}) {
       saleUnitPrice,
       lineSubtotal: lineTotal,
       lineTotal,
+      lineVatAmount: pricing.lineVatAmount,
+      economicLine: pricing.economicLine,
       hasTarget: Boolean(target),
+      supplyType: target?.supplyType || item.supplyType || null,
     };
   });
 
-  const subtotal = lines.reduce((sum, line) => sum + toNumber(line.lineTotal), 0);
+  const economicTotal = lines.reduce((sum, line) => sum + toNumber(line.economicLine), 0);
+  const subtotal = showVatBreakdown
+    ? lines.reduce((sum, line) => sum + toNumber(line.lineTotal), 0)
+    : economicTotal;
   const totalProfit = lines.reduce((sum, line) => sum + toNumber(line.lineProfitRial), 0);
-  const showVatBreakdown = isOfficial && !vatInclusive;
-  const vatAmount = showVatBreakdown ? Math.round(subtotal * VAT_RATE) : 0;
-  const orderTotal = subtotal + vatAmount;
+  const vatAmount = showVatBreakdown ? (economicTotal - subtotal) : 0;
+  const orderTotal = economicTotal;
   const baseTotal = lines.reduce((sum, line) => sum + toNumber(line.baseTotal), 0);
+
+  const taxSnap = buildQuotationTaxSnapshot({
+    saleType,
+    isOfficial,
+    lines: lines.map((l) => ({
+      sellingPriceInclVat: l.sellingPriceInclVat,
+      qty: l.qty,
+      supplyType: l.supplyType,
+    })),
+    vatRate: VAT_RATE,
+  });
 
   return {
     lines,
@@ -260,11 +313,14 @@ export function calculateQuotingPreview(order, options = {}) {
     totalProfit,
     vatAmount,
     orderTotal,
+    economicTotal,
     marginMode: quoting.marginMode,
     saleType,
     isOfficial,
     vatInclusive,
     showVatBreakdown,
+    quotingSnapshot: taxSnap.ok ? taxSnap.snapshot : null,
+    taxPolicyError: taxSnap.ok ? null : taxSnap,
   };
 }
 
@@ -292,8 +348,9 @@ export function applyQuotingToOrder(order) {
     totalProfitRial: preview.totalProfit > 0 ? roundRial(preview.totalProfit) : 0,
     vatAmountRial: preview.vatAmount > 0 ? roundRial(preview.vatAmount) : 0,
     subtotalAmountRial: preview.subtotal > 0 ? roundRial(preview.subtotal) : 0,
-    isPriced: preview.subtotal > 0,
+    isPriced: preview.subtotal > 0 || preview.economicTotal > 0,
     quoting: getOrderQuoting(order),
+    quotingSnapshot: preview.quotingSnapshot || order.quotingSnapshot || null,
   };
 }
 

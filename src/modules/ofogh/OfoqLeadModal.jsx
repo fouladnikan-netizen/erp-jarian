@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useContactsStore, LIFECYCLE_STAGES } from '../../stores/useContactsStore';
+import { useCompany, LIFECYCLE_STAGES } from '../kanoon/public/index.js';
 import { naturalPersonSelfId } from '../../domain/identity';
-import { useNabzOrders } from '../nabz/NabzOrdersContext';
+import { useCreateOrderDirect } from '../nabz/public/index.js';
 import { showSystemToast } from '../../utils/systemToast';
 import { mockAiRewrite } from '../../utils/aiRewrite';
 import { buildReturnQuery } from '../../components/navigation/SmartBackButton';
@@ -21,14 +21,21 @@ import {
   ROTTING_INACTIVITY_DAYS,
   getContactDisplayName,
   getContactTag,
+  getEngagementLabel,
   isCardRotting,
 } from './pipelineConfig';
 import { useCompanyCompletionGate } from '../../components/customerCompletion';
 import { isCompanyOperational } from '../../domain/customerCompletion';
 import {
+  fetchActivityTypes,
+  listActiveActivityTypes,
+  useActivityTypesVersion,
+} from '../../domain/activityTypes/activityTypesFacade.js';
+import {
   createCompanyInteraction,
   listCompanyInteractions,
 } from '../pooyesh/interactionFacade';
+import { ENGAGEMENT } from '../../domain/customerLifecycle/index.js';
 
 /** پیام پیش‌فرض پیگیری هوش مصنوعی برای فرصت‌های راکد (بات صیاد). */
 const AI_FOLLOWUP_DRAFT =
@@ -126,14 +133,27 @@ function SparklesIcon() {
   );
 }
 
-/** انواع فعالیت به سبک دیدار — پارامتر type در createCompanyInteraction می‌شود. */
-const ACTIVITY_TYPES = [
-  { id: 'call', label: 'تماس', Icon: PhoneIcon, placeholder: 'گزارش تماس… (نتیجه مکالمه، درخواست مشتری)' },
-  { id: 'message', label: 'پیام/ایمیل', Icon: MailIcon, placeholder: 'خلاصه پیام یا ایمیل… (موضوع، پاسخ مشتری)' },
-  { id: 'meeting', label: 'جلسه حضوری', Icon: MeetingIcon, placeholder: 'صورتجلسه… (حاضرین، توافق‌ها، اقدام بعدی)' },
-  { id: 'catalog', label: 'ارسال کاتالوگ', Icon: CatalogIcon, placeholder: 'جزئیات ارسال کاتالوگ… (نسخه، کانال ارسال، بازخورد)' },
-  { id: 'note', label: 'یادداشت داخلی', Icon: NoteIcon, placeholder: 'یادداشت داخلی… (نکته مهم، جمع‌بندی، هشدار)' },
-];
+/**
+ * Icon + placeholder are UI-only concerns keyed by the canonical registry key
+ * (Gap 1) — the type list itself comes from Shirazeh, not a local array.
+ */
+const ACTIVITY_TYPE_ICONS = {
+  call: PhoneIcon,
+  message: MailIcon,
+  meeting: MeetingIcon,
+  catalog: CatalogIcon,
+  note: NoteIcon,
+};
+
+const ACTIVITY_TYPE_PLACEHOLDERS = {
+  call: 'گزارش تماس… (نتیجه مکالمه، درخواست مشتری)',
+  message: 'خلاصه پیام یا ایمیل… (موضوع، پاسخ مشتری)',
+  meeting: 'صورتجلسه… (حاضرین، توافق‌ها، اقدام بعدی)',
+  catalog: 'جزئیات ارسال کاتالوگ… (نسخه، کانال ارسال، بازخورد)',
+  note: 'یادداشت داخلی… (نکته مهم، جمع‌بندی، هشدار)',
+};
+
+const DEFAULT_ACTIVITY_TYPE_PLACEHOLDER = 'شرح فعالیت…';
 
 function SystemIcon() {
   return (
@@ -289,6 +309,14 @@ function SidebarInfo({ contact }) {
 }
 
 function ActionForm({ contactId, draftSeed = null, ensureOperational }) {
+  const activityTypesVersion = useActivityTypesVersion();
+  useEffect(() => { fetchActivityTypes(); }, []);
+  const activityTypeOptions = useMemo(() => listActiveActivityTypes().map((t) => ({
+    id: t.key,
+    label: t.labelFa,
+    Icon: ACTIVITY_TYPE_ICONS[t.key] || NoteIcon,
+    placeholder: ACTIVITY_TYPE_PLACEHOLDERS[t.key] || DEFAULT_ACTIVITY_TYPE_PLACEHOLDER,
+  })), [activityTypesVersion]);
   const [activityType, setActivityType] = useState('call');
   const [note, setNote] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
@@ -307,7 +335,8 @@ function ActionForm({ contactId, draftSeed = null, ensureOperational }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftSeed?.key]);
 
-  const typeMeta = ACTIVITY_TYPES.find((item) => item.id === activityType);
+  const typeMeta = activityTypeOptions.find((item) => item.id === activityType)
+    || { placeholder: DEFAULT_ACTIVITY_TYPE_PLACEHOLDER };
 
   // اعتبارسنجی: متن الزامی + تاریخ پیگیری شمسی الزامی و حتماً در آینده
   const trimmedNote = note.trim();
@@ -323,7 +352,7 @@ function ActionForm({ contactId, draftSeed = null, ensureOperational }) {
       const { year, month, day } = parseJalaliDate(followUpDate);
       const g = jalaliToGregorian(year, month, day);
       const iso = new Date(g.year, g.month - 1, g.day, 9, 0, 0).toISOString();
-      createCompanyInteraction(contactId, {
+      void createCompanyInteraction(contactId, {
         note: trimmedNote,
         type: activityType,
         nextFollowUpDate: iso,
@@ -352,7 +381,7 @@ function ActionForm({ contactId, draftSeed = null, ensureOperational }) {
   return (
     <div className="ofoq-modal__action-box">
       <div className="ofoq-modal__action-tabs" role="tablist" aria-label="نوع فعالیت">
-        {ACTIVITY_TYPES.map(({ id, label, Icon }) => (
+        {activityTypeOptions.map(({ id, label, Icon }) => (
           <button
             key={id}
             type="button"
@@ -484,14 +513,11 @@ function RottingWarningBanner({ onAiFollowUp }) {
 
 /**
  * مودال مرکزی لید افق — گلس‌مورفیسم، چیدمان دو ستونه سبک دیدار/هاب‌اسپات.
- * Company identity via useContactsStore; soft interactions via Pooyesh interactionFacade (DDL-09).
+ * Company identity via Kanoon public facade; soft interactions via Pooyesh interactionFacade (DDL-09).
  */
 export default function OfoqLeadModal({ contactId, onClose }) {
-  const contact = useContactsStore(
-    (state) => state.contacts.find((item) => item.id === contactId) || null,
-  );
-  const updateContactStage = useContactsStore((state) => state.updateContactStage);
-  const { createOrderDirect } = useNabzOrders();
+  const contact = useCompany(contactId);
+  const createOrderDirect = useCreateOrderDirect();
   const navigate = useNavigate();
   const [converting, setConverting] = useState(false);
   const [draftSeed, setDraftSeed] = useState(null);
@@ -533,13 +559,12 @@ export default function OfoqLeadModal({ contactId, onClose }) {
       setConverting(true);
       try {
         await Promise.resolve(createOrderDirect(contact.id));
-        updateContactStage(contact.id, LIFECYCLE_STAGES.SALES_QUALIFIED);
-        createCompanyInteraction(contact.id, {
+        await createCompanyInteraction(contact.id, {
           note: 'سیستم: انتقال مستقیم به ثبت سفارش نهایی',
           type: 'system',
         });
         onClose();
-        showSystemToast('سرنخ با موفقیت به سفارش تبدیل شد');
+        showSystemToast('انتقال به ثبت سفارش');
         navigate('/nabz/new-order');
       } finally {
         setConverting(false);
@@ -576,6 +601,11 @@ export default function OfoqLeadModal({ contactId, onClose }) {
             <h2 id="ofoq-modal-title" className="ofoq-modal__name">{name}</h2>
             {tag ? <span className="ofoq-modal__company">{tag}</span> : null}
             <StageBadge stageId={contact.lifecycle_stage} />
+            {contact.engagementStatus && contact.engagementStatus !== ENGAGEMENT.NORMAL ? (
+              <span className={`ofoq-engagement-chip ofoq-engagement-chip--${contact.engagementStatus}`}>
+                {getEngagementLabel(contact.engagementStatus)}
+              </span>
+            ) : null}
           </div>
           <div className="ofoq-modal__head-actions">
             <button
@@ -608,8 +638,13 @@ export default function OfoqLeadModal({ contactId, onClose }) {
         </div>
 
         <footer className="ofoq-modal__foot">
-          <Link to={profileHref} className="ofoq-modal__deep-dive" onClick={onClose}>
-            مشاهده پرونده کامل مشتری
+          <Link
+            to={profileHref}
+            className="ofoq-modal__deep-dive"
+            data-testid="ofogh-open-kanoon-profile"
+            onClick={onClose}
+          >
+            مشاهده پرونده کامل در کانون
             <ExternalLinkIcon />
           </Link>
         </footer>

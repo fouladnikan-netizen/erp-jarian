@@ -253,6 +253,10 @@
   color: var(--color-accent-dark);
 }
 
+.kanoon-table__lifecycle-col {
+  text-align: center !important;
+}
+
 .kanoon-table__name-link {
   background: none;
   border: none;
@@ -536,6 +540,13 @@
 .kanoon-form__error {
   font-size: 0.8rem;
   color: var(--color-brand-red);
+}
+
+.kanoon-form__hint {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
 }
 
 /* Profile drawer — left-only; motion from global overlays.css */

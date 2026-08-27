@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getCustomerById } from './customers';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { getDeliveryRecipientForShipping } from './deliveryInfoService';
@@ -176,7 +176,7 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
     carrierId,
     voucherNumber: viewModel.voucherNumber,
     issuedAt: at,
-    issuedBy: CURRENT_USER,
+    issuedBy: getCurrentUser(),
     selectedRowKeys: keys,
     itemCount: viewModel.items.length,
   };
@@ -195,7 +195,7 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
           id: Date.now(),
           type: 'shipping_voucher_issued',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `صدور سفارش ارسال ${viewModel.voucherNumber} — ${carrier.name} (${viewModel.items.length} قلم)`,
         },
       ],

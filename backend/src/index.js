@@ -3,46 +3,74 @@ import cors from 'cors';
 import { config } from './config.js';
 import { pool } from './db/pool.js';
 import { errorHandler, notFound } from './middleware/errors.js';
+import { requestContext } from './middleware/requestContext.js';
 import authRoutes from './routes/auth.js';
 import companyRoutes from './routes/companies.js';
 import orderRoutes from './routes/orders.js';
+import leadRoutes from './routes/leads.js';
+import leadPipelineRoutes from './routes/leadPipelines.js';
+import activityRoutes from './routes/activities.js';
+import activityTypeRoutes from './routes/activityTypes.js';
+import taskRoutes from './routes/tasks.js';
+import integrationRoutes from './routes/integrations.js';
 
 // Keep existing AI rewrite endpoint (Liara) without duplication.
 import aiRoutes from '../../src/server/api/aiRoutes.js';
 
-const app = express();
+export function createApp() {
+  const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '1mb' }));
+  app.use(cors({ origin: true, credentials: true }));
+  app.use(express.json({ limit: '1mb' }));
+  app.use(requestContext);
 
-app.get('/api/health', async (_req, res) => {
-  let db = 'down';
-  try {
-    await pool.query('SELECT 1');
-    db = 'up';
-  } catch {
-    db = 'down';
-  }
-  res.json({
-    ok: db === 'up',
-    service: 'jarian-api',
-    version: '0.1.0',
-    db,
-    time: new Date().toISOString(),
+  app.get('/api/health', async (_req, res) => {
+    let db = 'down';
+    try {
+      await pool.query('SELECT 1');
+      db = 'up';
+    } catch {
+      db = 'down';
+    }
+    res.json({
+      ok: db === 'up',
+      service: 'jarian-api',
+      version: '0.1.0',
+      db,
+      time: new Date().toISOString(),
+    });
   });
-});
 
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/companies', companyRoutes);
-app.use('/api/v1/orders', orderRoutes);
-app.use('/api/ai', aiRoutes);
+  app.use('/api/v1/auth', authRoutes);
+  app.use('/api/v1/companies', companyRoutes);
+  app.use('/api/v1/orders', orderRoutes);
+  app.use('/api/v1/leads', leadRoutes);
+  app.use('/api/v1/lead-pipelines', leadPipelineRoutes);
+  app.use('/api/v1/activities', activityRoutes);
+  app.use('/api/v1/activity-types', activityTypeRoutes);
+  app.use('/api/v1/tasks', taskRoutes);
+  app.use('/api/v1/integrations', integrationRoutes);
+  app.use('/api/ai', aiRoutes);
 
-app.use(notFound);
-app.use(errorHandler);
+  app.use(notFound);
+  app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`[jarian-api] listening on http://localhost:${config.port}`);
-  console.log(`[jarian-api] auth: POST /api/v1/auth/login`);
-  console.log(`[jarian-api] companies: /api/v1/companies`);
-  console.log(`[jarian-api] orders: /api/v1/orders`);
-});
+  return app;
+}
+
+export const app = createApp();
+
+if (process.env.JARIAN_SKIP_LISTEN !== '1') {
+  app.listen(config.port, () => {
+    console.log(`[jarian-api] listening on http://localhost:${config.port}`);
+    console.log(`[jarian-api] auth: POST /api/v1/auth/login`);
+    console.log(`[jarian-api] companies: /api/v1/companies`);
+    console.log(`[jarian-api] orders: /api/v1/orders`);
+    console.log(`[jarian-api] leads: /api/v1/leads`);
+    console.log(`[jarian-api] lead-pipelines: /api/v1/lead-pipelines`);
+    console.log(`[jarian-api] activities: /api/v1/activities`);
+    console.log(`[jarian-api] activity-types: /api/v1/activity-types`);
+    console.log(`[jarian-api] tasks: /api/v1/tasks`);
+    console.log(`[jarian-api] integrations: /api/v1/integrations`);
+  });
+}

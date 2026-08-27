@@ -7,7 +7,7 @@ import {
   IRAN_PROVINCES,
   PERSON_TYPES,
 } from '../../kanoon/config';
-import { CURRENT_USER } from '../constants';
+import { getCurrentUser } from '../constants';
 import { addCustomerRecord } from '../customers';
 
 function Field({ label, required, children }) {
@@ -55,7 +55,7 @@ export default function QuickAddCustomerModal({ onClose, onAdded }) {
       province: form.province || undefined,
       activityDomain: form.activityDomain,
       behavioralStatus: DEFAULT_CUSTOMER_STATUS,
-      assignee: { name: CURRENT_USER, role: ASSIGNEE_ROLES.customer },
+      assignee: { name: getCurrentUser(), role: ASSIGNEE_ROLES.customer },
       relatedPersons: [],
       interactions: [],
       relatedOrders: [],

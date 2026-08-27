@@ -4,6 +4,8 @@ export const ORDER_TABS = {
   CURRENT: 'current',
   SUCCESS: 'success',
   FAILED: 'failed',
+  /** Display-only view key (SUCCESS+CLOSED) — not an orders.status value */
+  CLOSED: 'closed',
 };
 
 export const VIEW_MODES = {
@@ -31,6 +33,7 @@ export const ORDER_TAB_META = {
   [ORDER_TABS.CURRENT]: { label: 'جاری', listTitle: 'فهرست سفارشات جاری' },
   [ORDER_TABS.SUCCESS]: { label: 'موفق', listTitle: 'فهرست سفارشات موفق' },
   [ORDER_TABS.FAILED]: { label: 'ناموفق', listTitle: 'فهرست سفارشات ناموفق' },
+  [ORDER_TABS.CLOSED]: { label: 'بسته‌شده', listTitle: 'فهرست سفارشات بسته‌شده' },
 };
 
 export function getStageLabel(stageId) {
@@ -38,8 +41,9 @@ export function getStageLabel(stageId) {
 }
 
 export function getKanbanStages(tab) {
-  if (tab === ORDER_TABS.SUCCESS) return PHASE2_STAGES;
+  // DDL-18(B): CURRENT = Phase-1 only; SUCCESS+OPEN = Phase-2; CLOSED/FAILED = list
   if (tab === ORDER_TABS.CURRENT) return PHASE1_STAGES;
+  if (tab === ORDER_TABS.SUCCESS) return PHASE2_STAGES;
   return [];
 }
 

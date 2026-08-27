@@ -45,12 +45,16 @@ export interface PreInvoice {
 export interface Order {
   id: string;
   customerId: string;
+  companyId?: string | null;
+  title?: string | null;
+  /** Optimistic concurrency token from API (Postgres orders.version). */
+  version?: number;
   /** Core lifecycle only — not used for revision loops. */
   status: OrderStatus;
   items: OrderItem[];
   createdAt: string;
   code?: string;
-  stageId?: number;
+  stageId?: number | string;
   financialSummary?: FinancialSummary;
   preInvoice?: PreInvoice;
   /** True when order was returned and needs rework at current stage. */

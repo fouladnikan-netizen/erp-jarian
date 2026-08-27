@@ -12,6 +12,8 @@ export function NabzOrdersProvider({ children }) {
 export function useNabzOrders() {
   const orders = useNabzStore((s) => s.orders);
   const setOrders = useNabzStore((s) => s.setOrders);
+  const commitOrders = useNabzStore((s) => s.commitOrders);
+  const saveOrder = useNabzStore((s) => s.saveOrder);
   const orderDraft = useNabzStore((s) => s.orderDraft);
   const createOrderDirect = useNabzStore((s) => s.createOrderDirect);
   const clearOrderDraft = useNabzStore((s) => s.clearOrderDraft);
@@ -19,6 +21,8 @@ export function useNabzOrders() {
   return {
     orders,
     setOrders,
+    commitOrders,
+    saveOrder,
     orderDraft,
     createOrderDirect,
     clearOrderDraft,

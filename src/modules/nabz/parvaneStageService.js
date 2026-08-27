@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { ORDER_TABS, STAGE_PARVANE_ID, STAGE_PISHKESH_ID } from './config';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { getCustomerPreview } from './customers';
@@ -7,13 +7,13 @@ import { getOrderFinanceRecords } from './operationalRecordsService';
 import { formatAmountRial } from './orderCode';
 import { getEffectiveStageId } from './orderStageService';
 import { OPERATIONAL_PHASES } from './phase2Config';
-import { advanceOperationalPhase, getOrderOperationalPhase } from './phase2Service';
+import { advanceOperationalPhase, getOrderOperationalPhase, shouldShowOperationalPhases } from './phase2Service';
 import { getTargetInquiry } from './quotingService';
 import { applyRevisionReturn } from './services/revisionService';
 import { getSupplierName } from './suppliers';
 
 export function isParvaneStageLive(order, operationalViewPhase) {
-  return order.status === ORDER_TABS.SUCCESS
+  return shouldShowOperationalPhases(order)
     && order.stageId === STAGE_PARVANE_ID
     && getOrderOperationalPhase(order) === OPERATIONAL_PHASES.PARVANE
     && operationalViewPhase === OPERATIONAL_PHASES.PARVANE;
@@ -87,7 +87,7 @@ export function issueParvaneSupplyPermit(order, driverNotes = '') {
         id: Date.now(),
         type: 'parvane_issued',
         at: `${getTodayJalali()} · ${getNowTimeFa()}`,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: trimmed
           ? `تأیید و صدور دستور خرید — ${trimmed}`
           : 'تأیید و صدور دستور خرید — ارجاع به تدارک',
@@ -105,6 +105,8 @@ export function returnParvaneToPishkesh(order, driverNotes = '') {
     ...order,
     status: ORDER_TABS.CURRENT,
     stageId: STAGE_PISHKESH_ID,
+    phase2EnteredAt: null,
+    gatewayDecision: null,
     parvaneRejectionNotes: trimmed,
     events: [
       ...(order.events || []),
@@ -112,7 +114,7 @@ export function returnParvaneToPishkesh(order, driverNotes = '') {
         id: Date.now() + 1,
         type: 'parvane_returned',
         at,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: trimmed
           ? `عودت از ماشه تأمین به پیش‌کش — ${trimmed}`
           : 'عدم تایید ماشه تأمین — عودت به پیش‌کش',

@@ -6,6 +6,7 @@ import {
   CreditCard,
   Truck,
   FileText,
+  CheckSquare,
   AlertCircle,
   Inbox,
   ExternalLink,
@@ -16,6 +17,8 @@ import { useContactsStore } from '../../stores/useContactsStore';
 import { getTodayJalaliParts, toPersianDigits } from '../../modules/nabz/dateUtils';
 import { withReturnParams } from '../navigation/SmartBackButton';
 import { useCompanyCompletionGate } from '../customerCompletion';
+import { useTasksVersion } from '../../modules/pooyesh/public/index.js';
+import { fetchPooyeshTasks, listPooyeshTasks } from '../../modules/pooyesh/taskFacade.js';
 import {
   COMMITMENT_TYPES,
   TYPE_ORDER,
@@ -36,6 +39,7 @@ const ICON_STROKE = 1.75;
 
 const TYPE_ICONS = {
   followup: Phone,
+  task: CheckSquare,
   finance: CreditCard,
   logistics: Truck,
   contract: FileText,
@@ -200,8 +204,19 @@ export default function CommitmentEngine() {
   const [activeTypes, setActiveTypes] = useState(() => new Set(TYPE_ORDER));
   const [selected, setSelected] = useState(null);
   const { ensureOperational, gateDialog } = useCompanyCompletionGate();
+  const tasksVersion = useTasksVersion();
 
-  const allItems = useMemo(() => buildCommitments(contacts, today), [contacts, today]);
+  useEffect(() => {
+    void fetchPooyeshTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once on mount, cache updates via tasksVersion
+  }, []);
+
+  const tasks = useMemo(() => listPooyeshTasks(), [tasksVersion]);
+
+  const allItems = useMemo(
+    () => buildCommitments(contacts, today, tasks),
+    [contacts, today, tasks],
+  );
   const metrics = useMemo(() => buildTodayMetrics(allItems, today), [allItems, today]);
 
   const visibleItems = useMemo(

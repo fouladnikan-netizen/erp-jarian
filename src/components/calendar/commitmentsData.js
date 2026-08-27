@@ -14,12 +14,13 @@ import { listCompanyInteractions } from '../../modules/pooyesh/interactionFacade
  */
 export const COMMITMENT_TYPES = {
   followup: { id: 'followup', label: 'پیگیری‌ها', source: 'افق' },
+  task: { id: 'task', label: 'وظایف', source: 'پویش' },
   finance: { id: 'finance', label: 'تسویه‌ها', source: 'مالی' },
   logistics: { id: 'logistics', label: 'بارگیری', source: 'رهسپار' },
   contract: { id: 'contract', label: 'قراردادها', source: 'میثاق' },
 };
 
-export const TYPE_ORDER = ['followup', 'finance', 'logistics', 'contract'];
+export const TYPE_ORDER = ['followup', 'task', 'finance', 'logistics', 'contract'];
 
 export const PRIORITY_META = {
   high: { label: 'فوری', className: 'is-high' },
@@ -78,177 +79,62 @@ function isoToJalaliParts(iso) {
 }
 
 /**
- * تعهدات شبیه‌سازی‌شده — تا اتصال سرویس تسویه نبض، برنامه بارگیری رهسپار و
- * میثاق، دموی موتور تعهدات را زنده نگه می‌دارند. آفست‌ها نسبت به امروزند و
- * همه به پرونده‌های واقعی seed لینک می‌شوند.
+ * تعهدات مالی/لجستیک/قرارداد هنوز به پروجکشن واقعی نبض/رهسپار/میثاق متصل
+ * نشده‌اند (P1 GAP — گزارش QA پویش). طبق قانون طلایی هیچ دادهٔ فیک نمایش
+ * داده نمی‌شود؛ تا اتصال آن سرویس‌ها، این دسته‌ها خالی نمایش داده می‌شوند.
  */
-const MOCK_COMMITMENTS = [
-  /* — معوق — */
-  {
-    id: 'fin-overdue-1', type: 'finance', offset: -3, time: '۱۰:۰۰', priority: 'high',
-    title: 'تسویه فاکتور PF-2581', target: 'صنایع فلزی کرمان',
-    owner: { name: 'نرگس عالی', role: 'صراف' },
-    link: '/nabz/order/JR050111002',
-    details: [
-      { label: 'مبلغ', value: '۲٬۱۲۰٬۰۰۰٬۰۰۰ ریال' },
-      { label: 'روش پرداخت', value: 'چک ۳۰ روزه' },
-      { label: 'کد سند', value: 'PF-2581' },
-    ],
-    note: 'سه روز از سررسید گذشته — پیگیری تلفنی با واحد مالی مشتری انجام شود.',
-  },
-  {
-    id: 'log-overdue-1', type: 'logistics', offset: -1, time: '۰۸:۳۰', priority: 'high',
-    title: 'ارسال صورت‌بار معوق', target: 'بازرگانی آذر',
-    owner: { name: 'رضا نوری', role: 'سفیر' },
-    link: '/nabz/order/JR050105008',
-    details: [
-      { label: 'انبار', value: 'انبار تهران' },
-      { label: 'اقلام', value: 'پروفیل Z — ۱ تن' },
-    ],
-    note: 'راننده اعلام آمادگی کرده؛ منتظر تأیید نهایی بازرس.',
-  },
 
-  /* — امروز — */
-  {
-    id: 'meet-1', type: 'followup', subtype: 'meeting', offset: 0, time: '۱۱:۰۰', priority: 'high',
-    title: 'جلسه حضوری بررسی قرارداد تأمین', target: 'فولاد پارس',
-    owner: { name: 'علی رضایی', role: 'شوالیه' },
-    link: '/kanoon/contact/1',
-    details: [
-      { label: 'محل', value: 'دفتر مرکزی مشتری' },
-      { label: 'موضوع', value: 'شرایط تأمین سه‌ماهه پاییز' },
-    ],
-  },
-  {
-    id: 'meet-2', type: 'followup', subtype: 'meeting', offset: 0, time: '۱۴:۳۰', priority: 'normal',
-    title: 'دمو کاتالوگ محصولات جدید', target: 'صنایع فلزی کرمان',
-    owner: { name: 'حسین کریمی', role: 'شوالیه' },
-    link: '/kanoon/contact/2',
-    details: [
-      { label: 'محل', value: 'جلسه آنلاین' },
-      { label: 'موضوع', value: 'مقاطع جدید ویترین' },
-    ],
-  },
-  {
-    id: 'meet-3', type: 'followup', subtype: 'meeting', offset: 0, time: '۱۶:۰۰', priority: 'normal',
-    title: 'هماهنگی برنامه حمل هفته آینده', target: 'ذوب آهن اصفهان',
-    owner: { name: 'فاطمه رحیمی', role: 'کاشف' },
-    link: '/kanoon/contact/5',
-    details: [
-      { label: 'محل', value: 'تماس تصویری' },
-      { label: 'موضوع', value: 'زمان‌بندی بارگیری ورق گالوانیزه' },
-    ],
-  },
-  {
-    id: 'fin-today-1', type: 'finance', offset: 0, time: '۱۲:۰۰', priority: 'high',
-    title: 'وصول مطالبات پیش‌فاکتور', target: 'صنایع فلزی کرمان',
-    owner: { name: 'نرگس عالی', role: 'صراف' },
-    link: '/nabz/order/JR050111002',
-    details: [
-      { label: 'مبلغ', value: '۲٬۱۲۰٬۰۰۰٬۰۰۰ ریال' },
-      { label: 'وضعیت', value: 'در انتظار واریز' },
-    ],
-  },
-  {
-    id: 'fin-today-2', type: 'finance', offset: 0, time: '۱۵:۰۰', priority: 'medium',
-    title: 'واریز پیش‌پرداخت به تأمین‌کننده', target: 'تأمین‌کننده: فولاد خوزستان',
-    owner: { name: 'حسین کریمی', role: 'کاشف' },
-    link: '/nabz/order/JR050106007',
-    details: [
-      { label: 'مبلغ', value: '۷۵۰٬۰۰۰٬۰۰۰ ریال' },
-      { label: 'روش پرداخت', value: 'حواله بانکی' },
-    ],
-  },
+function taskDisplayTarget(task, contacts) {
+  const companyId = task.companyReference?.companyId ?? task.subject?.entityId;
+  const contact = companyId != null
+    ? (contacts || []).find((c) => String(c.id) === String(companyId))
+    : null;
+  return contact ? getContactDisplayName(contact) : (task.subject?.entityType === 'RAW_LEAD' ? 'سرنخ خام' : '—');
+}
 
-  /* — آینده نزدیک — */
-  {
-    id: 'log-1', type: 'logistics', offset: 1, time: '۰۷:۳۰', priority: 'high',
-    title: 'بارگیری میلگرد ۱۸ — انبار تهران', target: 'فولاد پارس',
-    owner: { name: 'رضا نوری', role: 'سفیر' },
-    link: '/nabz/order/JR050106007',
-    details: [
-      { label: 'ناوگان', value: 'تریلی کفی — ۳ دستگاه' },
-      { label: 'تناژ', value: '۳ تن' },
-    ],
-  },
-  {
-    id: 'fin-2', type: 'finance', offset: 2, time: '۱۰:۳۰', priority: 'medium',
-    title: 'تسویه خرید میلگرد ۱۸', target: 'تأمین‌کننده: فولاد خوزستان',
-    owner: { name: 'حسین کریمی', role: 'کاشف' },
-    link: '/nabz/order/JR050106007',
-    details: [
-      { label: 'مبلغ', value: '۱۵۱٬۸۰۰٬۰۰۰ ریال' },
-      { label: 'روش پرداخت', value: 'چک صیادی' },
-    ],
-  },
-  {
-    id: 'con-1', type: 'contract', offset: 2, time: '۰۹:۰۰', priority: 'medium',
-    title: 'تمدید قرارداد سالانه تأمین', target: 'فولاد پارس',
-    owner: { name: 'علی رضایی', role: 'شوالیه' },
-    link: '/kanoon/contact/1',
-    details: [
-      { label: 'شماره قرارداد', value: 'CT-1404-018' },
-      { label: 'اعتبار فعلی', value: 'تا پایان مرداد' },
-    ],
-    note: 'پیش‌نویس تمدید آماده است؛ نیازمند امضای مدیرعامل.',
-  },
-  {
-    id: 'log-2', type: 'logistics', offset: 3, time: '۱۱:۳۰', priority: 'medium',
-    title: 'بازرسی QC ورق گالوانیزه', target: 'ذوب آهن اصفهان',
-    owner: { name: 'فاطمه رحیمی', role: 'بازرس' },
-    link: '/nabz/order/JR050107006',
-    details: [
-      { label: 'محل بازرسی', value: 'انبار اصفهان' },
-      { label: 'استاندارد', value: 'A653 — ضخامت ۲mm' },
-    ],
-  },
-  {
-    id: 'con-2', type: 'contract', offset: 5, time: '۰۹:۳۰', priority: 'high',
-    title: 'انقضای ضمانت‌نامه بانکی', target: 'ذوب آهن اصفهان',
-    owner: { name: 'نرگس عالی', role: 'صراف' },
-    link: '/kanoon/contact/5',
-    details: [
-      { label: 'شماره ضمانت‌نامه', value: 'BG-8842-1404' },
-      { label: 'بانک', value: 'پاسارگاد — شعبه مرکزی' },
-    ],
-    note: 'در صورت عدم تمدید، وثیقه نقدی جایگزین لازم است.',
-  },
-  {
-    id: 'fin-3', type: 'finance', offset: 6, time: '۱۳:۰۰', priority: 'normal',
-    title: 'سررسید چک بانک پاسارگاد', target: 'ذوب آهن اصفهان',
-    owner: { name: 'نرگس عالی', role: 'صراف' },
-    link: '/nabz/order/JR050107006',
-    details: [
-      { label: 'مبلغ', value: '۵٬۱۰۰٬۰۰۰٬۰۰۰ ریال' },
-      { label: 'سری چک', value: '۴۴۲۱۸۷' },
-    ],
-  },
-  {
-    id: 'log-3', type: 'logistics', offset: 9, time: '۰۸:۰۰', priority: 'normal',
-    title: 'برنامه‌ریزی حمل لوله ۸ اینچ', target: 'فولاد مبارکه',
-    owner: { name: 'رضا نوری', role: 'سفیر' },
-    link: '/nabz/order/JR050108005',
-    details: [
-      { label: 'مبدأ', value: 'کارخانه مبارکه' },
-      { label: 'تناژ', value: '۴ تن' },
-    ],
-  },
-  {
-    id: 'fin-4', type: 'finance', offset: 13, time: '۱۰:۰۰', priority: 'normal',
-    title: 'پیش‌پرداخت سفارش تأمین ورق', target: 'تأمین‌کننده: فولاد مبارکه',
-    owner: { name: 'امیر صادقی', role: 'کاشف' },
-    link: '/nabz/order/JR050108005',
-    details: [
-      { label: 'مبلغ', value: '۱٬۰۸۰٬۰۰۰٬۰۰۰ ریال' },
-      { label: 'روش پرداخت', value: 'حواله بانکی' },
-    ],
-  },
-];
+/** تعهدات وظیفهٔ کانونیک پویش (Task با dueAt باز) را به آیتم تقویم تبدیل می‌کند. */
+export function buildTaskCommitments(tasks, contacts, todayParts) {
+  const items = [];
+  (tasks || []).forEach((task) => {
+    if (!task || task.status === 'COMPLETED' || task.status === 'CANCELLED') return;
+    if (!task.dueAt) return;
+    const parts = isoToJalaliParts(task.dueAt);
+    if (!parts) return;
+    const overdue = compareParts(parts, todayParts) < 0;
+    const companyId = task.companyReference?.companyId ?? task.subject?.entityId;
+    const target = taskDisplayTarget(task, contacts);
+    const dueDate = new Date(task.dueAt);
+    const time = Number.isNaN(dueDate.getTime())
+      ? null
+      : `${String(dueDate.getHours()).padStart(2, '0')}:${String(dueDate.getMinutes()).padStart(2, '0')}`;
+
+    items.push({
+      id: `task-${task.id}`,
+      type: 'task',
+      parts,
+      time,
+      title: task.title,
+      target,
+      owner: task.assignedTo || { name: 'پویش', role: 'وظیفه' },
+      priority: task.priority === 'high' ? 'high' : (overdue ? 'high' : 'normal'),
+      contactId: task.subject?.entityType === 'COMPANY' ? companyId : null,
+      link: companyId != null ? `/kanoon/contact/${companyId}` : '/pooyesh',
+      details: [
+        { label: 'منبع', value: 'وظیفه پویش' },
+        { label: 'وضعیت', value: task.status === 'IN_PROGRESS' ? 'در حال انجام' : 'باز' },
+      ],
+      note: task.description || null,
+    });
+  });
+  return items;
+}
 
 /**
- * تجمیع تعهدات: پیگیری‌های زنده از useContactsStore + موک‌های مالی/لجستیک/قرارداد.
+ * تجمیع تعهدات: پیگیری‌های زنده از useContactsStore + وظایف کانونیک پویش
+ * (canonical Task via taskFacade). دسته‌های مالی/لجستیک/قرارداد تا اتصال
+ * پروجکشن واقعی نبض/رهسپار/میثاق خالی می‌مانند (بدون داده فیک).
  */
-export function buildCommitments(contacts, todayParts) {
+export function buildCommitments(contacts, todayParts, tasks = []) {
   const items = [];
 
   (contacts || []).forEach((contact) => {
@@ -283,10 +169,7 @@ export function buildCommitments(contacts, todayParts) {
     });
   });
 
-  MOCK_COMMITMENTS.forEach((spec) => {
-    const { offset, ...rest } = spec;
-    items.push({ ...rest, parts: shiftJalali(todayParts, offset) });
-  });
+  items.push(...buildTaskCommitments(tasks, contacts, todayParts));
 
   return items;
 }

@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getTodayJalali, getNowTimeFa, isJalaliDateReached, isValidJalaliDate } from './dateUtils';
 import { getFulfilledPurchaseRows } from './shippingService';
 import { getQcInspectionForRow } from './qcInspectionConfig';
@@ -342,7 +342,7 @@ export function confirmItemsReady(order, selectedItemIds = []) {
       ...(lineStates[id] || {}),
       status: LOAD_ITEM_STATUS.READY,
       readyConfirmedAt: at,
-      readyConfirmedBy: CURRENT_USER,
+      readyConfirmedBy: getCurrentUser(),
     };
   });
 
@@ -365,7 +365,7 @@ export function confirmItemsReady(order, selectedItemIds = []) {
           id: Date.now(),
           type: 'rahsepar_ready_confirmed',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `تأیید آمادگی کاشف — ${labels.length ? labels.join('، ') : `${ids.length} قلم`}`,
         },
       ],
@@ -471,7 +471,7 @@ export function assignDriverToItems(order, {
           id: Date.now(),
           type: 'rahsepar_driver_assigned',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `تخصیص راننده ${driver} — ${ids.length} قلم`,
         },
       ],
@@ -619,7 +619,7 @@ function applyScaleWeightUpdate(order, {
           id: Date.now(),
           type: eventType,
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `${summaryPrefix} «${itemLabel}» — ${weightNum.toLocaleString('fa-IR')} کیلوگرم`,
         },
       ],
@@ -662,7 +662,7 @@ export function finalizeRahseparOrder(order) {
         ...(result.order.rahsepar || {}),
         finalized: true,
         finalizedAt: at,
-        finalizedBy: CURRENT_USER,
+        finalizedBy: getCurrentUser(),
       },
       events: [
         ...(result.order.events || []),
@@ -670,7 +670,7 @@ export function finalizeRahseparOrder(order) {
           id: Date.now() + 1,
           type: 'rahsepar_finalized',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: 'نهایی‌سازی سفارش در رهسپار و انتقال به سرانجام',
         },
       ],

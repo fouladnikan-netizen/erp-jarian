@@ -20,6 +20,7 @@
 
 .cmt-dot--meeting { background: var(--status-radar); }
 .cmt-dot--followup { background: var(--success); }
+.cmt-dot--task { background: var(--accent); }
 .cmt-dot--finance { background: var(--warning); }
 .cmt-dot--logistics { background: var(--info); }
 .cmt-dot--contract { background: var(--status-silent); }

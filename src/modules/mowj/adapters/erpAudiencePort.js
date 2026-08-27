@@ -4,9 +4,9 @@
  */
 
 import { ENTITY_TYPES } from '../../../domain/party/party.constants';
-import { useContactsStore } from '../../../stores/useContactsStore';
+import { listCompanies } from '../../kanoon/public/index.js';
 import { getDisplayName } from '../../kanoon/columns';
-import { listOrders } from '../../nabz/ordersFacade';
+import { listOrders } from '../../nabz/public/index.js';
 import { getCustomerFinancialSummary } from '../../finance/customerFinancialProjection';
 import { listCompanyInteractions } from '../../pooyesh/interactionFacade';
 import {
@@ -14,6 +14,12 @@ import {
   CONTACT_PERSON_STATUSES,
   getContactPersonJobLabel,
 } from '../../../components/contactPerson/contactPersonRoles';
+import {
+  assertEntityEligibleFor,
+  ERP_CAPABILITY,
+  ENTITY_REF_TYPE,
+  companyReference,
+} from '../../../domain/entityReference';
 
 function resolveRelationTypeLabel(value) {
   if (!value) return null;
@@ -240,12 +246,18 @@ function toPersonProjection(companyProjection, person) {
  * @returns {import('../domain/audience.ports').AudienceDataPort}
  */
 export function createErpAudiencePort() {
-  function listCompanies() {
-    const contacts = useContactsStore.getState().contacts || [];
+  function listCompaniesForAudience() {
+    const contacts = listCompanies();
     const orders = listOrders();
     const orderMap = collectOrdersByCustomer(orders);
     return contacts
       .filter((contact) => {
+        if (String(contact.id || '').startsWith('lead_')) return false;
+        const campaignGate = assertEntityEligibleFor(
+          companyReference(contact.id),
+          ERP_CAPABILITY.CAMPAIGN,
+        );
+        if (!campaignGate.ok) return false;
         const entity = contact.entityType || contact.type;
         // Kanoon companies / customers — exclude pure suppliers from acquisition audiences by default
         return !entity || entity === ENTITY_TYPES.CUSTOMER || entity === 'customer';
@@ -254,8 +266,8 @@ export function createErpAudiencePort() {
   }
 
   function listRelatedPersons() {
-    const contacts = useContactsStore.getState().contacts || [];
-    const companies = listCompanies();
+    const contacts = listCompanies();
+    const companies = listCompaniesForAudience();
     const byCompanyId = new Map(contacts.map((c) => [String(c.id), c]));
     /** @type {import('../domain/audience.ports').PersonAudienceProjection[]} */
     const rows = [];
@@ -269,11 +281,41 @@ export function createErpAudiencePort() {
     return rows;
   }
 
+  /**
+   * Raw Leads are never campaign audience (DDL-14). Always empty.
+   * @returns {[]}
+   */
+  function listLeads() {
+    return [];
+  }
+
+  /**
+   * Reject accidental Raw Lead audience members.
+   * @param {{ companyId?: string, entityType?: string, leadId?: string }} member
+   */
+  function assertAudienceMemberEligible(member = {}) {
+    if (
+      member.entityType === ENTITY_REF_TYPE.RAW_LEAD
+      || member.leadId
+      || String(member.companyId || '').startsWith('lead_')
+    ) {
+      return assertEntityEligibleFor(
+        {
+          entityType: ENTITY_REF_TYPE.RAW_LEAD,
+          entityId: String(member.leadId || member.companyId || 'unknown'),
+        },
+        ERP_CAPABILITY.CAMPAIGN,
+      );
+    }
+    return { ok: true };
+  }
+
   return {
-    listCompanies,
+    listCompanies: listCompaniesForAudience,
     listRelatedPersons,
+    assertAudienceMemberEligible,
     // legacy shims for older callers
-    listContacts: () => listCompanies().map((row) => ({
+    listContacts: () => listCompaniesForAudience().map((row) => ({
       contactId: row.contactId,
       companyId: row.companyId,
       city: row.city,
@@ -284,7 +326,7 @@ export function createErpAudiencePort() {
       leadSource: row.leadSource,
       displayName: row.displayName,
     })),
-    listLeads: () => [],
+    listLeads,
     listOrders: () => listOrders().map((order) => ({
       orderId: String(order.id),
       customerId: String(order.customerId),

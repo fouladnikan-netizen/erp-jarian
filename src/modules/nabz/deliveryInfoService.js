@@ -27,7 +27,8 @@ export {
 export function canShowDeliveryLocationAction(order) {
   if (!order) return false;
   if (order.gatewayDecision?.outcome === GATEWAY_DECISION_OUTCOMES.SUCCESS) return true;
-  if (order.status === ORDER_TABS.SUCCESS && isPhase2Stage(order.stageId)) return true;
+  if (order.phase2EnteredAt && isPhase2Stage(order.stageId)) return true;
+  if (order.status === ORDER_TABS.SUCCESS) return true;
   return false;
 }
 

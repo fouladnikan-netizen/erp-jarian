@@ -23,9 +23,10 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 
 1. [../../README.md](../../README.md) — setup & module map  
 2. [../../CONTRIBUTING.md](../../CONTRIBUTING.md) — branches, checks, PR expectations  
-3. [CURSOR_RULES.md](./CURSOR_RULES.md) — mandatory theme + presentation rules  
+3. [CURSOR_RULES.md](./CURSOR_RULES.md) — mandatory theme + presentation + SSOT + entity pipeline rules  
 4. [SSOT.md](./SSOT.md) — where Company / Order / ContactPerson live  
 5. [ENTITY_OWNERSHIP.md](./ENTITY_OWNERSHIP.md) — who owns which entity  
+5a. [ENTITY_DELIVERY_PIPELINE.md](./ENTITY_DELIVERY_PIPELINE.md) — **Law** — how to ship Tier A/B entities  
 5b. [MOWJ_CAMPAIGN_ARCHITECTURE.md](./MOWJ_CAMPAIGN_ARCHITECTURE.md) — Mowj campaigns, automation, attribution, ports  
 6. [DOMAIN_DECISION_LOG.md](./DOMAIN_DECISION_LOG.md) — locked aggregate decisions before DB design  
 6b. [COMPANY_PROFILE_HUB_SESSION_PACK.md](./COMPANY_PROFILE_HUB_SESSION_PACK.md) — Customer/Supplier profile hub session (۱۰ پرامپت: architecture + file map)  
@@ -64,6 +65,13 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 | [15-DX_MAINTAINABILITY_AUDIT.md](./15-DX_MAINTAINABILITY_AUDIT.md) | Developer experience, onboarding, maintainability, team scale |
 | [16-BACKEND_READINESS_AUDIT.md](./16-BACKEND_READINESS_AUDIT.md) | Backend boundary, APIs, repos, DTOs, TX, multi-user readiness |
 | [BACKEND_V1.md](./BACKEND_V1.md) | **Implemented** Auth/Company/Order API + Postgres scaffold |
+| [BACKEND_FOUNDATION.md](./BACKEND_FOUNDATION.md) | Migration, transactions, error contract, soft-delete policy |
+| [CLIENT_STATE_SSOT.md](./CLIENT_STATE_SSOT.md) | **Law** — Zustand is cache; API/Postgres is SoR |
+| [ENTITY_DELIVERY_PIPELINE.md](./ENTITY_DELIVERY_PIPELINE.md) | **Law** — Tier A/B delivery pipeline, Entity Cards, dual repos |
+| [BACKUP_RESTORE.md](./BACKUP_RESTORE.md) | Daily pg_dump, restore drill, future PITR path |
+| [DEPLOY_ROLLBACK.md](./DEPLOY_ROLLBACK.md) | Deploy order; app rollback ≠ DB restore |
+| [ENTITY_GAP_AUDIT.md](./ENTITY_GAP_AUDIT.md) | Company/Order vs pipeline — gaps only |
+| [entity-cards/README.md](./entity-cards/README.md) | Machine-checkable Entity Card registry |
 | [QUALITY_ENGINEERING.md](./QUALITY_ENGINEERING.md) | Quality foundation — scripts, CI, test ownership, coverage targets |
 | [FRONTEND_ARCHITECTURE_GUIDELINES.md](./FRONTEND_ARCHITECTURE_GUIDELINES.md) | Current FE patterns + future ownership / deps |
 | [FRONTEND_COMPONENT_HOTSPOTS.md](./FRONTEND_COMPONENT_HOTSPOTS.md) | God components ≥500 LOC — no splits this phase |

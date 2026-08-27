@@ -50,4 +50,13 @@ router.patch(
   }),
 );
 
+router.delete(
+  '/:id',
+  requirePermission('orders:write'),
+  asyncHandler(async (req, res) => {
+    const result = await orderService.archiveOrder(req.params.id, req.auth.userId);
+    res.json(result);
+  }),
+);
+
 export default router;

@@ -10,7 +10,7 @@ import {
   recordStageReturn,
 } from '../../../domain/order/revisionEngine';
 import { REVISION_REASON_LABELS } from '../../../domain/order/revision.constants';
-import { CURRENT_USER } from '../constants';
+import { getCurrentUser } from '../constants';
 import {
   STAGE_KAVOSH_ID,
   STAGE_MOZENE_ID,
@@ -70,7 +70,7 @@ export function applyRevisionReturn(order, input) {
     throw new Error('applyRevisionReturn: reasonCode is required');
   }
 
-  const returnedBy = input.returnedBy || CURRENT_USER;
+  const returnedBy = input.returnedBy || getCurrentUser();
   const previousStage = stageIdToOrderStatus(input.fromStageId);
   const returnedToStage = stageIdToOrderStatus(input.toStageId);
   const reasonLabel = REVISION_REASON_LABELS[reasonCode] || reasonCode;
@@ -124,7 +124,7 @@ export function markRevisionResolved(order, nextDecision = 'PENDING') {
         id: Date.now() + Math.floor(Math.random() * 1000),
         type: 'revision_cleared',
         at,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: 'رفع نیاز به بازنگری — ادامه گردش کار',
       },
     ],

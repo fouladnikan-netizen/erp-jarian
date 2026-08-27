@@ -14,8 +14,9 @@
   position: relative;
   isolation: isolate;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 100vh;
   min-height: 100dvh;
   padding: 1.5rem 1rem;
@@ -46,6 +47,16 @@
     linear-gradient(125deg, var(--glass-bg-subtle) 0%, transparent 42%),
     linear-gradient(0deg, color-mix(in srgb, var(--color-neutral-500) 8%, transparent), transparent 40%);
   opacity: 0.9;
+}
+
+.auth-page__body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .auth-card {

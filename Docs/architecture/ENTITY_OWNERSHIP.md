@@ -1,7 +1,7 @@
 # Entity Ownership
 
-> **Status:** Documentation only — no persistence or aggregate redesign.  
-> **Related:** [AGGREGATE_BOUNDARIES.md](./AGGREGATE_BOUNDARIES.md), [SSOT.md](./SSOT.md), [07-DOMAIN_MODEL_AUDIT.md](./07-DOMAIN_MODEL_AUDIT.md)
+> **Status:** Active ownership map — keep aligned with [DOMAIN_DECISION_LOG.md](./DOMAIN_DECISION_LOG.md) (esp. DDL-13 Raw Lead).  
+> **Related:** [AGGREGATE_BOUNDARIES.md](./AGGREGATE_BOUNDARIES.md), [SSOT.md](./SSOT.md), [07-DOMAIN_MODEL_AUDIT.md](./07-DOMAIN_MODEL_AUDIT.md), [entity-cards/README.md](./entity-cards/README.md)
 
 Runtime field names often say **Contact**; domain language prefers **Company**. See `src/domain/party/naming.js`.
 
@@ -13,11 +13,11 @@ New string/numeric IDs for created records use `src/domain/identity` (`createEnt
 
 | Field | Value |
 |-------|--------|
-| **Owner Module** | کانون (Kanoon) as primary UX; shared store is the write SSOT |
-| **Aggregate** | Company root |
-| **Current Storage** | `useContactsStore` (Zustand, in-memory + seed from `contactsData.js`) |
-| **Lifecycle** | Created/edited in Kanoon; Ofogh advances `lifecycle_stage`; Nabz links via `contactId` |
-| **Future Direction** | Persist as party/company table; keep ContactPerson 1:N; optional Opportunity facet URL |
+| **Owner Module** | کانون (Kanoon) |
+| **Aggregate** | Company root (Tier A) |
+| **Current Storage** | `useContactsStore` cache; PostgreSQL via `CompanyRepository` when `VITE_USE_MOCK_API=false` |
+| **Lifecycle** | Verified-customer continuum only (نوپدید → … → سایه). **Not** used for Raw Lead. |
+| **Future Direction** | Keep ContactPerson 1:N; Opportunity remains Company capability (DDL-04) |
 
 ---
 
@@ -25,7 +25,7 @@ New string/numeric IDs for created records use `src/domain/identity` (`createEnt
 
 | Field | Value |
 |-------|--------|
-| **Owner Module** | Company aggregate (not a standalone module) |
+| **Owner Module** | Company aggregate / Kanoon (not a standalone module) |
 | **Aggregate** | Embedded under Company |
 | **Current Storage** | `contact.relatedPersons[]` via `useContactsStore` + `src/domain/contactPerson/` |
 | **Lifecycle** | CRUD through store / ContactPerson modal; natural-person “self” via `naturalPersonSelfId` |
@@ -33,27 +33,49 @@ New string/numeric IDs for created records use `src/domain/identity` (`createEnt
 
 ---
 
-## Opportunity / Lead
+## Raw Lead (Ofogh)
 
 | Field | Value |
 |-------|--------|
-| **Owner Module** | افق (Ofogh) owns the **pipeline UX**; entity data owned by Company |
-| **Aggregate** | Same as Company (`lifecycle_stage`, follow-up dates, interactions) |
-| **Current Storage** | No separate table — filters on `useContactsStore` |
-| **Lifecycle** | Stage moves in Ofogh; board cards are Company projections |
-| **Future Direction** | Optional addressable Opportunity facet; **do not** split aggregate until DB exists |
+| **Owner Module** | افق (Ofogh) |
+| **Aggregate** | **Independent** Tier A root (`RawLead`) — **DDL-13** |
+| **Current Storage** | PostgreSQL `raw_leads` via `/api/v1/leads`; `useLeadsStore` = **Zustand cache only** (SERVER_FIRST) |
+| **Lifecycle** | System: `NEW` / `QUALIFYING` / `CONVERTED` / `REJECTED` (+ soft-delete archive with reason). **Personal Pipeline Stage** (`pipeline_stage_id`) is orthogonal, user-owned Kanban placement — not a management reporting dimension. |
+| **Minimum fields** | API create: `companyName` required; personName, mobile, leadSource, description, activityDomain optional |
+| **Personal Pipeline** | One active `lead_pipelines` row per user; stages in `lead_pipeline_stages`; API `/api/v1/lead-pipelines/me` |
+| **Forbidden until convert** | Order, quotation, financial ops, campaign-as-company, formal correspondence, contract (**DDL-14**) |
+| **Allowed until convert** | Activity / notes / Task / Follow-up via Pooyesh EntityReference |
+| **Conversion** | `POST /api/v1/leads/:id/convert` → create/link Company (Kanoon) in TX; keep Lead with `convertedCompanyId` / `convertedAt` / `convertedBy` |
+| **Reference model** | `{ entityType: 'COMPANY'\|'RAW_LEAD', entityId }` — Pooyesh Port/Facade only |
+| **Future Direction** | Org pipeline template copy-on-provision; optional `assigned_to` for reassignment (today owner = `created_by`) |
 
 ---
 
-## Interaction (Company activity)
+## Opportunity / Customer Lifecycle (Company capability — not Raw Lead)
 
 | Field | Value |
 |-------|--------|
-| **Owner Module** | Company timeline (Kanoon / Ofogh surfaces) |
-| **Aggregate** | Company |
-| **Current Storage** | `contact.interactions[]` |
-| **Lifecycle** | Appended on CRM touch; IDs via `createInteractionId` |
-| **Future Direction** | Unify with Activity SSOT under پویش when Activity model is funded (see SSOT) |
+| **Owner Module** | افق (Ofogh) owns **Customer Lifecycle board UX**; data remains on **Company** |
+| **Aggregate** | Same as Company (`lifecycle_stage`, engagement) — **DDL-04 still in force** |
+| **Current Storage** | Filters / board cards on `useContactsStore` (verified contacts) |
+| **Lifecycle** | Fixed system-controlled stages: نوپدید → دیدار → رویش → آستانه → نوپیمان → هم‌پیمان. **Not** user-customizable. |
+| **Future Direction** | Optional addressable Opportunity facet; do **not** conflate with Raw Lead personal pipeline (DDL-13) |
+
+---
+
+## Interaction / Activity (soft CRM)
+
+| Field | Value |
+|-------|--------|
+| **Owner Module** | پویش (Pooyesh) — **DDL-15** |
+| **Aggregate** | **Independent** Tier A root (`Activity`) — subject ref only |
+| **SSOT** | PostgreSQL `activities` + `/api/v1/activities` — Entity Card `activity.yaml` (`active`) |
+| **Client cache** | `useActivitiesStore` (SERVER_FIRST); facades rewired |
+| **SubjectReference** | `{ entityType: 'COMPANY' \| 'RAW_LEAD', entityId }` (**DDL-14**) |
+| **Lifecycle** | `OPEN` \| `COMPLETED`; archive = soft-delete |
+| **Out of scope** | Nabz Order `crmActivities`, Order events/stage history, finance events, `audit_log` |
+| **Task** | **Task ≠ Activity** — PostgreSQL `tasks` (**DDL-16**); Mowj via Port only |
+| **Legacy** | Parent `interactions[]` not auto-migrated; mock mode may still use them offline |
 
 ---
 
@@ -100,8 +122,8 @@ New string/numeric IDs for created records use `src/domain/identity` (`createEnt
 | **Owner Module** | Nabz Order profile |
 | **Aggregate** | Order |
 | **Current Storage** | `order.crmActivities`, saranjam payment arrays, CRM payment helpers |
-| **Lifecycle** | Order-scoped; distinct from Company `interactions` |
-| **Future Direction** | Payment / Activity extraction deferred (medium/high cost) |
+| **Lifecycle** | Order-scoped; **distinct from Pooyesh Activity** (**DDL-15** — not unified into `activities`) |
+| **Future Direction** | Payment / Order-CRM extraction deferred; do **not** dump into Pooyesh Activity without a new DDL |
 
 ---
 
@@ -137,7 +159,7 @@ New string/numeric IDs for created records use `src/domain/identity` (`createEnt
 | **Aggregate** | Campaign (`cmp-*`), Template, AudienceSegment, Snapshot, Execution, Intent, Result, Attribution |
 | **Current Storage** | `mowj/repositories/*` (in-memory SSOT behind repository ports) |
 | **Lifecycle** | `campaign.lifecycle.js` transitions via facade; automation evaluate → intent; executor → result |
-| **Does not own** | Contact (Kanoon), Lead/Opportunity (Ofogh), Order (Nabz), Task (Pooyesh) |
+| **Does not own** | Contact/Company (Kanoon), Raw Lead (Ofogh, DDL-13), Opportunity facet data (Company), Order (Nabz), Task (Pooyesh) |
 | **Future Direction** | Persist via ports; wire ERP event producers; real channel providers behind `ChannelExecutor`; Aineh consumes `campaignAnalyticsContract` for dashboards |
 
 See [MOWJ_CAMPAIGN_ARCHITECTURE.md](./MOWJ_CAMPAIGN_ARCHITECTURE.md).
@@ -183,3 +205,20 @@ See [MOWJ_CAMPAIGN_ARCHITECTURE.md](./MOWJ_CAMPAIGN_ARCHITECTURE.md).
 ## Explicit non-goals (ownership)
 
 Do **not** move ownership of Order stages to Ofogh, Company registry to Nabz, or Activity to multiple writers. Document conflicts in [SSOT.md](./SSOT.md); resolve only with funded migrations.
+
+---
+
+## Cross-module access (module boundaries)
+
+Cross-module communication must use **Port / Facade / Public contract** — never another module's Zustand store.
+
+| Entity | Owner | Public surface |
+|--------|-------|----------------|
+| Company / ContactPerson | Kanoon | `src/modules/kanoon/public` |
+| Raw Lead | Ofogh | `src/modules/ofogh/public` |
+| Order | Nabz | `src/modules/nabz/public` |
+| Activity | Pooyesh | `interactionFacade`, `pooyesh/public` |
+| Task | Pooyesh | `taskFacade` |
+| Subject resolution | Pooyesh | `ports/subjectEntity.port` |
+
+Enforcement: `npm run check:module-boundaries`. Owner-module UI may still use its own store internally; foreign modules must import from the public barrel only.

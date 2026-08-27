@@ -1,3 +1,103 @@
+/* —— Toolbar cluster: tabs + filters beside search —— */
+.ofoq-toolbar-cluster {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+/* —— Workspace tabs: سرنخ‌ها | چرخه مشتری —— */
+.ofoq-workspace-tabs {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0.15rem;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.ofoq-workspace-tabs__btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.42rem 0.85rem;
+  border-radius: 10px;
+  color: var(--text-muted);
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.ofoq-workspace-tabs__btn.is-active {
+  color: var(--text-primary);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--glass-shadow);
+}
+
+.ofoq-engagement-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: var(--surface-muted, var(--glass-bg));
+}
+
+.ofoq-engagement-chip--forgotten {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.ofoq-engagement-chip--shadow {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.ofoq-pipeline__column--add {
+  flex: 0 0 200px;
+  width: 200px;
+  padding-top: 0.4rem;
+}
+
+.ofoq-add-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.55rem;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.ofoq-add-stage__trigger {
+  width: 100%;
+  justify-content: center;
+}
+
+.ofoq-pipeline__loading {
+  color: var(--text-muted);
+  padding: 1rem;
+}
+
+.ofoq-lead-card--static {
+  cursor: pointer;
+}
+
+.ofoq-pipeline__column-body.is-system-controlled .ofoq-pipeline__empty {
+  opacity: 0.65;
+}
+
 /* ═══════════════════ افق — پایپ‌لاین کانبان روی مخاطبین کانون ═══════════════════ */
 
 .module-page.ofoq-pipeline,
@@ -428,6 +528,123 @@
   color: var(--text-primary);
   line-height: 1.4;
   min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ofoq-pipeline__column--raw-lead .ofoq-pipeline__column-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ofoq-lead-card--raw {
+  cursor: pointer;
+}
+
+.ofoq-modal__lead-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 0.5rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border: 1px dashed var(--text-muted);
+  background: var(--muted-surface);
+}
+
+.ofoq-modal__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.ofoq-modal__body--lead {
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) 1fr;
+  gap: 1rem;
+}
+
+.ofoq-modal__convert-btn {
+  width: 100%;
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.ofoq-modal__converted-hint {
+  margin-top: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.ofoq-modal__convert-hint {
+  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.ofoq-modal__ops {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ofoq-modal__ops-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.ofoq-modal__ops-status-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.ofoq-modal__ops-select {
+  min-width: 10rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.ofoq-modal__ops-terminal {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.ofoq-modal__ops-archive {
+  margin-inline-start: auto;
+}
+
+.ofoq-modal__ops-error {
+  margin: 0.25rem 1.25rem 0;
+}
+
+.ofoq-modal__edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.ofoq-modal__edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
 }
 
 .ofoq-lead-card__tag {
@@ -442,6 +659,48 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.ofoq-lead-card__meta {
+  align-self: flex-start;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ofoq-lead-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.ofoq-lead-matches__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: flex-start;
+  text-align: start;
+}
+
+.ofoq-lead-matches__nid {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.ofoq-lead-matches__action {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-inline-start: auto;
+}
+
+.ofoq-lead-matches__loading {
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }
 
 /* —— نبض پیگیری —— */
@@ -534,6 +793,50 @@
 
 .ofoq-filterbar {
   gap: 0.75rem;
+  width: auto;
+  align-items: center;
+}
+
+.ofoq-filterbar__scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem;
+  border-radius: 12px;
+  border: 1px solid var(--muted-border);
+  background: var(--glass-bg-strong);
+}
+
+.ofoq-filterbar__scope-btn {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.65rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.ofoq-filterbar__scope-btn.is-active {
+  background: var(--muted-surface);
+  color: var(--text-primary);
+}
+
+.ofoq-filterbar__scope-btn:disabled,
+.ofoq-filterbar__stage-trigger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* فیلتر افق داخل تولبار گلس است — نباید باکس گلس/فضای خالی جدا بسازد */
+.ofoq-pipeline .list-toolbar__filters {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.ofoq-pipeline .list-toolbar__buttons {
+  margin-inline-start: auto;
 }
 
 .ofoq-filterbar__stage-select {

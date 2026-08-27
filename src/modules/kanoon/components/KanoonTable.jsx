@@ -20,6 +20,9 @@ import {
   getActivityLink,
   getLatestInteraction,
 } from '../columns';
+import LifecycleIndicator from '../../../components/common/LifecycleIndicator';
+import { resolveContactLifecycleStage } from '../../../domain/party/relationshipLifecycle.js';
+import { RELATIONSHIP_LIFECYCLE_ORDER } from '../../../domain/party/relationshipLifecycle.constants.js';
 import { filterContacts } from '../kpi';
 import RowQuickActions from './RowQuickActions';
 import OrderPulseTally from './OrderPulseTally';
@@ -116,6 +119,9 @@ export default function KanoonTable({
     if (key === 'behavioralStatus') {
       return BEHAVIORAL_STATUS[contact.behavioralStatus]?.label || '';
     }
+    if (key === 'relationshipLifecycle') {
+      return getCellValue(contact, key);
+    }
     const value = getCellValue(contact, key);
     return value == null || value === '' || value === '—' ? '' : String(value);
   };
@@ -153,6 +159,11 @@ export default function KanoonTable({
       map[col.key] = (row) => {
         if (col.key === 'behavioralStatus') {
           return BEHAVIORAL_STATUS[row.behavioralStatus]?.label || '';
+        }
+        if (col.key === 'relationshipLifecycle') {
+          const stage = resolveContactLifecycleStage(row);
+          const idx = RELATIONSHIP_LIFECYCLE_ORDER.indexOf(stage);
+          return idx >= 0 ? idx : RELATIONSHIP_LIFECYCLE_ORDER.length;
         }
         return getCellValue(row, col.key);
       };
@@ -393,6 +404,14 @@ export default function KanoonTable({
                           {meta ? (
                             <StatusTag value={`tag:${meta.tag}:${meta.label}`} />
                           ) : '—'}
+                        </td>
+                      );
+                    }
+                    if (col.key === 'relationshipLifecycle') {
+                      const stage = resolveContactLifecycleStage(contact);
+                      return (
+                        <td key={col.key} className="kanoon-table__lifecycle-col">
+                          <LifecycleIndicator stage={stage} />
                         </td>
                       );
                     }

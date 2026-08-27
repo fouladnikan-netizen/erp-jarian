@@ -1,17 +1,24 @@
+import { getDisplayName } from '../../kanoon/columns';
+import { listCompanies } from '../../kanoon/public/index.js';
+import {
+  companyReference,
+  assertEntityEligibleFor,
+  ERP_CAPABILITY,
+  ENTITY_REF_TYPE,
+} from '../../../domain/entityReference';
+
 /**
  * Letter counterparties = Kanoon companies (same catalog shape as Nabz CustomerCombobox).
- * No free-text receivers.
+ * Formal correspondence: Company only (DDL-14). Raw Lead rejected.
  */
-
-import { getDisplayName } from '../../kanoon/columns';
-import { useContactsStore } from '../../../stores/useContactsStore';
 
 /**
  * Active companies from Kanoon (customers + suppliers), same SSOT as order form.
+ * Never includes Raw Leads.
  */
 export function listLetterCompanies() {
-  return (useContactsStore.getState().contacts || []).filter(
-    (contact) => contact.isActive !== false,
+  return listCompanies().filter(
+    (contact) => !String(contact.id || '').startsWith('lead_'),
   );
 }
 
@@ -46,9 +53,25 @@ export function searchLetterContacts(query = '', options = {}) {
  * Build a RecordParticipant from a Kanoon company (CustomerCombobox-equivalent pick).
  * @param {object} company
  * @param {'RECEIVER'|'SENDER'} role
+ * @returns {object|null}
  */
 export function buildCompanyParticipant(company, role = 'RECEIVER') {
   if (company?.id == null) return null;
+
+  if (
+    company.entityType === ENTITY_REF_TYPE.RAW_LEAD
+    || company.recordType === 'LEAD'
+    || String(company.id).startsWith('lead_')
+  ) {
+    return null;
+  }
+
+  const gate = assertEntityEligibleFor(
+    companyReference(company.id),
+    ERP_CAPABILITY.CORRESPONDENCE,
+  );
+  if (!gate.ok) return null;
+
   const name = getDisplayName(company) || null;
   return {
     partyType: 'CONTACT',

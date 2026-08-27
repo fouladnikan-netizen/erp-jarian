@@ -1,30 +1,35 @@
 import { useMemo } from 'react';
-import { useContactsStore, LIFECYCLE_STAGES } from '../../stores/useContactsStore';
+import { useCompanies, LIFECYCLE_STAGES, CONTACT_RECORD_TYPES } from '../kanoon/public/index.js';
+import { useLeadsStore } from '../../stores/useLeadsStore';
+import { isOpenLeadStatus } from './domain/lead.constants.js';
 import { PIPELINE_STAGES, getPulseStatus } from './pipelineConfig';
 
 const SQ_STAGE_COLOR = PIPELINE_STAGES.find(
   (stage) => stage.id === LIFECYCLE_STAGES.SALES_QUALIFIED,
 )?.color || 'var(--success)';
 
-/** مشتقات KPI افق — مستقیم از مخاطبین کانون (بدون state جداگانه). */
-function computeOfoqKpis(contacts) {
-  const active = contacts.filter(
-    (contact) => contact.lifecycle_stage !== LIFECYCLE_STAGES.ARCHIVED,
+/** مشتقات KPI افق — مخاطبین کانون + سرنخ‌های باز افق. */
+function computeOfoqKpis(contacts, openLeadCount) {
+  const companies = contacts.filter(
+    (contact) => contact.recordType !== CONTACT_RECORD_TYPES.LEAD
+      && contact.lifecycle_stage
+      && contact.lifecycle_stage !== LIFECYCLE_STAGES.ARCHIVED,
   );
-  const dueToday = active.filter(
+  const dueToday = companies.filter(
     (contact) => getPulseStatus(contact.next_follow_up_date) === 'today',
   ).length;
-  const salesQualified = active.filter(
+  const salesQualified = companies.filter(
     (contact) => contact.lifecycle_stage === LIFECYCLE_STAGES.SALES_QUALIFIED,
   ).length;
-  const buyers = active.filter(
+  const buyers = companies.filter(
     (contact) => contact.lifecycle_stage === LIFECYCLE_STAGES.FIRST_TIME_BUYER
       || contact.lifecycle_stage === LIFECYCLE_STAGES.LOYAL,
   ).length;
-  const conversionRate = active.length ? Math.round((buyers / active.length) * 100) : 0;
+  const conversionRate = companies.length ? Math.round((buyers / companies.length) * 100) : 0;
 
   return {
-    total: active.length,
+    openLeads: openLeadCount,
+    total: companies.length,
     dueToday,
     salesQualified,
     conversionRate,
@@ -33,12 +38,21 @@ function computeOfoqKpis(contacts) {
 }
 
 export default function OfoqKpis() {
-  const contacts = useContactsStore((state) => state.contacts);
-  const kpis = useMemo(() => computeOfoqKpis(contacts), [contacts]);
+  const contacts = useCompanies();
+  const openLeadCount = useLeadsStore(
+    (state) => state.leads.filter((l) => isOpenLeadStatus(l.status)).length,
+  );
+  const kpis = useMemo(() => computeOfoqKpis(contacts, openLeadCount), [contacts, openLeadCount]);
 
   const cards = [
     {
-      label: 'سرنخ‌های فعال',
+      label: 'سرنخ خام',
+      value: kpis.openLeads.toLocaleString('fa-IR'),
+      hint: 'خارج از کانون',
+      accent: 'var(--text-muted)',
+    },
+    {
+      label: 'مخاطب فعال',
       value: kpis.total.toLocaleString('fa-IR'),
       hint: 'خارج از سایه',
       accent: 'var(--color-accent-dark)',
@@ -54,12 +68,6 @@ export default function OfoqKpis() {
       value: kpis.salesQualified.toLocaleString('fa-IR'),
       hint: 'در انتظار صدور پیش‌کش',
       accent: SQ_STAGE_COLOR,
-    },
-    {
-      label: 'نرخ تبدیل',
-      value: `${kpis.conversionRate.toLocaleString('fa-IR')}٪`,
-      hint: `${kpis.buyers.toLocaleString('fa-IR')} خریدار از ${kpis.total.toLocaleString('fa-IR')} سرنخ`,
-      accent: 'var(--warning)',
     },
   ];
 

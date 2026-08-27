@@ -7,6 +7,7 @@ import {
   Save,
   Plus,
   Trash2,
+  Tag,
 } from 'lucide-react';
 import {
   AUDIENCE_BASE_SELECTION,
@@ -167,7 +168,7 @@ function ConditionValueInput({ condition, definition, onChange }) {
         />
         <input
           type="number"
-          className="mowj-input"
+          className="mowj-input mowj-input--numeric font-yekan"
           placeholder={isBetween ? 'از تعداد' : 'تعداد سفارش'}
           value={isBetween
             ? (Array.isArray(condition.value) ? condition.value[0] : condition.value)
@@ -184,7 +185,7 @@ function ConditionValueInput({ condition, definition, onChange }) {
         {isBetween ? (
           <input
             type="number"
-            className="mowj-input"
+            className="mowj-input mowj-input--numeric font-yekan"
             placeholder="تا تعداد"
             value={Array.isArray(condition.value) ? (condition.value[1] ?? '') : (condition.valueTo ?? '')}
             onChange={(e) => {
@@ -204,7 +205,7 @@ function ConditionValueInput({ condition, definition, onChange }) {
     return (
       <div className="mowj-condition-values mowj-condition-values--stacked">
         <select
-          className="mowj-select"
+          className="mowj-select font-meem"
           aria-label="بازه زمانی"
           value={preset}
           onChange={(e) => onChange(applyRelativeDatePreset(e.target.value, condition))}
@@ -316,7 +317,7 @@ function ConditionValueInput({ condition, definition, onChange }) {
       <div className="mowj-condition-values">
         <input
           type="number"
-          className="mowj-input"
+          className="mowj-input mowj-input--numeric font-yekan"
           placeholder={dataType === CONDITION_DATA_TYPE.MONEY ? 'مبلغ (ریال)' : 'عدد'}
           value={isBetween
             ? (Array.isArray(condition.value) ? condition.value[0] : condition.value)
@@ -333,7 +334,7 @@ function ConditionValueInput({ condition, definition, onChange }) {
         {isBetween ? (
           <input
             type="number"
-            className="mowj-input"
+            className="mowj-input mowj-input--numeric font-yekan"
             placeholder="تا"
             value={Array.isArray(condition.value) ? (condition.value[1] ?? '') : (condition.valueTo ?? '')}
             onChange={(e) => {
@@ -354,7 +355,7 @@ function ConditionValueInput({ condition, definition, onChange }) {
       <div className="mowj-condition-values">
         <input
           type="date"
-          className="mowj-input"
+          className="mowj-input font-yekan"
           value={isBetween
             ? (Array.isArray(condition.value) ? condition.value[0] : condition.value)
             : (condition.value ?? '')}
@@ -385,7 +386,7 @@ function ConditionValueInput({ condition, definition, onChange }) {
   return (
     <input
       type="text"
-      className="mowj-input"
+      className="mowj-input font-meem"
       placeholder={isIn ? 'مقادیر با ویرگول' : 'مقدار'}
       value={Array.isArray(condition.value) ? condition.value.join('، ') : (condition.value ?? '')}
       onChange={(e) => onChange({ ...condition, value: e.target.value })}
@@ -407,7 +408,7 @@ function ConditionRow({ condition, onChange, onRemove }) {
   return (
     <div className="mowj-condition-row mowj-condition-row--registry">
       <select
-        className="mowj-select"
+        className="mowj-select font-meem"
         value={category}
         onChange={(e) => {
           const nextFields = listConditionDefinitions(e.target.value, { targetLevel: TARGET_LEVEL });
@@ -430,7 +431,7 @@ function ConditionRow({ condition, onChange, onRemove }) {
         ))}
       </select>
       <select
-        className="mowj-select"
+        className="mowj-select font-meem"
         value={condition.conditionId || ''}
         onChange={(e) => {
           const conditionId = e.target.value;
@@ -452,7 +453,7 @@ function ConditionRow({ condition, onChange, onRemove }) {
       </select>
       {!hideOperator ? (
         <select
-          className="mowj-select"
+          className="mowj-select font-meem"
           value={condition.operator || ''}
           onChange={(e) => onChange({ ...condition, operator: e.target.value })}
           aria-label="عملگر"
@@ -651,16 +652,16 @@ export default function AudienceBuilderDrawer({
 
           <section className="mowj-block">
             <header className="mowj-block__head">
-              <Save {...ICON} aria-hidden="true" />
+              <Tag {...ICON} aria-hidden="true" />
               <div>
                 <h3 className="font-meem">نام سگمنت</h3>
-                <p>شناسه قابل استفاده مجدد در کمپین‌ها</p>
+                <p className="font-meem">شناسه قابل استفاده مجدد در کمپین‌ها</p>
               </div>
             </header>
             <label className="mowj-field font-meem">
               نام سگمنت
               <input
-                className="mowj-input"
+                className="mowj-input font-meem"
                 value={draft.name}
                 onChange={(e) => patch({ name: e.target.value })}
                 placeholder="مثلاً مدیران خرید زن در فولاد"
@@ -671,7 +672,7 @@ export default function AudienceBuilderDrawer({
             <label className="mowj-field font-meem">
               توضیح (اختیاری)
               <textarea
-                className="mowj-input mowj-textarea"
+                className="mowj-input mowj-textarea font-meem"
                 rows={2}
                 value={draft.description || ''}
                 onChange={(e) => patch({ description: e.target.value })}
@@ -685,7 +686,7 @@ export default function AudienceBuilderDrawer({
               <Users {...ICON} aria-hidden="true" />
               <div>
                 <h3 className="font-meem">مخاطب پایه</h3>
-                <p>پایه سگمنت ثابت است</p>
+                <p className="font-meem">پایه سگمنت ثابت است</p>
               </div>
             </header>
             <div className="mowj-audience-base-pill font-meem">
@@ -699,7 +700,7 @@ export default function AudienceBuilderDrawer({
                 <Filter {...ICON} aria-hidden="true" />
                 <div>
                   <h3 className="font-meem">شرط‌ها</h3>
-                  <p>دسته → شرط → مقدار</p>
+                  <p className="font-meem">دسته → شرط → مقدار</p>
                 </div>
               </div>
               <div className="mowj-live-count font-meem" aria-live="polite">
@@ -733,7 +734,7 @@ export default function AudienceBuilderDrawer({
             <div className="mowj-condition-actions">
               <button
                 type="button"
-                className="mowj-btn mowj-btn--ghost"
+                className="mowj-btn mowj-btn--ghost font-meem"
                 onClick={() => patch({
                   rules: [
                     ...(draft.rules || []),
@@ -746,7 +747,7 @@ export default function AudienceBuilderDrawer({
               </button>
               <button
                 type="button"
-                className="mowj-btn mowj-btn--ghost"
+                className="mowj-btn mowj-btn--ghost font-meem"
                 onClick={() => patch({
                   groups: [...(draft.groups || []), emptyGroup()],
                 })}
@@ -863,14 +864,14 @@ export default function AudienceBuilderDrawer({
         <footer className="mowj-drawer__foot">
           <button
             type="button"
-            className="mowj-btn mowj-btn--ghost"
+            className="mowj-btn mowj-btn--ghost font-meem"
             onClick={onClose}
           >
             انصراف
           </button>
           <button
             type="button"
-            className="mowj-btn mowj-btn--launch"
+            className="mowj-btn mowj-btn--primary font-meem"
             disabled={!canSave}
             onClick={handleSave}
           >

@@ -110,11 +110,49 @@ async function persistContactSnapshot(contact) {
   return CompanyRepository.update(contact.id, contact);
 }
 
+/** Replace one company in cache from authoritative server response (SERVER_FIRST). */
+function patchContactCache(set, contactId, saved) {
+  set((state) => ({
+    contacts: state.contacts.map((c) =>
+      String(c.id) === String(contactId) ? saved : c,
+    ),
+    error: null,
+  }));
+}
+
+/**
+ * SERVER_FIRST company write:
+ * build next → API → PostgreSQL → server response → Zustand → UI.
+ * Does not paint optimistic cache before API success.
+ */
+async function commitContactServerFirst(get, set, contactId, buildNext) {
+  const prev = get().contacts.find((c) => String(c.id) === String(contactId));
+  if (!prev) return null;
+
+  const nextContact = buildNext(prev);
+  if (!nextContact) return null;
+
+  if (useMockApi()) {
+    patchContactCache(set, contactId, nextContact);
+    return nextContact;
+  }
+
+  try {
+    const saved = await persistContactSnapshot(nextContact);
+    patchContactCache(set, contactId, saved);
+    return saved;
+  } catch (error) {
+    console.error('[contacts-store] SERVER_FIRST persist failed', error);
+    set({ error: error?.message || 'ذخیره شرکت ناموفق بود.' });
+    throw error;
+  }
+}
+
 /**
  * Single source of truth for Companies/Contacts + nested ContactPersons (1:N).
  * Kanoon, Nabz, and Ofogh must read/write party identity through this store.
  *
- * When VITE_USE_MOCK_API=false, reads/writes go to PostgreSQL via CompanyRepository.
+ * When VITE_USE_MOCK_API=false: Postgres is SoR; Zustand is cache only (SERVER_FIRST).
  */
 export const useContactsStore = create((set, get) => ({
   contacts: useMockApi() ? seedContacts() : [],
@@ -141,65 +179,62 @@ export const useContactsStore = create((set, get) => ({
     }
   },
 
+  /** Full company + persons (list API omits persons). */
+  fetchCompanyById: async (companyId) => {
+    if (!companyId) return null;
+    if (useMockApi()) {
+      return get().contacts.find((c) => String(c.id) === String(companyId)) || null;
+    }
+    try {
+      const company = await CompanyRepository.getById(companyId);
+      if (!company?.id) return null;
+      set((state) => {
+        const without = state.contacts.filter((c) => String(c.id) !== String(company.id));
+        return { contacts: [company, ...without], error: null };
+      });
+      return company;
+    } catch (error) {
+      console.error('[contacts-store] fetchCompanyById failed', error);
+      return null;
+    }
+  },
+
   /**
    * Append-only audit trail for ContactPerson domain events (DDL-08).
    */
   contactPersonAuditLog: [],
 
   updateContactStage: (contactId, newStage) => {
-    if (!LIFECYCLE_STAGE_ORDER.includes(newStage)) return;
-    const lifecycleStage = relationshipStageFromPipelineStage(newStage);
-    let nextContact = null;
-    set((state) => ({
-      contacts: state.contacts.map((contact) => {
-        if (contact.id !== contactId) return contact;
-        nextContact = {
-          ...contact,
-          lifecycle_stage: newStage,
-          lifecycleStage,
-          last_interaction_date: new Date().toISOString(),
-        };
-        return nextContact;
-      }),
-    }));
-    if (nextContact && !useMockApi()) {
-      void persistContactSnapshot(nextContact).catch((error) => {
-        console.error('[contacts-store] updateContactStage persist failed', error);
-      });
+    // Customer Lifecycle is system-controlled — do not mutate stage from UI drag.
+    if (typeof console !== 'undefined') {
+      console.warn(
+        '[ofogh] updateContactStage ignored — lifecycle is event-driven',
+        { contactId, newStage },
+      );
     }
   },
 
   addInteraction: (contactId, note, nextFollowUpDate, type = 'note') => {
     const trimmed = (note || '').trim();
     if (!trimmed) return;
-    let nextContact = null;
-    set((state) => ({
-      contacts: state.contacts.map((contact) => {
-        if (String(contact.id) !== String(contactId)) return contact;
-        const now = new Date().toISOString();
-        const entry = {
-          id: createInteractionId(contactId),
-          date: now,
-          note: trimmed,
-          summary: trimmed,
-          type,
-          nextFollowUp: nextFollowUpDate || null,
-          operator: contact.assignee?.name || (SHOW_BRAND_NAME ? `کاربر ${BRAND_NAME}` : 'کاربر سامانه'),
-        };
-        nextContact = {
-          ...contact,
-          interactions: [entry, ...(contact.interactions || [])],
-          next_follow_up_date: nextFollowUpDate || contact.next_follow_up_date,
-          last_interaction_date: now,
-        };
-        return nextContact;
-      }),
-    }));
-    if (nextContact && !useMockApi()) {
-      void persistContactSnapshot(nextContact).catch((error) => {
-        console.error('[contacts-store] addInteraction persist failed', error);
-      });
-    }
+    void commitContactServerFirst(get, set, contactId, (contact) => {
+      const now = new Date().toISOString();
+      const entry = {
+        id: createInteractionId(contactId),
+        date: now,
+        note: trimmed,
+        summary: trimmed,
+        type,
+        nextFollowUp: nextFollowUpDate || null,
+        operator: contact.assignee?.name || (SHOW_BRAND_NAME ? `کاربر ${BRAND_NAME}` : 'کاربر سامانه'),
+      };
+      return {
+        ...contact,
+        interactions: [entry, ...(contact.interactions || [])],
+        next_follow_up_date: nextFollowUpDate || contact.next_follow_up_date,
+        last_interaction_date: now,
+      };
+    });
   },
 
   /**
@@ -208,64 +243,44 @@ export const useContactsStore = create((set, get) => ({
    */
   updateInteraction: (contactId, interactionId, changes = {}) => {
     if (contactId == null || interactionId == null) return false;
-    let updated = false;
-    let nextContact = null;
-    set((state) => ({
-      contacts: state.contacts.map((contact) => {
-        if (String(contact.id) !== String(contactId)) return contact;
-        const list = contact.interactions || [];
-        const nextList = list.map((item) => {
-          if (String(item.id) !== String(interactionId)) return item;
-          updated = true;
-          const next = { ...item, ...changes, id: item.id };
-          if (changes.note != null && changes.summary == null) {
-            next.summary = changes.note;
-          }
-          return next;
-        });
-        if (!updated) return contact;
-        nextContact = {
-          ...contact,
-          interactions: nextList,
-          last_interaction_date: new Date().toISOString(),
-        };
-        return nextContact;
-      }),
-    }));
-    if (updated && nextContact && !useMockApi()) {
-      void persistContactSnapshot(nextContact).catch((error) => {
-        console.error('[contacts-store] updateInteraction persist failed', error);
+    const prev = get().contacts.find((c) => String(c.id) === String(contactId));
+    if (!prev) return false;
+    const list = prev.interactions || [];
+    if (!list.some((item) => String(item.id) === String(interactionId))) return false;
+
+    void commitContactServerFirst(get, set, contactId, (contact) => {
+      const nextList = (contact.interactions || []).map((item) => {
+        if (String(item.id) !== String(interactionId)) return item;
+        const next = { ...item, ...changes, id: item.id };
+        if (changes.note != null && changes.summary == null) {
+          next.summary = changes.note;
+        }
+        return next;
       });
-    }
-    return updated;
+      return {
+        ...contact,
+        interactions: nextList,
+        last_interaction_date: new Date().toISOString(),
+      };
+    });
+    return true;
   },
 
   removeInteraction: (contactId, interactionId) => {
     if (contactId == null || interactionId == null) return false;
-    let removed = false;
-    let nextContact = null;
-    set((state) => ({
-      contacts: state.contacts.map((contact) => {
-        if (String(contact.id) !== String(contactId)) return contact;
-        const list = contact.interactions || [];
-        const nextList = list.filter((item) => {
-          if (String(item.id) === String(interactionId)) {
-            removed = true;
-            return false;
-          }
-          return true;
-        });
-        if (!removed) return contact;
-        nextContact = { ...contact, interactions: nextList };
-        return nextContact;
-      }),
-    }));
-    if (removed && nextContact && !useMockApi()) {
-      void persistContactSnapshot(nextContact).catch((error) => {
-        console.error('[contacts-store] removeInteraction persist failed', error);
-      });
+    const prev = get().contacts.find((c) => String(c.id) === String(contactId));
+    if (!prev) return false;
+    if (!(prev.interactions || []).some((item) => String(item.id) === String(interactionId))) {
+      return false;
     }
-    return removed;
+
+    void commitContactServerFirst(get, set, contactId, (contact) => ({
+      ...contact,
+      interactions: (contact.interactions || []).filter(
+        (item) => String(item.id) !== String(interactionId),
+      ),
+    }));
+    return true;
   },
 
   addContact: (contact) => {
@@ -309,42 +324,80 @@ export const useContactsStore = create((set, get) => ({
 
     try {
       const saved = await CompanyRepository.create(newContact);
-      set((state) => ({ contacts: [saved, ...state.contacts] }));
+      set((state) => ({ contacts: [saved, ...state.contacts], error: null }));
       return saved.id;
     } catch (error) {
       console.error('[contacts-store] addContact failed', error);
+      set({ error: error?.message || 'ایجاد شرکت ناموفق بود.' });
+      throw error;
+    }
+  },
+
+  /**
+   * SERVER_FIRST: nationalId → Backend/Linka → cache only after success.
+   * @param {{ nationalId: string, entityType?: string }} input
+   * @returns {Promise<{ company: object, created: boolean, mode: string }>}
+   */
+  createFromIdentityAsync: async (input = {}) => {
+    const nationalId = String(input.nationalId || '').replace(/\D/g, '');
+    const rawType = String(input.entityType || 'CUSTOMER').toUpperCase();
+    const entityType = rawType === 'SUPPLIER' ? 'SUPPLIER' : 'CUSTOMER';
+    const activityDomain = String(input.activityDomain || '').trim() || null;
+
+    try {
+      const result = await CompanyRepository.createFromIdentity({
+        nationalId,
+        entityType,
+        activityDomain,
+      });
+      const company = result.company;
+      if (!company?.id) {
+        throw new Error('پاسخ ایجاد شرکت نامعتبر بود.');
+      }
+      set((state) => {
+        const without = state.contacts.filter((c) => String(c.id) !== String(company.id));
+        return { contacts: [company, ...without], error: null };
+      });
+      return {
+        company,
+        created: Boolean(result.created),
+        mode: result.mode || (result.created ? 'create_new' : 'existing'),
+        enrichment: result.enrichment || null,
+      };
+    } catch (error) {
+      console.error('[contacts-store] createFromIdentity failed', error);
+      set({ error: error?.message || 'استعلام/ثبت شرکت ناموفق بود.' });
+      throw error;
+    }
+  },
+
+  enrichFromLinkaAsync: async (companyId) => {
+    try {
+      const result = await CompanyRepository.enrichFromLinka(companyId);
+      const company = result.company;
+      if (company?.id) {
+        set((state) => {
+          const without = state.contacts.filter((c) => String(c.id) !== String(company.id));
+          return { contacts: [company, ...without], error: null };
+        });
+      }
+      return result;
+    } catch (error) {
+      console.error('[contacts-store] enrichFromLinka failed', error);
+      set({ error: error?.message || 'غنی‌سازی از لینکا ناموفق بود.' });
       throw error;
     }
   },
 
   updateContact: (contactId, updates) => {
-    let nextContact = null;
-    set((state) => ({
-      contacts: state.contacts.map((contact) => {
-        if (contact.id !== contactId) return contact;
-        const next = { ...contact, ...updates };
-        if (updates.relatedPersons) {
-          next.relatedPersons = updates.relatedPersons.map((person) =>
-            normalizeContactPerson(person, contactId));
-        }
-        nextContact = next;
-        return next;
-      }),
-    }));
-
-    if (nextContact && !useMockApi()) {
-      void persistContactSnapshot(nextContact)
-        .then((saved) => {
-          if (saved) {
-            set((state) => ({
-              contacts: state.contacts.map((c) => (c.id === contactId ? saved : c)),
-            }));
-          }
-        })
-        .catch((error) => {
-          console.error('[contacts-store] updateContact persist failed', error);
-        });
-    }
+    void commitContactServerFirst(get, set, contactId, (contact) => {
+      const next = { ...contact, ...updates };
+      if (updates.relatedPersons) {
+        next.relatedPersons = updates.relatedPersons.map((person) =>
+          normalizeContactPerson(person, contactId));
+      }
+      return next;
+    });
   },
 
   /**
@@ -374,97 +427,62 @@ export const useContactsStore = create((set, get) => ({
       companyId,
     );
 
-    let nextContact = null;
-    set((state) => {
-      const contacts = state.contacts.map((contact) => {
-        if (String(contact.id) !== String(companyId)) return contact;
-        let persons = [...(contact.relatedPersons || [])];
-        if (nextPerson.isPrimary) {
-          persons = persons.map((p) => ({ ...p, isPrimary: false }));
-        }
-        nextContact = { ...contact, relatedPersons: [...persons, nextPerson] };
-        return nextContact;
-      });
-
-      const contactPersonAuditLog = possibleDuplicateMobile
-        ? [
-            ...state.contactPersonAuditLog,
-            {
-              action: 'CREATE_CONTACT_PERSON',
-              possibleDuplicateMobile: true,
-              companyId,
-              personId,
-              mobile: normalizeMobile(mobile) || mobile,
-              possibleDuplicateMatches,
-              createdAt: new Date().toISOString(),
-            },
-          ]
-        : state.contactPersonAuditLog;
-
-      return { contacts, contactPersonAuditLog };
-    });
-
-    if (nextContact && !useMockApi()) {
-      void persistContactSnapshot(nextContact).catch((error) => {
-        console.error('[contacts-store] addContactPerson persist failed', error);
-      });
+    if (possibleDuplicateMobile) {
+      set((state) => ({
+        contactPersonAuditLog: [
+          ...state.contactPersonAuditLog,
+          {
+            action: 'CREATE_CONTACT_PERSON',
+            possibleDuplicateMobile: true,
+            companyId,
+            personId,
+            mobile: normalizeMobile(mobile) || mobile,
+            possibleDuplicateMatches,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      }));
     }
+
+    void commitContactServerFirst(get, set, companyId, (contact) => {
+      let persons = [...(contact.relatedPersons || [])];
+      if (nextPerson.isPrimary) {
+        persons = persons.map((p) => ({ ...p, isPrimary: false }));
+      }
+      return { ...contact, relatedPersons: [...persons, nextPerson] };
+    });
 
     return personId;
   },
 
   updateContactPerson: (companyId, contactPersonId, contactData) => {
-    let nextContact = null;
-    set((state) => ({
-      contacts: state.contacts.map((contact) => {
-        if (String(contact.id) !== String(companyId)) return contact;
-        const persons = contact.relatedPersons || [];
-        if (!persons.some((p) => String(p.id) === String(contactPersonId))) return contact;
+    void commitContactServerFirst(get, set, companyId, (contact) => {
+      const persons = contact.relatedPersons || [];
+      if (!persons.some((p) => String(p.id) === String(contactPersonId))) return null;
 
-        let next = persons.map((person) => {
-          if (String(person.id) !== String(contactPersonId)) return person;
-          return normalizeContactPerson({ ...person, ...contactData, id: person.id }, companyId);
-        });
-
-        if (contactData?.isPrimary === true) {
-          next = next.map((person) => ({
-            ...person,
-            isPrimary: String(person.id) === String(contactPersonId),
-          }));
-        }
-
-        nextContact = { ...contact, relatedPersons: next };
-        return nextContact;
-      }),
-    }));
-
-    if (nextContact && !useMockApi()) {
-      void persistContactSnapshot(nextContact).catch((error) => {
-        console.error('[contacts-store] updateContactPerson persist failed', error);
+      let next = persons.map((person) => {
+        if (String(person.id) !== String(contactPersonId)) return person;
+        return normalizeContactPerson({ ...person, ...contactData, id: person.id }, companyId);
       });
-    }
+
+      if (contactData?.isPrimary === true) {
+        next = next.map((person) => ({
+          ...person,
+          isPrimary: String(person.id) === String(contactPersonId),
+        }));
+      }
+
+      return { ...contact, relatedPersons: next };
+    });
   },
 
   deleteContactPerson: (companyId, contactPersonId) => {
-    let nextContact = null;
-    set((state) => ({
-      contacts: state.contacts.map((contact) => {
-        if (String(contact.id) !== String(companyId)) return contact;
-        nextContact = {
-          ...contact,
-          relatedPersons: (contact.relatedPersons || []).filter(
-            (person) => String(person.id) !== String(contactPersonId),
-          ),
-        };
-        return nextContact;
-      }),
+    void commitContactServerFirst(get, set, companyId, (contact) => ({
+      ...contact,
+      relatedPersons: (contact.relatedPersons || []).filter(
+        (person) => String(person.id) !== String(contactPersonId),
+      ),
     }));
-
-    if (nextContact && !useMockApi()) {
-      void persistContactSnapshot(nextContact).catch((error) => {
-        console.error('[contacts-store] deleteContactPerson persist failed', error);
-      });
-    }
   },
 
   /** Lookup helper for cross-module use (Nabz/Ofogh). */

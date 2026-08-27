@@ -1,5 +1,5 @@
 import { ORDER_TABS, getStageLabel, STAGE_PISHKESH_ID, STAGE_KAVOSH_ID, STAGE_MOZENE_ID } from './config';
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { buildStatusHistory, getEffectiveStageId } from './orderStageService';
 import {
@@ -387,7 +387,7 @@ export function markOrderCancelled(order, failReason) {
         id: Date.now(),
         type: 'order_cancelled',
         at,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `لغو سفارش ${order.code} — ${reason}`,
         failReason: reason,
       },

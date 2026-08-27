@@ -4,7 +4,7 @@
  * TipTap only edits greeting + free body text.
  */
 
-import { CURRENT_USER, CURRENT_USER_ROLE, USER_ROLES } from '../../nabz/constants';
+import { getCurrentUser, CURRENT_USER_ROLE, USER_ROLES } from '../../nabz/constants';
 import { escapeHtml, ensureLetterHtml, htmlToPlainText, plainTextToHtml } from './letterHtml';
 
 export const LETTER_BISMILLAH = 'به نام یکتا خالق هستی';
@@ -56,13 +56,13 @@ export function resolveLetterRoleTitle(roleOrTitle) {
 }
 
 /**
- * Demo signatory until Auth SSOT — mirrors Nabz CURRENT_USER.
+ * Demo signatory until Auth SSOT — mirrors Nabz getCurrentUser().
  * `title` is letter-only (e.g. راهبر → مدیر فروش).
  * @param {string} [role]
  */
 export function getLetterSignatory(role = CURRENT_USER_ROLE) {
   return Object.freeze({
-    name: CURRENT_USER,
+    name: getCurrentUser(),
     role,
     title: resolveLetterRoleTitle(role),
     company: LETTER_ORG_LINE,

@@ -28,10 +28,12 @@ function ChevronDownIcon() {
 }
 
 /**
- * Ofogh Row 3 — stage / due filter controls (search + create live in ListActionBar).
+ * Ofogh Row 3 — stage / due / entity-scope filter controls.
  */
 export default function OfoqToolbar({
   selectedStages, onStagesChange, dueFilter, onDueFilterChange,
+  entityScope = 'all', onEntityScopeChange,
+  hideEntityScope = false,
 }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
@@ -94,8 +96,30 @@ export default function OfoqToolbar({
   const activeCount = selectedStages.length + (dueFilter ? 1 : 0);
   const hasAnyFilter = activeCount > 0;
 
+  const scopeOptions = [
+    { id: 'all', label: 'همه' },
+    { id: 'raw', label: 'سرنخ‌های خام' },
+    { id: 'companies', label: 'مخاطبین' },
+  ];
+
   return (
-    <ListFilterBar className="ofoq-filterbar ofoq-glass" ariaLabel="فیلتر پایپ‌لاین">
+    <ListFilterBar className="ofoq-filterbar" ariaLabel="فیلتر پایپ‌لاین">
+      {!hideEntityScope ? (
+        <div className="ofoq-filterbar__scope" role="group" aria-label="نوع موجودیت">
+          {scopeOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={`ofoq-filterbar__scope-btn font-meem${entityScope === option.id ? ' is-active' : ''}`}
+              aria-pressed={entityScope === option.id}
+              onClick={() => onEntityScopeChange?.(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <div className="ofoq-filterbar__stage-select">
         <button
           ref={triggerRef}
@@ -104,6 +128,7 @@ export default function OfoqToolbar({
           aria-expanded={open}
           aria-haspopup="listbox"
           onClick={() => setOpen((value) => !value)}
+          disabled={entityScope === 'raw'}
         >
           <LinesFilterIcon />
           {hasAnyFilter
@@ -169,8 +194,6 @@ export default function OfoqToolbar({
           document.body,
         )}
       </div>
-
-      <span className="list-filter-bar__spacer" aria-hidden="true" />
     </ListFilterBar>
   );
 }

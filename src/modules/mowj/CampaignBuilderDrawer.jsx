@@ -20,7 +20,6 @@ import {
   CAMPAIGN_TYPE_LABELS,
   EXECUTION_CHANNELS,
   TEMPLATE_TYPE,
-  TRIGGER_RULE_CATALOG,
   buildTriggerRule,
   createCampaignDraft,
   getCompatibleTemplateType,
@@ -32,12 +31,19 @@ import { listSegments, listTemplates } from './services/campaignFacade';
 import AudienceBuilderDrawer from './AudienceBuilderDrawer';
 import TemplateQuickCreateDrawer from './TemplateQuickCreateDrawer';
 import SurveyFormCreateDrawer from './SurveyFormCreateDrawer';
+import TriggerPicker from './components/TriggerPicker';
+import {
+  formatTriggerPickerLabel,
+  isTriggerPickerSelectionComplete,
+  resolveTriggerPickerSelection,
+  triggerPickerSelectionFromRule,
+} from './triggerPicker.registry';
 import { SURVEY_FORMS } from './surveyForms';
 
 const ICON = { size: 16, strokeWidth: 1.75 };
 
 const STEPS = [
-  { id: 1, title: 'هدف و شرط', subtitle: 'نگهداشت / جذب و رویداد آغازگر', Icon: Filter },
+  { id: 1, title: 'هدف و شرط', subtitle: 'هدف کمپین و شرط آغاز', Icon: Filter },
   { id: 2, title: 'نوع و کانال', subtitle: 'نوع کمپین و کانال اجرا', Icon: Zap },
   { id: 3, title: 'مخاطب', subtitle: 'انتخاب مخاطب هدف', Icon: Users },
   { id: 4, title: 'انتخاب اقدام', subtitle: 'اقدام و قالب اجرا', Icon: Sparkles },
@@ -81,7 +87,7 @@ function draftFromEmpty() {
       purpose: CAMPAIGN_PURPOSE.RETENTION,
       campaignType: CAMPAIGN_TYPE.SURVEY,
       executionChannelId: 'WHATSAPP',
-      triggerRuleId: TRIGGER_RULE_CATALOG[0]?.id,
+      triggerPickerSelection: null,
       kpiMetricKey: 'SURVEY_RESPONSES',
       surveyFormId: SURVEY_FORMS[0]?.id,
       audienceSegmentId: null,
@@ -96,7 +102,7 @@ function draftFromEmpty() {
     purpose: base.purpose,
     campaignType: base.campaignType,
     executionChannelId: base.executionChannelId,
-    triggerRuleId: base.triggerRule?.id || TRIGGER_RULE_CATALOG[0].id,
+    triggerPickerSelection: null,
     kpiMetricKey: base.kpiDefinition?.metricKey || 'SURVEY_RESPONSES',
     surveyFormId: base.surveyFormId,
     audienceSegmentId: null,
@@ -124,7 +130,19 @@ export default function CampaignBuilderDrawer({
   useEffect(() => {
     if (!open) return undefined;
     setStep(1);
-    setDraft(initialDraft ? { ...draftFromEmpty(), ...initialDraft } : draftFromEmpty());
+    if (initialDraft) {
+      const merged = { ...draftFromEmpty(), ...initialDraft };
+      if (!merged.triggerPickerSelection && initialDraft.triggerRule) {
+        merged.triggerPickerSelection = triggerPickerSelectionFromRule(initialDraft.triggerRule);
+      } else if (!merged.triggerPickerSelection && initialDraft.triggerRuleId) {
+        merged.triggerPickerSelection = triggerPickerSelectionFromRule(
+          buildTriggerRule(initialDraft.triggerRuleId),
+        );
+      }
+      setDraft(merged);
+    } else {
+      setDraft(draftFromEmpty());
+    }
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e) => {
@@ -165,7 +183,9 @@ export default function CampaignBuilderDrawer({
 
   const needsAction = Boolean(actionType);
   const canNext = useMemo(() => {
-    if (step === 1) return Boolean(draft.purpose && draft.triggerRuleId);
+    if (step === 1) {
+      return Boolean(draft.purpose && isTriggerPickerSelectionComplete(draft.triggerPickerSelection));
+    }
     if (step === 2) return Boolean(draft.campaignType);
     if (step === 3) return Boolean(draft.audienceSegmentId);
     if (step === 4) {
@@ -205,13 +225,16 @@ export default function CampaignBuilderDrawer({
       })
       : null;
 
+    const resolvedTrigger = resolveTriggerPickerSelection(draft.triggerPickerSelection);
     onActivate({
       name: draft.name.trim(),
       description: draft.description.trim() || null,
       purpose: draft.purpose,
       campaignType: draft.campaignType,
       executionChannelId: draft.executionChannelId || null,
-      triggerRule: buildTriggerRule(draft.triggerRuleId),
+      triggerRule: resolvedTrigger
+        ? buildTriggerRule(resolvedTrigger.domainRuleId, resolvedTrigger.params)
+        : null,
       kpiDefinition: kpi ? { ...kpi } : null,
       surveyFormId: draft.campaignType === CAMPAIGN_TYPE.SURVEY ? draft.surveyFormId : null,
       audienceSegmentId: draft.audienceSegmentId,
@@ -281,21 +304,14 @@ export default function CampaignBuilderDrawer({
 
               <header className="mowj-block__head" style={{ marginTop: '1rem' }}>
                 <div>
-                  <h3 className="font-meem">شرط آغاز (Trigger)</h3>
-                  <p>فقط تعریف ساختاری — موتور اتوماسیون هنوز فعال نیست</p>
+                  <h3 className="font-meem">شرط آغاز</h3>
+                  <p className="font-meem">چه زمانی این کمپین فعال شود؟</p>
                 </div>
               </header>
-              <div className="mowj-option-grid">
-                {TRIGGER_RULE_CATALOG.map((rule) => (
-                  <OptionCard
-                    key={rule.id}
-                    selected={draft.triggerRuleId === rule.id}
-                    title={rule.label}
-                    hint={rule.hint}
-                    onClick={() => patch({ triggerRuleId: rule.id })}
-                  />
-                ))}
-              </div>
+              <TriggerPicker
+                value={draft.triggerPickerSelection}
+                onChange={(next) => patch({ triggerPickerSelection: next })}
+              />
             </section>
           ) : null}
 
@@ -554,9 +570,9 @@ export default function CampaignBuilderDrawer({
                   </dd>
                 </div>
                 <div>
-                  <dt>شرط</dt>
+                  <dt>شرط آغاز</dt>
                   <dd className="font-meem">
-                    {TRIGGER_RULE_CATALOG.find((r) => r.id === draft.triggerRuleId)?.label || '—'}
+                    {formatTriggerPickerLabel(draft.triggerPickerSelection)}
                   </dd>
                 </div>
               </dl>

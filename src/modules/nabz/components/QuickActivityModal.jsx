@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CURRENT_USER, CURRENT_USER_ROLE } from '../constants';
+import { getCurrentUser, CURRENT_USER_ROLE } from '../constants';
 import {
   CRM_ACTIVITY_ORDER,
   CRM_ACTIVITY_META,
@@ -110,7 +110,7 @@ export default function QuickActivityModal({
         id: editActivity?.id,
         type: form.type,
         body: trimmedBody || 'دریافت وجه',
-        author: editActivity?.author || CURRENT_USER,
+        author: editActivity?.author || getCurrentUser(),
         roleLabel: editActivity?.roleLabel || getRoleLabel(CURRENT_USER_ROLE),
         followUp: form.date && form.time
           ? {
@@ -142,7 +142,7 @@ export default function QuickActivityModal({
       id: editActivity?.id,
       type: form.type,
       body: trimmedBody,
-      author: editActivity?.author || CURRENT_USER,
+      author: editActivity?.author || getCurrentUser(),
       roleLabel: editActivity?.roleLabel || getRoleLabel(CURRENT_USER_ROLE),
       followUp: {
         date: form.date,

@@ -1,13 +1,13 @@
 import { CRM_ACTIVITY_META } from '../../../orderCrmConfig';
-import { getPendingActivityTitle, getPendingCrmActivities } from '../../../orderCrmService';
+import { getPendingActivityTitle } from '../../../orderCrmService';
 
 export default function PendingActivitiesPanel({
-  order,
+  activities,
   onComplete,
   onEdit,
   onAddNew,
 }) {
-  const pending = getPendingCrmActivities(order);
+  const pending = activities;
 
   return (
     <section className="order-crm-pending">

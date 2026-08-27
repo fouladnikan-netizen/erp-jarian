@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { useContactsStore } from '../../stores/useContactsStore';
+import { useContactsStore, CONTACT_RECORD_TYPES, LIFECYCLE_STAGES, RELATIONSHIP_LIFECYCLE_STAGES } from '../../stores/useContactsStore';
 import SmartBackButton, { withReturnParams } from '../../components/navigation/SmartBackButton';
-import { useNabzOrders } from '../nabz/NabzOrdersContext';
+import { useOrders } from '../nabz/public/index.js';
 import { getStageLabel } from '../nabz/config';
 import {
   SupplierPurchaseOrdersPanel,
@@ -26,6 +26,8 @@ import GahshomarDocumentsPanel from '../gahshomar/GahshomarDocumentsPanel';
 import CustomerFinancialCockpit from '../finance/components/CustomerFinancialCockpit';
 import { formatRial } from '../finance/customerFinancialProjection';
 import LegalInfoModal from './components/LegalInfoModal';
+import CustomerLeadOriginCard from './components/CustomerLeadOriginCard';
+import { useNotificationEngine } from '../../context/NotificationEngineContext';
 import './kanoon.css';
 import './customerProfile.css';
 
@@ -46,15 +48,9 @@ const PinIcon = () => icon(<><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 1
 const GlobeIcon = () => icon(<><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>);
 const InfoIcon = () => icon(<><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></>, 13);
 
-function getInitials(name) {
-  const parts = String(name || '').trim().split(/\s+/);
-  if (!parts[0]) return '؟';
-  return parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : parts[0].slice(0, 2);
-}
-
 /* ═══ ستون راست: هویت ═══ */
 
-function IdentityCard({ company, onCompanySaved }) {
+function IdentityCard({ company, onCompanySaved, isLead }) {
   const displayName = getDisplayName(company) || '—';
   const statusMeta = BEHAVIORAL_STATUS[company.behavioralStatus];
   const isCustomer = company.entityType === ENTITY_TYPES.CUSTOMER;
@@ -68,23 +64,24 @@ function IdentityCard({ company, onCompanySaved }) {
 
   return (
     <section className="kprofile-glass kprofile-identity" aria-label="هویت مخاطب">
-      <div className="kprofile-identity__avatar" aria-hidden="true">{getInitials(displayName)}</div>
       <div className="kprofile-identity__name-row">
         <h2 className="kprofile-identity__name font-meem">{displayName}</h2>
-        <button
-          type="button"
-          className="kprofile-identity__legal-btn"
-          title="اطلاعات حقوقی تکمیلی"
-          aria-label="اطلاعات حقوقی تکمیلی"
-          onClick={() => setLegalModalOpen(true)}
-        >
-          <InfoIcon />
-        </button>
+        {!isLead ? (
+          <button
+            type="button"
+            className="kprofile-identity__legal-btn"
+            title="اطلاعات حقوقی تکمیلی"
+            aria-label="اطلاعات حقوقی تکمیلی"
+            onClick={() => setLegalModalOpen(true)}
+          >
+            <InfoIcon />
+          </button>
+        ) : null}
       </div>
       <p className="kprofile-identity__meta font-meem">
         {isCustomer ? 'مشتری' : 'تامین‌کننده'} · {isLegal ? 'حقوقی' : 'حقیقی'}
       </p>
-      {isLegal ? <CompanyCompletionProfileBanner company={company} /> : null}
+      {!isLead && isLegal ? <CompanyCompletionProfileBanner company={company} /> : null}
       {!isCustomer && capabilityTags.length > 0 && (
         <div
           className="kprofile-identity__capabilities"
@@ -106,6 +103,10 @@ function IdentityCard({ company, onCompanySaved }) {
         {company.activityDomain && <span className="kprofile-chip">{company.activityDomain}</span>}
         {company.supplierType && <span className="kprofile-chip">{company.supplierType}</span>}
         {company.province && <span className="kprofile-chip">{company.province}</span>}
+        {company.officialSpecs?.city && <span className="kprofile-chip">{company.officialSpecs.city}</span>}
+        {company.officialSpecs?.companyType && (
+          <span className="kprofile-chip">{company.officialSpecs.companyType}</span>
+        )}
       </div>
       {company.assignee?.name && (
         <p className="kprofile-identity__assignee">
@@ -113,7 +114,7 @@ function IdentityCard({ company, onCompanySaved }) {
         </p>
       )}
 
-      {isLegalModalOpen && (
+      {!isLead && isLegalModalOpen && (
         <LegalInfoModal
           company={company}
           onClose={() => setLegalModalOpen(false)}
@@ -160,7 +161,7 @@ function QuickContacts({ contact }) {
 /* ═══ تب سفارش‌ها ═══ */
 
 function OrdersPanel({ contact }) {
-  const { orders } = useNabzOrders();
+  const orders = useOrders();
 
   const liveOrders = useMemo(
     () => (orders || []).filter((order) => String(order.customerId) === String(contact.id)),
@@ -250,6 +251,13 @@ export default function CustomerProfilePage() {
   const { contactId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const contacts = useContactsStore((state) => state.contacts);
+  const fetchCompanyById = useContactsStore((state) => state.fetchCompanyById);
+
+  useEffect(() => {
+    if (contactId) {
+      void fetchCompanyById(contactId);
+    }
+  }, [contactId, fetchCompanyById]);
 
   const contact = useMemo(
     () => contacts.find((c) => String(c.id) === String(contactId)) || null,
@@ -258,8 +266,11 @@ export default function CustomerProfilePage() {
 
   const entityType = contact?.entityType || ENTITY_TYPES.CUSTOMER;
   const profileTabs = useMemo(() => getCompanyProfileTabs(entityType), [entityType]);
-  const activeTab = resolveCompanyProfileTab(searchParams.get('tab'), entityType);
+  const isLead = contact?.recordType === CONTACT_RECORD_TYPES.LEAD;
+  const rawActiveTab = resolveCompanyProfileTab(searchParams.get('tab'), entityType);
+  const activeTab = isLead ? 'interactions' : rawActiveTab;
   const [addPersonOpen, setAddPersonOpen] = useState(false);
+  const [leadUpgradeOpen, setLeadUpgradeOpen] = useState(false);
 
   const handleTabChange = (id) => {
     const next = new URLSearchParams(searchParams);
@@ -267,14 +278,14 @@ export default function CustomerProfilePage() {
     setSearchParams(next, { replace: true });
   };
 
-  const tabs = useMemo(
-    () => profileTabs.map(({ id, label, Icon }) => ({
+  const tabs = useMemo(() => {
+    const mapped = profileTabs.map(({ id, label, Icon }) => ({
       id,
       label,
       icon: <Icon size={14} strokeWidth={1.75} />,
-    })),
-    [profileTabs],
-  );
+    }));
+    return isLead ? mapped.filter((t) => t.id === 'interactions') : mapped;
+  }, [profileTabs, isLead]);
 
   if (!contact) {
     return (
@@ -294,7 +305,15 @@ export default function CustomerProfilePage() {
     <ProfilePageShell className="module-page kanoon-profile-page" dataModule="kanoon">
       <div className="kprofile-topbar" role="toolbar" aria-label="عملیات پروفایل">
         <SmartBackButton fallbackTo="/" fallbackName="کانون" />
-        {isLegalCompany ? (
+        {isLead ? (
+          <button
+            type="button"
+            className="kprofile-topbar__add-person font-meem"
+            onClick={() => setLeadUpgradeOpen(true)}
+          >
+            ارتقا به مخاطب رسمی
+          </button>
+        ) : isLegalCompany ? (
           <button
             type="button"
             className="kprofile-topbar__add-person font-meem"
@@ -308,10 +327,17 @@ export default function CustomerProfilePage() {
 
       <div className="kprofile">
         <aside className="kprofile__side" aria-label="کابین هویت و مالی">
-          <IdentityCard company={contact} />
-          <CustomerFinancialCockpit company={contact} />
+          <IdentityCard
+            company={contact}
+            isLead={isLead}
+            onCompanySaved={(id) => {
+              void fetchCompanyById(id);
+            }}
+          />
+          {!isLead ? <CustomerFinancialCockpit company={contact} /> : null}
+          {!isLead ? <CustomerLeadOriginCard companyId={contact.id} /> : null}
           <QuickContacts contact={contact} />
-          {isLegalCompany ? (
+          {!isLead && isLegalCompany ? (
             <ContactPersonsSection companyId={contact.id} showAddButton={false} />
           ) : null}
         </aside>
@@ -330,28 +356,28 @@ export default function CustomerProfilePage() {
             tabClassName={(_tab, active) => `kprofile-tabs__btn${active ? ' is-active' : ''}`}
           />
 
-          {activeTab === 'timeline' && <CompanyTimelinePanel company={contact} />}
-          {activeTab === 'orders' && !isSupplier && <OrdersPanel contact={contact} />}
-          {activeTab === 'purchases' && isSupplier && (
+          {activeTab === 'timeline' && !isLead && <CompanyTimelinePanel company={contact} />}
+          {activeTab === 'orders' && !isLead && !isSupplier && <OrdersPanel contact={contact} />}
+          {activeTab === 'purchases' && !isLead && isSupplier && (
             <SupplierPurchaseOrdersPanel contact={contact} />
           )}
-          {activeTab === 'opportunities' && !isSupplier && (
+          {activeTab === 'opportunities' && !isLead && !isSupplier && (
             <ComingSoonPanel
               title="افق — فرصت‌ها"
               subtitle="فرصت‌های فروش و پیگیری‌های مرتبط با این مخاطب"
               Icon={Target}
             />
           )}
-          {activeTab === 'inquiries' && isSupplier && (
+          {activeTab === 'inquiries' && !isLead && isSupplier && (
             <SupplierInquiriesPanel contact={contact} />
           )}
           {activeTab === 'interactions' && (
             <PooyeshInteractionsPanel company={contact} />
           )}
-          {activeTab === 'documents' && (
+          {activeTab === 'documents' && !isLead && (
             <GahshomarDocumentsPanel companyId={contact.id} />
           )}
-          {activeTab === 'financial' && (
+          {activeTab === 'financial' && !isLead && (
             <ComingSoonPanel
               title="صورت‌حساب مالی"
               subtitle="مانده حساب، دریافت‌ها، پرداخت‌ها و صورت‌حساب‌های مرتبط"
@@ -361,11 +387,134 @@ export default function CustomerProfilePage() {
         </main>
       </div>
 
-      <ContactPersonModal
-        open={addPersonOpen}
-        companyId={contact.id}
-        onClose={() => setAddPersonOpen(false)}
-      />
+      {!isLead && (
+        <ContactPersonModal
+          open={addPersonOpen}
+          companyId={contact.id}
+          onClose={() => setAddPersonOpen(false)}
+        />
+      )}
+
+      {leadUpgradeOpen && isLead && (
+        <LeadUpgradeModal
+          company={contact}
+          onClose={() => setLeadUpgradeOpen(false)}
+        />
+      )}
     </ProfilePageShell>
+  );
+}
+
+function LeadUpgradeModal({ company, onClose }) {
+  const [nationalId, setNationalId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const updateContact = useContactsStore((s) => s.updateContact);
+  const { dispatchNotification } = useNotificationEngine();
+
+  const mockLinkaValidate = async (id) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    return { ok: true, nationalId: id };
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setError('');
+
+    const cleaned = String(nationalId ?? '').replace(/\D/g, '');
+    if (!cleaned) {
+      setError('شناسه ملی را وارد کنید.');
+      return;
+    }
+    if (cleaned.length !== 11) {
+      setError('شناسه ملی باید دقیقاً ۱۱ رقم باشد.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await mockLinkaValidate(cleaned);
+      if (!result?.ok) {
+        setError('خطا در اعتبارسنجی لینکا. لطفاً دوباره تلاش کنید.');
+        return;
+      }
+
+      updateContact(company.id, {
+        recordType: CONTACT_RECORD_TYPES.CUSTOMER,
+        nationalId: cleaned,
+        lifecycleStage: RELATIONSHIP_LIFECYCLE_STAGES.NOPODID,
+        lifecycle_stage: LIFECYCLE_STAGES.COLD_LEAD,
+      });
+
+      dispatchNotification({
+        type: 'DEFAULT',
+        title: 'ارتقا انجام شد',
+        message: 'ارتقا به مخاطب رسمی با موفقیت انجام شد و دسترسی‌های مالی/سفارشات باز شد.',
+      });
+
+      onClose?.();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="kanoon-modal-overlay" onClick={onClose} role="presentation">
+      <div
+        className="kanoon-modal kanoon-modal--minimal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="ارتقا به مخاطب رسمی"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="kanoon-modal__header">
+          <h2 className="kanoon-modal__title font-meem">ارتقا به مخاطب رسمی</h2>
+          <button
+            type="button"
+            className="btn btn--ghost btn--icon"
+            onClick={onClose}
+            aria-label="بستن"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </header>
+
+        <form onSubmit={handleSubmit} dir="rtl">
+          <div className="kanoon-modal__body">
+            <label className="kanoon-form__field">
+              <span className="kanoon-form__label">
+                شناسه ملی
+                <span className="kanoon-form__required">*</span>
+              </span>
+              <input
+                type="text"
+                className="font-yekan"
+                value={nationalId}
+                onChange={(e) => setNationalId(e.target.value)}
+                placeholder="کد ملی"
+              />
+            </label>
+
+            {error ? (
+              <p className="kanoon-form__error" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+
+          <footer className="kanoon-modal__footer">
+            <button type="button" className="btn btn--ghost" onClick={onClose}>
+              انصراف
+            </button>
+            <button type="submit" className="btn btn--primary" disabled={isSubmitting}>
+              {isSubmitting ? 'در حال بررسی…' : 'تایید و ارتقا'}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
   );
 }

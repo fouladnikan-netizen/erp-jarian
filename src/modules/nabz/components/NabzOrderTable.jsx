@@ -177,7 +177,9 @@ export default function NabzOrderTable({
   const isCurrentTab = tab === ORDER_TABS.CURRENT;
   const isSuccessTab = tab === ORDER_TABS.SUCCESS;
   const showProfileAction = isCurrentTab || isSuccessTab;
-  const useStandardColumns = tab === ORDER_TABS.CURRENT || tab === ORDER_TABS.FAILED || tab === ORDER_TABS.SUCCESS;
+  const useStandardColumns = tab === ORDER_TABS.CURRENT
+    || tab === ORDER_TABS.FAILED
+    || tab === ORDER_TABS.SUCCESS;
 
   const columnDefinitions = useMemo(
     () => buildColumnDefinitions(showProfileAction),

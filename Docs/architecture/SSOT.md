@@ -35,21 +35,30 @@
 | **Duplicate sources** | Legacy field aliases (`name`/`role`); synthetic `self-{id}` for natural persons |
 | **Recommended future source** | Same embed; normalize always through domain helpers |
 
-### Opportunity / Lead
+### Opportunity (Company capability)
 
 | | |
 |--|--|
-| **Current source** | Company + `lifecycle_stage` (constants in `domain/party`) |
-| **Duplicate sources** | UX copy saying “لید/فرصت” as if separate DB row |
+| **Current source** | Company + `lifecycle_stage` (constants in `domain/party`) — **DDL-04** |
+| **Duplicate sources** | UX copy saying “فرصت” as if separate DB row |
 | **Recommended future source** | Keep view-based until product requires Opportunity entity |
+
+### Raw Lead (Ofogh aggregate)
+
+| | |
+|--|--|
+| **Current source** | PostgreSQL `raw_leads` + `/api/v1/leads` (**DDL-13** implemented); `useLeadsStore` = cache only |
+| **Duplicate sources** | Historical conflation with Opportunity/Company facet (resolved by **DDL-13**) |
+| **Recommended future source** | Linka production adapter; keep Lead row after CONVERTED for attribution |
 
 ### Activity
 
 | | |
 |--|--|
-| **Current source** | **Split** — Company `interactions` + Order `crmActivities` + پویش stub/claims |
-| **Duplicate sources** | Calendar commitments; Ofogh follow-up dates as soft activity |
-| **Recommended future source** | Single Activity model owned by پویش, with `companyId` / `orderId` links (**medium cost — do not implement now**) |
+| **Architecture (locked)** | **DDL-15** — Pooyesh owns soft-CRM Activity; SSOT = PostgreSQL `activities`; subject = `COMPANY` \| `RAW_LEAD` only |
+| **Current source** | PostgreSQL `activities` + `/api/v1/activities`; `useActivitiesStore` = cache |
+| **Out of unify** | Nabz Order `crmActivities`, Order operational events, finance events, `audit_log` |
+| **Legacy** | Parent `interactions[]` not auto-migrated; mock offline may still use them |
 
 ---
 

@@ -1,5 +1,9 @@
 /* ——— Nabz module (سند چارچوب ۱.۸) ——— */
 
+.nabz-page {
+  min-width: 0;
+}
+
 .nabz-page .section-kpis {
   margin-top: 0;
 }
@@ -330,6 +334,8 @@
 
 .nabz-kanban-card-wrap {
   cursor: grab;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .nabz-kanban-card-wrap.is-dragging {
@@ -653,6 +659,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+  min-width: 0;
+  padding: 1rem 1.25rem;
 }
 
 .nabz-kanban-header {
@@ -724,6 +732,8 @@
   overflow-x: auto;
   padding: 0.25rem 0.1rem 1rem;
   min-height: 300px;
+  min-width: 0;
+  max-width: 100%;
   scrollbar-width: thin;
 }
 
@@ -732,6 +742,7 @@
   flex: 0 0 248px;
   width: 248px;
   min-width: 248px;
+  max-width: 248px;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
@@ -776,6 +787,10 @@
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nabz-kanban-col__count {
@@ -800,9 +815,15 @@
   flex-direction: column;
   gap: 0.6rem;
   min-height: 9rem;
-  padding: 0.25rem 0.15rem 0.75rem;
+  min-width: 0;
+  padding: 0.35rem 0.15rem 0.75rem;
   border-radius: 14px;
   transition: background 0.18s ease;
+}
+
+.nabz-kanban-col__cards > li {
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* حالت خالی ستون — باکس خط‌چین ظریف مثل افق */
@@ -821,6 +842,9 @@
 /* کارت شناور براق — عین کارت لید افق */
 .nabz-kanban-card {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   text-align: right;
   padding: 0.75rem 0.85rem;
   background: linear-gradient(180deg, var(--color-white) 0%, var(--bg-surface) 100%);
@@ -852,6 +876,7 @@
     flex-basis: 220px;
     width: 220px;
     min-width: 220px;
+    max-width: 220px;
   }
 }
 
@@ -865,10 +890,12 @@
 }
 
 .nabz-kanban-card__top-main {
-  display: inline-flex;
+  display: flex;
+  flex: 1;
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
+  overflow: hidden;
 }
 
 .nabz-kanban-card__date {
@@ -921,6 +948,10 @@
   font-weight: 600;
   line-height: 1.35;
   color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nabz-kanban-card__customer-btn {
@@ -931,6 +962,11 @@
   text-align: right;
   cursor: pointer;
   color: var(--color-accent-dark);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nabz-kanban-card__customer-btn:hover {
@@ -941,6 +977,10 @@
   font-family: var(--font-secondary);
   font-size: 0.72rem;
   color: var(--text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nabz-kanban-card__footer {
@@ -948,11 +988,25 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.35rem;
+  min-width: 0;
   font-family: var(--font-secondary);
   font-size: 0.68rem;
   color: var(--text-secondary);
   padding-top: 0.15rem;
   border-top: 1px solid color-mix(in srgb, var(--color-neutral-800) 6%, transparent);
+}
+
+.nabz-kanban-card__footer > span:first-child {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nabz-kanban-card__footer > span:last-child {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* Drawer — left-only; motion from global overlays.css */

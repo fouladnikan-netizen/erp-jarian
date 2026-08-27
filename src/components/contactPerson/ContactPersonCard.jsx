@@ -7,7 +7,12 @@ import { getContactPersonJobLabel } from './contactPersonRoles';
  */
 export default function ContactPersonCard({ person, onEdit }) {
   const name = getContactPersonDisplayName(person);
-  const jobLabel = getContactPersonJobLabel(person.jobPosition);
+  const titles = Array.isArray(person.linkaRoleTitles) && person.linkaRoleTitles.length
+    ? person.linkaRoleTitles
+    : null;
+  const jobLabel = titles
+    ? titles.join(' · ')
+    : getContactPersonJobLabel(person.jobPosition);
   const mobile = person.mobile || '—';
   const hasRole = Boolean(jobLabel && jobLabel !== '—');
 

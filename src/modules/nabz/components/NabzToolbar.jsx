@@ -1,7 +1,11 @@
 import { ORDER_TABS, ORDER_TAB_META, VIEW_MODES } from '../config';
 import ListFilterBar from '../../../components/module/ListFilterBar';
 
-const TAB_ORDER = [ORDER_TABS.CURRENT, ORDER_TABS.SUCCESS, ORDER_TABS.FAILED];
+const TAB_ORDER = [
+  ORDER_TABS.CURRENT,
+  ORDER_TABS.SUCCESS,
+  ORDER_TABS.FAILED,
+];
 
 /**
  * Nabz Row 3 — status tabs + list/kanban view controls.
@@ -12,7 +16,8 @@ export default function NabzToolbar({
   viewMode,
   onViewModeChange,
 }) {
-  const showViewToggle = activeTab !== ORDER_TABS.FAILED;
+  const showViewToggle = activeTab !== ORDER_TABS.FAILED
+    && activeTab !== ORDER_TABS.CLOSED;
   const isList = viewMode === VIEW_MODES.LIST;
 
   return (

@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  CREATE_ORDER_TYPES,
-  CURRENT_USER,
-  DEFAULT_ORDER_TYPE,
-  DEFAULT_SALE_TYPE,
-  SALES_TYPES,
-} from '../constants';
+import { CREATE_ORDER_TYPES, getCurrentUser, DEFAULT_ORDER_TYPE, DEFAULT_SALE_TYPE, SALES_TYPES,  } from '../constants';
 import {
   applyOrderEdit,
   buildNewOrder,
@@ -190,7 +184,7 @@ export default function CreateOrderDrawer({
     const nextOrder = buildNewOrder({
       orders,
       customerId,
-      assignee: CURRENT_USER,
+      assignee: getCurrentUser(),
       lineItems,
       orderType,
       saleType,

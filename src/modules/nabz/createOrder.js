@@ -1,5 +1,5 @@
 import { ORDER_TABS } from './config';
-import { CURRENT_USER, DEFAULT_ORDER_TYPE, DEFAULT_SALE_TYPE, SALES_TYPES } from './constants';
+import { getCurrentUser, DEFAULT_ORDER_TYPE, DEFAULT_SALE_TYPE, SALES_TYPES } from './constants';
 import { getTodayJalali, getNowTimeFa, parseJalaliParts } from './dateUtils';
 import { buildOrderCodeDashed } from './orderCode';
 import { getCustomerById } from './customers';
@@ -10,6 +10,12 @@ import {
   updateGatewayOrderItemWithSensitivity,
 } from './gatewayService';
 import { isMozeneStage } from './orderStageService';
+import {
+  companyReference,
+  assertEntityEligibleFor,
+  detectRawLeadOrderAttempt,
+  ERP_CAPABILITY,
+} from '../../domain/entityReference';
 
 function resolveIsOfficialFromSaleType(saleType) {
   const type = saleType || DEFAULT_SALE_TYPE;
@@ -44,11 +50,57 @@ export function createLineItemsFromSelections(selections) {
   return lines;
 }
 
-export function validateCreateOrder({ customerId, lineItems }) {
+export function validateCreateOrder({ customerId, lineItems, entityType, leadId, subject } = {}) {
+  const rawAttempt = detectRawLeadOrderAttempt({
+    customerId,
+    companyId: customerId,
+    entityType,
+    leadId,
+    subject,
+  });
+  if (rawAttempt.attempted) {
+    return {
+      valid: false,
+      code: 'RAW_LEAD_NOT_ELIGIBLE_FOR_ORDER',
+      reason: 'Raw lead must be converted to a company before an order can be created.',
+    };
+  }
+
   if (!customerId) {
     return { valid: false, reason: 'مشتری را انتخاب کنید.' };
   }
-  if (!lineItems.length) {
+
+  const gate = assertEntityEligibleFor(
+    companyReference(customerId),
+    ERP_CAPABILITY.ORDER,
+  );
+  if (!gate.ok) {
+    return { valid: false, code: gate.code, reason: gate.message };
+  }
+
+  const customer = getCustomerById(customerId);
+  if (!customer) {
+    return { valid: false, reason: 'مشتری یافت نشد.' };
+  }
+  if (customer.recordType === 'LEAD') {
+    return {
+      valid: false,
+      code: 'RAW_LEAD_NOT_ELIGIBLE_FOR_ORDER',
+      reason: 'Raw lead must be converted to a company before an order can be created.',
+    };
+  }
+
+  const personType = String(customer.personType || 'legal').toLowerCase();
+  if (personType !== 'natural' && !String(customer.nationalId || '').trim()) {
+    return {
+      valid: false,
+      code: 'CUSTOMER_NATIONAL_ID_REQUIRED',
+      reason: 'برای ثبت سفارش، ابتدا شناسه ملی مشتری را در کانون تکمیل کنید.',
+      companyId: customerId,
+    };
+  }
+
+  if (!lineItems?.length) {
     return { valid: false, reason: 'حداقل یک کالا به سبد اضافه کنید.' };
   }
   if (lineItems.some((item) => !item.qty || item.qty <= 0)) {
@@ -76,7 +128,7 @@ export function buildNewOrder({
     code,
     customerId,
     customer: customer ? getDisplayName(customer) : '—',
-    assignee: assignee || CURRENT_USER,
+    assignee: assignee || getCurrentUser(),
     orderType: orderType || DEFAULT_ORDER_TYPE,
     saleType: resolvedSaleType,
     isOfficial: resolveIsOfficialFromSaleType(resolvedSaleType),
@@ -89,6 +141,7 @@ export function buildNewOrder({
     stageId: 1,
     inquiryCompletedAt: null,
     status: ORDER_TABS.CURRENT,
+    closure: 'open',
     registeredDate,
     registeredTime,
     items: lineItems.map(({

@@ -1,10 +1,10 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { ORDER_TABS, STAGE_TADAROK_ID } from './config';
 import { getTodayJalali, getNowTimeFa, isValidJalaliDate } from './dateUtils';
 import { parseMoneyInput } from './orderCode';
 import { calculateQuotingPreview, getTargetInquiry } from './quotingService';
 import { OPERATIONAL_PHASES } from './phase2Config';
-import { advanceOperationalPhase, getOrderOperationalPhase } from './phase2Service';
+import { advanceOperationalPhase, getOrderOperationalPhase, shouldShowOperationalPhases } from './phase2Service';
 import { getSupplierName } from './suppliers';
 import {
   PAYMENT_TERM_TYPES,
@@ -13,7 +13,7 @@ import {
 } from './tadarokStageConfig';
 
 export function isTadarokStageLive(order, operationalViewPhase) {
-  return order.status === ORDER_TABS.SUCCESS
+  return shouldShowOperationalPhases(order)
     && order.stageId === STAGE_TADAROK_ID
     && getOrderOperationalPhase(order) === OPERATIONAL_PHASES.TADAROK
     && operationalViewPhase === OPERATIONAL_PHASES.TADAROK;
@@ -203,7 +203,7 @@ export function splitTadarokLine(order, lineId, quantities) {
           id: Date.now(),
           type: 'tadarok_line_split',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `تفکیک ${line.name} به ${children.length} زیرسطر`,
         },
       ],
@@ -244,7 +244,7 @@ export function issuePurchaseOrder(order, lineId, draft) {
     ...normalizePurchaseOrderPayload(draft),
     poNumber,
     issuedAt: at,
-    issuedBy: CURRENT_USER,
+    issuedBy: getCurrentUser(),
   };
 
   lines[lineIndex] = {
@@ -265,7 +265,7 @@ export function issuePurchaseOrder(order, lineId, draft) {
           id: Date.now(),
           type: 'purchase_order_issued',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `صدور سفارش خرید ${poNumber} — ${line.name} — ${supplierName}`,
         },
       ],
@@ -290,7 +290,7 @@ export function updatePurchaseOrder(order, lineId, draft) {
   const purchaseOrder = {
     ...normalizePurchaseOrderPayload(draft, line.purchaseOrder),
     updatedAt: at,
-    updatedBy: CURRENT_USER,
+    updatedBy: getCurrentUser(),
   };
 
   lines[lineIndex] = {
@@ -310,7 +310,7 @@ export function updatePurchaseOrder(order, lineId, draft) {
           id: Date.now(),
           type: 'purchase_order_updated',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `ویرایش سفارش خرید ${purchaseOrder.poNumber || ''} — ${line.name} — ${supplierName}`.trim(),
         },
       ],

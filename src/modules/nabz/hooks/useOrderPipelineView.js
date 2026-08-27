@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ORDER_TABS } from '../config';
 import { getOrderGatewayPhase } from '../gatewayService';
-import { getOrderOperationalPhase } from '../phase2Service';
+import { getOrderOperationalPhase, shouldShowOperationalPhases } from '../phase2Service';
 
 export function useOrderPipelineView(order) {
   const orderPhase = getOrderGatewayPhase(order);
@@ -9,7 +9,9 @@ export function useOrderPipelineView(order) {
   const [viewPhase, setViewPhase] = useState(orderPhase);
   const [operationalViewPhase, setOperationalViewPhase] = useState(operationalPhase);
   const [viewMode, setViewMode] = useState(
-    order.status === ORDER_TABS.SUCCESS ? 'operations' : 'gateway',
+    shouldShowOperationalPhases(order) || order.status === ORDER_TABS.SUCCESS
+      ? 'operations'
+      : 'gateway',
   );
 
   useEffect(() => {
@@ -21,13 +23,13 @@ export function useOrderPipelineView(order) {
   }, [order.id, operationalPhase]);
 
   useEffect(() => {
-    if (order.status === ORDER_TABS.SUCCESS) {
+    if (shouldShowOperationalPhases(order) || order.status === ORDER_TABS.SUCCESS) {
       setViewMode('operations');
       setOperationalViewPhase(getOrderOperationalPhase(order));
     } else {
       setViewMode('gateway');
     }
-  }, [order.id, order.status, order.stageId]);
+  }, [order.id, order.status, order.stageId, order.phase2EnteredAt, order.gatewayDecision?.outcome]);
 
   const handlePhaseChange = (phase) => {
     setViewMode('gateway');
@@ -42,7 +44,7 @@ export function useOrderPipelineView(order) {
   const syncAfterOrderUpdate = (nextOrder) => {
     setViewPhase(getOrderGatewayPhase(nextOrder));
     setOperationalViewPhase(getOrderOperationalPhase(nextOrder));
-    if (nextOrder.status === ORDER_TABS.SUCCESS) {
+    if (shouldShowOperationalPhases(nextOrder) || nextOrder.status === ORDER_TABS.SUCCESS) {
       setViewMode('operations');
     }
   };

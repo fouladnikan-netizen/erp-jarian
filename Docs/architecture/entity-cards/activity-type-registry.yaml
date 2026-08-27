@@ -1,0 +1,26 @@
+id: activity-type-registry
+name: Activity Type Registry
+tier: B
+status: active
+ownerModule: shirazeh
+aggregateRoot: ActivityTypeRegistry
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Central config list of allowed activity_type keys for the Pooyesh Activity aggregate; create/rename/reorder/activate/deactivate, no hard delete."
+archivePolicy: soft-delete
+auditPolicy: none
+rbacPolicy:
+  - activities:read
+  - users:admin
+databaseTable: activity_type_registry
+apiBasePath: /api/v1/activity-types
+backendRepository: backend/src/repositories/activityTypeRepository.js
+frontendRepository: src/api/repositories/ActivityTypeRepository.js
+dependencies:
+  - auth-user
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-19
+migrationSafety: "010_activity_type_registry.sql + 012_activity_type_registry_add_task.sql, expand-only; activities.activity_type stays free TEXT (no FK) so deactivated/renamed keys never break historical Activity rows; enforcement of active-key-only is service-layer on write, not a DB constraint."
+notes: "Read (list) requires only activities:read so every Activity-creation surface (Pooyesh/Kanoon/Ofogh/Nabz) can fetch the registry; create/rename/reorder/activate/deactivate require users:admin. Shirazeh owns the CRUD UI at /shirazeh/activity-types. Consumers must use src/domain/activityTypes/activityTypesFacade.js — never hardcode a local type list."

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Search } from 'lucide-react';
-import { useNabzOrders } from '../nabz/NabzOrdersContext';
+import { useOrders } from '../nabz/public/index.js';
 import { withReturnParams } from '../../components/navigation/SmartBackButton';
 import { ProfileTabSectionHeader } from '../../components/profileLayout';
 import EntityMentionText from '../../components/navigation/EntityMentionText';
@@ -129,7 +129,7 @@ function SupplyRowCard({ row, returnTo, returnName }) {
 }
 
 export function SupplierPurchaseOrdersPanel({ contact }) {
-  const { orders } = useNabzOrders();
+  const orders = useOrders();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
   const rows = useMemo(
@@ -181,7 +181,7 @@ export function SupplierPurchaseOrdersPanel({ contact }) {
 }
 
 export function SupplierInquiriesPanel({ contact }) {
-  const { orders } = useNabzOrders();
+  const orders = useOrders();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
   const rows = useMemo(

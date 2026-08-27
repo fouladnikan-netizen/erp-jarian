@@ -378,8 +378,24 @@
 
 .list-toolbar__search,
 .list-action-bar__search {
-  flex: 1 1 14rem;
-  min-width: 11rem;
+  /* Compact, consistent search width across Kanoon / Vitrin / Nabz / Ofogh */
+  flex: 0 1 16rem;
+  width: 16rem;
+  min-width: 12rem;
+  max-width: 18rem;
+}
+
+.list-toolbar .actions-bar__search input,
+.list-action-bar .actions-bar__search input {
+  padding: 0.45rem 2.25rem 0.45rem 0.85rem;
+  font-size: 0.8125rem;
+}
+
+.list-toolbar .actions-bar__search-icon,
+.list-action-bar .actions-bar__search-icon {
+  right: 0.65rem;
+  width: 16px;
+  height: 16px;
 }
 
 .list-toolbar__filters {
@@ -405,7 +421,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin-inline-end: auto;
+  /* RTL: push primary actions to the physical left (same as Kanoon / Vitrin) */
+  margin-inline-start: auto;
 }
 
 .list-toolbar__below-search {

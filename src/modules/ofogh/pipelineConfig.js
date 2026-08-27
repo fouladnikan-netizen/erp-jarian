@@ -1,8 +1,14 @@
-import { LIFECYCLE_STAGES } from '../../stores/useContactsStore';
+import { LIFECYCLE_STAGES } from '../kanoon/public/index.js';
+import {
+  CUSTOMER_LIFECYCLE_ORDER,
+  ENGAGEMENT,
+  ENGAGEMENT_LABELS_FA,
+} from '../../domain/customerLifecycle/index.js';
 
 /**
- * متادیتای ۷ ستون پایپ‌لاین افق — واژگان رسمی «جریان» (Jarian Lexicon).
+ * متادیتای ستون‌های چرخه مشتری افق — واژگان رسمی «جریان» (Jarian Lexicon).
  * رنگ‌ها فقط از Theme Tokens (RFC-001) — هرگز هگز خام.
+ * «سایه» lifecycle column نیست — Engagement جداست.
  */
 export const PIPELINE_STAGES = [
   {
@@ -41,13 +47,17 @@ export const PIPELINE_STAGES = [
     color: 'var(--pipeline-loyal)',
     glow: 'var(--pipeline-loyal-glow)',
   },
-  {
-    id: LIFECYCLE_STAGES.ARCHIVED,
-    label: 'سایه',
-    color: 'var(--pipeline-archived)',
-    glow: 'var(--pipeline-archived-glow)',
-  },
 ];
+
+/** @deprecated Legacy 7th column removed — سایه is engagement */
+export const LEGACY_ARCHIVED_STAGE = {
+  id: LIFECYCLE_STAGES.ARCHIVED,
+  label: 'سایه',
+  color: 'var(--pipeline-archived)',
+  glow: 'var(--pipeline-archived-glow)',
+};
+
+export { CUSTOMER_LIFECYCLE_ORDER, ENGAGEMENT, ENGAGEMENT_LABELS_FA };
 
 /** وضعیت «نبض» پیگیری بعدی: overdue | today | future | none */
 export function getPulseStatus(isoDate) {
@@ -72,12 +82,12 @@ export const PULSE_META = {
 /** بات صیاد: آستانه رکود فرصت — بیش از این تعداد روز بدون تعامل یعنی «در حال پوسیدن». */
 export const ROTTING_INACTIVITY_DAYS = 14;
 
-/** ستون‌های مستثنی از منطق پوسیدگی: هم‌پیمان (وفادار) و سایه (بایگانی). */
-const ROTTING_EXEMPT_STAGES = new Set([LIFECYCLE_STAGES.LOYAL, LIFECYCLE_STAGES.ARCHIVED]);
+/** ستون‌های مستثنی از منطق پوسیدگی: هم‌پیمان. */
+const ROTTING_EXEMPT_STAGES = new Set([LIFECYCLE_STAGES.LOYAL]);
 
 /**
  * آیا فرصت در حال پوسیدن است؟ بیش از ۱۴ روز بدون تعامل
- * و خارج از ستون‌های هم‌پیمان/سایه.
+ * و خارج از ستون هم‌پیمان.
  */
 export function isCardRotting(lastInteractionDate, lifecycleStage) {
   if (ROTTING_EXEMPT_STAGES.has(lifecycleStage)) return false;
@@ -96,4 +106,8 @@ export function getContactDisplayName(contact) {
 /** تگ کوتاه کارت — حوزه فعالیت یا نوع تأمین‌کننده. */
 export function getContactTag(contact) {
   return contact.activityDomain || contact.supplierType || contact.province || '';
+}
+
+export function getEngagementLabel(status) {
+  return ENGAGEMENT_LABELS_FA[status] || ENGAGEMENT_LABELS_FA[ENGAGEMENT.NORMAL];
 }

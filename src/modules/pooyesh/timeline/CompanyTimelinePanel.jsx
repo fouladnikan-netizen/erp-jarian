@@ -1,14 +1,15 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { History, ShoppingCart, Phone, Banknote, FileText } from 'lucide-react';
-import { useContactsStore } from '../../../stores/useContactsStore';
-import { useNabzStore } from '../../nabz/store/useNabzStore';
+import { History, ShoppingCart, Phone, Banknote, FileText, CheckSquare } from 'lucide-react';
+import { useOrders } from '../../nabz/public/index.js';
+import { useCompanies } from '../../kanoon/public/index.js';
+import { useActivitiesVersion, useTasksVersion } from '../public/index.js';
 import { withReturnParams } from '../../../components/navigation/SmartBackButton';
 import EntityMentionText from '../../../components/navigation/EntityMentionText';
 import { ProfileTabSectionHeader } from '../../../components/profileLayout';
 import { ENTITY_TYPES } from '../../kanoon/config';
 import { getDisplayName } from '../../kanoon/columns';
-import { getCompanyTimeline } from './companyTimelineFacade';
+import { fetchSubjectTimeline, getCompanyTimeline } from './companyTimelineFacade';
 import '../../kanoon/customerProfile.css';
 import '../pooyesh-panel.css';
 
@@ -23,6 +24,10 @@ const EVENT_META = {
   followup: { label: 'پیگیری', Icon: Phone, color: 'var(--color-neutral-400)' },
   payment: { label: 'پرداخت', Icon: Banknote, color: 'var(--success)' },
   invoice: { label: 'صورتحساب', Icon: FileText, color: 'var(--success)' },
+  task: { label: 'وظیفه', Icon: CheckSquare, color: 'var(--accent)' },
+  'lead-activity': { label: 'فعالیت سرنخ', Icon: Phone, color: 'var(--color-neutral-400)' },
+  'lead-task': { label: 'وظیفه سرنخ', Icon: CheckSquare, color: 'var(--accent)' },
+  'lead-conversion': { label: 'تبدیل سرنخ', Icon: History, color: 'var(--color-brand-red)' },
 };
 
 /**
@@ -30,13 +35,22 @@ const EVENT_META = {
  */
 export default function CompanyTimelinePanel({ company, returnTo: returnToProp, returnName: returnNameProp }) {
   const companyId = company?.id;
-  // Subscribe so timeline refreshes when Pooyesh activities or Nabz orders change.
-  useContactsStore((state) => state.contacts);
-  const orders = useNabzStore((state) => state.orders);
+  // Subscribe via public facades (no direct foreign-store imports).
+  useCompanies();
+  const activitiesVersion = useActivitiesVersion();
+  const tasksVersion = useTasksVersion();
+  const orders = useOrders();
+
+  useEffect(() => {
+    if (companyId == null) return undefined;
+    void fetchSubjectTimeline(companyId);
+    return undefined;
+  }, [companyId]);
 
   const events = useMemo(
     () => getCompanyTimeline(companyId, { orders }),
-    [companyId, orders, company],
+    // activitiesVersion/tasksVersion: invalidate when Activity/Task cache updates after fetch/create
+    [companyId, orders, company, activitiesVersion, tasksVersion],
   );
 
   const returnTo = returnToProp ?? (companyId != null
@@ -75,6 +89,9 @@ export default function CompanyTimelinePanel({ company, returnTo: returnToProp, 
             const primaryOrderPath = event.orderCode
               ? `/nabz/order/${encodeURIComponent(event.orderCode)}`
               : null;
+            const primaryLeadPath = !primaryOrderPath && event.links?.[0]?.kind === 'lead'
+              ? event.links[0].path
+              : null;
             return (
               <li
                 key={event.id}
@@ -92,6 +109,13 @@ export default function CompanyTimelinePanel({ company, returnTo: returnToProp, 
                       {primaryOrderPath ? (
                         <Link
                           to={withReturnParams(primaryOrderPath, returnTo, returnName)}
+                          className="entity-mention-link font-meem"
+                        >
+                          {event.title}
+                        </Link>
+                      ) : primaryLeadPath ? (
+                        <Link
+                          to={withReturnParams(primaryLeadPath, returnTo, returnName)}
                           className="entity-mention-link font-meem"
                         >
                           {event.title}

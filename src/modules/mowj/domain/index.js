@@ -191,9 +191,16 @@ export {
 
 export {
   TEMPLATE_VARIABLE_SCOPE,
+  TEMPLATE_VARIABLE_CATEGORY,
+  TEMPLATE_VARIABLE_CATEGORY_LABELS,
+  TEMPLATE_VARIABLE_REGISTRY,
   TEMPLATE_VARIABLE_CATALOG,
   getTemplateVariable,
+  getTemplateVariableByToken,
   extractVariableTokens,
+  findUnknownVariableTokens,
+  listTemplateVariablesForType,
+  listTemplateVariableCategories,
   validateTemplateVariables,
   validateContentVariables,
 } from './template.variables';

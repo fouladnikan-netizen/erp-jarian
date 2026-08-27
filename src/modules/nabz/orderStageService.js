@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import {
   PHASE1_STAGES,
@@ -15,16 +15,20 @@ import {
 } from './config';
 import { canCompleteOrderInquiries } from './quotingService';
 import { getOrderDecisionLabel } from './gatewayDecisionService';
-import { canDropOnPhase2KanbanStage, tryChangePhase2Stage } from './phase2Service';
+import { canDropOnPhase2KanbanStage, tryChangePhase2Stage, shouldShowOperationalPhases } from './phase2Service';
 import { applyRevisionReturn, markRevisionResolved } from './services/revisionService';
+import {
+  evaluateStageTransition,
+  MOZENE_LOCKED_MESSAGE as LIFECYCLE_MOZENE_LOCKED_MESSAGE,
+} from '../../domain/order/orderLifecycle.js';
 
 export const ORDER_DISPLAY_STATUS = {
   ANNOUNCING: 'در حال اعلام',
   EXPLORING: 'کاوش',
 };
 
-export const MOZENE_LOCKED_MESSAGE =
-  'ورود به مرحله مظنه فقط پس از تکمیل استعلام همه سطرها و کلیک دکمه «تکمیل کاوش» امکان‌پذیر است.';
+/** UX mirror — authority = Backend orderLifecycle / orderService */
+export const MOZENE_LOCKED_MESSAGE = LIFECYCLE_MOZENE_LOCKED_MESSAGE;
 
 let stageEventIdCounter = 1;
 
@@ -137,7 +141,12 @@ export function canSelectStageInList(order, stageId) {
 }
 
 export function canDropOnKanbanStage(order, targetStageId) {
-  if (order.status === ORDER_TABS.SUCCESS) {
+  if (order.status === ORDER_TABS.FAILED) return false;
+  if (order.saranjam?.archivedAt || order.saranjam?.locked || order.closure === 'closed') {
+    return false;
+  }
+  // DDL-18(B): SUCCESS+OPEN on Phase-2 board; CURRENT on Phase-1 board
+  if (order.status === ORDER_TABS.SUCCESS || shouldShowOperationalPhases(order) || isPhase2Stage(targetStageId)) {
     return canDropOnPhase2KanbanStage(order, targetStageId);
   }
   if (targetStageId === STAGE_MOZENE_ID) return false;
@@ -154,7 +163,7 @@ function buildStageAdvancedEvent(order, targetStageId) {
     id: stageEventIdCounter++,
     type: 'stage_advanced',
     at,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     fromStageId: order.stageId,
     toStageId: targetStageId,
     fromStageLabel: fromLabel,
@@ -176,24 +185,35 @@ export function tryChangeOrderStage(order, targetStageId) {
     return { order: current, accepted: true };
   }
 
-  if (order.status === ORDER_TABS.SUCCESS || isPhase2Stage(targetStageId)) {
-    return tryChangePhase2Stage(current, targetStageId);
-  }
-
+  // Manual mozene entry is always locked in UX — advance via «تکمیل کاوش» only.
+  // Backend still allows 1→2 when inquiryCompletedAt + inquiries present (API path).
   if (targetStageId === STAGE_MOZENE_ID) {
     return {
       order: current,
       accepted: false,
       reason: MOZENE_LOCKED_MESSAGE,
+      code: 'ORDER_MOZENE_LOCKED',
     };
   }
 
-  if (!isPhase1Stage(targetStageId)) {
+  // UX mirror of Backend stage machine (authority remains API)
+  const gate = evaluateStageTransition({
+    fromStage: current.stageId,
+    toStage: targetStageId,
+    status: order.status,
+    order: current,
+  });
+  if (!gate.ok) {
     return {
       order: current,
       accepted: false,
-      reason: 'تغییر به این مرحله در فاز جاری مجاز نیست.',
+      reason: gate.message || MOZENE_LOCKED_MESSAGE,
+      code: gate.code,
     };
+  }
+
+  if (shouldShowOperationalPhases(order) || isPhase2Stage(targetStageId)) {
+    return tryChangePhase2Stage(current, targetStageId);
   }
 
   const nextOrder = {

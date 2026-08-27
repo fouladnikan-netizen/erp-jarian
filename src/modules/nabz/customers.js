@@ -1,6 +1,13 @@
-import { useContactsStore } from '../../stores/useContactsStore';
 import { getDisplayName, getLatestInteraction } from '../kanoon/columns';
 import { BEHAVIORAL_STATUS, ENTITY_TYPES, PERSON_TYPES } from '../kanoon/config';
+import {
+  getCompany,
+  listCompanies,
+  listContactPersons,
+  createCompany,
+  updateCompany,
+  addContactPerson,
+} from '../kanoon/public/index.js';
 import {
   getContactPersonDisplayName,
   normalizeContactPerson,
@@ -8,26 +15,18 @@ import {
 import { naturalPersonSelfId } from '../../domain/identity';
 
 /**
- * Nabz customer helpers — facade over the shared Company SSOT (useContactsStore).
+ * Nabz customer helpers — via Kanoon public Company facade (no direct ContactsStore).
  * Domain language: Customer ≡ Company (entityType customer).
- * Do NOT keep a separate in-memory registry here.
  */
-function getContacts() {
-  return useContactsStore.getState().contacts;
-}
 
 export function getCustomerById(id) {
-  if (!id) return null;
-  const contact = getContacts().find((c) => String(c.id) === String(id)) || null;
-  if (contact?.recordType === 'LEAD') return null;
-  return contact;
+  return getCompany(id);
 }
 
 export function listCustomers() {
-  return getContacts().filter(
+  return listCompanies().filter(
     (c) => c.entityType === ENTITY_TYPES.CUSTOMER
-      && c.isActive !== false
-      && c.recordType !== 'LEAD',
+      && c.isActive !== false,
   );
 }
 
@@ -59,7 +58,7 @@ export function listCustomerExperts(customerId) {
   const customer = getCustomerById(customerId);
   if (!customer) return [];
 
-  const experts = useContactsStore.getState().listContactPersons(customerId);
+  const experts = listContactPersons(customerId);
 
   if (customer.personType === PERSON_TYPES.NATURAL && customer.personName) {
     experts.unshift(
@@ -108,7 +107,7 @@ export function findExpertByKey(customerId, key) {
 }
 
 export async function addCustomerRecord(contact) {
-  const id = await useContactsStore.getState().addContactAsync({
+  const id = await createCompany({
     ...contact,
     relatedPersons: contact.relatedPersons || [],
   });
@@ -116,7 +115,7 @@ export async function addCustomerRecord(contact) {
 }
 
 export function addExpertToCustomer(customerId, person) {
-  return useContactsStore.getState().addContactPerson(customerId, {
+  return addContactPerson(customerId, {
     fullName: person.fullName || person.name,
     mobile: person.mobile,
     gender: person.gender || '',
@@ -128,7 +127,7 @@ export function addExpertToCustomer(customerId, person) {
 
 export function updateCustomer(customerId, patch) {
   if (!customerId || !patch) return null;
-  useContactsStore.getState().updateContact(customerId, patch);
+  updateCompany(customerId, patch);
   return getCustomerById(customerId);
 }
 

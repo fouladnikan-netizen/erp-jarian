@@ -10,9 +10,11 @@ import { buildSaranjamSettlementModel, getSaranjamDiscrepancy } from '../../../s
 import { createEntityId, ENTITY_ID_PREFIX } from '../../../../../domain/identity';
 import { printTaxInvoice } from './printTaxInvoice';
 import SaranjamSettlementLayout from './SaranjamSettlementLayout';
+import { OFFICIAL_VAT_RATE } from '../../../services/quotingService';
+import { ORDER_TABS, STAGE_SARANJAM_ID } from '../../../config';
 import './SaranjamTab.css';
 
-const VAT_RATE = 0.09;
+const VAT_RATE = OFFICIAL_VAT_RATE;
 
 const MOCK_ITEMS = [
   {
@@ -1070,6 +1072,9 @@ export default function SaranjamTab({
     setArchiveModalOpen(false);
     onUpdateOrder?.((current) => ({
       ...current,
+      status: ORDER_TABS.SUCCESS,
+      closure: 'closed',
+      stageId: STAGE_SARANJAM_ID,
       archivedAt,
       saranjam: {
         ...(current.saranjam || {}),

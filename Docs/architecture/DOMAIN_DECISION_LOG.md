@@ -57,9 +57,10 @@ Append new decisions at the bottom with `DDL-NN` ids. Do not silently rewrite hi
 | | |
 |--|--|
 | **Decision** | **Opportunity** is **not** a standalone aggregate yet. It remains a **Company capability** (primarily `lifecycle_stage` + Ofogh UX). |
-| **Current state** | Ofogh pipeline reads/writes the same contact records; no opportunity id/row. |
+| **Current state** | Ofogh pipeline still advances Company `lifecycle_stage` on verified contacts; no opportunity id/row. |
 | **Reason** | Avoid a second CRM root and dual-write with Company before Company persistence exists. Aligns with aggregate-boundary “Opportunity is a view on Company.” |
 | **Future migration impact** | v1 APIs expose lifecycle on Company (or a thin “opportunity view” DTO), not `/opportunities` as a separate SoR. Promoting Opportunity to its own entity/table requires a new DDL with identity, ownership, and sync rules. |
+| **Supersession** | **Raw Lead** ownership/model formerly conflated with this entry is **superseded by [DDL-13](#ddl-13--raw-lead-is-an-independent-ofogh-aggregate)**. Opportunity-as-Company-capability **remains in force**. |
 
 ---
 
@@ -71,6 +72,7 @@ Append new decisions at the bottom with `DDL-NN` ids. Do not silently rewrite hi
 | **Current state** | At least three streams: Company `interactions[]`, Order `crmActivities[]`, Order `events[]`, plus unused activity-timeline mock data. |
 | **Reason** | Forcing a unify-before-Company/Order persist would block backend priority 1–5; wrong early schema is costly. |
 | **Future migration impact** | Do **not** invent a single Activity table as SoR in the first backend slice without DDL-05 follow-up. Interim: persist streams with their parent aggregates. A later DDL must choose: unify vs keep typed streams, and define `companyId` / `orderId` rules. |
+| **Supersession** | **Resolved by [DDL-15](#ddl-15--pooyesh-activity-is-an-independent-postgresql-aggregate).** Pooyesh Activity (`activities` table) is the soft-CRM aggregate. Nabz Order `crmActivities` / operational `events` remain **out of unify**. Historical text above is retained for audit; do not implement against the “no Activity SoR” rule. |
 
 ---
 
@@ -231,6 +233,367 @@ Append new decisions at the bottom with `DDL-NN` ids. Do not silently rewrite hi
 | Payment / Invoice / Shipment split from Order | Deferred |
 | Auth principal vs Actor / expert name | Security docs; not restated here |
 | Database engine / Prisma | Out of scope for this log |
+| Lead Activity stream vs Pooyesh Task port details | **Resolved by DDL-15** — Activity SSOT with subject `COMPANY`\|`RAW_LEAD`; Task remains separate |
+
+---
+
+## DDL-13 — Raw Lead is an independent Ofogh aggregate
+
+> **Date:** 2026-08-26  
+> **SUPERSEDES DDL-04** for **Raw Lead** ownership and persistence model only.  
+> **Does not supersede** DDL-04 for **Opportunity** (Company `lifecycle_stage` capability).
+
+| | |
+|--|--|
+| **Decision** | **Raw Lead** is an **independent Tier A aggregate** owned by **Ofogh**. It is **not** a Company, **not** a Company facet, and **must not** enter the verified-customer lifecycle continuum until conversion creates/links a **Company** (Kanoon). |
+| **Current state** | **Implemented (v1):** PostgreSQL `raw_leads`, `/api/v1/leads`, `leadRepository` / `leadService`, FE `LeadRepository`, `useLeadsStore` = SERVER_FIRST cache. Conversion: atomic TX create/link Company + `lead.convert` audit. Identity: `CompanyIdentityResolverPort` + Linka production adapter (`backend/src/integrations/linka/`; Login JWT + CompanyBaseInfo, contract verified 2026-08-27). Entity Card `raw-lead.yaml` = `active`. |
+| **Reason** | Business requires capturing unverified interest (inbound call, exhibition card, tip) without polluting Kanoon’s Company registry, without nationalId/Linka, and without enabling Order/finance. Traceability after conversion needs a durable Lead row (attribution: source → lead → company → orders). |
+| **Future migration impact** | Implement via [ENTITY_DELIVERY_PIPELINE.md](./ENTITY_DELIVERY_PIPELINE.md): migration → `LeadRepository` → use case → API → FE repository → Zustand **cache**. Soft-delete/archive + append-only audit. Do **not** delete converted leads. |
+
+### Options compared (decision record)
+
+| Option | Model | Verdict |
+|--------|--------|---------|
+| **A** | Lead = Company facet (DDL-04 as written for “Lead”) | **Rejected for Raw Lead** — forces unverified data into Company; pollutes Kanoon; weak conversion history; Order gating hard to express |
+| **B** | Raw Lead = independent Ofogh aggregate; Company = Kanoon | **Accepted (DDL-13)** — matches ownership, ERP gating, attribution, and code trajectory (`useLeadsStore`) |
+| **C** | Hybrid temporary only, no durable Lead after convert | **Rejected** — loses attribution; “temporary forever” becomes dual SoR |
+
+### Ownership (locked)
+
+| Entity | Owner module |
+|--------|----------------|
+| Raw Lead | Ofogh |
+| Company | Kanoon |
+| ContactPerson | Kanoon (embedded under Company — DDL-02) |
+| Activity (soft CRM) | Pooyesh (**DDL-15** — PostgreSQL `activities`; interim client storage until implementation) |
+| Order | Nabz |
+
+### Minimum Raw Lead fields (product)
+
+**Required:** `companyName`, `personName`, `mobile`, `leadSource`, description/notes.  
+**Optional:** `activityDomain`.  
+**Not on Raw Lead:** nationalId required, Linka lookup, Company create in Kanoon (those belong to **conversion**).
+
+### Allowed / forbidden before conversion (domain intent — enforce later)
+
+| Allowed | Forbidden |
+|---------|-----------|
+| Activity / call / note | Order |
+| Task / follow-up via Pooyesh | Quotation / financial ops |
+| Qualify / reject | Campaign execution treating Lead as Company |
+| | Contract / Company-level ERP ops |
+
+### Lifecycle separation
+
+**Raw Lead lifecycle (outside customer continuum):** `NEW` → `QUALIFYING` → `CONVERTED` \| `REJECTED`  
+(Runtime today may still use `OPEN` as umbrella for NEW/QUALIFYING until backend vocabulary lands.)
+
+**Customer lifecycle (Company only, after conversion):** نوپدید → دیدار → رویش → آستانه → نوپیمان → هم‌پیمان → سایه  
+Raw Lead **never** receives these stages.
+
+### Visual semantics (architecture only — no UI change in this DDL)
+
+| Stage | Symbol intent |
+|-------|----------------|
+| Lead (Raw) | dashed circle |
+| نوپدید | hollow circle |
+| دیدار | 25% filled |
+| رویش | 50% filled |
+| آستانه | 75% filled |
+| نوپیمان | full circle |
+| هم‌پیمان | star |
+| سایه | moon |
+
+### Duplicate company-name detection (future requirement)
+
+While typing `companyName` on Raw Lead create, suggest similar **existing Companies** in Kanoon so the user can open/link an existing Company instead of inventing a duplicate Raw Lead. Informational / guided UX — not auto-merge. Implementation deferred.
+
+### Conversion contract (future use case — not implemented here)
+
+```text
+convertLeadToCompany({ leadId, nationalId, actorId })
+  → { leadId, companyId, conversionStatus }
+```
+
+Intended transaction steps:
+
+1. Validate Lead is convertible (not already CONVERTED/REJECTED)  
+2. Resolve Company by nationalId / Linka / existing match  
+3. Create Company **or** link existing Company (Kanoon)  
+4. Set Lead `status=CONVERTED`, `convertedCompanyId`, `convertedAt`, `convertedBy`  
+5. Append audit (Lead + Company)  
+6. **Do not delete** the Lead row (attribution / history)
+
+Converted Lead remains queryable for: Lead Source → Leads → Converted → Companies → Orders.
+
+### Future backend boundary
+
+```text
+PostgreSQL leads
+  → backend LeadRepository
+  → LeadService / convertLeadToCompany use case
+  → /api/v1/leads
+  → src/api/repositories/LeadRepository
+  → Zustand cache (replace useLeadsStore SoR role)
+```
+
+### Opportunity vs Raw Lead (do not conflate)
+
+| Concept | Model |
+|---------|--------|
+| **Raw Lead** | Independent Ofogh aggregate (this DDL) |
+| **Opportunity** | Still Company capability via `lifecycle_stage` (DDL-04 remains) |
+
+---
+
+## DDL-14 — Global Raw Lead Gate + Pooyesh polymorphic subject reference
+
+> **Date:** 2026-08-26  
+> **Builds on:** [DDL-13](#ddl-13--raw-lead-is-an-independent-ofogh-aggregate), [DDL-15](#ddl-15--pooyesh-activity-is-an-independent-postgresql-aggregate) (Activity SSOT), DDL-09/11 (Pooyesh ownership)
+
+| | |
+|--|--|
+| **Decision** | Raw Lead may only participate in **Activity / Task / Follow-up / Note**. It is **forbidden** for Order, Quotation, Finance, Campaign audience, Formal Correspondence, and Contract. Pooyesh Task/Activity attach to a polymorphic **EntityReference** (`COMPANY` \| `RAW_LEAD`) via Port/Facade — never by forging a Company from a Lead. |
+| **Current state** | Domain contract: `src/domain/entityReference/*`. Pooyesh: `taskFacade` + `interactionFacade` + `ports/subjectEntity.port.js`. Backend Order gate: `backend/src/domain/rawLeadGate.js` on create/update. Mowj `listLeads()` always `[]`; Gahshomar letter search excludes LEAD. Finance/Quotation: domain assert helpers until backends exist. Soft Activity storage still interim on parent aggregates until DDL-15 implementation. |
+| **Reason** | Prevent Raw Lead leakage into Nabz/Mowj/Finance/Gahshomar after Lead API landed; keep Pooyesh as the only operational consumer of unverified parties. |
+| **Future migration impact** | Implement Activity SSOT per **DDL-15** (`subject_type` / `subject_id`). Wire Finance/Quotation/Gahshomar APIs to the same gate codes. |
+
+### Capability matrix (locked)
+
+| Capability | Company | Raw Lead |
+|------------|---------|----------|
+| Activity / Task / Follow-up / Note | ✅ | ✅ |
+| Order / Quotation / Finance / Campaign / Correspondence / Contract | ✅ (RBAC) | ❌ |
+
+### EntityReference contract
+
+```js
+{ entityType: 'COMPANY' | 'RAW_LEAD', entityId: '...' }
+```
+
+Error codes: `RAW_LEAD_NOT_ELIGIBLE_FOR_ORDER` · `…_FINANCE` · `…_CAMPAIGN` · `…_CORRESPONDENCE` · `INVALID_ENTITY_REFERENCE`.
+
+### After conversion
+
+ERP mutations (Order, Finance, …) use **`companyId` only**. Lead row remains for attribution; modules must not use `leadId` for those capabilities.
+
+---
+
+## DDL-15 — Pooyesh Activity is an independent PostgreSQL aggregate
+
+> **Date:** 2026-08-26  
+> **RESOLVES / SUPERSEDES [DDL-05](#ddl-05--activity-ownership-requires-a-future-dedicated-decision)** for soft-CRM Activity ownership and SoR.  
+> **Does not unify** Nabz Order `crmActivities`, Order operational `events`, stage history, financial events, or `audit_log`.  
+> **Builds on:** DDL-09 / DDL-11 (Pooyesh owns soft interactions), DDL-14 (EntityReference `COMPANY` \| `RAW_LEAD`).
+
+| | |
+|--|--|
+| **Decision** | **Activity** is an **independent Tier A aggregate** owned by **Pooyesh**. **SSOT = PostgreSQL** table `activities`. Each Activity holds only a **SubjectReference** `{ entityType: 'COMPANY' \| 'RAW_LEAD', entityId }` — it must **not** duplicate Company or Raw Lead data. |
+| **Current state** | **Implemented (v1):** PostgreSQL `activities`, `/api/v1/activities`, `activityRepository` / `activityService`, FE `ActivityRepository`, `useActivitiesStore` = SERVER_FIRST cache. Facades rewired. Entity Card `activity.yaml` = `active`. Legacy parent `interactions[]` not auto-migrated. |
+| **Reason** | DDL-09/11 already assigned soft CRM to Pooyesh; DDL-14 already standardized polymorphic subjects. DDL-05’s “no Activity table” rule blocked PostgreSQL SoR after that foundation landed. Closing DDL-05 enables Entity Delivery Pipeline without inventing a global event bucket. |
+| **Future migration impact** | Funded implementation: migration `004_activities.sql` (or next version) → `activityRepository` → service/API `/api/v1/activities` → FE `ActivityRepository` → rewire facades SERVER_FIRST; Zustand/cache only. Soft-delete + append-only audit. Application-level subject integrity (v1) — no polymorphic FK registry table. |
+
+### Scope boundary (locked)
+
+| In Pooyesh Activity | Out of Pooyesh Activity (keep separate) |
+|---------------------|------------------------------------------|
+| Call, note, meeting, follow-up, soft human/CRM touch | Nabz Order `crmActivities` |
+| Interaction on Company or Raw Lead | Order operational `events` / stage history |
+| Timeline soft stream source (via facade) | Financial / settlement events |
+| | System `audit_log` |
+
+Activity **must not** become a dump for all ERP events.
+
+### Task ≠ Activity (locked)
+
+- **Task** remains a separate Pooyesh concept (`taskFacade` / future Task entity).  
+- Task may create or reference an Activity; they are **not** the same aggregate.  
+- This DDL does **not** change Task architecture.
+
+### SubjectReference + integrity (v1)
+
+```js
+{ entityType: 'COMPANY' | 'RAW_LEAD', entityId: '...' }
+```
+
+- Unknown `entityType` → reject (`INVALID_ENTITY_REFERENCE`).  
+- **COMPANY** → active company via `companyRepository.findById`.  
+- **RAW_LEAD** → active lead via `leadRepository.findById` + DDL-14 Activity capability allowed.  
+- **v1:** application-level validation only (no polymorphic reference registry table).
+
+### Lifecycle (v1 — keep simple)
+
+Soft CRM today is logging-oriented; no complex state machine.
+
+| Status | Meaning |
+|--------|---------|
+| `OPEN` | Active / logged (default) |
+| `COMPLETED` | Explicitly completed |
+| Archived | Soft-delete (`deleted_at` / `deleted_by`) — not a status enum value |
+
+Do not invent extra statuses without a new DDL.
+
+### Ownership summary after DDL-15
+
+| Entity | Owner | SoR |
+|--------|-------|-----|
+| Activity (soft CRM) | Pooyesh | PostgreSQL `activities` (when implemented) |
+| Task | Pooyesh | Separate from Activity |
+| Company | Kanoon | PostgreSQL `companies` |
+| Raw Lead | Ofogh | PostgreSQL `raw_leads` |
+| Order CRM activities | Nabz | Order document (not `activities`) |
+
+---
+
+## DDL-16 — Pooyesh Task is an independent PostgreSQL aggregate
+
+> **Date:** 2026-08-26  
+> **Builds on:** DDL-09 (Pooyesh owns tasks), DDL-14 (EntityReference), DDL-15 (Task ≠ Activity).  
+> **Does not change** Activity SSOT, Mowj campaign domain model, or Nabz.
+
+| | |
+|--|--|
+| **Decision** | **Task** is an **independent Tier A aggregate** owned by **Pooyesh**. **SSOT = PostgreSQL** table `tasks`. SubjectReference `{ entityType: 'COMPANY' \| 'RAW_LEAD', entityId }` required on create (same as current facade). **Task ≠ Activity**. |
+| **Current state** | **Implemented (v1):** PostgreSQL `tasks`, `/api/v1/tasks`, repositories/services, FE `TaskRepository` + `useTasksStore`, `taskFacade` rewired. Entity Card `task.yaml` = `active`. Mock mode retains in-memory array for offline/unit tests. |
+| **Reason** | In-memory `taskFacade` array is not durable; Mowj CREATE_TASK and Ofogh/Kanoon subjects need server SSOT while keeping Port/Facade boundaries. |
+| **Future migration impact** | Soft-delete + audit; application-level subject integrity; assignment validates `users.id` when set. Mowj continues via `PooyeshTaskPort` → facade only. |
+
+### Lifecycle (v1)
+
+`OPEN` → `IN_PROGRESS` \| `COMPLETED` \| `CANCELLED`  
+`IN_PROGRESS` → `COMPLETED` \| `CANCELLED`  
+`COMPLETED` / `CANCELLED` → terminal (complete twice → `TASK_ALREADY_COMPLETED`)
+
+Priority vocabulary (aligned with current facade): `low` \| `normal` \| `high` \| `urgent` (default `normal`).
+
+### Scope boundary
+
+| In Pooyesh Task | Out |
+|-----------------|-----|
+| Internal ERP follow-up tasks | Soft CRM Activity rows |
+| Mowj CREATE_TASK via Port | Campaign aggregate itself |
+| Subject COMPANY / RAW_LEAD | Order / Finance tasks |
+
+---
+
+## DDL-17 — Ofogh Personal Lead Pipeline (user-owned) vs Customer Lifecycle (system)
+
+> **Date:** 2026-08-27  
+> **Builds on:** DDL-13 (Raw Lead), DDL-04 (Opportunity/Customer Lifecycle on Company)
+
+| | |
+|--|--|
+| **Decision** | Ofogh exposes **two views**: (1) **Lead Management** — one **personal** Kanban pipeline per user (`lead_pipelines` / `lead_pipeline_stages`, `raw_leads.pipeline_stage_id`); (2) **Customer Lifecycle Management** — fixed, system-controlled Company stages (نوپدید…هم‌پیمان). |
+| **Current state** | Migration `007_lead_personal_pipeline.sql`; API `/api/v1/lead-pipelines/me`; Lead system status remains `NEW`/`QUALIFYING`/`CONVERTED`/`REJECTED` (+ archive with reason). Convert/Archive are explicit actions, not pipeline columns. Pipeline owner today = Lead `created_by` (no `assigned_to` yet). |
+| **Reason** | Experts need personalizable workflow without polluting management reporting or Customer Lifecycle. Personal stage names are **not** business qualification and **must not** be used as canonical management dimensions. |
+| **Future migration impact** | Org pipeline **template** copy-on-provision is allowed later; do not share mutable pipelines across users. Optional `assigned_to` + reassignment handoff needs a follow-up DDL when product requires it. |
+
+### DDL-17 rules
+
+1. **Personal Pipeline Stage ≠ System Lead Status ≠ Customer Lifecycle stage.**  
+2. One active personal lead pipeline per user (v1).  
+3. Cross-user stage mutation → forbidden (ownership enforcement on API).  
+4. Management reports use system status / conversion / activity / order / customer lifecycle — **not** personal stage names.
+
+---
+
+## DDL-18 — Successful Purchase Event = Order.status SUCCESS (final close)
+
+> **Date:** 2026-08-27  
+> **Status:** **SUPERSEDED by DDL-18(B)**  
+> **Builds on:** DDL-04 / Customer Lifecycle; Nabz `ORDER_WORKFLOW.md`; `orderLifecycle.js`
+
+| | |
+|--|--|
+| **Decision** | **(A)** `Order.status == success` is the **only** Successful Purchase Event = **final close** (saranjam archive / settlement complete). Phase-2 entry uses a **separate signal**: `phase2EnteredAt` and/or `gatewayDecision.outcome === 'success'` while status remains **`current`**. |
+| **Superseded** | Product final decision **DDL-18(B)** separates Outcome vs Closure. Do not implement (A) as current law. |
+
+---
+
+## DDL-18(B) — Outcome + Closure (supersedes DDL-18(A))
+
+> **Date:** 2026-08-27  
+> **Status:** **CLOSED — product final** (this conversation pack)  
+> **Supersedes:** DDL-18(A)  
+> **Builds on:** DDL-04; Nabz workflow; tax policy (VAT-inclusive commercial)
+
+| | |
+|--|--|
+| **Outcome (`orders.status`)** | `current` \| `success` \| `failed` |
+| **Closure (`payload.closure`)** | `open` \| `closed` (expand-only; default `open`) |
+| **UI four views** | جاری=`CURRENT+OPEN`; موفق=`SUCCESS+OPEN`; ناموفق=`FAILED`; بسته‌شده=`SUCCESS+CLOSED` |
+| **CURRENT** | Pre commercial decision (کاوش/مظنه/پیش‌کش) |
+| **SUCCESS** | Sale committed (gateway / quotation accept). May still be in تدارک/رهسپار/سرانجام with `closure=open`. **SUCCESS ≠ CLOSED.** |
+| **FAILED** | Failed before SUCCESS; `failReason` required; terminal for sales outcome |
+| **CLOSED** | Only after SUCCESS + saranjam/settlement gates. `CURRENT→CLOSED` and `FAILED→CLOSED` forbidden. |
+| **Successful Purchase Event** | Becoming **SUCCESS** (not CLOSED). 1→نوپیمان; 2→نوپیمان; 3+→هم‌پیمان. CLOSED must **not** increment purchase count again. |
+| **Transitions** | Allowed: `CURRENT→SUCCESS`, `CURRENT→FAILED`, `SUCCESS→CLOSED`. Forbidden: `FAILED→SUCCESS`, `FAILED→CLOSED`, `CLOSED→*`, `SUCCESS→CURRENT` (reopen OOS). |
+| **Migration** | `009_ddl18b_outcome_closure.sql` restores Phase-2 open rows demoted by 008 → `success`+`open`; saranjam-archived → `success`+`closed`. |
+| **Tax** | Only two real prices: `purchasePrice` + `sellingPrice` (both VAT-inclusive commercial). Formal/Informal does **not** change those — formal only derives `displaySellingUnitPrice = round(sellingPrice/1.1)` and `VAT = sellingPrice − display` (line-level: economic − Σ display). Informal display = `sellingPrice`. Never add 10% on inclusive. Moghayer: **PRODUCT DECISION REQUIRED — MOGHAYER ALLOCATION RULES**. Backend authoritative; tamper reject; rate `0.10`; quotation snapshot. |
+| **Supplier gate** | Supplier-only Company rejected on Order create (BE). Customer and BOTH allowed. Ownership remains Kanoon. |
+
+---
+
+## DDL-19 — Activity Type Registry is a Shirazeh-owned config aggregate (Tier B)
+
+> **Date:** 2026-08-27
+> **Status:** CLOSED — implemented
+> **Builds on:** DDL-15 (Pooyesh Activity is an independent PostgreSQL aggregate)
+
+| | |
+|--|--|
+| **Decision** | `activities.activity_type` values are governed by a new, centrally-owned lookup table `activity_type_registry` (key/label_fa/sort_order/is_active), managed by Shirazeh (Settings). This is a **config/registry aggregate (Tier B)**, not a copy of Activity data. |
+| **Current state** | Migration `010_activity_type_registry.sql` creates the table and seeds the audited canonical list from every existing hardcoded FE list (`call`, `message`, `meeting`, `catalog`, `note`) plus `task` (migration `012_...`, kept for FE behavior parity in `OfoqRawLeadDetailModal.jsx` — a quick free-text "task-like" Activity note, distinct from the canonical Pooyesh Task entity). Backend `activityTypeRepository.js` / `activityTypeService.js` / `routes/activityTypes.js` provide CRUD (soft activate/deactivate only, no hard delete). `activityService.createActivity`/`updateActivity` validate `activityType` against **active** registry keys server-side (service-layer check, **not** a DB FK — see below). |
+| **Reason** | At least 3 independent FE modules (Pooyesh, Ofogh, Nabz) each hardcoded their own Activity-type list with drifting labels. A single canonical, backend-persisted registry (owned by Shirazeh, per its existing "central configuration surface" role) removes drift and lets ops add/rename/retire types without a deploy. |
+| **Why no DB-level FK** | `activities.activity_type` stays a free `TEXT` column (expand-only — no destructive constraint change). A hard FK would make deactivating (or, worse, any future rename) of a type break historical rows. Enforcement of "only active registry keys allowed" is intentionally a **service-layer** check applied only on **write** (create, or update when the type field itself changes) — historical rows keep an old/deactivated key and remain fully readable; the display layer resolves the label via the full (not just active) registry list. |
+| **Future migration impact** | Any new Activity-creation surface **must** read types from `GET /api/v1/activity-types` (via `src/domain/activityTypes/activityTypesFacade.js`) — never hardcode a new local list. If a type needs renaming, `PATCH /activity-types/:key` (rename) is additive-only (key/slug is stable; only `label_fa`/`sort_order`/`is_active` change). |
+
+---
+
+## DDL-20 — Activity follow-up date creates/links a canonical Pooyesh Task (idempotent)
+
+> **Date:** 2026-08-27
+> **Status:** CLOSED — implemented
+> **Builds on:** DDL-15, DDL-16 (Pooyesh Task is an independent PostgreSQL aggregate)
+
+| | |
+|--|--|
+| **Decision** | When an Activity is created (or updated) with a future `followUpAt`/`dueAt`, `activityService` atomically (same DB transaction) creates-or-updates **one** linked canonical Task via a new first-class column `tasks.source_activity_id TEXT REFERENCES activities(id)` (migration `011_activity_task_followup_linkage.sql`, indexed). No `payload.sourceActivityId` shadow key is used — the FK column is the single source of truth for the linkage. |
+| **Idempotency rule** | If a Task already linked to this `sourceActivityId` exists and is still `OPEN`/`IN_PROGRESS`, the existing Task's `title`/`dueAt` are updated in place (no duplicate). If the linked Task was already `COMPLETED`/`CANCELLED`, it is **never resurrected** — completed/cancelled work is never silently overwritten. |
+| **Follow-up removed/cleared rule** | If the follow-up is cleared on Activity update and the linked Task is still `OPEN`/`IN_PROGRESS` (auto-created from this follow-up), it is transitioned to `CANCELLED` via the existing status-transition path. If it is already `COMPLETED`, it is left untouched (never destroyed). |
+| **Reason** | Follow-up dates recorded on an Activity are a well-understood commitment; product intent is "this must show up as a real, actionable Task" (Task board, Calendar, Customer/Lead/Order projections) rather than a second, weaker reminder concept living only on the Activity row. |
+| **Future migration impact** | Any Activity-creation surface funneling through `activityService.createActivity`/`updateActivity` (Kanoon/Company, Ofogh/RawLead, Nabz via `orderActivityBridge.js`) gets this behavior for free — no per-module wiring needed. Do not add a second, independent follow-up→reminder mechanism anywhere else. |
+
+---
+
+## DDL-21 — Lead lineage on Customer 360 is a read-time projection only (no copy/re-key)
+
+> **Date:** 2026-08-27
+> **Status:** CLOSED — implemented
+> **Builds on:** DDL-13 (Raw Lead is an independent Ofogh aggregate), DDL-10/DDL-11 (Company Timeline Projection Ownership)
+
+| | |
+|--|--|
+| **Decision** | Kanoon's Customer 360 timeline (`buildCompanyTimelineEvents.js`) merges pre-conversion Ofogh Lead Activities/Tasks (`subjectType=RAW_LEAD`) as a **read-time projection**, via a new optional `leadLineage` parameter (`Array<{ lead, activities, tasks, deepLink }>`, default `[]`, fully backward compatible). `companyTimelineFacade.js` (Pooyesh) computes this by calling Ofogh's existing public `fetchLeadsConvertedToCompany(companyId)` and then reading each lead's Activities/Tasks via Pooyesh's own `interactionFacade`/`taskFacade` with a `RAW_LEAD` subject reference — **no new Kanoon-owned or Pooyesh-owned Lead storage, no rewrite of any Activity/Task row's `subject_type`/`subject_id`.** |
+| **Current state** | Projected events use distinct kinds (`lead-activity`, `lead-task`, `lead-conversion`) carrying `leadId` + a deep-link back to the Ofogh Lead detail (`buildOfoghLeadDeepLink`). A single company may have 0..N converted-from leads (structurally possible even if rare in practice) — **all** are projected, not just a single "primary origin" (`pickPrimaryOriginLead` remains available for callers that need a single-origin summary elsewhere, but is not forced here). |
+| **Reason** | Lead stays Ofogh-owned, Activity/Task stay Pooyesh-owned, Company stays Kanoon-owned — copying rows into a new table (or re-keying `subject_id` from `RAW_LEAD` to `COMPANY` on conversion) would violate all three ownership boundaries and silently lose the pre-conversion audit trail. |
+| **Future migration impact** | Any future Lead-lineage consumer must call the same `fetchLeadsConvertedToCompany` + Pooyesh subject-scoped Activity/Task read path — never introduce a second Lead→Company lineage lookup. |
+
+---
+
+## DDL-22 — Activity/Task mutation is ownership-scoped (assignee/creator or elevated role)
+
+> **Date:** 2026-08-27
+> **Status:** CLOSED — implemented
+> **Builds on:** DDL-15, DDL-16; `Docs/architecture/AUTHORIZATION_MODEL.md`
+
+| | |
+|--|--|
+| **Decision** | A mutation (`update`, `changeStatus`, `complete`, `archive`) on an Activity or Task is allowed only if the actor is the record's `assignedTo` or `createdBy`, **or** the actor's JWT-derived roles include an elevated role. `backend/src/domain/access/ownershipGate.js` (`assertOwnerOrElevated`) implements this and is used by both `activityService.js` and `taskService.js`; violation throws `403 OWNERSHIP_FORBIDDEN`. |
+| **Elevated roles (enforceable minimum)** | Only `admin` bypasses ownership scoping today. **`sales_manager` does NOT bypass** — the seed data has no `manager_id`/`team_id` hierarchy field, so "manager of this specific user/team" cannot be safely scoped; granting `sales_manager` a blanket bypass would be broader than the actual product intent ("manager of their team"), so the conservative, correct-for-today choice is `admin`-only bypass. |
+| **PRODUCT DECISION REQUIRED (open)** | No manager/team hierarchy field exists (`manager_id`/`team_id`) to scope `sales_manager` to only their own team's Activities/Tasks. Until that field exists, `sales_manager` is subject to the same ownership check as `sales`/`purchase`/`accounting`. |
+| **Reason** | Before this decision, any actor holding `activities:write`/`tasks:write` could mutate **any** record regardless of assignment — a real cross-tenant-within-org data-integrity gap identified during the Pooyesh QA pass. |
+| **Future migration impact** | If/when a manager/team hierarchy field is added to `users`, this DDL should be superseded with a scoped `sales_manager` rule (e.g. "assignee's `manager_id === actor.userId`"), not silently patched. Create is intentionally **not** ownership-scoped beyond existing subject-reference + permission checks (no per-Company/per-Lead ACL concept exists in this codebase; do not invent one without a new DDL). |
 
 ---
 
@@ -238,4 +601,10 @@ Append new decisions at the bottom with `DDL-NN` ids. Do not silently rewrite hi
 
 1. Propose a new `DDL-NN` when a persistence or aggregate choice would contradict or refine the above.  
 2. Reference the DDL id from schema/API design notes and PRs.  
-3. Do not implement backend schema that invents a standalone Opportunity or global ContactPerson root without superseding DDL-02 / DDL-04.
+3. Do not invent a standalone **Opportunity** or global ContactPerson root without superseding DDL-02 / DDL-04.  
+4. **Raw Lead** is an independent Ofogh aggregate per **DDL-13** (supersedes DDL-04 for Raw Lead only). Do not fold Raw Lead back into Company without a new superseding DDL.  
+5. **Raw Lead capabilities** are gated per **DDL-14** (Pooyesh Activity/Task only). Do not accept `leadId` / `RAW_LEAD` on Order, Finance, Campaign, or Formal Correspondence paths.  
+6. **Activity** is a Pooyesh PostgreSQL aggregate per **DDL-15** (resolves DDL-05). Do not unify Nabz `crmActivities` / Order events into `activities` without a new superseding DDL.  
+7. **Task** is a Pooyesh PostgreSQL aggregate per **DDL-16**. Do not merge Task into Activity without a new superseding DDL.  
+8. **Personal Lead Pipeline** is user-owned per **DDL-17**. Do not make Customer Lifecycle customizable or report on personal stage names as business status.  
+9. **Order Outcome + Closure** per **DDL-18(B)** (supersedes DDL-18(A)). Successful Purchase = `status=success`; final close = `closure=closed`.  

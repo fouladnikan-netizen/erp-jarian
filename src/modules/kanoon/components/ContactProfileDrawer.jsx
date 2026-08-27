@@ -13,19 +13,33 @@ import { formatProductGroups } from './ProductGroupMultiSelect';
 import StatusTag from '../../../components/module/StatusTag';
 import ContactPersonsSection from '../../../components/contactPerson/ContactPersonsSection';
 import { listCompanyInteractions } from '../../pooyesh/interactionFacade';
+import { toJalaliDisplayDate } from '../../nabz/dateUtils';
+import { formatJarianMoney } from '../../../config/JarianUI.config';
 
 const OFFICIAL_SPEC_FIELDS = [
-  { key: 'establishmentDate', label: 'تاریخ تاسیس' },
+  { key: 'establishmentDate', label: 'تاریخ تاسیس', kind: 'date' },
   { key: 'economicCode', label: 'کد اقتصادی' },
   { key: 'companyType', label: 'نوع شرکت' },
   { key: 'registrationRegion', label: 'منطقه ثبتی' },
-  { key: 'latestGazette', label: 'آخرین آگهی رسمی' },
-  { key: 'latestCapital', label: 'آخرین سرمایه ثبتی' },
+  { key: 'latestGazette', label: 'آخرین آگهی رسمی', kind: 'dateSummary' },
+  { key: 'latestCapital', label: 'آخرین سرمایه ثبتی', kind: 'money' },
   { key: 'phone', label: 'تلفن' },
   { key: 'website', label: 'وبسایت' },
   { key: 'address', label: 'آدرس' },
   { key: 'postalCode', label: 'کدپستی' },
 ];
+
+function formatOfficialSpecValue(value, kind) {
+  if (value == null || value === '') return value;
+  if (kind === 'date') return toJalaliDisplayDate(value) || value;
+  if (kind === 'money') return formatJarianMoney(value, { empty: '' }) || value;
+  if (kind === 'dateSummary') {
+    const parts = String(value).split(' — ');
+    if (parts[0]) parts[0] = toJalaliDisplayDate(parts[0]) || parts[0];
+    return parts.join(' — ');
+  }
+  return value;
+}
 
 const ORDER_STAGE_TAG = {
   مظنه: 'active',
@@ -128,8 +142,12 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
                     <h3>اطلاعات ثبتی</h3>
                     <ProfileRow label="شماره ثبت" value={specs.registrationNumber} />
                     <ProfileRow label="شناسه ملی" value={contact.nationalId} />
-                    {OFFICIAL_SPEC_FIELDS.map(({ key, label }) => (
-                      <ProfileRow key={key} label={label} value={specs[key]} />
+                    {OFFICIAL_SPEC_FIELDS.map(({ key, label, kind }) => (
+                      <ProfileRow
+                        key={key}
+                        label={label}
+                        value={formatOfficialSpecValue(specs[key], kind)}
+                      />
                     ))}
                     <ProfileRow label="آدرس کامل" value={contact.fullAddress} />
                   </div>

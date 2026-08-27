@@ -1,5 +1,6 @@
 /**
  * PooyeshTaskExecutor — CREATE_TASK via PooyeshTaskPort (real internal task).
+ * Supports sync and Promise createTask (API SERVER_FIRST).
  */
 
 import { CAMPAIGN_ACTION_TYPE } from '../action.rules';
@@ -26,7 +27,7 @@ export function createPooyeshTaskExecutor(options = {}) {
 
     /**
      * @param {import('../executor.ports').ExecutorContext} ctx
-     * @returns {import('../executor.ports').ExecutorActionOutcome}
+     * @returns {import('../executor.ports').ExecutorActionOutcome|Promise<object>}
      */
     execute(ctx) {
       const intent = ctx?.intent;
@@ -70,37 +71,44 @@ export function createPooyeshTaskExecutor(options = {}) {
         return fail(err?.message || 'خطا در فراخوانی PooyeshTaskPort.');
       }
 
-      if (!creation?.ok || !creation.taskId) {
-        return {
-          ok: false,
-          status: EXECUTION_RESULT_STATUS.FAILED,
-          referenceId: null,
-          error: creation?.error || 'ایجاد وظیفه پویش ناموفق بود.',
-          payload: {
-            kind: POOYESH_TASK_INTENT_KIND,
-            taskCreationIntent: taskIntent,
-            taskCreationResult: creation || null,
-          },
-        };
+      if (creation && typeof creation.then === 'function') {
+        return creation.then((resolved) => mapCreation(resolved, taskIntent));
       }
+      return mapCreation(creation, taskIntent);
+    },
+  };
+}
 
-      return {
-        ok: true,
-        status: EXECUTION_RESULT_STATUS.SUCCESS,
-        referenceId: String(creation.taskId),
-        error: null,
-        payload: {
-          kind: POOYESH_TASK_INTENT_KIND,
-          taskCreationIntent: taskIntent,
-          taskCreationResult: {
-            taskId: creation.taskId,
-            status: creation.status || TASK_CREATION_RESULT_STATUS.CREATED,
-            assignedTo: creation.assignedTo || taskIntent.assignedTo,
-          },
-          assignedTo: creation.assignedTo || taskIntent.assignedTo,
-          taskId: creation.taskId,
-        },
-      };
+function mapCreation(creation, taskIntent) {
+  if (!creation?.ok || !creation.taskId) {
+    return {
+      ok: false,
+      status: EXECUTION_RESULT_STATUS.FAILED,
+      referenceId: null,
+      error: creation?.error || 'ایجاد وظیفه پویش ناموفق بود.',
+      payload: {
+        kind: POOYESH_TASK_INTENT_KIND,
+        taskCreationIntent: taskIntent,
+        taskCreationResult: creation || null,
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    status: EXECUTION_RESULT_STATUS.SUCCESS,
+    referenceId: String(creation.taskId),
+    error: null,
+    payload: {
+      kind: POOYESH_TASK_INTENT_KIND,
+      taskCreationIntent: taskIntent,
+      taskCreationResult: {
+        taskId: creation.taskId,
+        status: creation.status || TASK_CREATION_RESULT_STATUS.CREATED,
+        assignedTo: creation.assignedTo || taskIntent.assignedTo,
+      },
+      assignedTo: creation.assignedTo || taskIntent.assignedTo,
+      taskId: creation.taskId,
     },
   };
 }

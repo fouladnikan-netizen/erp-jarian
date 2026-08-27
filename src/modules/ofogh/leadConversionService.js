@@ -1,17 +1,28 @@
 /**
- * Ofogh → Kanoon lead conversion.
- * Creates a verified Company in useContactsStore; marks Lead as CONVERTED.
- * Preserves Pooyesh interactions by migrating them onto the new Company.
+ * Ofogh → Kanoon lead conversion orchestration (frontend).
+ * Mock: local Linka stub + contacts store create.
+ * API: LeadRepository.convertLead → backend atomic TX; then refresh Company cache.
+ *
+ * Ofogh must not write Company via Kanoon store in API mode — refresh via public fetchCompanies().
  */
 
-import { useContactsStore, CONTACT_RECORD_TYPES, LIFECYCLE_STAGES, RELATIONSHIP_LIFECYCLE_STAGES } from '../../stores/useContactsStore';
+import {
+  CONTACT_RECORD_TYPES,
+  LIFECYCLE_STAGES,
+  RELATIONSHIP_LIFECYCLE_STAGES,
+  createCompany,
+  fetchCompanies,
+} from '../kanoon/public/index.js';
 import { useLeadsStore } from '../../stores/useLeadsStore';
 import {
   ENTITY_TYPES,
   PERSON_TYPES,
   DEFAULT_CUSTOMER_STATUS,
 } from '../kanoon/config';
-import { LEAD_STATUS } from './domain/lead.constants.js';
+import { LEAD_STATUS, isOpenLeadStatus } from './domain/lead.constants.js';
+import { LeadRepository } from '../../api/repositories/LeadRepository';
+import { useMockApi } from '../../api/useMockApi';
+import { mapCompanyIdentityErrorMessage } from '../../api/companyIdentityErrors.js';
 
 /**
  * Mock Linka validation — simulated network delay, always succeeds when nationalId is valid shape.
@@ -27,18 +38,14 @@ export async function mockLinkaValidate(nationalId) {
   return { ok: true, nationalId: cleaned };
 }
 
-/**
- * Convert an OPEN Ofogh Lead into a Kanoon Company (CUSTOMER).
- *
- * @param {string} leadId
- * @param {{ nationalId: string }} options
- * @returns {Promise<{ ok: boolean, companyId?: string|number, error?: string }>}
- */
-export async function convertLeadToCompany(leadId, options = {}) {
+async function convertLeadMock(leadId, options = {}) {
   const lead = useLeadsStore.getState().getLead(leadId);
   if (!lead) return { ok: false, error: 'سرنخ یافت نشد.' };
   if (lead.status === LEAD_STATUS.CONVERTED) {
     return { ok: false, error: 'این سرنخ قبلاً تبدیل شده است.', companyId: lead.convertedCompanyId };
+  }
+  if (!isOpenLeadStatus(lead.status) && lead.status !== LEAD_STATUS.OPEN) {
+    return { ok: false, error: 'وضعیت سرنخ برای تبدیل مجاز نیست.' };
   }
 
   const validation = await mockLinkaValidate(options.nationalId);
@@ -81,10 +88,49 @@ export async function convertLeadToCompany(leadId, options = {}) {
     convertedFromLeadId: lead.id,
   };
 
-  const companyId = await useContactsStore.getState().addContactAsync(companyPayload);
+  const companyId = await createCompany(companyPayload);
   useLeadsStore.getState().markLeadConverted(leadId, companyId);
 
-  return { ok: true, companyId };
+  return { ok: true, companyId, conversionMode: 'create_new' };
+}
+
+async function convertLeadApi(leadId, options = {}) {
+  const lead = useLeadsStore.getState().getLead(leadId);
+  if (!lead) return { ok: false, error: 'سرنخ یافت نشد.' };
+  if (lead.status === LEAD_STATUS.CONVERTED) {
+    return { ok: false, error: 'این سرنخ قبلاً تبدیل شده است.', companyId: lead.convertedCompanyId };
+  }
+
+  try {
+    const result = await LeadRepository.convertLead(leadId, {
+      nationalId: options.nationalId,
+    });
+    if (result?.lead) {
+      useLeadsStore.getState().upsertLeadCache(result.lead);
+    } else {
+      useLeadsStore.getState().markLeadConverted(leadId, result.companyId);
+    }
+    await fetchCompanies();
+    return { ok: true, companyId: result.companyId, conversionMode: result.conversionMode };
+  } catch (error) {
+    const code = error?.response?.data?.error;
+    const message = mapCompanyIdentityErrorMessage(code, error?.response?.data?.message);
+    return { ok: false, error: message, errorCode: code };
+  }
+}
+
+/**
+ * Convert an Ofogh Lead into a Kanoon Company (CUSTOMER).
+ *
+ * @param {string} leadId
+ * @param {{ nationalId: string }} options
+ * @returns {Promise<{ ok: boolean, companyId?: string|number, error?: string }>}
+ */
+export async function convertLeadToCompany(leadId, options = {}) {
+  if (useMockApi()) {
+    return convertLeadMock(leadId, options);
+  }
+  return convertLeadApi(leadId, options);
 }
 
 export const leadConversionService = {

@@ -50,12 +50,19 @@ export const OrderRepository = {
     return orderFromApi(data.order) as Order;
   },
 
-  async updateOrderStatus(id: string, status: OrderStatus): Promise<Order | void> {
+  async updateOrderStatus(id: string, status: OrderStatus, version?: number): Promise<Order | void> {
     if (useMockApi()) {
       return Promise.resolve();
     }
 
-    const { data } = await apiClient.patch<{ order: unknown }>(`/orders/${id}`, { status });
+    if (version == null || !Number.isFinite(version)) {
+      throw new Error('Order version required for status update (SERVER_FIRST / optimistic lock)');
+    }
+
+    const { data } = await apiClient.patch<{ order: unknown }>(`/orders/${id}`, {
+      status,
+      version,
+    });
     return orderFromApi(data.order) as Order;
   },
 };

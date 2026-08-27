@@ -1,16 +1,18 @@
 import { BEHAVIORAL_STATUS, ENTITY_TYPES } from './config';
 import { getCellValue } from './columns';
 import { getSupplierCapabilityTags } from './supplierCapabilities';
+import { CONTACT_RECORD_TYPES } from './public/index.js';
 
 const INACTIVE_STATUSES = new Set(['silent', 'stagnant']);
 
 export function computeKanoonKpis(contacts) {
-  const total = contacts.length;
-  const activeCustomers = contacts.filter(
+  const companies = contacts.filter((c) => c.recordType !== CONTACT_RECORD_TYPES.LEAD);
+  const total = companies.length;
+  const activeCustomers = companies.filter(
     (c) => c.entityType === ENTITY_TYPES.CUSTOMER && !INACTIVE_STATUSES.has(c.behavioralStatus),
   ).length;
-  const ambassadors = contacts.filter((c) => c.behavioralStatus === 'ambassador').length;
-  const silentStagnant = contacts.filter((c) => INACTIVE_STATUSES.has(c.behavioralStatus)).length;
+  const ambassadors = companies.filter((c) => c.behavioralStatus === 'ambassador').length;
+  const silentStagnant = companies.filter((c) => INACTIVE_STATUSES.has(c.behavioralStatus)).length;
 
   return [
     { label: 'کل مخاطبین', value: total.toLocaleString('fa-IR'), variant: 'accent' },
@@ -28,6 +30,9 @@ export function filterContacts(contacts, {
   audienceFilter = null,
 }) {
   return contacts.filter((contact) => {
+    // Kanoon is the verified company registry — raw LEADs never belong here
+    if (contact.recordType === CONTACT_RECORD_TYPES.LEAD) return false;
+
     if (personType && contact.personType !== personType) return false;
 
     if (audienceFilter === 'customers' || audienceFilter === 'leads') {

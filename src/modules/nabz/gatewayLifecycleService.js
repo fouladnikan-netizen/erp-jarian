@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import {
   STAGE_KAVOSH_ID,
@@ -52,7 +52,7 @@ function buildLifecycleEvent(order, fromStageId, toStageId, summary) {
     id: lifecycleEventIdCounter++,
     type: 'stage_advanced',
     at,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     fromStageId,
     toStageId,
     fromStageLabel: getStageLabel(fromStageId),
@@ -172,7 +172,7 @@ export function sendProformaToCustomer(order) {
         id: lifecycleEventIdCounter++,
         type: 'proforma_sent',
         at,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `ارسال پیش‌فاکتور سفارش ${order.code} برای مشتری`,
       },
     ],

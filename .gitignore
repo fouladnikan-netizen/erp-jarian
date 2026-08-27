@@ -48,3 +48,9 @@ Assets/nikan4.png
 # Logs
 *.log
 npm-debug.log*
+
+# Playwright E2E
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/

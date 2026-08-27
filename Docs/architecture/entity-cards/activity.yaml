@@ -1,0 +1,36 @@
+id: activity
+name: Activity
+tier: A
+status: active
+ownerModule: pooyesh
+aggregateRoot: Activity
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "OPEN (default) | COMPLETED; ARCHIVED via soft-delete. Soft CRM logging — no complex state machine (DDL-15)."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - activities:read
+  - activities:write
+databaseTable: activities
+apiBasePath: /api/v1/activities
+backendRepository: backend/src/repositories/activityRepository.js
+frontendRepository: src/api/repositories/ActivityRepository.js
+dependencies:
+  - company
+  - raw-lead
+  - auth-user
+integrationPorts:
+  - subject-entity-port
+  - pooyesh-interaction-facade
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-15
+  - DDL-09
+  - DDL-11
+  - DDL-14
+  - DDL-19
+  - DDL-20
+  - DDL-22
+migrationSafety: "004_activities.sql expand-only; soft-delete + append-only audit. Application-level subject integrity (COMPANY|RAW_LEAD). Nabz crmActivities out of unify. 011_activity_task_followup_linkage.sql adds tasks.source_activity_id (expand-only, on tasks not activities)."
+notes: "DDL-15. Independent Pooyesh aggregate. SubjectReference { entityType: COMPANY|RAW_LEAD, entityId }. Task ≠ Activity. Facades rewired to ActivityRepository (SERVER_FIRST). Mock mode may still use parent interactions[] offline only. Legacy parent interactions not auto-migrated. activityType validated against activity-type-registry active keys on write (DDL-19). Future follow-up date creates/links a canonical Task (DDL-20). update/complete/archive ownership-scoped via ownershipGate (DDL-22)."

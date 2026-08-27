@@ -75,7 +75,7 @@ export const JARIAN_UI = Object.freeze({
 });
 
 /**
- * مبلغ عددی با جداکننده سه‌رقمی.
+ * مبلغ عددی با جداکننده سه‌رقمی و ارقام فارسی (قانون jarian-numeral-display).
  * @param {object} [options]
  * @param {boolean} [options.withCurrency=false] — فقط برای فوتر جمع‌ها `true` بگذارید
  * @example formatJarianMoney(12500000) → "۱۲٬۵۰۰٬۰۰۰"

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Phone,
   Mail,
@@ -8,8 +8,18 @@ import {
   Sparkles,
   Calendar,
   Activity,
+  CheckSquare,
+  Plus,
 } from 'lucide-react';
-import { useContactsStore } from '../../stores/useContactsStore';
+import { useCompany, useCompanies, CONTACT_RECORD_TYPES } from '../kanoon/public/index.js';
+import { useActivitiesVersion, useTasksVersion } from './public/index.js';
+import { companyReference, ENTITY_REF_TYPE } from '../../domain/entityReference';
+import {
+  fetchActivityTypes,
+  listActiveActivityTypes,
+  resolveActivityTypeLabel,
+  useActivityTypesVersion,
+} from '../../domain/activityTypes/activityTypesFacade.js';
 import { mockAiRewrite } from '../../utils/aiRewrite';
 import JalaliDatePicker from '../nabz/components/JalaliDatePicker';
 import {
@@ -24,27 +34,31 @@ import { evaluateCompanyCompletion } from '../../domain/customerCompletion';
 import {
   createActivity,
 } from './timeline/companyTimelineFacade';
-import { listCompanyInteractions } from './interactionFacade';
+import { listCompanyInteractions, fetchInteractions } from './interactionFacade';
+import {
+  createPooyeshTask,
+  completePooyeshTask,
+  fetchPooyeshTasks,
+  listPooyeshTasks,
+} from './taskFacade';
 import { ProfileTabSectionHeader } from '../../components/profileLayout';
 import EntityMentionText from '../../components/navigation/EntityMentionText';
 import { getDisplayName } from '../kanoon/columns';
+import { useCan } from '../../stores/useSessionStore';
+import { PERMISSIONS } from '../../auth/permissions.catalog.js';
 import '../kanoon/customerProfile.css';
 import './pooyesh-panel.css';
 
-const ACTIVITY_TYPES = [
-  { id: 'call', label: 'تماس', Icon: Phone },
-  { id: 'message', label: 'پیام/ایمیل', Icon: Mail },
-  { id: 'meeting', label: 'جلسه حضوری', Icon: Users },
-  { id: 'catalog', label: 'ارسال کاتالوگ', Icon: BookOpen },
-  { id: 'note', label: 'یادداشت داخلی', Icon: StickyNote },
-];
+/** Icon is a UI-only concern — the type list/labels come from the Shirazeh registry (Gap 1). */
+const ACTIVITY_TYPE_ICONS = {
+  call: Phone,
+  message: Mail,
+  meeting: Users,
+  catalog: BookOpen,
+  note: StickyNote,
+};
 
-const TYPE_LABELS = {
-  call: 'تماس',
-  message: 'پیام/ایمیل',
-  meeting: 'جلسه حضوری',
-  catalog: 'ارسال کاتالوگ',
-  note: 'یادداشت',
+const NON_ACTIVITY_TYPE_LABELS = {
   task: 'وظیفه',
   system: 'سیستم',
 };
@@ -57,7 +71,8 @@ function nodeColorFor(type) {
 }
 
 function typeLabelFor(type) {
-  return TYPE_LABELS[type] || type || 'رویداد';
+  if (NON_ACTIVITY_TYPE_LABELS[type]) return NON_ACTIVITY_TYPE_LABELS[type];
+  return resolveActivityTypeLabel(type, type || 'رویداد');
 }
 
 function formatFaDate(value) {
@@ -69,9 +84,15 @@ function formatFaDate(value) {
 }
 
 export function MagicInput({ companyId }) {
-  const contact = useContactsStore(
-    (state) => state.contacts.find((c) => String(c.id) === String(companyId)) || null,
-  );
+  const contact = useCompany(companyId);
+  const canWriteActivities = useCan(PERMISSIONS.ACTIVITIES_WRITE);
+  const activityTypesVersion = useActivityTypesVersion();
+  useEffect(() => { fetchActivityTypes(); }, []);
+  const activityTypeOptions = useMemo(() => listActiveActivityTypes().map((t) => ({
+    id: t.key,
+    label: t.labelFa,
+    Icon: ACTIVITY_TYPE_ICONS[t.key] || StickyNote,
+  })), [activityTypesVersion]);
   const [expanded, setExpanded] = useState(false);
   const [activityType, setActivityType] = useState('call');
   const [note, setNote] = useState('');
@@ -124,14 +145,14 @@ export function MagicInput({ companyId }) {
     }, 1000);
   };
 
-  const commitActivity = () => {
+  const commitActivity = async () => {
     let iso = null;
     if (hasDate && isFutureDate) {
       const { year, month, day } = parseJalaliDate(followUpDate);
       const g = jalaliToGregorian(year, month, day);
       iso = new Date(g.year, g.month - 1, g.day, 9, 0, 0).toISOString();
     }
-    createActivity(companyId, {
+    await createActivity(companyId, {
       note: trimmed,
       type: activityType,
       nextFollowUpDate: iso,
@@ -142,11 +163,12 @@ export function MagicInput({ companyId }) {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!canSubmit) return;
-    if (contact && !evaluateCompanyCompletion(contact).isOperational) {
+    // Quarantine: raw LEAD should still allow Pooyesh interactions (notes/calls/…).
+    if (contact && contact.recordType !== CONTACT_RECORD_TYPES.LEAD && !evaluateCompanyCompletion(contact).isOperational) {
       setCompletionGateOpen(true);
       return;
     }
-    commitActivity();
+    void commitActivity();
   };
 
   const gateDialog = (
@@ -157,6 +179,10 @@ export function MagicInput({ companyId }) {
       onResolved={commitActivity}
     />
   );
+
+  if (!canWriteActivities) {
+    return null;
+  }
 
   if (!expanded) {
     return (
@@ -177,7 +203,7 @@ export function MagicInput({ companyId }) {
       <div className="kprofile-magic" ref={panelRef}>
         <form className="kprofile-magic__panel" onSubmit={handleSubmit}>
           <div className="kprofile-magic__types" role="tablist" aria-label="نوع فعالیت پویش">
-            {ACTIVITY_TYPES.map(({ id, label, Icon }) => (
+            {activityTypeOptions.map(({ id, label, Icon }) => (
               <button
                 key={id}
                 type="button"
@@ -306,6 +332,133 @@ function HeartbeatTimeline({ interactions, returnTo, returnName, companyName, co
 }
 
 /**
+ * Pooyesh ownership surface for canonical Tasks (future work — distinct from Activity).
+ * Minimal task board: create + list + complete for a Company/Raw Lead subject.
+ */
+export function PooyeshTaskBoard({ companyId }) {
+  const canWriteTasks = useCan(PERMISSIONS.TASKS_WRITE);
+  const tasksVersion = useTasksVersion();
+  const [title, setTitle] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (companyId == null) return undefined;
+    void fetchPooyeshTasks({ entityType: ENTITY_REF_TYPE.COMPANY, entityId: companyId });
+    return undefined;
+  }, [companyId]);
+
+  const tasks = useMemo(() => {
+    if (companyId == null) return [];
+    return listPooyeshTasks({ entityType: ENTITY_REF_TYPE.COMPANY, entityId: companyId })
+      .filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS')
+      .sort((a, b) => new Date(a.dueAt || a.dueDate || 0) - new Date(b.dueAt || b.dueDate || 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-read when task cache ticks
+  }, [companyId, tasksVersion]);
+
+  const handleCreate = async (event) => {
+    event.preventDefault();
+    const trimmed = title.trim();
+    if (!trimmed || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      let iso = null;
+      if (dueDate && isValidJalaliDate(dueDate)) {
+        const { year, month, day } = parseJalaliDate(dueDate);
+        const g = jalaliToGregorian(year, month, day);
+        iso = new Date(g.year, g.month - 1, g.day, 9, 0, 0).toISOString();
+      }
+      const result = await createPooyeshTask({
+        title: trimmed,
+        subject: companyReference(companyId),
+        dueDate: iso,
+        sourceModule: 'pooyesh',
+      });
+      if (!result?.ok) {
+        setError(result?.error || 'ثبت وظیفه ناموفق بود.');
+        return;
+      }
+      setTitle('');
+      setDueDate('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleComplete = async (taskId) => {
+    const result = await completePooyeshTask(taskId);
+    if (result && result.ok === false) {
+      setError(result.error || 'تکمیل وظیفه ناموفق بود.');
+    }
+  };
+
+  return (
+    <section className="pooyesh-tasks" data-domain="pooyesh" aria-label="پویش — وظایف">
+      <ProfileTabSectionHeader
+        title="پویش — وظایف"
+        subtitle="اقدامات بعدی زمان‌دار — مجزا از فعالیت‌ها"
+        Icon={CheckSquare}
+      />
+
+      {canWriteTasks && (
+        <form className="pooyesh-tasks__form" onSubmit={handleCreate}>
+          <input
+            type="text"
+            className="pooyesh-tasks__input font-meem"
+            placeholder="عنوان وظیفه بعدی…"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            disabled={busy}
+          />
+          <div className="pooyesh-tasks__date">
+            <JalaliDatePicker
+              value={dueDate}
+              onChange={setDueDate}
+              placeholder="سررسید (اختیاری)"
+            />
+          </div>
+          <button type="submit" className="btn btn--primary font-meem" disabled={!title.trim() || busy}>
+            <Plus size={14} strokeWidth={2} aria-hidden="true" />
+            افزودن وظیفه
+          </button>
+        </form>
+      )}
+
+      {error && <p className="pooyesh-tasks__error font-meem">{error}</p>}
+
+      {!tasks.length ? (
+        <div className="kprofile-empty font-meem">وظیفه بازی برای این مخاطب ثبت نشده است.</div>
+      ) : (
+        <ul className="pooyesh-tasks__list">
+          {tasks.map((task) => (
+            <li key={task.id} className="pooyesh-tasks__item" data-testid="pooyesh-task-item">
+              <span className="pooyesh-tasks__check" aria-hidden="true">
+                <CheckSquare size={15} strokeWidth={1.75} />
+              </span>
+              <span className="pooyesh-tasks__body">
+                <strong className="pooyesh-tasks__title font-meem">{task.title}</strong>
+                <span className="pooyesh-tasks__due font-yekan">{formatFaDate(task.dueAt || task.dueDate)}</span>
+              </span>
+              {canWriteTasks && (
+                <button
+                  type="button"
+                  className="pooyesh-tasks__complete"
+                  onClick={() => handleComplete(task.id)}
+                >
+                  ✓ تکمیل
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/**
  * Pooyesh ownership surface for soft customer interactions (history stream).
  * Quick activity logging lives globally on CustomerProfilePage above tabs.
  * CustomerProfilePage must only compose this panel — not own interaction state.
@@ -316,14 +469,21 @@ export default function PooyeshInteractionsPanel({
   returnName: returnNameProp,
 }) {
   const companyId = company?.id;
-  // Subscribe to contacts so the panel re-renders when the facade-backed stream changes.
-  useContactsStore((state) => state.contacts);
+  // Subscribe so the panel re-renders when Activity cache / contacts change.
+  useCompanies();
+  useActivitiesVersion();
   const interactions = listCompanyInteractions(companyId);
   const companyName = getDisplayName(company) || '';
   const returnTo = returnToProp ?? (companyId != null
     ? `/kanoon/contact/${companyId}?tab=interactions`
     : undefined);
   const returnName = returnNameProp ?? (companyName || 'پروفایل مشتری');
+
+  useEffect(() => {
+    if (companyId == null) return undefined;
+    void fetchInteractions(companyReference(companyId));
+    return undefined;
+  }, [companyId]);
 
   return (
     <section className="pooyesh-panel" data-domain="pooyesh" aria-label="پویش — موتور تعاملات">
@@ -339,6 +499,8 @@ export default function PooyeshInteractionsPanel({
         companyName={companyName}
         companyId={companyId}
       />
+
+      <PooyeshTaskBoard companyId={companyId} />
     </section>
   );
 }

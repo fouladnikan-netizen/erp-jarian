@@ -3,6 +3,8 @@ import {
   getIntegrationById,
   MOCK_INTEGRATION_HEALTH,
 } from '../config/integrationsRegistry';
+import { apiClient } from '../../../../api/client';
+import { useMockApi } from '../../../../api/useMockApi';
 
 /**
  * UI-only store for Integrations panel.
@@ -33,6 +35,39 @@ export const useIntegrationUIStore = create((set, get) => ({
   draftForms: {},
   /** Display-only connection health (simulates backend until API exists) */
   health: cloneHealth(),
+
+  /** Load Linka status from backend ENV (no secrets). */
+  fetchLinkaStatus: async () => {
+    if (useMockApi()) return null;
+    try {
+      const { data } = await apiClient.get('/integrations/linka/status');
+      const connected = Boolean(data?.enabled && data?.ready && data?.configured);
+      const nowLabel = new Date().toLocaleTimeString('fa-IR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      set((state) => ({
+        health: {
+          ...state.health,
+          linka: {
+            connected,
+            lastCheckLabel: connected ? `امروز ${nowLabel}` : state.health.linka?.lastCheckLabel || null,
+          },
+        },
+        testResults: {
+          ...state.testResults,
+          linka: {
+            status: connected ? 'success' : (data?.message ? 'error' : 'idle'),
+            message: data?.message || '',
+          },
+        },
+      }));
+      return data;
+    } catch (error) {
+      console.error('[integrations] linka status failed', error);
+      return null;
+    }
+  },
 
   selectIntegration: (id) => set({ selectedIntegrationId: id }),
 
@@ -106,6 +141,60 @@ export const useIntegrationUIStore = create((set, get) => ({
   testConnection: async (integrationId) => {
     const integration = getIntegrationById(integrationId);
     if (!integration) return { ok: false };
+
+    if (integrationId === 'linka' && !useMockApi()) {
+      set({
+        testingId: integrationId,
+        loading: true,
+        testResults: {
+          ...get().testResults,
+          [integrationId]: { status: 'idle', message: '' },
+        },
+      });
+
+      try {
+        const { data } = await apiClient.post('/integrations/linka/test');
+        const ok = Boolean(data?.ok);
+        const nowLabel = new Date().toLocaleTimeString('fa-IR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        set((state) => ({
+          testingId: null,
+          loading: false,
+          testResults: {
+            ...state.testResults,
+            linka: {
+              status: ok ? 'success' : 'error',
+              message: data?.message || (ok ? 'اتصال موفق بود' : 'اتصال برقرار نشد'),
+            },
+          },
+          health: {
+            ...state.health,
+            linka: {
+              connected: ok,
+              lastCheckLabel: ok ? `امروز ${nowLabel}` : state.health.linka?.lastCheckLabel || null,
+            },
+          },
+        }));
+        return { ok };
+      } catch (error) {
+        const message = error?.response?.data?.message || 'اتصال Linka برقرار نشد.';
+        set((state) => ({
+          testingId: null,
+          loading: false,
+          testResults: {
+            ...state.testResults,
+            linka: { status: 'error', message },
+          },
+          health: {
+            ...state.health,
+            linka: { connected: false, lastCheckLabel: state.health.linka?.lastCheckLabel || null },
+          },
+        }));
+        return { ok: false };
+      }
+    }
 
     set({
       testingId: integrationId,

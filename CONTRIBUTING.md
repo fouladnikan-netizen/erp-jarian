@@ -56,7 +56,9 @@ npm run quality
 
 - Index: [Docs/architecture/README.md](./Docs/architecture/README.md)
 - Rules catalog: [Docs/architecture/CURSOR_RULES.md](./Docs/architecture/CURSOR_RULES.md)
-- **Always applied:** theme tokens (no hardcoded colors), Unified Presentation 2.0 (tables / money / supplier)
+- **Always applied:** theme tokens, Unified Presentation 2.0, client SSOT, **Entity Delivery Pipeline**
+- Entity Cards: `npm run check:entity-cards` (also part of `npm run quality`)
+- New Tier A/B entities: follow [ENTITY_DELIVERY_PIPELINE.md](./Docs/architecture/ENTITY_DELIVERY_PIPELINE.md) — UI last, DDL first
 
 ## What not to do in drive-by PRs
 
@@ -64,6 +66,7 @@ npm run quality
 - Add `React.lazy` / Vite chunk splits / virtualization deps without a performance rollout
 - Split god Nabz panels or rewrite `nabz.css` “while here”
 - Replace Zustand or invent a second CRM SSOT
+- Add Lead/`leads` API or table without DDL gate (see `raw-lead` Entity Card)
 
 ## Questions
 

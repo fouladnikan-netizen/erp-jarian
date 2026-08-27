@@ -127,7 +127,7 @@ function getProformaEvents(order) {
 /**
  * @returns {Array<{
  *   id: string,
- *   kind: 'order' | 'followup' | 'payment' | 'invoice',
+ *   kind: 'order' | 'followup' | 'payment' | 'invoice' | 'task',
  *   title: string,
  *   body: string,
  *   dateLabel: string,
@@ -137,10 +137,77 @@ function getProformaEvents(order) {
  *   links?: Array<{ label: string, path: string, kind?: string }>,
  * }>}
  */
-export function buildCompanyTimelineEvents(contact, orders = []) {
+const TASK_STATUS_LABELS_FA = {
+  OPEN: 'باز',
+  IN_PROGRESS: 'در حال انجام',
+  COMPLETED: 'انجام‌شده',
+  CANCELLED: 'لغوشده',
+};
+
+/**
+ * @param {Array<object>} contact
+ * @param {Array<object>} orders
+ * @param {Array<object>} tasks
+ * @param {Array<{lead: object, activities: Array<object>, tasks: Array<object>, deepLink: string}>} leadLineage
+ *   Pre-conversion Ofogh Lead history (Activities/Tasks), read-time projection only.
+ *   Pooyesh/Kanoon never copy or re-key these rows — see DDL for Gap 3.
+ */
+export function buildCompanyTimelineEvents(contact, orders = [], tasks = [], leadLineage = []) {
   if (!contact) return [];
   const events = [];
   const companyId = String(contact.id);
+
+  for (const origin of (leadLineage || [])) {
+    const lead = origin?.lead;
+    if (!lead) continue;
+    const deepLink = origin.deepLink || null;
+    const leadLinks = deepLink ? [{ label: 'مشاهده سرنخ', path: deepLink, kind: 'lead' }] : [];
+    const leadMeta = lead.leadSource ? `سرنخ · ${lead.leadSource}` : 'سرنخ';
+
+    for (const item of (origin.activities || [])) {
+      const date = item.date || item.occurredAt || null;
+      events.push({
+        id: `lead-ix-${lead.id}-${item.id}`,
+        kind: 'lead-activity',
+        title: interactionTitle(item.type || item.activityType),
+        body: item.note || item.summary || item.description || '—',
+        dateLabel: formatDisplayDate(date),
+        sortKey: timelineSortKey(date),
+        meta: leadMeta,
+        leadId: lead.id,
+        links: leadLinks,
+      });
+    }
+
+    for (const task of (origin.tasks || [])) {
+      const anchorDate = task.completedAt || task.dueAt || task.dueDate || task.createdAt;
+      events.push({
+        id: `lead-task-${lead.id}-${task.id}`,
+        kind: 'lead-task',
+        title: task.title || 'وظیفه',
+        body: task.description || '—',
+        dateLabel: formatDisplayDate(anchorDate),
+        sortKey: timelineSortKey(anchorDate),
+        meta: `${TASK_STATUS_LABELS_FA[task.status] || task.status || ''} · سرنخ`.replace(/^ · /, ''),
+        leadId: lead.id,
+        links: leadLinks,
+      });
+    }
+
+    if (lead.convertedAt) {
+      events.push({
+        id: `lead-converted-${lead.id}`,
+        kind: 'lead-conversion',
+        title: 'سرنخ به مشتری تبدیل شد',
+        body: lead.leadSource ? `منبع جذب: ${lead.leadSource}` : '—',
+        dateLabel: formatDisplayDate(lead.convertedAt),
+        sortKey: timelineSortKey(lead.convertedAt),
+        meta: leadMeta,
+        leadId: lead.id,
+        links: leadLinks,
+      });
+    }
+  }
 
   const orderLink = (code) => {
     const path = orderDeepLinkPath(code);
@@ -157,6 +224,20 @@ export function buildCompanyTimelineEvents(contact, orders = []) {
       dateLabel: formatDisplayDate(item.date),
       sortKey: timelineSortKey(item.date),
       meta: item.operator || null,
+      links: [],
+    });
+  }
+
+  for (const task of (tasks || [])) {
+    const anchorDate = task.completedAt || task.dueAt || task.dueDate || task.createdAt;
+    events.push({
+      id: `task-${task.id}`,
+      kind: 'task',
+      title: task.title || 'وظیفه',
+      body: task.description || '—',
+      dateLabel: formatDisplayDate(anchorDate),
+      sortKey: timelineSortKey(anchorDate),
+      meta: TASK_STATUS_LABELS_FA[task.status] || task.status || null,
       links: [],
     });
   }

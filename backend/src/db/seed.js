@@ -14,14 +14,33 @@ const PERMISSIONS = [
   { code: 'companies:write', label_fa: 'ثبت/ویرایش شرکت' },
   { code: 'orders:read', label_fa: 'مشاهده سفارش‌ها' },
   { code: 'orders:write', label_fa: 'ثبت/ویرایش سفارش' },
+  { code: 'leads:read', label_fa: 'مشاهده سرنخ‌های خام' },
+  { code: 'leads:write', label_fa: 'ثبت/ویرایش سرنخ خام' },
+  { code: 'leads:convert', label_fa: 'تبدیل سرنخ به شرکت' },
+  { code: 'activities:read', label_fa: 'مشاهده فعالیت‌های پویش' },
+  { code: 'activities:write', label_fa: 'ثبت/ویرایش فعالیت پویش' },
+  { code: 'tasks:read', label_fa: 'مشاهده وظایف پویش' },
+  { code: 'tasks:write', label_fa: 'ثبت/ویرایش وظایف پویش' },
   { code: 'users:admin', label_fa: 'مدیریت کاربران' },
 ];
 
 const ROLE_PERMS = {
   admin: PERMISSIONS.map((p) => p.code),
-  sales_manager: ['companies:read', 'companies:write', 'orders:read', 'orders:write'],
-  sales: ['companies:read', 'companies:write', 'orders:read', 'orders:write'],
-  purchase: ['companies:read', 'orders:read', 'orders:write'],
+  sales_manager: [
+    'companies:read', 'companies:write',
+    'orders:read', 'orders:write',
+    'leads:read', 'leads:write', 'leads:convert',
+    'activities:read', 'activities:write',
+    'tasks:read', 'tasks:write',
+  ],
+  sales: [
+    'companies:read', 'companies:write',
+    'orders:read', 'orders:write',
+    'leads:read', 'leads:write', 'leads:convert',
+    'activities:read', 'activities:write',
+    'tasks:read', 'tasks:write',
+  ],
+  purchase: ['companies:read', 'orders:read', 'orders:write', 'activities:read', 'tasks:read'],
   accounting: ['companies:read', 'orders:read'],
 };
 
@@ -30,6 +49,11 @@ function newId(prefix) {
 }
 
 async function seed() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[seed] BLOCKED: refuse to seed when NODE_ENV=production');
+    process.exit(1);
+  }
+
   for (const role of ROLES) {
     await query(
       `INSERT INTO roles (code, label_fa) VALUES ($1, $2)
@@ -77,13 +101,52 @@ async function seed() {
     [adminId],
   );
 
+  // Second sales user for Personal Pipeline isolation E2E (non-production seed only)
+  const salesBExisting = await query(`SELECT id FROM users WHERE username = $1`, ['sales_b']);
+  let salesBId = salesBExisting.rows[0]?.id;
+  if (!salesBId) {
+    salesBId = newId('u');
+    const passwordHash = await bcrypt.hash('SalesB123!', 10);
+    await query(
+      `INSERT INTO users (id, username, display_name, password_hash)
+       VALUES ($1, $2, $3, $4)`,
+      [salesBId, 'sales_b', 'کارشناس فروش ب', passwordHash],
+    );
+    console.log('[seed] created user sales_b / SalesB123!');
+  }
+  await query(
+    `INSERT INTO user_roles (user_id, role_code) VALUES ($1, 'sales')
+     ON CONFLICT DO NOTHING`,
+    [salesBId],
+  );
+
+  // Third sales user — unauthorized-actor fixture for Activity/Task ownership
+  // RBAC E2E (Gap 4 / Journey 011, non-production seed only).
+  const salesCExisting = await query(`SELECT id FROM users WHERE username = $1`, ['sales_c']);
+  let salesCId = salesCExisting.rows[0]?.id;
+  if (!salesCId) {
+    salesCId = newId('u');
+    const passwordHash = await bcrypt.hash('SalesC123!', 10);
+    await query(
+      `INSERT INTO users (id, username, display_name, password_hash)
+       VALUES ($1, $2, $3, $4)`,
+      [salesCId, 'sales_c', 'کارشناس فروش ج', passwordHash],
+    );
+    console.log('[seed] created user sales_c / SalesC123!');
+  }
+  await query(
+    `INSERT INTO user_roles (user_id, role_code) VALUES ($1, 'sales')
+     ON CONFLICT DO NOTHING`,
+    [salesCId],
+  );
+
   const companyCount = await query(`SELECT COUNT(*)::int AS n FROM companies`);
   if (companyCount.rows[0].n === 0) {
     const companyId = newId('co');
     await query(
       `INSERT INTO companies (id, name, entity_type, province, activity_domain, lifecycle_stage, created_by)
        VALUES ($1, $2, 'CUSTOMER', $3, $4, $5, $6)`,
-      [companyId, 'ساختمان و نصب فراب', 'تهران', 'نصب صنعتی', 'نوپدید', adminId],
+      [companyId, 'ساختمان و نصب فراب', 'تهران', 'نصب صنعتی', 'cold_lead', adminId],
     );
 
     const orderId = newId('ord');

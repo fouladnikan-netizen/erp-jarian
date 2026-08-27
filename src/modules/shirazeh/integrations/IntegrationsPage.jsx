@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Activity, AlertTriangle, Plug } from 'lucide-react';
 import { buildIntegrationsHealthSummary } from './config/integrationsRegistry';
 import { useIntegrationUIStore } from './store/integrationUIStore';
@@ -24,7 +24,12 @@ function HealthMiniCard({ icon: Icon, label, value, tone = 'neutral' }) {
  */
 export default function IntegrationsPage() {
   const health = useIntegrationUIStore((s) => s.health);
+  const fetchLinkaStatus = useIntegrationUIStore((s) => s.fetchLinkaStatus);
   const summary = useMemo(() => buildIntegrationsHealthSummary(health), [health]);
+
+  useEffect(() => {
+    void fetchLinkaStatus();
+  }, [fetchLinkaStatus]);
 
   return (
     <div className="shirazeh-integrations" dir="rtl">

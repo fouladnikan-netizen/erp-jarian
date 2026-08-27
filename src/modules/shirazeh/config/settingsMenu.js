@@ -28,6 +28,13 @@ export const SETTINGS_MENU = [
     icon: 'Plug',
   },
   {
+    id: 'activity-types',
+    label: 'انواع فعالیت پویش',
+    description: 'فهرست یکپارچه نوع فعالیت برای مشتری، سرنخ و سفارش',
+    path: `${SHIRAZEH_BASE_PATH}/activity-types`,
+    icon: 'ListChecks',
+  },
+  {
     id: 'warehouses',
     label: 'انبارها',
     description: 'تعریف انبارها و آدرس‌های عملیاتی',

@@ -1,8 +1,8 @@
-# Persistence Boundary (proposal)
+# Persistence Boundary
 
-> **Status:** Recommended **future** layering — **not implemented**.  
-> Do not add Prisma, database, or repository rewrites in this phase.  
-> **Related:** [DATA_OWNERSHIP_MODEL.md](./DATA_OWNERSHIP_MODEL.md), [10-DATA_ARCHITECTURE_AUDIT.md](./10-DATA_ARCHITECTURE_AUDIT.md)
+> **Status:** Target layering — **implemented in part** via backend v1 + [ENTITY_DELIVERY_PIPELINE.md](./ENTITY_DELIVERY_PIPELINE.md).  
+> Do not invent a second layering guide; follow the Entity Delivery Pipeline for new Tier A/B work.  
+> **Related:** [DATA_OWNERSHIP_MODEL.md](./DATA_OWNERSHIP_MODEL.md), [CLIENT_STATE_SSOT.md](./CLIENT_STATE_SSOT.md), [ENTITY_GAP_AUDIT.md](./ENTITY_GAP_AUDIT.md)
 
 ---
 
@@ -67,3 +67,15 @@ Client cache (e.g. Zustand) may sit **beside** Application/UI as a **working cop
 - Introducing Prisma / PostgreSQL  
 - Changing Zustand architecture  
 - Changing existing APIs or routes  
+
+---
+
+## Cross-module FE boundary (implemented)
+
+When module A needs entity B owned by module C:
+
+1. Import from `modules/<owner>/public/*` or an approved Port/Facade (`subjectEntity.port`, `interactionFacade`, `taskFacade`).  
+2. Do **not** import `useContactsStore`, `useLeadsStore`, `useNabzStore`, `useActivitiesStore`, or `useTasksStore` from outside the owner module.  
+3. Stores remain in `src/stores/` as owner cache; public facades are the only cross-module touchpoint.
+
+Guard: `npm run check:module-boundaries` (see `.cursor/rules/jarian-module-boundaries.mdc`).

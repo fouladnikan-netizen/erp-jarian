@@ -110,14 +110,13 @@ export const INTEGRATIONS_REGISTRY = [
     name: 'لینکا',
     category: 'verification',
     icon: 'BadgeCheck',
-    description: 'استعلام مشخصات رسمی شرکت با شناسه ملی',
-    fields: [
-      { key: 'apiKey', type: 'secret', label: 'کلید API' },
-      { key: 'endpoint', type: 'text', label: 'آدرس Endpoint' },
-    ],
+    description: 'استعلام مشخصات رسمی شرکت با شناسه ملی (فقط از backend)',
+    backendOnly: true,
+    fields: [],
     supportsOAuth: false,
     supportsWebhooks: false,
     relatedConfigKey: 'linka',
+    configHint: 'اعتبارنامه Linka فقط در backend/.env ذخیره می‌شود: COMPANY_IDENTITY_PROVIDER=linka، LINKA_BASE_URL، LINKA_USERNAME، LINKA_PASSWORD — سپس API را ری‌استارت کنید.',
   },
 ];
 

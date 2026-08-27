@@ -12,12 +12,18 @@ import { KANOON_ACTION } from './kanoonActionTypes';
 import { useCompanyCompletionGate } from '../../components/customerCompletion';
 import ListPageLayout from '../../components/module/ListPageLayout';
 import ListToolbar from '../../components/module/ListToolbar';
+import { useCan } from '../../stores/useSessionStore';
+import { PERMISSIONS } from '../../auth/permissions.catalog.js';
+import { getCompanyIdentityErrorFromApi } from '../../api/companyIdentityErrors.js';
+import { showSystemToast } from '../../utils/systemToast.js';
 import './kanoon.css';
 
 export default function KanoonPage() {
   const contacts = useContactsStore((state) => state.contacts);
   const addContact = useContactsStore((state) => state.addContact);
+  const createFromIdentityAsync = useContactsStore((state) => state.createFromIdentityAsync);
   const updateContact = useContactsStore((state) => state.updateContact);
+  const canWriteCompanies = useCan(PERMISSIONS.COMPANIES_WRITE);
   const [audienceFilter, setAudienceFilter] = useState('customers');
   const [personType, setPersonType] = useState(PERSON_TYPES.LEGAL);
   const [search, setSearch] = useState('');
@@ -50,6 +56,24 @@ export default function KanoonPage() {
   const handleAddContact = (contact) => {
     void addContact(contact);
     setModalState(null);
+  };
+
+  const handleCreateFromIdentity = async ({ nationalId, entityType, activityDomain }) => {
+    try {
+      const result = await createFromIdentityAsync({ nationalId, entityType, activityDomain });
+      setModalState(null);
+      if (result?.company?.id) {
+        navigate(`/kanoon/contact/${result.company.id}`);
+      }
+      if (result && !result.created && result.mode === 'existing') {
+        showSystemToast('شرکت با این شناسه ملی از قبل در کانون ثبت شده است.');
+      }
+    } catch (error) {
+      const message = getCompanyIdentityErrorFromApi(error);
+      const err = new Error(message);
+      err.cause = error;
+      throw err;
+    }
   };
 
   const handleUpdateContact = (id, updates) => {
@@ -92,6 +116,8 @@ export default function KanoonPage() {
           onSearchChange={setSearch}
           primaryLabel="ثبت مخاطب جدید"
           onPrimaryClick={() => openCreateModal('minimal')}
+          primaryDisabled={!canWriteCompanies}
+          primaryTitle={canWriteCompanies ? undefined : 'شما مجوز ایجاد مخاطب را ندارید.'}
           filters={(
             <KanoonToolbar
               audienceFilter={audienceFilter}
@@ -125,6 +151,7 @@ export default function KanoonPage() {
           personType={modalState.personType}
           onClose={() => setModalState(null)}
           onSubmit={handleAddContact}
+          onCreateFromIdentity={handleCreateFromIdentity}
           onOpenFullForm={() => setModalState((s) => ({ ...s, mode: 'full' }))}
         />
       )}

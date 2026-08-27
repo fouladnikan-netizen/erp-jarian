@@ -13,8 +13,12 @@ These load for every Cursor Agent session in this repo:
 |-----------|---------|
 | [`jarian-theme-tokens.mdc`](../../.cursor/rules/jarian-theme-tokens.mdc) | RFC-001 — no hardcoded colors; use `theme-tokens.css` / CSS variables |
 | [`jarian-unified-presentation.mdc`](../../.cursor/rules/jarian-unified-presentation.mdc) | Tables, money, product cell, supplier — Jarian Presentation 2.0 |
+| [`jarian-numeral-display.mdc`](../../.cursor/rules/jarian-numeral-display.mdc) | **Law** — money/dates → Persian digits; IDs/codes → Latin digits |
+| [`jarian-client-state-ssot.mdc`](../../.cursor/rules/jarian-client-state-ssot.mdc) | **Law** — Zustand cache only when API exists; Postgres is SoR |
+| [`jarian-entity-pipeline.mdc`](../../.cursor/rules/jarian-entity-pipeline.mdc) | **Law** — DDL gate, tiers, Entity Cards, dual repos, UI last |
+| [`jarian-module-boundaries.mdc`](../../.cursor/rules/jarian-module-boundaries.mdc) | **Law** — cross-module Port/Facade only; no foreign `use*Store` imports |
 
-Violating these in PRs is a review blocker (theme also enforced via `npm run lint:theme` / build).
+Violating these in PRs is a review blocker (theme also enforced via `npm run lint:theme` / build; boundaries via `npm run check:module-boundaries`).
 
 ---
 
@@ -43,4 +47,4 @@ Applied when editing matching paths or when the agent selects the rule:
 2. Document it in this file.
 3. Commit the `.mdc` with the related architecture doc when possible.
 
-Do **not** set `alwaysApply: true` unless the rule must constrain nearly all UI work (theme + presentation are the exceptions).
+Do **not** set `alwaysApply: true` unless the rule must constrain nearly all work (theme, presentation, numeral display, client SSOT, and entity pipeline are the exceptions).

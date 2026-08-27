@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { showSystemToast } from '../../../utils/systemToast';
-import { WEB_SERVICES_CONFIG } from '../../../config/registry/webServices';
+import { useContactsStore } from '../../../stores/useContactsStore';
 import {
   getTodayJalali,
   isValidJalaliDate,
   parseJalaliDate,
+  toJalaliDisplayDate,
 } from '../../nabz/dateUtils';
+import { formatJarianMoney } from '../../../config/JarianUI.config';
 import { PERSON_TYPES } from '../config';
 import { updateCompanyLegalInfo } from '../legalInfoService';
 import '../customerProfile.css';
@@ -38,8 +40,11 @@ const LEGAL_REG_FIELDS = [
   { key: 'nationalId', label: 'شناسه ملی', root: true },
   { key: 'registrationNumber', label: 'شماره ثبت' },
   { key: 'establishmentDate', label: 'تاریخ تاسیس' },
+  { key: 'companyType', label: 'نوع شرکت' },
+  { key: 'companyStatus', label: 'وضعیت شرکت' },
   { key: 'economicCode', label: 'کد اقتصادی' },
   { key: 'postalCode', label: 'کد پستی ۱۰ رقمی' },
+  { key: 'city', label: 'شهر' },
   { key: 'latestCapital', label: 'آخرین سرمایه ثبتی', rtl: true },
   { key: 'website', label: 'وبسایت' },
   { key: 'phone', label: 'تلفن ثابت' },
@@ -53,12 +58,15 @@ function buildLegalDraft(company) {
     nationalId: company.nationalId || '',
     registrationNumber: specs.registrationNumber || '',
     establishmentDate: specs.establishmentDate || '',
+    companyType: specs.companyType || '',
+    companyStatus: specs.companyStatus || '',
     economicCode: specs.economicCode || '',
     postalCode: specs.postalCode || '',
+    city: specs.city || '',
     latestCapital: specs.latestCapital || '',
     website: specs.website || '',
     phone: specs.phone || '',
-    latestGazette: specs.latestGazette || '',
+    latestGazette: resolveLatestGazetteDisplay(company) || specs.latestGazette || '',
     ceoName: gov.ceo?.name || '',
     ceoNationalId: gov.ceo?.nationalId || '',
     ceoValidUntil: gov.ceo?.validUntil || '',
@@ -108,6 +116,47 @@ function isRecentVerification(dateStr) {
   return diffDays >= 0 && diffDays <= 180;
 }
 
+function hasPersonOrGazetteEnrichment(company) {
+  const gov = company?.governance || {};
+  const specs = company?.officialSpecs || {};
+  const gazette = company?.linkaGazette?.latest;
+  return Boolean(
+    gov.ceo?.name
+    || (gov.boardMembers || []).length
+    || (gov.inspectors || []).length
+    || specs.latestGazette
+    || gazette?.gazetteTitle,
+  );
+}
+
+function resolveLatestGazetteDisplay(company) {
+  const specs = company?.officialSpecs || {};
+  if (specs.latestGazette) {
+    // summary may embed a Gregorian date at the start — convert first token if possible
+    const parts = String(specs.latestGazette).split(' — ');
+    if (parts[0]) parts[0] = toJalaliDisplayDate(parts[0]) || parts[0];
+    return parts.join(' — ');
+  }
+  const latest = company?.linkaGazette?.latest;
+  if (!latest) return '';
+  return [
+    toJalaliDisplayDate(latest.gazetteDate),
+    latest.gazetteNumber ? `شماره ${latest.gazetteNumber}` : null,
+    latest.gazetteTitle,
+  ].filter(Boolean).join(' — ');
+}
+
+function formatCapitalDisplay(value) {
+  if (value == null || value === '') return '';
+  const formatted = formatJarianMoney(value, { empty: '' });
+  return formatted || String(value);
+}
+
+function formatLegalDateDisplay(value) {
+  if (value == null || value === '') return '';
+  return toJalaliDisplayDate(value) || String(value);
+}
+
 /**
  * @param {{
  *   company: object,
@@ -115,31 +164,60 @@ function isRecentVerification(dateStr) {
  *   onSaved?: (companyId: string|number) => void,
  * }} props
  */
-export default function LegalInfoModal({ company, onClose, onSaved }) {
+export default function LegalInfoModal({ company: companyProp, onClose, onSaved }) {
+  const companyFromStore = useContactsStore((state) => (
+    state.contacts.find((c) => String(c.id) === String(companyProp?.id)) || null
+  ));
+  const company = companyFromStore || companyProp;
   const isLegal = company.personType === PERSON_TYPES.LEGAL;
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(true);
   const [versionIndex, setVersionIndex] = useState(0);
   const [draft, setDraft] = useState(() => buildLegalDraft(company));
   const syncTimer = useRef(null);
+  const autoEnrichTried = useRef(false);
 
   /* ماشین زمان: ایندکس ۰ = نسخه فعلی (داده زنده)، ایندکس‌های بالاتر = استعلام‌های قدیمی‌تر */
-  const snapshots = useMemo(() => [
-    {
-      isCurrent: true,
-      verifiedAt: company.legalVerifiedAt || null,
-      nationalId: company.nationalId,
-      specs: company.officialSpecs || {},
-      gov: company.governance || {},
-    },
-    ...(company.legalHistory || []).map((snap) => ({
-      isCurrent: false,
-      verifiedAt: snap.verifiedAt,
-      nationalId: snap.nationalId ?? company.nationalId,
-      specs: snap.officialSpecs || {},
-      gov: snap.governance || {},
-    })),
-  ], [company]);
+  const snapshots = useMemo(() => {
+    const specs = {
+      ...(company.officialSpecs || {}),
+      establishmentDate: formatLegalDateDisplay((company.officialSpecs || {}).establishmentDate)
+        || (company.officialSpecs || {}).establishmentDate
+        || '',
+      latestCapital: formatCapitalDisplay((company.officialSpecs || {}).latestCapital)
+        || (company.officialSpecs || {}).latestCapital
+        || '',
+      latestGazette: resolveLatestGazetteDisplay(company) || (company.officialSpecs || {}).latestGazette || '',
+    };
+    return [
+      {
+        isCurrent: true,
+        verifiedAt: company.legalVerifiedAt || company.linkaEnrichment?.fetchedAt || null,
+        nationalId: company.nationalId,
+        specs,
+        gov: {
+          ...(company.governance || {}),
+          ceo: {
+            ...((company.governance || {}).ceo || {}),
+            validUntil: formatLegalDateDisplay((company.governance || {}).ceo?.validUntil)
+              || (company.governance || {}).ceo?.validUntil
+              || '',
+          },
+          boardValidUntil: formatLegalDateDisplay((company.governance || {}).boardValidUntil)
+            || (company.governance || {}).boardValidUntil
+            || '',
+        },
+      },
+      ...(company.legalHistory || []).map((snap) => ({
+        isCurrent: false,
+        verifiedAt: snap.verifiedAt,
+        nationalId: snap.nationalId ?? company.nationalId,
+        specs: snap.officialSpecs || {},
+        gov: snap.governance || {},
+      })),
+    ];
+  }, [company]);
 
   const active = snapshots[Math.min(versionIndex, snapshots.length - 1)];
   const isCurrentVersion = active.isCurrent;
@@ -171,27 +249,88 @@ export default function LegalInfoModal({ company, onClose, onSaved }) {
     };
   }, [onClose]);
 
-  /**
-   * استعلام از وب‌سرویس لینکا (به‌روزرسانی خودکار مشخصات رسمی با شناسه ملی).
-   * تا وقتی سرویس در شیرازه پیکربندی نشده (WEB_SERVICES_CONFIG.linka.enabled)،
-   * فقط چرخه اتصال را شبیه‌سازی و وضعیت را اعلام می‌کند.
-   */
-  const handleLinkaSync = () => {
-    if (isSyncing) return;
-    setIsSyncing(true);
-    syncTimer.current = setTimeout(() => {
-      setIsSyncing(false);
-      const linka = WEB_SERVICES_CONFIG.linka;
-      if (!linka.enabled || !linka.endpoint) {
-        showSystemToast('وب‌سرویس لینکا هنوز متصل نیست — پس از پیکربندی در شیرازه، اطلاعات با یک کلیک به‌روز می‌شود.', { duration: 3600 });
+  // Always re-hydrate full Company (payload + persons) when opening legal modal.
+  useEffect(() => {
+    let cancelled = false;
+    async function hydrate() {
+      if (!companyProp?.id) {
+        setIsHydrating(false);
         return;
       }
-      /* TODO(linka): fetch(linka.endpoint + company.nationalId) → updateCompanyLegalInfo */
-      showSystemToast('اطلاعات رسمی شرکت از لینکا به‌روزرسانی شد.');
-    }, 1200);
+      setIsHydrating(true);
+      try {
+        const fetchCompanyById = useContactsStore.getState().fetchCompanyById;
+        const fresh = await fetchCompanyById(companyProp.id);
+        const current = fresh || useContactsStore.getState().contacts.find(
+          (c) => String(c.id) === String(companyProp.id),
+        );
+        const needsEnrich = current?.nationalId
+          && !hasPersonOrGazetteEnrichment(current)
+          && !autoEnrichTried.current;
+        if (needsEnrich) {
+          autoEnrichTried.current = true;
+          setIsSyncing(true);
+          try {
+            await useContactsStore.getState().enrichFromLinkaAsync(companyProp.id);
+            if (typeof onSaved === 'function') onSaved(companyProp.id);
+          } catch {
+            /* toast only on explicit sync */
+          } finally {
+            if (!cancelled) setIsSyncing(false);
+          }
+        }
+      } finally {
+        if (!cancelled) setIsHydrating(false);
+      }
+    }
+    void hydrate();
+    return () => {
+      cancelled = true;
+    };
+  }, [companyProp?.id, onSaved]);
+
+  useEffect(() => {
+    setDraft(buildLegalDraft(company));
+  }, [company]);
+
+  /**
+   * استعلام از لینکا از طریق Backend — BaseInfo + اشخاص + روزنامه رسمی.
+   */
+  const handleLinkaSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const enrichFromLinkaAsync = useContactsStore.getState().enrichFromLinkaAsync;
+      const result = await enrichFromLinkaAsync(company.id);
+      const sections = result.sections || {};
+      const parts = [
+        `اطلاعات پایه ${sections.base === 'ok' ? '✅' : '⚠️'}`,
+        `اشخاص مرتبط ${sections.persons === 'ok' ? '✅' : '⚠️'}`,
+        `روزنامه رسمی ${sections.gazette === 'ok' ? '✅' : '⚠️'}`,
+      ];
+      showSystemToast(
+        result.complete
+          ? 'اطلاعات رسمی شرکت از لینکا به‌روزرسانی شد.'
+          : `غنی‌سازی جزئی: ${parts.join(' · ')}`,
+        { duration: 4200 },
+      );
+      await useContactsStore.getState().fetchCompanyById(company.id);
+      if (typeof onSaved === 'function') onSaved(company.id);
+    } catch (err) {
+      showSystemToast(err?.message || 'استعلام لینکا ناموفق بود.', { duration: 3600 });
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  const currentValue = (field) => (field.root ? active.nationalId : active.specs[field.key]);
+  const currentValue = (field) => {
+    if (field.root) return active.nationalId;
+    const raw = active.specs[field.key];
+    if (field.key === 'establishmentDate') return formatLegalDateDisplay(raw);
+    if (field.key === 'latestCapital') return formatCapitalDisplay(raw);
+    if (field.key === 'latestGazette') return raw; // already normalized in snapshots
+    return raw;
+  };
   const setField = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
   const setMember = (index, key, value) => setDraft((prev) => ({
     ...prev,
@@ -312,6 +451,11 @@ export default function LegalInfoModal({ company, onClose, onSaved }) {
         )}
 
         <div className="kprofile-legal-modal__body">
+          {(isHydrating || isSyncing) && (
+            <p className="kprofile-legal-modal__empty font-meem" role="status">
+              {isSyncing ? 'در حال استعلام از لینکا…' : 'در حال بارگذاری اطلاعات حقوقی…'}
+            </p>
+          )}
           {isEditing ? (
             <form onSubmit={handleSave}>
               <h4 className="kprofile-legal-modal__section-title">مشخصات ثبتی</h4>
@@ -420,7 +564,7 @@ export default function LegalInfoModal({ company, onClose, onSaved }) {
                 {viewRow('کد ملی', active.gov.ceo?.nationalId, {
                   changed: hasFieldChanged('ceoNationalId'),
                 })}
-                {viewRow('اعتبار مسئولیت تا', active.gov.ceo?.validUntil, {
+                {viewRow('اعتبار مسئولیت تا', formatLegalDateDisplay(active.gov.ceo?.validUntil), {
                   changed: hasFieldChanged('ceoValidUntil'),
                 })}
               </dl>
@@ -455,7 +599,7 @@ export default function LegalInfoModal({ company, onClose, onSaved }) {
                 </p>
               )}
               <dl className="kprofile-legal-modal__list">
-                {viewRow('اعتبار هیئت مدیره تا', active.gov.boardValidUntil, {
+                {viewRow('اعتبار هیئت مدیره تا', formatLegalDateDisplay(active.gov.boardValidUntil), {
                   changed: hasFieldChanged('boardValidUntil'),
                 })}
               </dl>
@@ -477,6 +621,68 @@ export default function LegalInfoModal({ company, onClose, onSaved }) {
               >
                 {active.specs.address || '—'}
               </p>
+
+              {company.linkaIdentity?.activityDescription && (
+                <>
+                  <h4 className="kprofile-legal-modal__section-title">موضوع فعالیت (رسمی / لینکا)</h4>
+                  <p className="kprofile-legal-modal__text">
+                    {company.linkaIdentity.activityDescription}
+                  </p>
+                </>
+              )}
+
+              {(active.gov.inspectors || []).length > 0 && (
+                <>
+                  <h4 className="kprofile-legal-modal__section-title">بازرسان</h4>
+                  <ul className="kprofile-legal-modal__members">
+                    {active.gov.inspectors.map((member, index) => (
+                      <li key={`${member.name}-insp-${index}`} className="kprofile-legal-modal__member">
+                        <span className="kprofile-legal-modal__member-role">{member.role}</span>
+                        <span className="kprofile-legal-modal__member-name">{member.name}</span>
+                        <span className="kprofile-legal-modal__member-code">کد ملی: {member.nationalId || '—'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {company.linkaGazette?.latest && (
+                <>
+                  <h4 className="kprofile-legal-modal__section-title">روزنامه رسمی / آخرین آگهی</h4>
+                  <dl className="kprofile-legal-modal__list">
+                    {viewRow('تاریخ', formatLegalDateDisplay(company.linkaGazette.latest.gazetteDate || company.linkaGazette.latest.newsPaperDate), { rtl: true })}
+                    {viewRow('شماره', company.linkaGazette.latest.gazetteNumber)}
+                    {viewRow('عنوان', company.linkaGazette.latest.gazetteTitle, { rtl: true })}
+                  </dl>
+                  {company.linkaGazette.latest.gazetteBody && (
+                    <p className="kprofile-legal-modal__text">
+                      {company.linkaGazette.latest.gazetteBody}
+                    </p>
+                  )}
+                  {(company.linkaGazette.history || []).length > 1 && (
+                    <>
+                      <h4 className="kprofile-legal-modal__section-title">
+                        سابقه آگهی‌ها ({company.linkaGazette.totalCount || company.linkaGazette.history.length})
+                      </h4>
+                      <ul className="kprofile-legal-modal__members">
+                        {company.linkaGazette.history.slice(0, 8).map((item, index) => (
+                          <li key={`gaz-${item.gazetteNumber || index}-${index}`} className="kprofile-legal-modal__member">
+                            <span className="kprofile-legal-modal__member-role">
+                              {formatLegalDateDisplay(item.gazetteDate || item.newsPaperDate) || '—'}
+                            </span>
+                            <span className="kprofile-legal-modal__member-name">
+                              {item.gazetteTitle || `آگهی ${item.gazetteNumber || index + 1}`}
+                            </span>
+                            <span className="kprofile-legal-modal__member-code">
+                              شماره: {item.gazetteNumber || '—'}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

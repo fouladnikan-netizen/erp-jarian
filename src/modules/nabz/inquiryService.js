@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getStageLabel, STAGE_MOZENE_ID, STAGE_PISHKESH_ID } from './config';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import {
@@ -96,7 +96,7 @@ export function validateInquiryDraft(draft) {
 
 export function buildInquiryFromDraft(
   draft,
-  registeredBy = CURRENT_USER,
+  registeredBy = getCurrentUser(),
   status = INQUIRY_STATUS.DRAFT,
 ) {
   const base = {
@@ -235,7 +235,7 @@ export function appendInquiryToOrder(
   order,
   itemIndex,
   draft,
-  registeredBy = CURRENT_USER,
+  registeredBy = getCurrentUser(),
   status = INQUIRY_STATUS.DRAFT,
 ) {
   if (!canEditInquiryPrices()) return order;
@@ -262,7 +262,7 @@ export function finalizeItemInquiries(order, itemIndex) {
     id: eventIdCounter++,
     type: 'inquiry_item_finalized',
     at: `${getTodayJalali()} · ${getNowTimeFa()}`,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     itemIndex,
     itemName: item?.name || '—',
     summary: `تکمیل استعلام — ${item?.name || '—'} — آماده برای مرحله بعدی`,
@@ -296,7 +296,7 @@ export function finalizeSingleInquiry(order, itemIndex, inquiryId) {
     id: eventIdCounter++,
     type: 'inquiry_finalized',
     at: `${getTodayJalali()} · ${getNowTimeFa()}`,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     itemIndex,
     itemName: item?.name || '—',
     inquiryId,
@@ -347,7 +347,7 @@ export function completeOrderInquiries(order) {
     id: eventIdCounter++,
     type: 'inquiry_order_completed',
     at,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     fromStageId,
     toStageId: nextStageId,
     fromStageLabel: fromLabel,
@@ -385,7 +385,7 @@ export function completeOrderQuoting(order) {
     id: eventIdCounter++,
     type: 'quoting_completed',
     at,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     fromStageId,
     toStageId: nextStageId,
     fromStageLabel: fromLabel,

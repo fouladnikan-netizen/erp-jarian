@@ -28,6 +28,7 @@ import ShirazehPage, {
 import OrganizationStructurePage from './modules/shirazeh/security/organization/OrganizationStructurePage';
 import PermissionsPage from './modules/shirazeh/security/permissions/PermissionsPage';
 import UsersPage from './modules/shirazeh/users/UsersPage';
+import ActivityTypesPage from './modules/shirazeh/activityTypes/ActivityTypesPage';
 import { DEFAULT_SETTINGS_SECTION, SHIRAZEH_BASE_PATH } from './modules/shirazeh/config/settingsMenu';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { NotificationEngineProvider } from './context/NotificationEngineContext';
@@ -100,6 +101,7 @@ export default function App() {
                 />
                 <Route path="integrations" element={<IntegrationsPage />} />
                 <Route path="users" element={<UsersPage />} />
+                <Route path="activity-types" element={<ActivityTypesPage />} />
                 <Route path="security" element={<SecuritySettingsPage />} />
                 <Route path="security/organization" element={<OrganizationStructurePage />} />
                 <Route path="security/permissions" element={<PermissionsPage />} />

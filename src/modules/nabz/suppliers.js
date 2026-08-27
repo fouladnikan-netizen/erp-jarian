@@ -1,26 +1,19 @@
 /**
- * Nabz supplier helpers — facade over the shared Company SSOT (useContactsStore).
- * Do NOT read initialContacts seed directly (bypasses live mutations).
- *
+ * Nabz supplier helpers — via Kanoon public Company facade.
  * Supplier ≡ Company with entityType === supplier.
  */
-import { useContactsStore } from '../../stores/useContactsStore';
 import { getDisplayName } from '../kanoon/columns';
 import { ENTITY_TYPES } from '../kanoon/config';
-
-function getContacts() {
-  return useContactsStore.getState().contacts;
-}
+import { getCompany, listCompanies } from '../kanoon/public/index.js';
 
 export function listSuppliers() {
-  return getContacts().filter(
+  return listCompanies().filter(
     (c) => c.entityType === ENTITY_TYPES.SUPPLIER && c.isActive !== false,
   );
 }
 
 export function getSupplierById(id) {
-  if (!id) return null;
-  const contact = getContacts().find((c) => String(c.id) === String(id));
+  const contact = getCompany(id);
   if (!contact || contact.entityType !== ENTITY_TYPES.SUPPLIER) return null;
   return contact;
 }
