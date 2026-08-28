@@ -1,0 +1,35 @@
+id: product
+name: Product / SKU
+tier: A
+status: active
+ownerModule: vitrin
+aggregateRoot: Product
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "ACTIVE / INACTIVE. SKU immutable after creation (backend-generated, never included in any UPDATE). Inactive Products remain historically resolvable and are not selectable for new transactions, but are never hard-deleted. Lifecycle changes are audited."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - products:read
+  - products:write
+  - products:lifecycle
+  - products:manage-relationships
+  - products:bulk-import
+databaseTable: products, product_attribute_values, product_sku_counters, product_relationships, product_bulk_import_batches
+apiBasePath: /api/v1/products
+backendRepository: backend/src/repositories/productRepository.js
+frontendRepository: src/api/repositories/ProductRepository.js
+dependencies:
+  - product-taxonomy
+  - attribute-definition
+  - uom-registry
+  - brand
+integrationPorts:
+  - vitrin-public
+  - nabz-future-order-line-product-reference
+  - kanoon-supplier-capabilities
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-24
+migrationSafety: "017_product_master_products.sql + 018_product_master_bulk_import.sql, expand-only. sku has DB-level UNIQUE constraint, generated atomically via product_sku_counters (per-Product-Type variant sequence, INSERT..ON CONFLICT DO UPDATE..RETURNING, same pattern as correspondence_number_counters DDL-23a) in the GG-CC-TT-VV 8-digit format (DDL-24b). canonical_identity_key has DB-level UNIQUE constraint for exact-duplicate blocking (DDL-24d), computed from Product Type + normalized identity-relevant Master Attribute values (Persian/Latin numeral folding, numeric-format folding). Product names are generated (Product Type + ordered identity/display attributes) with a controlled displayNameOverride column that never feeds duplicate detection. weight_profile_type/weight_profile_coefficients model FIXED/PER_LENGTH/DIMENSIONAL/MANUAL_ACTUAL (DDL-24f). product_relationships models ALTERNATIVE/SUBSTITUTE/SUBSTITUTE_WITH_CONVERSION with self-link + duplicate-relation rejection. product_bulk_import_batches records every DRY_RUN/APPLY run for audit (DDL-24g)."
+notes: "DDL-24, DDL-24(b)-(h). catalogData.js (src/modules/vitrin/catalogData.js) stays a static, shape-compatible shim for the frozen Nabz product picker (src/modules/nabz/vitrinCategories.js) and Kanoon's supplier-capability suggestions — it is NOT this table's source of truth and must not be extended with new mock rows (DDL-24a). Nabz is not modified and has no FK into this table in this phase; see Docs/architecture/product-master-nabz-future-contract.md for the future Order Line contract."

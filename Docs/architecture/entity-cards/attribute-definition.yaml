@@ -1,0 +1,28 @@
+id: attribute-definition
+name: Attribute Definition + Product Type Schema Binding
+tier: B
+status: active
+ownerModule: shirazeh
+aggregateRoot: AttributeDefinition
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Centralized, reusable attribute definitions (STRING/DECIMAL/INTEGER/BOOLEAN/ENUM/DATE/REFERENCE). Bound to one or more Product Types via product_type_attributes (the effective Attribute Schema a Type inherits). Deactivating a definition or binding does not retroactively invalidate historical Product attribute values."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - products:read
+  - products:manage-taxonomy
+databaseTable: attribute_definitions, product_type_attributes
+apiBasePath: /api/v1/attribute-definitions
+backendRepository: backend/src/repositories/attributeDefinitionRepository.js
+frontendRepository: src/api/repositories/AttributeDefinitionRepository.js
+dependencies:
+  - product-taxonomy
+  - uom-registry
+integrationPorts:
+  - vitrin-schema-driven-product-form
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-24
+migrationSafety: "016_product_master_attributes.sql, expand-only. product_type_attributes.attribute_role (MASTER_ONLY/TRANSACTION_OVERRIDE_ALLOWED/TRANSACTION_ONLY) + is_identity_relevant are per-binding, not per-definition (same attribute can be identity-relevant for one Type and merely display-relevant for another). Service layer rejects any binding with attribute_role=TRANSACTION_ONLY and is_identity_relevant=true (assertTransactionOnlyNotIdentity in attributeDefinitionService.js) — a transaction-only attribute can never force a new SKU."
+notes: "DDL-24(c), DDL-24(h). Controlled schema model (Attribute Definition + binding table), not raw EAV — keeps validation/queryability/reporting centralized. Products store per-attribute values in Vitrin's product_attribute_values (see product.yaml), never redefining their own schema. Master-vs-Transactional split is informational-only in this phase — no Nabz storage/implementation (see Docs/architecture/product-master-nabz-future-contract.md)."

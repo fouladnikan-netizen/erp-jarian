@@ -42,6 +42,13 @@ export const SETTINGS_MENU = [
     icon: 'Mail',
   },
   {
+    id: 'product-master',
+    label: 'طبقه‌بندی و مرجع کالا',
+    description: 'گروه/دسته/نوع کالا، ویژگی‌ها، واحد اندازه‌گیری و برند مرکزی',
+    path: `${SHIRAZEH_BASE_PATH}/product-master`,
+    icon: 'Boxes',
+  },
+  {
     id: 'warehouses',
     label: 'انبارها',
     description: 'تعریف انبارها و آدرس‌های عملیاتی',

@@ -1,5 +1,28 @@
 import { formatProductCode } from './productCode';
 
+/**
+ * Frozen, static, synchronously-importable compatibility shim (DDL-24a).
+ *
+ * The real Product Master (taxonomy + Product/SKU) now lives in the backend
+ * — Shirazeh owns `product_groups`/`product_categories`/`product_types`,
+ * Vitrin owns `products` — served via `/api/v1/product-taxonomy` and
+ * `/api/v1/products` (see `src/api/repositories/ProductTaxonomyRepository.js`
+ * / `ProductRepository.js`). The current Vitrin UI reads that real API.
+ *
+ * This file stays exactly as it was, in the exact legacy shape, ONLY because
+ * `src/modules/nabz/vitrinCategories.js` (frozen — Nabz must not be modified)
+ * imports `initialGroups`/`initialProducts` via a top-level, synchronous ES
+ * import. A synchronous import cannot `await` a real network fetch, so this
+ * module cannot be turned into a real API-backed module without editing
+ * Nabz. `src/modules/kanoon/supplierCapabilities.js` uses the same shape for
+ * read-only capability-tag suggestions.
+ *
+ * Do NOT add new taxonomy/products here — new Product Master data lives only
+ * in the real backend tables. Do NOT delete this file while Nabz's product
+ * picker still imports it. See `Docs/architecture/product-master-nabz-future-contract.md`
+ * and DDL-24(a) in `Docs/architecture/DOMAIN_DECISION_LOG.md`.
+ */
+
 export const initialGroups = [
   {
     id: 1,
@@ -48,10 +71,6 @@ const productSeed = [
       unitWeight: '۱.۲۱ کیلوگرم بر متر',
       standards: ['DIN', 'ISIRI'],
     },
-    relatedOrders: [
-      { id: 'JR050112001', customer: 'فولاد پارس', stage: 'مظنه', registeredAt: '۱۴۰۴/۰۱/۱۲' },
-      { id: 'JR050111002', customer: 'صنایع فلزی کرمان', stage: 'پیش‌کش', registeredAt: '۱۴۰۴/۰۱/۱۱' },
-    ],
   },
   {
     id: 2,
@@ -68,7 +87,6 @@ const productSeed = [
       unitWeight: '۱.۵۸ کیلوگرم بر متر',
       standards: ['ASTM', 'ISIRI'],
     },
-    relatedOrders: [{ id: 'JR041120004', customer: 'بازرگانی آذر', stage: 'کاوش', registeredAt: '۱۴۰۳/۱۱/۲۰' }],
   },
   {
     id: 3,
@@ -85,9 +103,6 @@ const productSeed = [
       unitWeight: '۴۷.۱ کیلوگرم بر متر مربع',
       standards: ['DIN', 'ASTM'],
     },
-    relatedOrders: [
-      { id: 'JR050109004', customer: 'علی رضایی', stage: 'پیش‌کش', registeredAt: '۱۴۰۴/۰۱/۰۸' },
-    ],
   },
   {
     id: 4,
@@ -104,7 +119,6 @@ const productSeed = [
       unitWeight: '۱۵.۷ کیلوگرم بر متر مربع',
       standards: ['EN'],
     },
-    relatedOrders: [],
   },
   {
     id: 5,
@@ -121,7 +135,6 @@ const productSeed = [
       unitWeight: '۵۰.۵ کیلوگرم بر متر',
       standards: ['ASTM A106'],
     },
-    relatedOrders: [{ id: 'JR041220008', customer: 'ذوب آهن اصفهان', stage: 'سرانجام', registeredAt: '۱۴۰۳/۱۲/۲۰' }],
   },
   {
     id: 6,
@@ -138,7 +151,6 @@ const productSeed = [
       unitWeight: '۱۵.۸ کیلوگرم بر متر',
       standards: ['EN', 'DIN'],
     },
-    relatedOrders: [],
   },
 ];
 

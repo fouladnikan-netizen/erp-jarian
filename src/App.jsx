@@ -30,6 +30,7 @@ import PermissionsPage from './modules/shirazeh/security/permissions/Permissions
 import UsersPage from './modules/shirazeh/users/UsersPage';
 import ActivityTypesPage from './modules/shirazeh/activityTypes/ActivityTypesPage';
 import CorrespondenceTypesPage from './modules/shirazeh/correspondenceTypes/CorrespondenceTypesPage';
+import ProductMasterPage from './modules/shirazeh/productMaster/ProductMasterPage';
 import { DEFAULT_SETTINGS_SECTION, SHIRAZEH_BASE_PATH } from './modules/shirazeh/config/settingsMenu';
 import { NabzOrdersProvider } from './modules/nabz/NabzOrdersContext';
 import { NotificationEngineProvider } from './context/NotificationEngineContext';
@@ -104,6 +105,7 @@ export default function App() {
                 <Route path="users" element={<UsersPage />} />
                 <Route path="activity-types" element={<ActivityTypesPage />} />
                 <Route path="correspondence-types" element={<CorrespondenceTypesPage />} />
+                <Route path="product-master" element={<ProductMasterPage />} />
                 <Route path="security" element={<SecuritySettingsPage />} />
                 <Route path="security/organization" element={<OrganizationStructurePage />} />
                 <Route path="security/permissions" element={<PermissionsPage />} />

@@ -1,0 +1,27 @@
+id: uom-registry
+name: UOM Registry + Conversions
+tier: B
+status: active
+ownerModule: shirazeh
+aggregateRoot: UomRegistry
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Centrally governed Units of Measure (KG, TON, METER, PIECE, SHEET, BRANCH, ROLL, PACK, ...) plus pairwise conversion rules (numerator/denominator, exact vs approximate). Create/deactivate; no hard delete since Products reference UOMs by id."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - products:read
+  - products:manage-taxonomy
+databaseTable: uom_registry, uom_conversions
+apiBasePath: /api/v1/uom
+backendRepository: backend/src/repositories/uomRepository.js
+frontendRepository: src/api/repositories/UomRepository.js
+dependencies: []
+integrationPorts:
+  - vitrin-uom-configuration
+  - attribute-definition-unit-reference
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-24
+migrationSafety: "015_product_master_taxonomy.sql, expand-only, seeded with an initial common-unit set + one conversion example. uom_conversions rejects self-referential (from=to) and unknown/inactive UOM references at the service layer. Replaces the hardcoded PRODUCT_UNITS array in src/modules/vitrin/config.js as the real source of truth for new Vitrin UI — the legacy array stays only inside the frozen legacy Vitrin file."
+notes: "DDL-24(e). Registry-governed, not hardcoded in business logic. Conversions are registered once per UOM pair (Shirazeh-governed fact, e.g. '1 شاخه تیرآهن ≈ X KG'), reusable by any Product using that UOM pair — not product-scoped. Vitrin's products table references base_uom_id/sales_uom_id/purchase_uom_id from this registry."

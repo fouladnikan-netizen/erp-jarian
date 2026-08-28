@@ -15,6 +15,11 @@ import taskRoutes from './routes/tasks.js';
 import integrationRoutes from './routes/integrations.js';
 import correspondenceRoutes from './routes/correspondence.js';
 import correspondenceTypeRoutes from './routes/correspondenceTypes.js';
+import productTaxonomyRoutes from './routes/productTaxonomy.js';
+import attributeDefinitionRoutes from './routes/attributeDefinitions.js';
+import uomRoutes from './routes/uom.js';
+import brandRoutes from './routes/brands.js';
+import productRoutes from './routes/products.js';
 
 // Keep existing AI rewrite endpoint (Liara) without duplication.
 import aiRoutes from '../../src/server/api/aiRoutes.js';
@@ -56,6 +61,12 @@ export function createApp() {
   app.use('/api/v1/integrations', integrationRoutes);
   app.use('/api/v1/correspondence', correspondenceRoutes);
   app.use('/api/v1/correspondence-types', correspondenceTypeRoutes);
+  // Product Master (DDL-24) — Shirazeh taxonomy/attribute/UOM/Brand registries + Vitrin Product/SKU.
+  app.use('/api/v1/product-taxonomy', productTaxonomyRoutes);
+  app.use('/api/v1/attribute-definitions', attributeDefinitionRoutes);
+  app.use('/api/v1/uom', uomRoutes);
+  app.use('/api/v1/brands', brandRoutes);
+  app.use('/api/v1/products', productRoutes);
   app.use('/api/ai', aiRoutes);
 
   app.use(notFound);

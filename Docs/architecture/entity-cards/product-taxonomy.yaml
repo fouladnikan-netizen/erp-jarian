@@ -1,0 +1,28 @@
+id: product-taxonomy
+name: Product Taxonomy (Group -> Category -> Product Type)
+tier: B
+status: active
+ownerModule: shirazeh
+aggregateRoot: ProductType
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Extensible 3-level taxonomy Group -> Category -> Product Type. Create/rename/reorder/activate/deactivate. Inactive nodes stay historically resolvable for Products already referencing them; no hard delete."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - products:read
+  - products:manage-taxonomy
+databaseTable: product_groups, product_categories, product_types
+apiBasePath: /api/v1/product-taxonomy
+backendRepository: backend/src/repositories/productGroupRepository.js
+frontendRepository: src/api/repositories/ProductTaxonomyRepository.js
+dependencies:
+  - auth-user
+integrationPorts:
+  - vitrin-product-form
+  - kanoon-supplier-capabilities
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-24
+migrationSafety: "015_product_master_taxonomy.sql, expand-only, IF NOT EXISTS/ON CONFLICT. Group/Category/Type 2-digit taxonomy codes allocated atomically per parent scope via product_taxonomy_code_counters (INSERT..ON CONFLICT DO UPDATE..RETURNING, same pattern as correspondence_number_counters DDL-23a). products.group_id/category_id/product_type_id reference these tables; deactivating a node does not cascade-delete or block reads of Products already referencing it."
+notes: "DDL-24, DDL-24(b). Shirazeh owns taxonomy+schema; Vitrin (see product.yaml) owns actual Product/SKU. Group/Category/Type codes feed the GG-CC-TT segments of the Product SKU (DDL-24b) but the taxonomy tables themselves have no knowledge of SKU — code allocation is a pure counter concern. Master-detail navigation (tree endpoint /api/v1/product-taxonomy/tree) mirrors the target UX (Group -> Category -> Type -> Attribute Schema), not 9 disconnected CRUD tables."

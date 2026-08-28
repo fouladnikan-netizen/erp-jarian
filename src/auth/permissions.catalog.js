@@ -17,6 +17,13 @@ export const PERMISSIONS = Object.freeze({
   CORRESPONDENCE_READ: 'correspondence:read',
   CORRESPONDENCE_WRITE: 'correspondence:write',
   CORRESPONDENCE_FINALIZE: 'correspondence:finalize',
+  PRODUCTS_READ: 'products:read',
+  PRODUCTS_WRITE: 'products:write',
+  PRODUCTS_LIFECYCLE: 'products:lifecycle',
+  PRODUCTS_MANAGE_RELATIONSHIPS: 'products:manage-relationships',
+  PRODUCTS_MANAGE_TAXONOMY: 'products:manage-taxonomy',
+  PRODUCTS_MANAGE_BRANDS: 'products:manage-brands',
+  PRODUCTS_BULK_IMPORT: 'products:bulk-import',
   USERS_ADMIN: 'users:admin',
 });
 

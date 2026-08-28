@@ -25,6 +25,14 @@ const PERMISSIONS = [
   { code: 'correspondence:write', label_fa: 'ثبت/ویرایش پیش‌نویس مکاتبه' },
   { code: 'correspondence:finalize', label_fa: 'نهایی‌سازی و صدور شماره مکاتبه' },
   { code: 'users:admin', label_fa: 'مدیریت کاربران' },
+  // Product Master (DDL-24) — Shirazeh taxonomy/attribute/UOM/Brand registries + Vitrin Product/SKU.
+  { code: 'products:read', label_fa: 'مشاهده کالاها (ویترین)' },
+  { code: 'products:write', label_fa: 'ثبت/ویرایش کالا (ویترین)' },
+  { code: 'products:lifecycle', label_fa: 'فعال/غیرفعال‌سازی کالا' },
+  { code: 'products:manage-relationships', label_fa: 'مدیریت روابط کالا' },
+  { code: 'products:manage-taxonomy', label_fa: 'مدیریت طبقه‌بندی/ویژگی/واحد کالا (شیرازه)' },
+  { code: 'products:manage-brands', label_fa: 'مدیریت رجیستری برند' },
+  { code: 'products:bulk-import', label_fa: 'ورود دسته‌ای کالا' },
 ];
 
 const ROLE_PERMS = {
@@ -36,6 +44,7 @@ const ROLE_PERMS = {
     'activities:read', 'activities:write',
     'tasks:read', 'tasks:write',
     'correspondence:read', 'correspondence:write', 'correspondence:finalize',
+    'products:read', 'products:write', 'products:lifecycle', 'products:manage-relationships', 'products:bulk-import',
   ],
   sales: [
     'companies:read', 'companies:write',
@@ -44,12 +53,14 @@ const ROLE_PERMS = {
     'activities:read', 'activities:write',
     'tasks:read', 'tasks:write',
     'correspondence:read', 'correspondence:write', 'correspondence:finalize',
+    'products:read', 'products:write',
   ],
   purchase: [
     'companies:read', 'orders:read', 'orders:write', 'activities:read', 'tasks:read',
     'correspondence:read',
+    'products:read', 'products:manage-brands',
   ],
-  accounting: ['companies:read', 'orders:read', 'correspondence:read'],
+  accounting: ['companies:read', 'orders:read', 'correspondence:read', 'products:read'],
 };
 
 function newId(prefix) {

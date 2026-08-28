@@ -1,11 +1,5 @@
-export default function CategoryChips({
-  groups,
-  selectedGroupId,
-  onSelectGroup,
-  onAddSubgroup,
-}) {
-  const selectedGroup = groups.find((g) => g.id === selectedGroupId);
-
+/** Group-level quick filter chips. Taxonomy is administered in Shirazeh — Vitrin only filters by it. */
+export default function CategoryChips({ groups, selectedGroupId, onSelectGroup }) {
   return (
     <div className="vitrin-categories">
       <div className="vitrin-categories__row" role="tablist" aria-label="گروه‌های کالا">
@@ -16,7 +10,7 @@ export default function CategoryChips({
         >
           همه
         </button>
-        {groups.map((group) => (
+        {groups.filter((g) => g.isActive !== false).map((group) => (
           <button
             key={group.id}
             type="button"
@@ -28,15 +22,6 @@ export default function CategoryChips({
             {group.name}
           </button>
         ))}
-        {selectedGroup && (
-          <button
-            type="button"
-            className="btn btn--outline vitrin-categories__add-sub"
-            onClick={() => onAddSubgroup(selectedGroup.id)}
-          >
-            + ثبت زیرگروه
-          </button>
-        )}
       </div>
     </div>
   );

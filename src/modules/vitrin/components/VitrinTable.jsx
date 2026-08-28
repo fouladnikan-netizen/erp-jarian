@@ -15,11 +15,12 @@ import VitrinRowActions from './VitrinRowActions';
 const COLUMN_LABELS = {
   check: 'انتخاب',
   row: 'ردیف',
-  code: 'کد کالا',
-  title: 'شرح محصول',
+  sku: 'کد کالا (SKU)',
+  name: 'شرح کالا',
   group: 'گروه کالا',
-  subgroup: 'زیرگروه کالا',
-  unit: 'واحد سنجش',
+  category: 'دسته کالا',
+  productType: 'نوع کالا',
+  brand: 'برند',
   status: 'وضعیت',
   actions: 'عملیات',
 };
@@ -27,39 +28,34 @@ const COLUMN_LABELS = {
 const VITRIN_COLUMN_DEFS = [
   { key: 'check', title: COLUMN_LABELS.check, defaultWidth: 52, resizable: false, locked: true, sortable: false, filterable: false },
   { key: 'row', title: COLUMN_LABELS.row, defaultWidth: 56, resizable: false, locked: true, sortable: false, filterable: false },
-  { key: 'code', title: COLUMN_LABELS.code, defaultWidth: 110, locked: true, filterable: true, numeric: true },
-  { key: 'title', title: COLUMN_LABELS.title, defaultWidth: 200, locked: true, filterable: true },
-  { key: 'group', title: COLUMN_LABELS.group, defaultWidth: 120, filterable: true },
-  { key: 'subgroup', title: COLUMN_LABELS.subgroup, defaultWidth: 120, filterable: true },
-  { key: 'unit', title: COLUMN_LABELS.unit, defaultWidth: 90, filterable: true },
-  { key: 'status', title: COLUMN_LABELS.status, defaultWidth: 110, filterable: true },
-  { key: 'actions', title: COLUMN_LABELS.actions, defaultWidth: 100, resizable: false, locked: true, sortable: false, filterable: false },
+  { key: 'sku', title: COLUMN_LABELS.sku, defaultWidth: 130, locked: true, filterable: true, numeric: true },
+  { key: 'name', title: COLUMN_LABELS.name, defaultWidth: 240, locked: true, filterable: true },
+  { key: 'group', title: COLUMN_LABELS.group, defaultWidth: 110, filterable: true },
+  { key: 'category', title: COLUMN_LABELS.category, defaultWidth: 110, filterable: true },
+  { key: 'productType', title: COLUMN_LABELS.productType, defaultWidth: 120, filterable: true },
+  { key: 'brand', title: COLUMN_LABELS.brand, defaultWidth: 120, filterable: true },
+  { key: 'status', title: COLUMN_LABELS.status, defaultWidth: 100, filterable: true },
+  { key: 'actions', title: COLUMN_LABELS.actions, defaultWidth: 90, resizable: false, locked: true, sortable: false, filterable: false },
 ];
 
 const FILTERABLE_KEYS = VITRIN_COLUMN_DEFS.filter((c) => c.filterable !== false).map((c) => c.key);
 
-function getGroupName(groups, groupId) {
-  return groups.find((g) => g.id === groupId)?.name || '—';
-}
-
-function getSubgroupName(groups, groupId, subgroupId) {
-  return groups.find((g) => g.id === groupId)?.subgroups.find((s) => s.id === subgroupId)?.name || '—';
-}
-
-function getRawValue(product, key, groups) {
+function getRawValue(product, key) {
   switch (key) {
-    case 'code':
-      return product.code || '';
-    case 'title':
-      return product.title || '';
+    case 'sku':
+      return product.sku || '';
+    case 'name':
+      return product.displayNameOverride || product.generatedName || '';
     case 'group':
-      return getGroupName(groups, product.groupId);
-    case 'subgroup':
-      return getSubgroupName(groups, product.groupId, product.subgroupId);
-    case 'unit':
-      return product.unit || '';
+      return product.groupName || '—';
+    case 'category':
+      return product.categoryName || '—';
+    case 'productType':
+      return product.productTypeName || '—';
+    case 'brand':
+      return product.brandName || '—';
     case 'status':
-      return product.isActive !== false ? 'فعال' : 'غیرفعال';
+      return product.lifecycleStatus === 'INACTIVE' ? 'غیرفعال' : 'فعال';
     default:
       return '';
   }
@@ -67,12 +63,10 @@ function getRawValue(product, key, groups) {
 
 export default function VitrinTable({
   products,
-  groups,
   listTitle,
   selectedIds,
   onSelectionChange,
   onTitleClick,
-  onEdit,
   onToggleActive,
 }) {
   const {
@@ -85,25 +79,23 @@ export default function VitrinTable({
     buildOptions,
   } = useColumnExcelFilters();
 
-  const getValue = (row, key) => getRawValue(row, key, groups);
+  const getValue = (row, key) => getRawValue(row, key);
 
   const filterOptions = useMemo(
     () => buildOptions(products, FILTERABLE_KEYS, getValue),
-    [products, groups, buildOptions],
+    [products, buildOptions],
   );
 
   const filteredProducts = useMemo(
     () => filterRows(products, getValue),
-    [products, groups, filterRows],
+    [products, filterRows],
   );
 
   const sortAccessors = useMemo(() => {
     const map = {};
-    FILTERABLE_KEYS.forEach((key) => {
-      map[key] = (row) => getRawValue(row, key, groups);
-    });
+    FILTERABLE_KEYS.forEach((key) => { map[key] = (row) => getRawValue(row, key); });
     return map;
-  }, [groups]);
+  }, []);
 
   const scrollRef = useRef(null);
   const sentinelRef = useRef(null);
@@ -158,7 +150,7 @@ export default function VitrinTable({
   const pageAllSelected = pageRows.length > 0 && pageRows.every((p) => selectedIds.has(p.id));
 
   return (
-    <section className="section-data vitrin-table-section" aria-label="فهرست محصولات">
+    <section className="section-data vitrin-table-section" aria-label="فهرست کالاهای مرجع">
       <div className="data-table-header">
         <span className="data-table-header__title">{listTitle}</span>
         <div className="data-table-header__tools">
@@ -228,7 +220,7 @@ export default function VitrinTable({
               <tr>
                 <td colSpan={colSpan}>
                   <div className="empty-state">
-                    <p className="font-meem">محصولی در این نما یافت نشد.</p>
+                    <p className="font-meem">کالایی در این نما یافت نشد.</p>
                   </div>
                 </td>
               </tr>
@@ -236,7 +228,7 @@ export default function VitrinTable({
               pageRows.map((product, index) => (
                 <tr
                   key={product.id}
-                  className={`vitrin-table__row${product.isActive === false ? ' is-inactive' : ''}`}
+                  className={`vitrin-table__row${product.lifecycleStatus === 'INACTIVE' ? ' is-inactive' : ''}`}
                 >
                   {visibleColumns.map((col) => {
                     if (col.key === 'check') {
@@ -244,7 +236,7 @@ export default function VitrinTable({
                         <td key={col.key} className="vitrin-table__check-col">
                           <input
                             type="checkbox"
-                            aria-label={`انتخاب ${product.title}`}
+                            aria-label={`انتخاب ${product.generatedName}`}
                             checked={selectedIds.has(product.id)}
                             onChange={() => toggleSelect(product.id)}
                           />
@@ -252,54 +244,35 @@ export default function VitrinTable({
                       );
                     }
                     if (col.key === 'row') {
-                      return (
-                        <td key={col.key} className="font-yekan">
-                          {(index + 1).toLocaleString('fa-IR')}
-                        </td>
-                      );
+                      return <td key={col.key} className="font-yekan">{(index + 1).toLocaleString('fa-IR')}</td>;
                     }
-                    if (col.key === 'code') {
-                      return <td key={col.key} className="vitrin-table__code font-yekan">{product.code}</td>;
+                    if (col.key === 'sku') {
+                      return <td key={col.key} className="vitrin-table__code font-yekan" dir="ltr">{product.sku}</td>;
                     }
-                    if (col.key === 'title') {
+                    if (col.key === 'name') {
                       return (
                         <td key={col.key}>
-                          <button
-                            type="button"
-                            className="vitrin-table__title-link font-meem"
-                            onClick={() => onTitleClick(product)}
-                          >
-                            {product.title}
+                          <button type="button" className="vitrin-table__title-link font-meem" onClick={() => onTitleClick(product)}>
+                            {product.displayNameOverride || product.generatedName}
                           </button>
                         </td>
                       );
                     }
-                    if (col.key === 'group') {
-                      return <td key={col.key} className="font-meem">{getGroupName(groups, product.groupId)}</td>;
-                    }
-                    if (col.key === 'subgroup') {
-                      return (
-                        <td key={col.key} className="font-meem">
-                          {getSubgroupName(groups, product.groupId, product.subgroupId)}
-                        </td>
-                      );
-                    }
-                    if (col.key === 'unit') {
-                      return <td key={col.key} className="font-meem">{product.unit}</td>;
-                    }
+                    if (col.key === 'group') return <td key={col.key} className="font-meem">{product.groupName || '—'}</td>;
+                    if (col.key === 'category') return <td key={col.key} className="font-meem">{product.categoryName || '—'}</td>;
+                    if (col.key === 'productType') return <td key={col.key} className="font-meem">{product.productTypeName || '—'}</td>;
+                    if (col.key === 'brand') return <td key={col.key} className="font-meem">{product.brandName || '—'}</td>;
                     if (col.key === 'status') {
                       return (
                         <td key={col.key}>
-                          <StatusTag
-                            value={product.isActive !== false ? 'tag:active:فعال' : 'tag:danger:غیرفعال'}
-                          />
+                          <StatusTag value={product.lifecycleStatus !== 'INACTIVE' ? 'tag:active:فعال' : 'tag:danger:غیرفعال'} />
                         </td>
                       );
                     }
                     if (col.key === 'actions') {
                       return (
                         <td key={col.key} className="vitrin-table__actions-col">
-                          <VitrinRowActions product={product} onEdit={onEdit} onToggleActive={onToggleActive} />
+                          <VitrinRowActions product={product} onToggleActive={onToggleActive} />
                         </td>
                       );
                     }

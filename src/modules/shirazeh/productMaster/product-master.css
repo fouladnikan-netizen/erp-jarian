@@ -1,0 +1,261 @@
+/* Shirazeh Product Master — taxonomy / attributes / UOM / brand registries (DDL-24) */
+
+.shirazeh-pm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.shirazeh-pm__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shirazeh-pm__title {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.shirazeh-pm__subtitle {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.shirazeh-pm__alert {
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-size: 0.82rem;
+}
+
+.shirazeh-pm__tabs {
+  display: flex;
+  gap: 0.4rem;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.shirazeh-pm__tab {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shirazeh-pm__tab--active {
+  background: var(--glass-bg-strong, var(--glass-bg));
+  color: var(--text-primary);
+  border-color: var(--glass-border);
+}
+
+.shirazeh-pm__body {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.shirazeh-pm__col {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.shirazeh-pm__col-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.shirazeh-pm__create {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  flex-wrap: wrap;
+}
+
+.shirazeh-pm__input,
+.shirazeh-pm__select {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.5rem 0.7rem;
+  border-radius: 9px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.shirazeh-pm__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 9px;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shirazeh-pm__btn--primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.shirazeh-pm__btn--ghost {
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+}
+
+.shirazeh-pm__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.shirazeh-pm__form-error {
+  color: var(--danger);
+  font-size: 0.78rem;
+  padding: 0 0.2rem;
+}
+
+.shirazeh-pm__form-warning {
+  color: var(--warning);
+  font-size: 0.78rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border: 1px solid var(--warning);
+}
+
+.shirazeh-pm__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.shirazeh-pm__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--table-row-odd-bg, var(--glass-bg));
+  cursor: pointer;
+  font-size: 0.83rem;
+  color: var(--text-primary);
+}
+
+.shirazeh-pm__item--selected {
+  border-color: var(--info);
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+}
+
+.shirazeh-pm__item--inactive {
+  opacity: 0.5;
+}
+
+.shirazeh-pm__item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shirazeh-pm__item-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.shirazeh-pm__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.shirazeh-pm__icon-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.shirazeh-pm__icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.shirazeh-pm__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.shirazeh-pm__badge--active {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+}
+
+.shirazeh-pm__badge--inactive {
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-muted) 14%, transparent);
+}
+
+.shirazeh-pm__empty {
+  padding: 1.2rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.shirazeh-pm__table {
+  width: 100%;
+}
+
+.shirazeh-pm__code {
+  font-family: var(--font-numeric, monospace);
+  color: var(--text-secondary);
+  direction: ltr;
+}
+
+.shirazeh-pm__schema-panel {
+  flex: 1.4;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
