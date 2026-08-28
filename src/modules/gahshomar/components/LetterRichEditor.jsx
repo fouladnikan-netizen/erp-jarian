@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useEditor, EditorContent, Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -17,11 +17,8 @@ import {
   ListOrdered,
   Undo2,
   Redo2,
-  Sparkles,
-  Loader2,
   Type,
 } from 'lucide-react';
-import { polishLetterText } from '../officialRecordFacade';
 import { ensureLetterHtml } from '../services/letterHtml';
 import '../gahshomar-page.css';
 
@@ -91,8 +88,6 @@ export default function LetterRichEditor({
   placeholder = 'متن نامه را بنویسید…',
   contentKey = null,
 }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
   const editable = !disabled && !readOnly;
 
   const extensions = useMemo(() => [
@@ -150,52 +145,15 @@ export default function LetterRichEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, contentKey]);
 
-  const handlePolish = async () => {
-    if (!editor || !editable || busy) return;
-    const html = editor.getHTML();
-    const plain = String(html || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').trim();
-    if (!plain) {
-      setError('ابتدا متن نامه را وارد کنید.');
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      const polished = await polishLetterText(html);
-      const next = ensureLetterHtml(polished);
-      editor.commands.setContent(next, { emitUpdate: false });
-      onChange?.(editor.getHTML());
-    } catch {
-      setError('بهبود متن موقتاً در دسترس نیست.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   if (!editor) return null;
 
   return (
     <div className={`gahshomar-modal__field gahshomar-rte${readOnly ? ' is-readonly' : ''}`}>
-      <div className="gahshomar-rte__label-row">
-        {label ? <span className="font-meem">{label}</span> : <span />}
-        {editable ? (
-          <button
-            type="button"
-            className="gahshomar-rte__ai-btn font-meem"
-            onClick={handlePolish}
-            disabled={busy}
-            aria-label="بهبود متن با هوش مصنوعی"
-            title="بهبود نگارش اداری"
-          >
-            {busy ? (
-              <Loader2 size={15} strokeWidth={1.75} className="gahshomar-ai-textarea__spin" />
-            ) : (
-              <Sparkles size={15} strokeWidth={1.75} />
-            )}
-            بهبود با هوش مصنوعی
-          </button>
-        ) : null}
-      </div>
+      {label ? (
+        <div className="gahshomar-rte__label-row">
+          <span className="font-meem">{label}</span>
+        </div>
+      ) : null}
 
       {editable ? (
         <div className="gahshomar-rte__toolbar" role="toolbar" aria-label="ابزار ویرایش نامه">
@@ -302,7 +260,6 @@ export default function LetterRichEditor({
       <div className="gahshomar-rte__shell">
         <EditorContent editor={editor} />
       </div>
-      {error ? <span className="gahshomar-modal__error font-meem">{error}</span> : null}
     </div>
   );
 }

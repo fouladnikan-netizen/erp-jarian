@@ -13,6 +13,8 @@ import activityRoutes from './routes/activities.js';
 import activityTypeRoutes from './routes/activityTypes.js';
 import taskRoutes from './routes/tasks.js';
 import integrationRoutes from './routes/integrations.js';
+import correspondenceRoutes from './routes/correspondence.js';
+import correspondenceTypeRoutes from './routes/correspondenceTypes.js';
 
 // Keep existing AI rewrite endpoint (Liara) without duplication.
 import aiRoutes from '../../src/server/api/aiRoutes.js';
@@ -21,7 +23,9 @@ export function createApp() {
   const app = express();
 
   app.use(cors({ origin: true, credentials: true }));
-  app.use(express.json({ limit: '1mb' }));
+  // 20mb: correspondence attachments are stored as base64 JSON payloads
+  // (DDL-23b), up to correspondenceService.MAX_ATTACHMENT_BYTES (15MB raw).
+  app.use(express.json({ limit: '20mb' }));
   app.use(requestContext);
 
   app.get('/api/health', async (_req, res) => {
@@ -50,6 +54,8 @@ export function createApp() {
   app.use('/api/v1/activity-types', activityTypeRoutes);
   app.use('/api/v1/tasks', taskRoutes);
   app.use('/api/v1/integrations', integrationRoutes);
+  app.use('/api/v1/correspondence', correspondenceRoutes);
+  app.use('/api/v1/correspondence-types', correspondenceTypeRoutes);
   app.use('/api/ai', aiRoutes);
 
   app.use(notFound);
@@ -72,5 +78,7 @@ if (process.env.JARIAN_SKIP_LISTEN !== '1') {
     console.log(`[jarian-api] activity-types: /api/v1/activity-types`);
     console.log(`[jarian-api] tasks: /api/v1/tasks`);
     console.log(`[jarian-api] integrations: /api/v1/integrations`);
+    console.log(`[jarian-api] correspondence: /api/v1/correspondence`);
+    console.log(`[jarian-api] correspondence-types: /api/v1/correspondence-types`);
   });
 }

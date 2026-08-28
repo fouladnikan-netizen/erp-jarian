@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Inbox, Send } from 'lucide-react';
-import { DRAWER_MODE } from './models/officialRecord';
+import { DRAWER_MODE, RECORD_DIRECTION } from './models/officialRecord';
 import OfficialRecordList from './components/OfficialRecordList';
 import OfficialRecordDrawer from './components/OfficialRecordDrawer';
 import RecordTypePickerModal from './components/RecordTypePickerModal';
 import {
   createDraftRecord,
   createReply,
+  fetchOfficialRecord,
   useOfficialRecordKpis,
   useOfficialRecordList,
 } from './officialRecordFacade';
+import { fetchCorrespondenceTypes } from '../../domain/correspondenceTypes/correspondenceTypesFacade';
 import ListPageLayout from '../../components/module/ListPageLayout';
 import ListToolbar from '../../components/module/ListToolbar';
 import ListFilterBar from '../../components/module/ListFilterBar';
@@ -32,8 +35,30 @@ export default function GahshomarPage() {
 
   const kpis = useOfficialRecordKpis();
   const records = useOfficialRecordList({ tab, search, kpiFilter });
+  const [searchParams] = useSearchParams();
 
   const closeDrawer = () => setDrawerState({ mode: null, recordId: null });
+
+  useEffect(() => {
+    void fetchCorrespondenceTypes();
+  }, []);
+
+  // Cross-module deep link target (Kanoon Customer 360 / Nabz OrderProfile /
+  // Pooyesh timeline → `correspondenceDeepLinkPath`, product rules 14-16):
+  // open the canonical record's VIEW drawer directly from `?record=<id>`.
+  const deepLinkRecordId = searchParams.get('record');
+  useEffect(() => {
+    if (!deepLinkRecordId) return undefined;
+    let cancelled = false;
+    (async () => {
+      const detail = await fetchOfficialRecord(deepLinkRecordId);
+      if (cancelled || !detail) return;
+      setTab(detail.direction === RECORD_DIRECTION.INCOMING ? 'incoming' : 'outgoing');
+      setDrawerState({ mode: DRAWER_MODE.VIEW, recordId: detail.id });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkRecordId]);
 
   const handleKpiClick = (kpiId) => {
     setKpiFilter((current) => (current === kpiId ? null : kpiId));
@@ -41,9 +66,9 @@ export default function GahshomarPage() {
     if (kpiId === 'issued-today') setTab('outgoing');
   };
 
-  const handleTypeSelect = (direction) => {
+  const handleTypeSelect = async (direction) => {
     setTypePickerOpen(false);
-    const draft = createDraftRecord(direction);
+    const draft = await createDraftRecord(direction);
     if (!draft) return;
     setDrawerState({ mode: DRAWER_MODE.CREATE, recordId: draft.id });
     if (direction === 'INCOMING') setTab('incoming');
@@ -54,8 +79,8 @@ export default function GahshomarPage() {
     setDrawerState({ mode: DRAWER_MODE.VIEW, recordId });
   };
 
-  const handleReply = (recordId) => {
-    const reply = createReply(recordId);
+  const handleReply = async (recordId) => {
+    const reply = await createReply(recordId);
     if (!reply) return;
     setTab('outgoing');
     setDrawerState({ mode: DRAWER_MODE.EDIT, recordId: reply.id });

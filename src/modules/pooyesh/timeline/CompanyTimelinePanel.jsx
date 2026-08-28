@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { History, ShoppingCart, Phone, Banknote, FileText, CheckSquare } from 'lucide-react';
+import { History, ShoppingCart, Phone, Banknote, FileText, CheckSquare, Mail } from 'lucide-react';
 import { useOrders } from '../../nabz/public/index.js';
 import { useCompanies } from '../../kanoon/public/index.js';
 import { useActivitiesVersion, useTasksVersion } from '../public/index.js';
+import { useOfficialRecordsVersion } from '../../gahshomar/officialRecordFacade';
 import { withReturnParams } from '../../../components/navigation/SmartBackButton';
 import EntityMentionText from '../../../components/navigation/EntityMentionText';
 import { ProfileTabSectionHeader } from '../../../components/profileLayout';
@@ -28,6 +29,9 @@ const EVENT_META = {
   'lead-activity': { label: 'فعالیت سرنخ', Icon: Phone, color: 'var(--color-neutral-400)' },
   'lead-task': { label: 'وظیفه سرنخ', Icon: CheckSquare, color: 'var(--accent)' },
   'lead-conversion': { label: 'تبدیل سرنخ', Icon: History, color: 'var(--color-brand-red)' },
+  // DDL-23 product rule 16 — read-time projection of Gahshomar Correspondence,
+  // canonical record stays owned by Gahshomar (only the id/link is carried here).
+  correspondence: { label: 'مکاتبه دبیرخانه', Icon: Mail, color: 'var(--info)' },
 };
 
 /**
@@ -39,6 +43,7 @@ export default function CompanyTimelinePanel({ company, returnTo: returnToProp, 
   useCompanies();
   const activitiesVersion = useActivitiesVersion();
   const tasksVersion = useTasksVersion();
+  const correspondenceVersion = useOfficialRecordsVersion();
   const orders = useOrders();
 
   useEffect(() => {
@@ -49,8 +54,11 @@ export default function CompanyTimelinePanel({ company, returnTo: returnToProp, 
 
   const events = useMemo(
     () => getCompanyTimeline(companyId, { orders }),
-    // activitiesVersion/tasksVersion: invalidate when Activity/Task cache updates after fetch/create
-    [companyId, orders, company, activitiesVersion, tasksVersion],
+    // activitiesVersion/tasksVersion/correspondenceVersion: invalidate when the
+    // respective cache updates after fetch/create (correspondence fetch is async
+    // — see fetchSubjectTimeline — so this version bump is what triggers the
+    // re-render once it resolves, per DDL-23 product rule 16).
+    [companyId, orders, company, activitiesVersion, tasksVersion, correspondenceVersion],
   );
 
   const returnTo = returnToProp ?? (companyId != null
@@ -92,6 +100,10 @@ export default function CompanyTimelinePanel({ company, returnTo: returnToProp, 
             const primaryLeadPath = !primaryOrderPath && event.links?.[0]?.kind === 'lead'
               ? event.links[0].path
               : null;
+            const primaryCorrespondencePath = !primaryOrderPath && !primaryLeadPath
+              && event.links?.[0]?.kind === 'correspondence'
+              ? event.links[0].path
+              : null;
             return (
               <li
                 key={event.id}
@@ -116,6 +128,13 @@ export default function CompanyTimelinePanel({ company, returnTo: returnToProp, 
                       ) : primaryLeadPath ? (
                         <Link
                           to={withReturnParams(primaryLeadPath, returnTo, returnName)}
+                          className="entity-mention-link font-meem"
+                        >
+                          {event.title}
+                        </Link>
+                      ) : primaryCorrespondencePath ? (
+                        <Link
+                          to={withReturnParams(primaryCorrespondencePath, returnTo, returnName)}
                           className="entity-mention-link font-meem"
                         >
                           {event.title}

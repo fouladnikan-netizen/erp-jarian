@@ -14,6 +14,9 @@ export const PERMISSIONS = Object.freeze({
   ACTIVITIES_WRITE: 'activities:write',
   TASKS_READ: 'tasks:read',
   TASKS_WRITE: 'tasks:write',
+  CORRESPONDENCE_READ: 'correspondence:read',
+  CORRESPONDENCE_WRITE: 'correspondence:write',
+  CORRESPONDENCE_FINALIZE: 'correspondence:finalize',
   USERS_ADMIN: 'users:admin',
 });
 

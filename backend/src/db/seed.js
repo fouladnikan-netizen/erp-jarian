@@ -21,6 +21,9 @@ const PERMISSIONS = [
   { code: 'activities:write', label_fa: 'ثبت/ویرایش فعالیت پویش' },
   { code: 'tasks:read', label_fa: 'مشاهده وظایف پویش' },
   { code: 'tasks:write', label_fa: 'ثبت/ویرایش وظایف پویش' },
+  { code: 'correspondence:read', label_fa: 'مشاهده مکاتبات (گاه‌شمار)' },
+  { code: 'correspondence:write', label_fa: 'ثبت/ویرایش پیش‌نویس مکاتبه' },
+  { code: 'correspondence:finalize', label_fa: 'نهایی‌سازی و صدور شماره مکاتبه' },
   { code: 'users:admin', label_fa: 'مدیریت کاربران' },
 ];
 
@@ -32,6 +35,7 @@ const ROLE_PERMS = {
     'leads:read', 'leads:write', 'leads:convert',
     'activities:read', 'activities:write',
     'tasks:read', 'tasks:write',
+    'correspondence:read', 'correspondence:write', 'correspondence:finalize',
   ],
   sales: [
     'companies:read', 'companies:write',
@@ -39,9 +43,13 @@ const ROLE_PERMS = {
     'leads:read', 'leads:write', 'leads:convert',
     'activities:read', 'activities:write',
     'tasks:read', 'tasks:write',
+    'correspondence:read', 'correspondence:write', 'correspondence:finalize',
   ],
-  purchase: ['companies:read', 'orders:read', 'orders:write', 'activities:read', 'tasks:read'],
-  accounting: ['companies:read', 'orders:read'],
+  purchase: [
+    'companies:read', 'orders:read', 'orders:write', 'activities:read', 'tasks:read',
+    'correspondence:read',
+  ],
+  accounting: ['companies:read', 'orders:read', 'correspondence:read'],
 };
 
 function newId(prefix) {

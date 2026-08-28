@@ -8,6 +8,7 @@ import {
   Palette,
   DatabaseBackup,
   ListChecks,
+  Mail,
 } from 'lucide-react';
 import { SETTINGS_MENU, SHIRAZEH_BASE_PATH } from '../config/settingsMenu';
 
@@ -20,6 +21,7 @@ const ICON_MAP = {
   Palette,
   DatabaseBackup,
   ListChecks,
+  Mail,
 };
 
 /**

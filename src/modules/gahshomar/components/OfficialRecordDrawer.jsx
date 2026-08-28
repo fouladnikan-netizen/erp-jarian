@@ -12,14 +12,24 @@ import {
   FileText,
   ScrollText,
   Upload,
+  Sparkles,
+  TriangleAlert,
 } from 'lucide-react';
 import { DRAWER_MODE, PARTICIPANT_ROLE, RECORD_DIRECTION } from '../models/officialRecord';
 import {
+  aiRewriteOfficialRecord,
+  fetchOfficialRecord,
   getOfficialRecord,
   issueOfficialRecord,
   saveOfficialRecord,
 } from '../officialRecordFacade';
 import { getTodayJalali } from '../../nabz/dateUtils';
+import { listOrdersForCompany } from '../../nabz/public';
+import { htmlToPlainText } from '../services/letterHtml';
+import {
+  fetchCorrespondenceTypes,
+  listActiveCorrespondenceTypes,
+} from '../../../domain/correspondenceTypes/correspondenceTypesFacade';
 import {
   LETTER_BISMILLAH,
   buildDefaultEditableBody,
@@ -38,6 +48,24 @@ import LetterSubjectField from './LetterSubjectField';
 import PrintableOfficialLetter, { PRINT_LETTER_VARIANT } from './PrintableOfficialLetter';
 import '../../nabz/nabz.css';
 import '../gahshomar-page.css';
+
+/** Correspondence Type Registry options for the compose form (DDL-23d, product rule 8). */
+function useCorrespondenceTypeOptions() {
+  const [types, setTypes] = useState(() => listActiveCorrespondenceTypes());
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await fetchCorrespondenceTypes();
+      if (!cancelled) setTypes(listActiveCorrespondenceTypes());
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return types;
+}
 
 function MetaRow({ label, value, numeric = false }) {
   return (
@@ -177,6 +205,7 @@ function ViewBody({ record }) {
 
 function IncomingEditorBody({ draft, onChange, locked }) {
   const people = useMemo(() => listOrgPeopleForReferral(), []);
+  const typeOptions = useCorrespondenceTypeOptions();
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
@@ -234,6 +263,24 @@ function IncomingEditorBody({ draft, onChange, locked }) {
             />
           </label>
         </div>
+
+        {typeOptions.length > 1 ? (
+          <div className="gahshomar-compose__row gahshomar-compose__row--single">
+            <label className="gahshomar-modal__field font-meem">
+              نوع مکاتبه
+              <select
+                className="gahshomar-modal__input font-meem"
+                value={draft.type || 'OFFICIAL'}
+                disabled={locked}
+                onChange={(event) => onChange({ type: event.target.value })}
+              >
+                {typeOptions.map((option) => (
+                  <option key={option.key} value={option.key}>{option.labelFa}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
 
         <div className="gahshomar-compose__row">
           <label className="gahshomar-modal__field font-meem">
@@ -318,12 +365,110 @@ function IncomingEditorBody({ draft, onChange, locked }) {
   );
 }
 
-function EditorBody({ draft, onChange, locked }) {
+function AiRewritePanel({ recordId, draft, onChange, locked }) {
+  const [busy, setBusy] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
+  const [violations, setViolations] = useState([]);
+  const [panelError, setPanelError] = useState('');
+
+  if (locked) return null;
+
+  const handleRewrite = async () => {
+    const plain = htmlToPlainText(draft.body || '');
+    if (!plain.trim()) {
+      setPanelError('ابتدا متن نامه را بنویسید.');
+      return;
+    }
+    setBusy(true);
+    setPanelError('');
+    try {
+      const result = await aiRewriteOfficialRecord(recordId, plain);
+      setSuggestion(result?.content || '');
+      setViolations(result?.validation?.violations || []);
+    } catch {
+      setPanelError('بازنویسی هوشمند در دسترس نیست.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleAccept = () => {
+    if (!suggestion) return;
+    onChange({ body: suggestion, bodyRevision: Date.now(), hasAiDraft: true });
+    setSuggestion(null);
+    setViolations([]);
+  };
+
+  const handleDiscard = () => {
+    setSuggestion(null);
+    setViolations([]);
+  };
+
+  return (
+    <div className="gahshomar-ai-panel">
+      <button
+        type="button"
+        className="gahshomar-btn gahshomar-btn--ghost font-meem"
+        onClick={handleRewrite}
+        disabled={busy}
+      >
+        <Sparkles size={15} strokeWidth={1.5} aria-hidden="true" />
+        {busy ? 'در حال بازنویسی…' : 'بازنویسی هوشمند متن'}
+      </button>
+      {panelError ? <p className="gahshomar-modal__error font-meem">{panelError}</p> : null}
+      {suggestion ? (
+        <div className="gahshomar-ai-panel__suggestion" dir="rtl">
+          {violations.length ? (
+            <p className="gahshomar-ai-panel__warning font-meem">
+              <TriangleAlert size={14} strokeWidth={1.75} aria-hidden="true" />
+              هشدار: مقادیر حساس زیر ممکن است در متن بازنویسی‌شده تغییر کرده باشند —
+              {' '}
+              {violations.map((v) => v.kind).join('، ')}
+              . لطفاً پیش از پذیرش، متن را با نسخه اصلی مقایسه کنید.
+            </p>
+          ) : (
+            <p className="gahshomar-ai-panel__ok font-meem">
+              مقادیر حساس (مبلغ، تاریخ، درصد، شماره‌ها) در متن بازنویسی‌شده حفظ شده است.
+            </p>
+          )}
+          <div
+            className="gahshomar-ai-panel__preview font-meem gahshomar-letter-html"
+            dangerouslySetInnerHTML={{ __html: suggestion }}
+          />
+          <div className="gahshomar-ai-panel__actions">
+            <button
+              type="button"
+              className="gahshomar-btn gahshomar-btn--primary font-meem"
+              onClick={handleAccept}
+            >
+              پذیرش و جایگزینی متن
+            </button>
+            <button
+              type="button"
+              className="gahshomar-btn gahshomar-btn--ghost font-meem"
+              onClick={handleDiscard}
+            >
+              رد پیشنهاد
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function EditorBody({ draft, onChange, locked, recordId }) {
   if (draft.direction === RECORD_DIRECTION.INCOMING || draft.direction === 'INCOMING') {
     return <IncomingEditorBody draft={draft} onChange={onChange} locked={locked} />;
   }
 
   const counterpartyRole = PARTICIPANT_ROLE.RECEIVER;
+  const companyId = draft.counterparty?.companyId ?? null;
+  const relatedOrders = useMemo(
+    () => (companyId != null ? listOrdersForCompany(companyId) : []),
+    [companyId],
+  );
+  const typeOptions = useCorrespondenceTypeOptions();
 
   return (
     <form className="gahshomar-compose__editor" onSubmit={(event) => event.preventDefault()}>
@@ -343,12 +488,30 @@ function EditorBody({ draft, onChange, locked }) {
           />
         </div>
 
+        {typeOptions.length > 1 ? (
+          <div className="gahshomar-compose__row gahshomar-compose__row--single">
+            <label className="gahshomar-modal__field font-meem">
+              نوع مکاتبه
+              <select
+                className="gahshomar-modal__input font-meem"
+                value={draft.type || 'OFFICIAL'}
+                disabled={locked}
+                onChange={(event) => onChange({ type: event.target.value })}
+              >
+                {typeOptions.map((option) => (
+                  <option key={option.key} value={option.key}>{option.labelFa}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
+
         <div className="gahshomar-compose__row">
           <ContactSelector
             label="گیرنده"
             role={counterpartyRole}
             value={draft.counterparty}
-            onChange={(participant) => onChange({ counterparty: participant })}
+            onChange={(participant) => onChange({ counterparty: participant, orderId: null })}
             readOnly={locked}
             required
           />
@@ -364,6 +527,28 @@ function EditorBody({ draft, onChange, locked }) {
             />
           </label>
         </div>
+
+        {relatedOrders.length ? (
+          <div className="gahshomar-compose__row gahshomar-compose__row--single">
+            <label className="gahshomar-modal__field font-meem">
+              سفارش مرتبط (اختیاری)
+              <select
+                className="gahshomar-modal__input font-meem"
+                value={draft.orderId || ''}
+                disabled={locked}
+                onChange={(event) => onChange({ orderId: event.target.value || null })}
+              >
+                <option value="">— بدون ارجاع به سفارش —</option>
+                {relatedOrders.map((order) => (
+                  <option key={order.id} value={order.id}>
+                    {order.code || order.id}
+                    {order.title ? ` — ${order.title}` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
       </section>
 
       <LetterDocumentChrome
@@ -379,6 +564,8 @@ function EditorBody({ draft, onChange, locked }) {
           placeholder="متن نامه را بنویسید…"
         />
       </LetterDocumentChrome>
+
+      <AiRewritePanel recordId={recordId} draft={draft} onChange={onChange} locked={locked} />
     </form>
   );
 }
@@ -464,6 +651,7 @@ export default function OfficialRecordDrawer({
   const [error, setError] = useState('');
   const [entered, setEntered] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const hydrate = (detail) => {
     setRecord(detail);
@@ -487,6 +675,7 @@ export default function OfficialRecordDrawer({
       ) || defaultAssignee;
       setDraft({
         subject,
+        type: detail.type || 'OFFICIAL',
         attentionName: detail.attentionName || '',
         counterparty: counterparty?.partyId ? counterparty : null,
         date: detail.date || detail.recordDate || detail.receivedDate || today,
@@ -497,6 +686,8 @@ export default function OfficialRecordDrawer({
         attachments: Array.isArray(detail.attachments) ? detail.attachments : [],
         assigneeUserId: assignee?.id || defaultAssignee?.id || '',
         assigneeName: assignee?.name || defaultAssignee?.name || '',
+        orderId: detail.orderId || null,
+        hasAiDraft: Boolean(detail.aiRewrittenBody),
       });
     } else {
       setDraft(null);
@@ -513,11 +704,18 @@ export default function OfficialRecordDrawer({
       return undefined;
     }
 
-    hydrate(getOfficialRecord(recordId));
+    let cancelled = false;
+    (async () => {
+      const detail = await fetchOfficialRecord(recordId);
+      if (!cancelled) hydrate(detail);
+    })();
     setError('');
     setEntered(false);
     const frame = window.requestAnimationFrame(() => setEntered(true));
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, recordId]);
 
@@ -578,17 +776,20 @@ export default function OfficialRecordDrawer({
 
     return {
       subject: draft.subject.trim(),
+      type: draft.type || 'OFFICIAL',
       attentionName: String(draft.attentionName || '').trim() || null,
       body: record.direction === RECORD_DIRECTION.INCOMING
         || record.direction === 'INCOMING'
         ? null
         : ensureEditableLetterBody(draft.body || ''),
+      hasAiDraft: Boolean(draft.hasAiDraft),
       recordDate: draft.date || getTodayJalali() || null,
       receivedDate: record.direction === 'INCOMING'
         || record.direction === RECORD_DIRECTION.INCOMING
         ? (draft.date || getTodayJalali() || null)
         : record.receivedDate,
       companyId: draft.counterparty?.companyId ?? record.companyId,
+      orderId: draft.orderId ?? record.orderId ?? null,
       participants,
       attachments: Array.isArray(draft.attachments) ? draft.attachments : [],
       assigneeUserId: draft.assigneeUserId || null,
@@ -626,8 +827,8 @@ export default function OfficialRecordDrawer({
     return true;
   };
 
-  const handleSave = () => {
-    if (locked) return;
+  const handleSave = async () => {
+    if (locked || saving) return;
     if (!draft?.subject?.trim()) {
       setError('موضوع الزامی است.');
       return;
@@ -636,17 +837,24 @@ export default function OfficialRecordDrawer({
     const isIncoming = record.direction === RECORD_DIRECTION.INCOMING
       || record.direction === 'INCOMING';
     if (isIncoming && !validateIncoming()) return;
-    const saved = saveOfficialRecord(recordId, buildPayload());
-    if (!saved) {
-      setError('ذخیره ناموفق بود.');
-      return;
+    setSaving(true);
+    try {
+      const saved = await saveOfficialRecord(recordId, buildPayload());
+      if (!saved) {
+        setError('ذخیره ناموفق بود.');
+        return;
+      }
+      onSaved?.(saved);
+      onClose?.();
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || 'ذخیره ناموفق بود.');
+    } finally {
+      setSaving(false);
     }
-    onSaved?.(saved);
-    onClose?.();
   };
 
-  const handleIssue = () => {
-    if (locked) return;
+  const handleIssue = async () => {
+    if (locked || saving) return;
     if (!draft?.subject?.trim()) {
       setError('موضوع الزامی است.');
       return;
@@ -656,17 +864,24 @@ export default function OfficialRecordDrawer({
       return;
     }
     if (!validateCounterparty()) return;
-    const issued = issueOfficialRecord(recordId, buildPayload());
-    if (!issued) {
-      setError('صدور نامه ناموفق بود. گیرنده معتبر الزامی است.');
-      return;
+    setSaving(true);
+    try {
+      const issued = await issueOfficialRecord(recordId, buildPayload());
+      if (!issued) {
+        setError('صدور نامه ناموفق بود. گیرنده معتبر الزامی است.');
+        return;
+      }
+      hydrate(issued);
+      setError('');
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || 'صدور نامه ناموفق بود.');
+    } finally {
+      setSaving(false);
     }
-    hydrate(issued);
-    setError('');
   };
 
-  const handlePrint = () => {
-    const latest = getOfficialRecord(recordId);
+  const handlePrint = async () => {
+    const latest = await fetchOfficialRecord(recordId);
     if (!latest?.canPrint && !latest?.isLocked) {
       setError('برای چاپ، ابتدا نامه را امضا و صادر کنید.');
       return;
@@ -703,6 +918,11 @@ export default function OfficialRecordDrawer({
                   />
                   <h2 className="gahshomar-compose-popup__title font-meem">{title}</h2>
                 </div>
+                {locked && (record.registryNumber || record.number) ? (
+                  <p className="gahshomar-drawer__code font-yekan">
+                    {record.registryNumber || record.number}
+                  </p>
+                ) : null}
               </div>
               <button
                 type="button"
@@ -716,7 +936,7 @@ export default function OfficialRecordDrawer({
 
             <div className="gahshomar-compose-popup__body">
               {draft ? (
-                <EditorBody draft={draft} onChange={handleDraftChange} locked={locked} />
+                <EditorBody draft={draft} onChange={handleDraftChange} locked={locked} recordId={recordId} />
               ) : null}
               {error ? <p className="gahshomar-modal__error font-meem">{error}</p> : null}
             </div>
@@ -735,6 +955,7 @@ export default function OfficialRecordDrawer({
                     type="button"
                     className={`gahshomar-btn font-meem${isIncomingCompose ? ' gahshomar-btn--primary' : ' gahshomar-btn--secondary'}`}
                     onClick={handleSave}
+                    disabled={saving}
                   >
                     {isIncomingCompose ? 'ثبت نامه دریافتی' : 'ذخیره پیش‌نویس'}
                   </button>
@@ -743,6 +964,7 @@ export default function OfficialRecordDrawer({
                       type="button"
                       className="gahshomar-btn gahshomar-btn--primary font-meem"
                       onClick={handleIssue}
+                      disabled={saving}
                     >
                       <PenLine size={15} strokeWidth={1.5} aria-hidden="true" />
                       امضا و صدور

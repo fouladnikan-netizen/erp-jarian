@@ -27,6 +27,7 @@ import {
   listLeads,
   buildOfoghLeadDeepLink,
 } from '../../ofogh/public/leadsFacade.js';
+import { fetchOfficialRecords } from '../../gahshomar/officialRecordFacade';
 
 /**
  * Read-time projection of pre-conversion Ofogh Lead lineage onto a Company's
@@ -92,6 +93,10 @@ export async function fetchSubjectTimeline(subjectOrCompanyId, options = {}) {
       fetchPooyeshTasks({ entityType: ENTITY_REF_TYPE.RAW_LEAD, entityId: lead.id }),
     ])));
     leadLineage = computeLeadLineage(subject.entityId);
+    // Correspondence (Gahshomar) timeline events project off the shared
+    // correspondence cache — ensure it is hydrated so a fresh page load
+    // (e.g. deep-linking straight into the Timeline tab) still surfaces them.
+    await fetchOfficialRecords({ companyId: subject.entityId });
   }
 
   return getSubjectTimeline(subject, { ...options, leadLineage });

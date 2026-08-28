@@ -16,6 +16,21 @@ export const RECORD_STATUS = Object.freeze({
   ARCHIVED: 'ARCHIVED',
 });
 
+/**
+ * Backend-authoritative lifecycle (DDL-23, product rule 9) — only two real
+ * states server-side. FE keeps the richer RECORD_STATUS vocabulary above for
+ * list/badge/KPI compatibility; `backendStatus` is the source of truth for
+ * edit/finalize eligibility (`isLocked`) once the API is live.
+ */
+export const BACKEND_STATUS = Object.freeze({
+  DRAFT: 'DRAFT',
+  FINAL: 'FINAL',
+});
+
+/** Seeded defaults only — the canonical list is the Shirazeh-owned
+ * Correspondence Type Registry (DDL-23d, product rule 8: open registry, not
+ * a fixed enum). Historical letters keep whatever type_key they were created
+ * with even after that key is deactivated/renamed in the registry. */
 export const RECORD_TYPE = Object.freeze({
   OFFICIAL: 'OFFICIAL',
 });
@@ -52,7 +67,6 @@ export const ORG_SELF = Object.freeze({
 
 const DIRECTION_SET = new Set(Object.values(RECORD_DIRECTION));
 const STATUS_SET = new Set(Object.values(RECORD_STATUS));
-const TYPE_SET = new Set(Object.values(RECORD_TYPE));
 
 function createLocalId() {
   return `rec-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -73,10 +87,14 @@ export function normalizeStatus(value) {
   return RECORD_STATUS.DRAFT;
 }
 
+/**
+ * Open registry (DDL-23d) — any non-empty key from the Correspondence Type
+ * Registry is valid, not just the seeded defaults above. Falls back to
+ * OFFICIAL only when no key was supplied at all.
+ */
 export function normalizeType(value) {
   const raw = String(value || '').trim().toUpperCase();
-  if (TYPE_SET.has(raw)) return raw;
-  return RECORD_TYPE.OFFICIAL;
+  return raw || RECORD_TYPE.OFFICIAL;
 }
 
 export const PARTY_TYPE = Object.freeze({
@@ -144,7 +162,9 @@ function normalizeAttachments(list) {
         fileName,
         mimeType: item.mimeType ? String(item.mimeType) : undefined,
         dataUrl: item.dataUrl ? String(item.dataUrl) : undefined,
-        size: Number.isFinite(Number(item.size)) ? Number(item.size) : undefined,
+        size: Number.isFinite(Number(item.size ?? item.sizeBytes))
+          ? Number(item.size ?? item.sizeBytes)
+          : undefined,
       };
     })
     .filter(Boolean);
@@ -215,6 +235,13 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
     receivedDate: String(input.receivedDate || input.recordDate || input.letterDate || '').trim() || null,
     subject: subject || 'بدون موضوع',
     body: String(input.body || '').trim() || null,
+    /** DDL-23: raw user text / last AI-rewritten draft / finalized official
+     * text — kept distinct for audit + AI critical-value review, per
+     * product rule 10. Only populated in API mode; mock mode leaves these
+     * null and continues to use `body` alone. */
+    rawBody: input.rawBody != null ? String(input.rawBody) : null,
+    aiRewrittenBody: input.aiRewrittenBody != null ? String(input.aiRewrittenBody) : null,
+    finalBody: input.finalBody != null ? String(input.finalBody) : null,
     /** Free-text attention / signer person on the letter (not a Kanoon contact person). */
     attentionName: String(input.attentionName || input.personName || input.signerName || '').trim() || null,
     participants,
@@ -226,6 +253,8 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
       ? String(input.referenceId)
       : null,
     companyId: input.companyId != null && input.companyId !== '' ? input.companyId : null,
+    /** DDL-23 / product rule 15 — optional Nabz Order reference (Gahshomar never copies the Order). */
+    orderId: input.orderId != null && input.orderId !== '' ? String(input.orderId) : null,
     tags: Array.isArray(input.tags) ? input.tags.map(String) : [],
     issuedAt: input.issuedAt || null,
     issuedBy: input.issuedBy != null && input.issuedBy !== '' ? String(input.issuedBy) : null,
@@ -233,6 +262,8 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
       ? String(input.issuerTitle).trim()
       : null,
     isLocked: Boolean(input.isLocked),
+    /** Raw backend lifecycle value (DRAFT|FINAL) when sourced from the API — see BACKEND_STATUS. */
+    backendStatus: input.backendStatus || null,
     createdAt: input.createdAt || new Date().toISOString(),
     updatedAt: input.updatedAt || new Date().toISOString(),
   };

@@ -1,11 +1,12 @@
 import { getStageLabel } from '../../modules/nabz/config';
-import { orderDeepLinkPath } from '../../components/navigation/entityMentions';
+import { correspondenceDeepLinkPath, orderDeepLinkPath } from '../../components/navigation/entityMentions';
 import { listCompanyInteractions } from '../../modules/pooyesh/interactionFacade';
 import { ENTITY_TYPES } from '../../modules/kanoon/config';
 import {
   listSupplierInquiries,
   listSupplierPurchaseOrders,
 } from '../../modules/kanoon/supplierSupplyBinding';
+import { listOfficialRecordsByCompany } from '../../modules/gahshomar/officialRecordFacade';
 
 /**
  * Company profile timeline — cross-domain read projection (not a domain SoR).
@@ -225,6 +226,27 @@ export function buildCompanyTimelineEvents(contact, orders = [], tasks = [], lea
       sortKey: timelineSortKey(item.date),
       meta: item.operator || null,
       links: [],
+    });
+  }
+
+  // Gahshomar Correspondence → CORRESPONDENCE_FINALIZED read-time projection
+  // (DDL-23, product rule 16). Only FINAL/locked letters are meaningful
+  // business events; drafts stay internal to Gahshomar. Pooyesh never owns
+  // or copies the document — only the canonical correspondenceId + link.
+  for (const record of listOfficialRecordsByCompany(contact.id)) {
+    if (!record.isLocked) continue;
+    const isIncoming = record.direction === 'INCOMING';
+    const date = record.date;
+    events.push({
+      id: `corr-${record.id}`,
+      kind: 'correspondence',
+      title: isIncoming ? 'دریافت نامه رسمی' : 'ارسال نامه رسمی',
+      body: `${record.subject || 'بدون موضوع'}${record.number ? ` · شماره ${record.number}` : ''}`,
+      dateLabel: formatDisplayDate(date),
+      sortKey: timelineSortKey(date),
+      meta: record.number || null,
+      correspondenceId: record.id,
+      links: [{ label: 'مشاهده نامه', path: correspondenceDeepLinkPath(record.id), kind: 'correspondence' }],
     });
   }
 

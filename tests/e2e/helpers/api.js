@@ -84,7 +84,9 @@ export async function archiveEntity(request, token, kind, id, options = {}) {
       ? `/orders/${id}`
       : kind === 'task'
         ? `/tasks/${id}`
-        : `/activities/${id}`;
+        : kind === 'correspondence'
+          ? `/correspondence/${id}`
+          : `/activities/${id}`;
   return apiJson(request, token, 'DELETE', apiPath);
 }
 
@@ -193,6 +195,26 @@ export async function updateTaskApi(request, token, taskId, body) {
 
 export async function updateActivityApi(request, token, activityId, body) {
   return apiJson(request, token, 'PATCH', `/activities/${encodeURIComponent(activityId)}`, { body });
+}
+
+export async function createCorrespondenceApi(request, token, body) {
+  return apiJson(request, token, 'POST', '/correspondence', { body });
+}
+
+export async function getCorrespondenceApi(request, token, id) {
+  return apiJson(request, token, 'GET', `/correspondence/${encodeURIComponent(id)}`);
+}
+
+export async function updateCorrespondenceApi(request, token, id, body) {
+  return apiJson(request, token, 'PATCH', `/correspondence/${encodeURIComponent(id)}`, { body });
+}
+
+export async function finalizeCorrespondenceApi(request, token, id, body = {}) {
+  return apiJson(request, token, 'POST', `/correspondence/${encodeURIComponent(id)}/finalize`, { body });
+}
+
+export async function addCorrespondenceAttachmentApi(request, token, id, body) {
+  return apiJson(request, token, 'POST', `/correspondence/${encodeURIComponent(id)}/attachments`, { body });
 }
 
 export async function listCompaniesByNationalId(request, token, nationalId) {

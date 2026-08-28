@@ -26,3 +26,8 @@ export function activeTaskWhere(alias = '') {
   const prefix = alias ? `${alias}.` : '';
   return `${prefix}${ACTIVE_ONLY}`;
 }
+
+export function activeCorrespondenceWhere(alias = '') {
+  const prefix = alias ? `${alias}.` : '';
+  return `${prefix}${ACTIVE_ONLY}`;
+}

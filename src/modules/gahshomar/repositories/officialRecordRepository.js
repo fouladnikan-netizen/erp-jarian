@@ -16,6 +16,7 @@ import {
   normalizeOfficialRecord,
 } from '../models/officialRecord';
 import { buildRegistryNumber, formatRegistryNumberFa } from '../services/letterRegistryNumber';
+import { resolveCorrespondenceTypeLabel } from '../../../domain/correspondenceTypes/correspondenceTypesFacade';
 
 /** @type {Array<object>} */
 let records = seedRecords();
@@ -172,12 +173,14 @@ export function toListPresentationModel(record) {
       : record.recordDate,
     displayParty: resolveDisplayParty(record),
     subject: record.subject,
-    displayType: TYPE_LABELS[record.type] || record.type,
+    type: record.type,
+    displayType: resolveCorrespondenceTypeLabel(record.type, TYPE_LABELS[record.type] || record.type),
     displayStatus: STATUS_LABELS[record.status] || record.status,
     hasAttachments: attachments.length > 0,
     direction: record.direction,
     status: record.status,
     companyId: record.companyId,
+    orderId: record.orderId || null,
     isLocked: Boolean(record.isLocked),
   };
 }
@@ -194,6 +197,10 @@ export function toDetailPresentationModel(record, options = {}) {
   return {
     ...toListPresentationModel(record),
     body: record.body,
+    rawBody: record.rawBody ?? null,
+    aiRewrittenBody: record.aiRewrittenBody ?? null,
+    finalBody: record.finalBody ?? null,
+    backendStatus: record.backendStatus ?? null,
     recordDate: record.recordDate,
     receivedDate: record.receivedDate,
     attentionName: record.attentionName || null,
@@ -207,6 +214,7 @@ export function toDetailPresentationModel(record, options = {}) {
     threadId: record.threadId,
     referenceId: record.referenceId,
     companyId: record.companyId,
+    orderId: record.orderId || null,
     tags: record.tags || [],
     issuedAt: record.issuedAt,
     issuedBy: record.issuedBy,
@@ -246,6 +254,14 @@ export function repositoryFindByCompanyId(companyId) {
   if (companyId == null || companyId === '') return [];
   return snapshot()
     .filter((item) => String(item.companyId) === String(companyId))
+    .sort(sortByDateDesc);
+}
+
+/** Nabz OrderProfile correspondence projection (product rule 15) — mock-mode source. */
+export function repositoryFindByOrderId(orderId) {
+  if (orderId == null || orderId === '') return [];
+  return snapshot()
+    .filter((item) => String(item.orderId) === String(orderId))
     .sort(sortByDateDesc);
 }
 

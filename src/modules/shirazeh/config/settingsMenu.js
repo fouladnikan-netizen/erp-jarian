@@ -35,6 +35,13 @@ export const SETTINGS_MENU = [
     icon: 'ListChecks',
   },
   {
+    id: 'correspondence-types',
+    label: 'انواع مکاتبات دبیرخانه',
+    description: 'فهرست یکپارچه نوع مکاتبه برای ثبت نامه در گاه‌شمار',
+    path: `${SHIRAZEH_BASE_PATH}/correspondence-types`,
+    icon: 'Mail',
+  },
+  {
     id: 'warehouses',
     label: 'انبارها',
     description: 'تعریف انبارها و آدرس‌های عملیاتی',

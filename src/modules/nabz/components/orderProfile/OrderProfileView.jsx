@@ -39,6 +39,7 @@ import OrderProfileGatewayTab from './OrderProfileGatewayTab';
 import OrderProfileCrmTab from './OrderProfileCrmTab';
 import OrderProfileTimelineTab from './OrderProfileTimelineTab';
 import OrderProfileAttachmentsTab from './OrderProfileAttachmentsTab';
+import OrderProfileCorrespondenceTab from './OrderProfileCorrespondenceTab';
 import OrderActionDrawer from './OrderActionDrawer';
 import DeliveryOrderSelectionModal from './operations/DeliveryOrderSelectionModal';
 import ActivityDrawer from '../../../../components/activity/ActivityDrawer';
@@ -400,6 +401,16 @@ export default function OrderProfileView({
               order={order}
               onUpload={(file) => updateOrder((current) => appendProfileAttachment(current, file))}
             />
+          </div>
+        )}
+        {activeTab === ORDER_PROFILE_TABS.CORRESPONDENCE && (
+          <div
+            className="order-profile-panel"
+            role="tabpanel"
+            id="order-profile-panel-correspondence"
+            aria-labelledby="order-profile-tab-correspondence"
+          >
+            <OrderProfileCorrespondenceTab order={order} />
           </div>
         )}
       </div>

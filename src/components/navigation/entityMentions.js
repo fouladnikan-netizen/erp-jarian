@@ -42,6 +42,18 @@ export function companyDeepLinkPath(companyId) {
 }
 
 /**
+ * Build path for a Gahshomar correspondence record (DDL-23, product rule 16).
+ * Gahshomar's UI is a single-page list+drawer (no per-record route), so the
+ * canonical correspondenceId travels as a query param; `GahshomarPage`
+ * auto-opens the record's VIEW drawer on mount when present.
+ * @param {string|number} correspondenceId
+ */
+export function correspondenceDeepLinkPath(correspondenceId) {
+  if (correspondenceId == null || correspondenceId === '') return null;
+  return `/gahshomar?record=${encodeURIComponent(String(correspondenceId))}`;
+}
+
+/**
  * Tokenize free text into plain segments and entity link segments.
  *
  * @param {string} text
