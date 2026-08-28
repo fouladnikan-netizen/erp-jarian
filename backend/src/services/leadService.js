@@ -10,6 +10,10 @@ import { buildLegalPayloadFromIdentity } from '../domain/companyIdentity/linkaLe
 import { userMessageForCode } from '../integrations/linka/linkaErrors.js';
 import { CUSTOMER_LIFECYCLE } from '../domain/customerLifecycle/lifecycleKeys.js';
 import { recomputeCustomerLifecycle } from './customerLifecycleService.js';
+import { resolveContactForCompany } from './contactService.js';
+import {
+  checkLeadDuplicates,
+} from './identityMatchingService.js';
 import {
   ensurePersonalPipeline,
 } from './leadPipelineService.js';
@@ -118,6 +122,16 @@ export async function createLead(body, actorUserId) {
   }
 
   const data = normalizeCreateBody(parsed.data);
+
+  // DDL-25: warn on probable company duplicates (non-blocking at service layer; API exposes full check).
+  if (data.companyName) {
+    await checkLeadDuplicates(data, {
+      actorUserId,
+      audit: true,
+      action: 'lead_create_precheck',
+    }).catch(() => {});
+  }
+
   const id = newEntityId('lead');
 
   // Ensure personal pipeline before create so first stage exists
@@ -297,10 +311,10 @@ export async function convertLeadToCompany(input, deps = {}) {
   let conversionMode = 'link_existing';
 
   await withTransaction(async (client) => {
-    const leadLocked = await leadRepo.findById(leadId, {}, client);
+    const leadLocked = await leadRepo.findByIdForUpdate(leadId, client);
     assertConvertible(leadLocked);
 
-    const existingCompany = await companyRepo.findByNationalId(nationalId, client);
+    const existingCompany = await companyRepo.findByNationalIdForUpdate(nationalId, client);
 
     if (existingCompany) {
       companyId = existingCompany.id;
@@ -308,10 +322,6 @@ export async function convertLeadToCompany(input, deps = {}) {
 
       const companyPayload = {
         ...(existingCompany.payload || {}),
-        interactions: [
-          ...((leadLocked.payload?.interactions) || []),
-          ...((existingCompany.payload?.interactions) || []),
-        ],
         convertedFromLeadId: leadLocked.id,
       };
       const patch = { payload: companyPayload };
@@ -327,7 +337,6 @@ export async function convertLeadToCompany(input, deps = {}) {
       const legal = buildLegalPayloadFromIdentity(resolvedIdentity);
       const payload = {
         ...(leadLocked.payload || {}),
-        interactions: leadLocked.payload?.interactions || [],
         leadSource: leadLocked.leadSource,
         convertedFromLeadId: leadLocked.id,
         notes: leadLocked.description,
@@ -338,6 +347,7 @@ export async function convertLeadToCompany(input, deps = {}) {
         personType: 'legal',
         recordType: 'CUSTOMER',
       };
+      delete payload.interactions;
 
       await companyRepo.insert({
         id: companyId,
@@ -354,17 +364,17 @@ export async function convertLeadToCompany(input, deps = {}) {
         payload,
         actorUserId,
       }, client);
+    }
 
-      if (leadLocked.personName) {
-        await companyRepo.insertPerson({
-          id: newEntityId('cp'),
-          companyId,
-          fullName: leadLocked.personName,
-          mobile: leadLocked.mobile,
-          roleTitle: 'مخاطب اصلی',
-          payload: { isPrimary: true },
-        }, client);
-      }
+    if (leadLocked.personName || leadLocked.mobile) {
+      await resolveContactForCompany({
+        companyId,
+        fullName: leadLocked.personName || leadLocked.companyName,
+        mobile: leadLocked.mobile,
+        roleTitle: 'مخاطب اصلی',
+        isPrimary: true,
+        actorUserId,
+      }, client);
     }
 
     await leadRepo.markConverted(leadId, { companyId, actorUserId }, client);

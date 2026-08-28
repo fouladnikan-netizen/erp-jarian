@@ -23,6 +23,7 @@ import { ProfilePageShell, ProfileTabs, ProfileTabSectionHeader } from '../../co
 import PooyeshInteractionsPanel, { MagicInput } from '../pooyesh/PooyeshInteractionsPanel';
 import CompanyTimelinePanel from '../pooyesh/timeline/CompanyTimelinePanel';
 import GahshomarDocumentsPanel from '../gahshomar/GahshomarDocumentsPanel';
+import { useMockApi } from '../../api/useMockApi';
 import CustomerFinancialCockpit from '../finance/components/CustomerFinancialCockpit';
 import { formatRial } from '../finance/customerFinancialProjection';
 import LegalInfoModal from './components/LegalInfoModal';
@@ -169,7 +170,9 @@ function OrdersPanel({ contact }) {
   );
 
   const liveCodes = new Set(liveOrders.map((order) => order.code));
-  const seedOrders = (contact.relatedOrders || []).filter((order) => !liveCodes.has(order.id));
+  const seedOrders = useMockApi()
+    ? (contact.relatedOrders || []).filter((order) => !liveCodes.has(order.id))
+    : [];
   const profileLabel = contact.entityType === ENTITY_TYPES.SUPPLIER
     ? 'پروفایل تامین‌کننده'
     : 'پروفایل مشتری';
@@ -266,7 +269,7 @@ export default function CustomerProfilePage() {
 
   const entityType = contact?.entityType || ENTITY_TYPES.CUSTOMER;
   const profileTabs = useMemo(() => getCompanyProfileTabs(entityType), [entityType]);
-  const isLead = contact?.recordType === CONTACT_RECORD_TYPES.LEAD;
+  const isLead = useMockApi() && contact?.recordType === CONTACT_RECORD_TYPES.LEAD;
   const rawActiveTab = resolveCompanyProfileTab(searchParams.get('tab'), entityType);
   const activeTab = isLead ? 'interactions' : rawActiveTab;
   const [addPersonOpen, setAddPersonOpen] = useState(false);

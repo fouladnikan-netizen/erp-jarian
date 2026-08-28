@@ -748,6 +748,28 @@ Priority vocabulary (aligned with current facade): `low` \| `normal` \| `high` \
 
 ---
 
+## DDL-25 — Identity & Duplicate Governance
+
+| | |
+|--|--|
+| **Decision** | Centralized identity normalization (`backend/src/domain/identity/`), match classification (`EXACT`/`PROBABLE`/`POSSIBLE`/`NONE`/`CONFLICT`), reusable duplicate-check service/API (`/api/v1/identity/matches/*`), create policies (Company block on exact nationalId, Lead warn, Contact propose link), and `identity_decisions` audit (decisions only — not keystrokes). Active `companies.national_id` enforced by partial UNIQUE index (`deleted_at IS NULL`). |
+| **Current state** | Pre-DDL-25: service-layer nationalId check only; scattered name ILIKE in Lead repo; no Contact-level dedup. |
+| **Reason** | Independent audit found duplicate Company risk and scattered duplicate logic; Kanoon/Ofogh need one backend gate before persistence. |
+| **Future migration impact** | Extend signals (domain, registry number) via identity domain only — no UI-only duplicate checks. Concurrency: `FOR UPDATE` on nationalId during create/convert. |
+
+---
+
+## DDL-26 — Canonical Contact Master + Safe Lead Conversion
+
+| | |
+|--|--|
+| **Decision** | **Contact** is Kanoon-owned canonical person master (`contacts` table). **CompanyContactRelationship** links Contact↔Company (one primary per company; end relationship ≠ delete Contact). `contact_persons` backfilled via script — no unsafe name-only merges. Lead conversion: hardened TX with `SELECT FOR UPDATE`, identity resolution, Contact link/create, **no** `payload.interactions` merge, **no** Activity migration. Retire `company.payload.interactions` as SoR (Pooyesh Activity only in API mode). Retire Kanoon `recordType=LEAD` in API mode (Raw Lead stays in Ofogh). Customer 360 orders: Nabz only — no `relatedOrders` seed in API mode. |
+| **Current state** | Embedded `contact_persons`; conversion copied lead interactions; Kanoon LEAD facet; seed orders on profile. |
+| **Reason** | Same person may serve multiple companies; shadow interaction copy breaks Pooyesh SSOT; LEAD facet duplicates Ofogh Raw Lead. |
+| **Future migration impact** | Compatibility phases A–E: read legacy `persons` + `canonicalContacts` until UI fully on `/api/v1/contacts`. Lifecycle backfill: `backend/scripts/recompute-customer-lifecycle.js`. See `Docs/architecture/CUSTOMER_360_PROJECTION.md`. |
+
+---
+
 ## Change control
 
 1. Propose a new `DDL-NN` when a persistence or aggregate choice would contradict or refine the above.  

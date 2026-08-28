@@ -6,7 +6,8 @@
  * - Official Linka fields (A) overwrite provider-owned legal/registry fields.
  * - Jarian operational fields (B) preserved (crmActivityDomain, notes, assignee, lifecycle, interactions).
  * - Gazette stored as payload.linkaGazette snapshot (no parallel LegalHistory entity yet).
- * - Contact persons upserted by providerNationalCode; multi-role → payload.linkaRoles.
+ * - Contact persons → canonical Contact + CompanyContactRelationship (DDL-26).
+ *   Weak Linka rows (no verified nationalCode) stay governance-only, not canonical Contacts.
  */
 import { withTransaction } from '../db/pool.js';
 import { appError, notFoundError } from '../lib/errors.js';
@@ -24,12 +25,13 @@ import {
   parseCompanyPersonEnvelope,
   dedupeLinkaPersonsByNationalCode,
   buildGovernanceFromLinkaPersons,
-  buildContactPersonUpserts,
 } from '../domain/companyIdentity/linkaPersonMapper.js';
 import {
   parseGazetteEnvelope,
   buildGazetteSnapshot,
 } from '../domain/companyIdentity/linkaGazetteMapper.js';
+import * as relationshipRepo from '../repositories/companyContactRelationshipRepository.js';
+import { upsertLinkaOfficialPersons } from './contactOrchestration.js';
 
 /**
  * Merge officialSpecs: Linka fills empty or overwrites Linka-owned keys; keep manual phone/website if set.
@@ -75,13 +77,14 @@ function mergeOfficialSpecs(existing = {}, fromLinka = {}) {
  *   runTransaction?: typeof withTransaction,
  *   writeAuditFn?: typeof writeAudit,
  *   newId?: typeof newEntityId,
+ *   upsertLinkaPersons?: typeof upsertLinkaOfficialPersons,
  * }} [deps]
  */
 export async function enrichCompanyFromLinka(input, actorUserId, deps = {}) {
   const companyRepo = deps.companyRepo || defaultCompanyRepo;
   const runTransaction = deps.runTransaction || withTransaction;
   const writeAuditFn = deps.writeAuditFn || writeAudit;
-  const newId = deps.newId || newEntityId;
+  const upsertLinkaPersons = deps.upsertLinkaPersons || upsertLinkaOfficialPersons;
   const companyId = input.companyId ? String(input.companyId) : null;
   const nationalIdInput = input.nationalId
     ? String(input.nationalId).replace(/\D/g, '')
@@ -186,7 +189,6 @@ export async function enrichCompanyFromLinka(input, actorUserId, deps = {}) {
   const preserved = {
     crmActivityDomain: prevPayload.crmActivityDomain,
     notes: prevPayload.notes,
-    interactions: prevPayload.interactions,
     leadSource: prevPayload.leadSource,
     convertedFromLeadId: prevPayload.convertedFromLeadId,
     recordType: prevPayload.recordType || 'CUSTOMER',
@@ -251,38 +253,7 @@ export async function enrichCompanyFromLinka(input, actorUserId, deps = {}) {
     }, actorUserId, client);
 
     if (sections.persons === 'ok') {
-      const upserts = buildContactPersonUpserts(personDedupe, company.id);
-      for (const row of upserts) {
-        const code = row.payload?.providerNationalCode;
-        let existing = null;
-        if (code) {
-          existing = await companyRepo.findPersonByProviderNationalCode(
-            company.id,
-            code,
-            client,
-          );
-        }
-        if (existing) {
-          const mergedPayload = {
-            ...(existing.payload || {}),
-            ...row.payload,
-          };
-          await companyRepo.updatePerson(existing.id, {
-            fullName: row.fullName,
-            roleTitle: row.roleTitle,
-            payload: mergedPayload,
-          }, client);
-        } else {
-          await companyRepo.insertPerson({
-            id: newId('cp'),
-            companyId: company.id,
-            fullName: row.fullName,
-            mobile: row.mobile,
-            roleTitle: row.roleTitle,
-            payload: row.payload,
-          }, client);
-        }
-      }
+      await upsertLinkaPersons(company.id, personDedupe, actorUserId, client);
     }
 
     await writeAuditFn({
@@ -300,8 +271,16 @@ export async function enrichCompanyFromLinka(input, actorUserId, deps = {}) {
   });
 
   const companyRow = await companyRepo.findById(company.id);
-  const persons = await companyRepo.findPersonsByCompanyId(company.id);
-  const enriched = { ...companyRow, persons };
+  const canonicalContacts = await relationshipRepo.findActiveByCompany(company.id).catch(() => []);
+  const enriched = {
+    ...companyRow,
+    canonicalContacts: canonicalContacts.map((r) => ({
+      relationshipId: r.id,
+      isPrimary: r.isPrimary,
+      roleTitle: r.roleTitle,
+      contact: r.contact,
+    })),
+  };
 
   const allOk = sections.base === 'ok'
     && sections.persons === 'ok'

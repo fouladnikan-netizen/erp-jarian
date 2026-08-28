@@ -1,0 +1,27 @@
+id: company-contact-relationship
+name: CompanyContactRelationship
+tier: A
+status: active
+ownerModule: kanoon
+aggregateRoot: CompanyContactRelationship
+ssot: postgresql
+clientState: none
+lifecycle: "Link Contact to Company; one primary per company; end relationship does not delete Contact."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - companies:read
+  - companies:write
+databaseTable: company_contact_relationships
+apiBasePath: /api/v1/contacts/link
+backendRepository: backend/src/repositories/companyContactRelationshipRepository.js
+frontendRepository: src/api/repositories/ContactRepository.js
+dependencies:
+  - company
+  - contact
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-26
+migrationSafety: "Expand-only; backfill tracks migrated_contact_id on contact_persons."
+notes: "Replaces embedded contact_persons as canonical M:N link over time (compatibility phases A-E)."

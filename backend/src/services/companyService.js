@@ -3,12 +3,17 @@ import { withTransaction } from '../db/pool.js';
 import { appError, fromZodError, notFoundError } from '../lib/errors.js';
 import { newEntityId, writeAudit } from '../lib/ids.js';
 import * as companyRepo from '../repositories/companyRepository.js';
+import * as relationshipRepo from '../repositories/companyContactRelationshipRepository.js';
 import { normalizeNationalId } from '../domain/companyIdentity/normalizeNationalId.js';
-import { resolveCompanyIdentity } from '../ports/companyIdentityResolver.port.js';
 import { userMessageForCode } from '../integrations/linka/linkaErrors.js';
 import { buildLegalPayloadFromIdentity } from '../domain/companyIdentity/linkaLegalFields.js';
 import { enrichCompanyFromLinka } from './companyEnrichmentService.js';
 import { recomputeCustomerLifecycle } from './customerLifecycleService.js';
+import {
+  checkCompanyDuplicates,
+  assertCreatePolicy,
+} from './identityMatchingService.js';
+import { attachPersonsFromCompanyCreate } from './contactOrchestration.js';
 import {
   CUSTOMER_LIFECYCLE,
   normalizeLifecycleKey,
@@ -26,7 +31,24 @@ const createSchema = z.object({
   assigneeName: z.string().trim().optional().nullable(),
   assigneeRole: z.string().trim().optional().nullable(),
   payload: z.record(z.string(), z.any()).optional(),
+  relatedPersons: z.array(z.record(z.string(), z.any())).optional(),
+  confirmDuplicate: z.boolean().optional().default(false),
 });
+
+/** Strip shadow Contact/interaction fields from Company writes (DDL-26). */
+function stripShadowCompanyFields(data) {
+  const relatedPersons = [
+    ...(Array.isArray(data.relatedPersons) ? data.relatedPersons : []),
+    ...(Array.isArray(data.payload?.relatedPersons) ? data.payload.relatedPersons : []),
+  ];
+  const next = { ...data };
+  delete next.relatedPersons;
+  if (next.payload && typeof next.payload === 'object') {
+    const { relatedPersons: _rp, interactions: _ix, ...cleanPayload } = next.payload;
+    next.payload = cleanPayload;
+  }
+  return { data: next, relatedPersons };
+}
 
 const updateSchema = createSchema.partial();
 
@@ -54,8 +76,20 @@ export async function getCompany(id, options = {}) {
   if (!company) {
     throw notFoundError('شرکت یافت نشد.');
   }
-  const persons = await companyRepo.findPersonsByCompanyId(id);
-  return { ...company, persons };
+  const [persons, canonicalContacts] = await Promise.all([
+    companyRepo.findPersonsByCompanyId(id),
+    relationshipRepo.findActiveByCompany(id).catch(() => []),
+  ]);
+  return {
+    ...company,
+    persons,
+    canonicalContacts: canonicalContacts.map((r) => ({
+      relationshipId: r.id,
+      isPrimary: r.isPrimary,
+      roleTitle: r.roleTitle,
+      contact: r.contact,
+    })),
+  };
 }
 
 export async function createCompany(body, actorUserId) {
@@ -65,26 +99,70 @@ export async function createCompany(body, actorUserId) {
   }
 
   const data = { ...parsed.data };
-  const entityType = String(data.entityType || 'CUSTOMER').toUpperCase();
+  const confirmDuplicate = data.confirmDuplicate;
+  delete data.confirmDuplicate;
+  const { data: companyData, relatedPersons } = stripShadowCompanyFields(data);
+
+  if (companyData.nationalId) {
+    const normalized = normalizeNationalId(companyData.nationalId);
+    if (!normalized.ok) {
+      throw appError('COMPANY_IDENTITY_INVALID_NATIONAL_ID', normalized.error, 422);
+    }
+    companyData.nationalId = normalized.nationalId;
+    const dup = await checkCompanyDuplicates(
+      { nationalId: companyData.nationalId, name: companyData.name },
+      { actorUserId, audit: true, action: 'company_create_precheck' },
+    );
+    assertCreatePolicy('company', dup, { confirmDuplicate });
+  }
+
+  const entityType = String(companyData.entityType || 'CUSTOMER').toUpperCase();
   // Customers enter lifecycle at نوپدید; suppliers never get customer lifecycle stages.
   if (entityType === 'CUSTOMER' || entityType === 'BOTH') {
-    data.lifecycleStage = normalizeLifecycleKey(data.lifecycleStage)
+    companyData.lifecycleStage = normalizeLifecycleKey(companyData.lifecycleStage)
       || CUSTOMER_LIFECYCLE.COLD_LEAD;
-    data.engagementStatus = data.engagementStatus || 'normal';
+    companyData.engagementStatus = companyData.engagementStatus || 'normal';
   } else if (entityType === 'SUPPLIER') {
-    data.lifecycleStage = null;
-    data.engagementStatus = 'normal';
+    companyData.lifecycleStage = null;
+    companyData.engagementStatus = 'normal';
   }
   const id = newEntityId('co');
 
   await withTransaction(async (client) => {
-    await companyRepo.insert({ ...data, id, actorUserId }, client);
+    if (companyData.nationalId) {
+      const existing = await companyRepo.findByNationalIdForUpdate(companyData.nationalId, client);
+      if (existing) {
+        throw appError(
+          'IDENTITY_DUPLICATE_EXACT',
+          'رکورد تکراری با شناسه یکسان یافت شد — ایجاد مجاز نیست.',
+          409,
+          { existingId: existing.id },
+        );
+      }
+    }
+    try {
+      await companyRepo.insert({ ...companyData, id, actorUserId }, client);
+    } catch (err) {
+      if (err?.code === '23505') {
+        throw appError(
+          'IDENTITY_DUPLICATE_EXACT',
+          'رکورد تکراری با شناسه یکسان یافت شد — ایجاد مجاز نیست.',
+          409,
+        );
+      }
+      throw err;
+    }
+
+    if (relatedPersons.length > 0) {
+      await attachPersonsFromCompanyCreate(id, relatedPersons, actorUserId, client);
+    }
+
     await writeAudit({
       actorUserId,
       action: 'company.create',
       entityType: 'company',
       entityId: id,
-      detail: { name: data.name },
+      detail: { name: companyData.name, contactCount: relatedPersons.length },
     }, client);
   });
 
@@ -170,7 +248,7 @@ export async function createCompanyFromIdentity(input, actorUserId, deps = {}) {
   let mode = 'create_new';
 
   await withTransaction(async (client) => {
-    const existing = await companyRepo.findByNationalId(nationalId, client);
+    const existing = await companyRepo.findByNationalIdForUpdate(nationalId, client);
     if (existing) {
       companyId = existing.id;
       mode = 'existing';
@@ -303,8 +381,10 @@ export async function updateCompany(id, body, actorUserId) {
   }
   delete data.engagementStatus;
 
+  const { data: companyData } = stripShadowCompanyFields(data);
+
   await withTransaction(async (client) => {
-    await companyRepo.update(id, data, actorUserId, client);
+    await companyRepo.update(id, companyData, actorUserId, client);
     await writeAudit({
       actorUserId,
       action: 'company.update',

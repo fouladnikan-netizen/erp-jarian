@@ -21,12 +21,8 @@ function makeCompany(overrides = {}) {
   };
 }
 
-function makeRepo({ existingPerson = null } = {}) {
-  const inserted = [];
-  const updated = [];
+function makeRepo() {
   const payloadWrites = [];
-  let personLookupCount = 0;
-
   const companyRepo = {
     async findById() {
       return makeCompany();
@@ -34,26 +30,11 @@ function makeRepo({ existingPerson = null } = {}) {
     async findByNationalId() {
       return makeCompany();
     },
-    async findPersonsByCompanyId() {
-      return [];
-    },
     async update(_id, data) {
       payloadWrites.push(data.payload);
     },
-    async findPersonByProviderNationalCode() {
-      personLookupCount += 1;
-      if (existingPerson && personLookupCount > 1) return existingPerson;
-      return null;
-    },
-    async insertPerson(row) {
-      inserted.push(row);
-    },
-    async updatePerson(id, data) {
-      updated.push({ id, data });
-    },
   };
-
-  return { companyRepo, inserted, updated, payloadWrites };
+  return { companyRepo, payloadWrites };
 }
 
 const identityResolver = async () => ({
@@ -123,8 +104,9 @@ const fetchGazette = async () => ({
 });
 
 describe('enrichCompanyFromLinka', () => {
-  it('merges base + persons + gazette and upserts persons idempotently', async () => {
-    const { companyRepo, inserted, updated, payloadWrites } = makeRepo();
+  it('merges base + persons + gazette and upserts canonical Linka contacts', async () => {
+    const { companyRepo, payloadWrites } = makeRepo();
+    const upsertCalls = [];
 
     const result1 = await enrichCompanyFromLinka(
       { companyId: 'co_test' },
@@ -136,7 +118,10 @@ describe('enrichCompanyFromLinka', () => {
         companyRepo,
         runTransaction: async (fn) => fn({}),
         writeAuditFn: async () => {},
-        newId: () => 'cp_new',
+        upsertLinkaPersons: async (companyId, persons, actorUserId, client) => {
+          upsertCalls.push({ companyId, count: persons.length, actorUserId, client });
+          return persons.length;
+        },
       },
     );
 
@@ -144,50 +129,13 @@ describe('enrichCompanyFromLinka', () => {
     assert.equal(result1.sections.base, 'ok');
     assert.equal(result1.sections.persons, 'ok');
     assert.equal(result1.sections.gazette, 'ok');
-    assert.equal(inserted.length, 1);
-    assert.equal(inserted[0].payload.linkaRoleTitles.length, 2);
+    assert.equal(upsertCalls.length, 1);
+    assert.equal(upsertCalls[0].count, 1);
     assert.equal(payloadWrites[0].notes, 'manual note keep me');
     assert.equal(payloadWrites[0].crmActivityDomain, 'صنایع فولادی');
     assert.equal(payloadWrites[0].governance.ceo.name, 'علی احمدی');
     assert.equal(payloadWrites[0].linkaGazette.latest.gazetteNumber, '55');
-
-    const repo2 = makeRepo({
-      existingPerson: {
-        id: 'cp_existing',
-        fullName: 'علی',
-        roleTitle: 'مدیرعامل',
-        payload: { providerNationalCode: '0012345678' },
-      },
-    });
-    // Force first lookup to hit existing (simulates second enrichment)
-    let n = 0;
-    repo2.companyRepo.findPersonByProviderNationalCode = async () => {
-      n += 1;
-      return {
-        id: 'cp_existing',
-        fullName: 'علی',
-        roleTitle: 'مدیرعامل',
-        payload: { providerNationalCode: '0012345678' },
-      };
-    };
-
-    const result2 = await enrichCompanyFromLinka(
-      { companyId: 'co_test' },
-      'u_admin',
-      {
-        identityResolver,
-        fetchPersons,
-        fetchGazette,
-        companyRepo: repo2.companyRepo,
-        runTransaction: async (fn) => fn({}),
-        writeAuditFn: async () => {},
-        newId: () => 'cp_should_not',
-      },
-    );
-    assert.equal(result2.complete, true);
-    assert.equal(repo2.updated.length, 1);
-    assert.equal(repo2.inserted.length, 0);
-    assert.equal(n, 1);
+    assert.equal(payloadWrites[0].interactions, undefined);
   });
 
   it('reports partial failure without claiming complete', async () => {
@@ -209,7 +157,7 @@ describe('enrichCompanyFromLinka', () => {
         companyRepo,
         runTransaction: async (fn) => fn({}),
         writeAuditFn: async () => {},
-        newId: () => 'cp_x',
+        upsertLinkaPersons: async () => 0,
       },
     );
 

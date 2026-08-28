@@ -16,9 +16,14 @@ export default function ContactPersonsSection({ companyId, showAddButton = true 
     const company = s.contacts.find((c) => String(c.id) === String(companyId));
     return company?.relatedPersons || [];
   });
+  const fetchCompanyById = useContactsStore((s) => s.fetchCompanyById);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
+  const handleSaved = () => {
+    void fetchCompanyById(companyId);
+  };
 
   const openAdd = () => {
     setEditingId(null);
@@ -75,6 +80,7 @@ export default function ContactPersonsSection({ companyId, showAddButton = true 
         companyId={companyId}
         personId={editingId}
         onClose={closeModal}
+        onSaved={handleSaved}
       />
     </section>
   );

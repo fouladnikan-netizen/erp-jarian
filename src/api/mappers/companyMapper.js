@@ -40,14 +40,15 @@ function pickPayload(contact) {
     ...rest
   } = contact;
 
-  return {
+  const merged = {
     ...(payload && typeof payload === 'object' ? payload : {}),
     ...rest,
     recordType: recordType || 'CUSTOMER',
     lifecycleStage: lifecycleStage || lifecycle_stage,
-    relatedPersons: relatedPersons || [],
-    interactions: interactions || [],
   };
+  delete merged.relatedPersons;
+  delete merged.interactions;
+  return merged;
 }
 
 export function contactToApi(contact) {
@@ -58,6 +59,10 @@ export function contactToApi(contact) {
       || contact.displayName
       || '',
   ).trim();
+  const relatedPersons = Array.isArray(contact.relatedPersons)
+    ? contact.relatedPersons
+    : (contact.payload?.relatedPersons || []);
+
   return {
     name,
     entityType: contact.entityType === 'SUPPLIER' || contact.entityType === 'supplier'
@@ -71,6 +76,7 @@ export function contactToApi(contact) {
     assigneeName: contact.assignee?.name || contact.assigneeName || null,
     assigneeRole: contact.assignee?.role || contact.assigneeRole || null,
     payload: pickPayload(contact),
+    ...(relatedPersons.length ? { relatedPersons } : {}),
   };
 }
 
@@ -95,12 +101,35 @@ function mapPersonFromApi(person, companyId) {
   };
 }
 
+/** DDL-26: map Kanoon canonical Contact + relationship → legacy relatedPersons shape. */
+function mapCanonicalContactFromApi(entry, companyId) {
+  if (!entry?.contact) return null;
+  const { contact } = entry;
+  const roleTitle = entry.roleTitle || '';
+  return {
+    id: contact.id,
+    companyId,
+    fullName: contact.fullName || '',
+    mobile: contact.mobile || '',
+    jobPosition: roleTitle,
+    roleTitle,
+    isPrimary: Boolean(entry.isPrimary),
+    relationshipId: entry.relationshipId || entry.id || null,
+    canonicalContactId: contact.id,
+  };
+}
+
 export function contactFromApi(row) {
   if (!row) return null;
   const rawPayload = row.payload && typeof row.payload === 'object' ? row.payload : {};
   const payload = enrichLegalFieldsFromPayload(rawPayload);
-  const personsRaw = row.persons || payload.relatedPersons || [];
-  const persons = personsRaw.map((p) => mapPersonFromApi(p, row.id)).filter(Boolean);
+  const canonicalRaw = Array.isArray(row.canonicalContacts) ? row.canonicalContacts : [];
+  const personsRaw = canonicalRaw.length > 0
+    ? canonicalRaw
+    : (row.persons || payload.relatedPersons || []);
+  const persons = canonicalRaw.length > 0
+    ? personsRaw.map((p) => mapCanonicalContactFromApi(p, row.id)).filter(Boolean)
+    : personsRaw.map((p) => mapPersonFromApi(p, row.id)).filter(Boolean);
   const rawType = String(row.entityType || payload.entityType || 'CUSTOMER').toUpperCase();
   const entityType = rawType === 'SUPPLIER' ? 'supplier' : 'customer';
 

@@ -111,6 +111,20 @@ export async function findByNationalId(nationalId, client = null) {
   return res.rows[0] ? mapCompanyRow(res.rows[0]) : null;
 }
 
+/** Row lock for conversion / concurrent create by nationalId (DDL-25/26). */
+export async function findByNationalIdForUpdate(nationalId, client = null) {
+  const run = runner(client);
+  const cleaned = String(nationalId || '').replace(/\D/g, '');
+  if (!cleaned) return null;
+  const res = await run(
+    `SELECT * FROM companies
+     WHERE national_id = $1 AND ${activeCompanyWhere()}
+     FOR UPDATE LIMIT 1`,
+    [cleaned],
+  );
+  return res.rows[0] ? mapCompanyRow(res.rows[0]) : null;
+}
+
 /** Name search for Lead → Company duplicate detection foundation */
 export async function findPotentialMatchesForLead(q, { limit = 10 } = {}, client = null) {
   const run = runner(client);
@@ -128,19 +142,8 @@ export async function findPotentialMatchesForLead(q, { limit = 10 } = {}, client
 }
 
 export async function insertPerson(row, client = null) {
-  const run = runner(client);
-  await run(
-    `INSERT INTO contact_persons (
-      id, company_id, full_name, mobile, role_title, payload
-    ) VALUES ($1,$2,$3,$4,$5,$6::jsonb)`,
-    [
-      row.id,
-      row.companyId,
-      row.fullName,
-      row.mobile || null,
-      row.roleTitle || null,
-      JSON.stringify(row.payload || {}),
-    ],
+  throw new Error(
+    'LEGACY_CONTACT_PERSONS_WRITE_DISABLED (DDL-26): use canonical Contact + CompanyContactRelationship',
   );
 }
 
@@ -166,21 +169,8 @@ export async function findPersonByProviderNationalCode(companyId, nationalCode, 
 }
 
 export async function updatePerson(id, data, client = null) {
-  const run = runner(client);
-  await run(
-    `UPDATE contact_persons SET
-      full_name = COALESCE($2, full_name),
-      mobile = COALESCE($3, mobile),
-      role_title = COALESCE($4, role_title),
-      payload = COALESCE($5::jsonb, payload)
-     WHERE id = $1`,
-    [
-      id,
-      data.fullName ?? null,
-      data.mobile !== undefined ? data.mobile : null,
-      data.roleTitle ?? null,
-      data.payload ? JSON.stringify(data.payload) : null,
-    ],
+  throw new Error(
+    'LEGACY_CONTACT_PERSONS_WRITE_DISABLED (DDL-26): use canonical Contact + CompanyContactRelationship',
   );
 }
 

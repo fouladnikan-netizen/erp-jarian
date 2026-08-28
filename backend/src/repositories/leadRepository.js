@@ -105,6 +105,16 @@ export async function findById(id, { includeArchived = false } = {}, client = nu
   return res.rows[0] ? mapLeadRow(res.rows[0]) : null;
 }
 
+/** Row lock for lead conversion concurrency (DDL-26.7). */
+export async function findByIdForUpdate(id, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT * FROM raw_leads WHERE id = $1 AND ${activeLeadWhere()} FOR UPDATE`,
+    [id],
+  );
+  return res.rows[0] ? mapLeadRow(res.rows[0]) : null;
+}
+
 export async function create(row, client = null) {
   const run = runner(client);
   await run(

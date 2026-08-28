@@ -8,6 +8,8 @@ import {
   LIFECYCLE_STAGES,
   RELATIONSHIP_LIFECYCLE_STAGES,
 } from '../../../stores/useContactsStore.js';
+import { useMockApi } from '../../../api/useMockApi.js';
+import { listInteractions } from '../../pooyesh/interactionFacade.js';
 
 export {
   CONTACT_RECORD_TYPES,
@@ -97,12 +99,23 @@ export async function fetchCompanies() {
   return useContactsStore.getState().fetchContacts();
 }
 
-export function addContactPerson(companyId, person) {
-  return useContactsStore.getState().addContactPerson(companyId, person);
+export async function addContactPerson(companyId, person) {
+  return useContactsStore.getState().addContactPersonAsync(companyId, person);
 }
 
-/** Legacy mock soft-CRM on Company document (Pooyesh subject port). */
+export async function updateContactPerson(companyId, personId, patch) {
+  return useContactsStore.getState().updateContactPersonAsync(companyId, personId, patch);
+}
+
+export async function deleteContactPerson(companyId, personId) {
+  return useContactsStore.getState().deleteContactPersonAsync(companyId, personId);
+}
+
+/** Legacy mock soft-CRM on Company document. API mode → Pooyesh Activity facade (DDL-26.9). */
 export function listCompanyDocumentInteractions(companyId) {
+  if (!useMockApi()) {
+    return listInteractions(companyId);
+  }
   const company = getCompany(companyId);
   const list = Array.isArray(company?.interactions) ? company.interactions : [];
   return list.map((item) => ({ ...item }));
@@ -132,6 +145,8 @@ export const companyFacade = {
   updateCompanyStage,
   fetchCompanies,
   addContactPerson,
+  updateContactPerson,
+  deleteContactPerson,
 };
 
 export default companyFacade;

@@ -20,6 +20,8 @@ export {
   updateCompanyStage,
   fetchCompanies,
   addContactPerson,
+  updateContactPerson,
+  deleteContactPerson,
   listCompanyDocumentInteractions,
   addCompanyDocumentInteraction,
   updateCompanyDocumentInteraction,

@@ -8,6 +8,7 @@ import { getDisplayName } from '../kanoon/columns';
 import { showSystemToast } from '../../utils/systemToast';
 import { useMockApi } from '../../api/useMockApi';
 import { LeadRepository } from '../../api/repositories/LeadRepository';
+import { IdentityRepository } from '../../api/repositories/IdentityRepository';
 
 const MATCH_DEBOUNCE_MS = 320;
 
@@ -81,8 +82,22 @@ export default function OfoqRawLeadModal({ onClose, onSaved }) {
     const timer = setTimeout(async () => {
       setMatchesLoading(true);
       try {
-        const items = await LeadRepository.findCompanyMatches(query, { limit: 5 });
-        if (!cancelled) setApiMatches(Array.isArray(items) ? items : []);
+        const [companyItems, leadDup] = await Promise.all([
+          LeadRepository.findCompanyMatches(query, { limit: 5 }),
+          IdentityRepository.checkLeadDuplicates({
+            companyName: query,
+            mobile: form.mobile || undefined,
+          }),
+        ]);
+        const merged = companyItems?.length
+          ? companyItems
+          : (leadDup?.candidates || []).map((c) => ({
+            id: c.id,
+            name: c.name,
+            nationalId: c.nationalId,
+            activityDomain: c.activityDomain,
+          }));
+        if (!cancelled) setApiMatches(Array.isArray(merged) ? merged : []);
       } catch {
         if (!cancelled) setApiMatches([]);
       } finally {
@@ -93,7 +108,7 @@ export default function OfoqRawLeadModal({ onClose, onSaved }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, form.mobile]);
 
   const similarCompanies = useMockApi()
     ? localSimilar

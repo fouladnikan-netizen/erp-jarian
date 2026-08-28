@@ -21,6 +21,7 @@ import {
   relationshipStageFromPipelineStage,
 } from '../domain/party/relationshipLifecycle.js';
 import CompanyRepository from '../api/repositories/CompanyRepository';
+import ContactRepository from '../api/repositories/ContactRepository';
 import { useMockApi } from '../api/useMockApi';
 
 /**
@@ -107,7 +108,8 @@ function normalizeSeedInteractions(contact) {
 
 async function persistContactSnapshot(contact) {
   if (useMockApi() || !contact?.id) return contact;
-  return CompanyRepository.update(contact.id, contact);
+  const { relatedPersons, interactions, ...companyFields } = contact;
+  return CompanyRepository.update(contact.id, companyFields);
 }
 
 /** Replace one company in cache from authoritative server response (SERVER_FIRST). */
@@ -217,6 +219,8 @@ export const useContactsStore = create((set, get) => ({
   addInteraction: (contactId, note, nextFollowUpDate, type = 'note') => {
     const trimmed = (note || '').trim();
     if (!trimmed) return;
+    // API mode: Pooyesh Activity is SoR — do not shadow-write company.payload.interactions (DDL-26.9).
+    if (!useMockApi()) return;
     void commitContactServerFirst(get, set, contactId, (contact) => {
       const now = new Date().toISOString();
       const entry = {
@@ -243,6 +247,7 @@ export const useContactsStore = create((set, get) => ({
    */
   updateInteraction: (contactId, interactionId, changes = {}) => {
     if (contactId == null || interactionId == null) return false;
+    if (!useMockApi()) return false;
     const prev = get().contacts.find((c) => String(c.id) === String(contactId));
     if (!prev) return false;
     const list = prev.interactions || [];
@@ -268,6 +273,7 @@ export const useContactsStore = create((set, get) => ({
 
   removeInteraction: (contactId, interactionId) => {
     if (contactId == null || interactionId == null) return false;
+    if (!useMockApi()) return false;
     const prev = get().contacts.find((c) => String(c.id) === String(contactId));
     if (!prev) return false;
     if (!(prev.interactions || []).some((item) => String(item.id) === String(interactionId))) {
@@ -323,7 +329,11 @@ export const useContactsStore = create((set, get) => ({
     }
 
     try {
-      const saved = await CompanyRepository.create(newContact);
+      const { relatedPersons, interactions, ...companyInput } = newContact;
+      const saved = await CompanyRepository.create({
+        ...companyInput,
+        relatedPersons: relatedPersons || [],
+      });
       set((state) => ({ contacts: [saved, ...state.contacts], error: null }));
       return saved.id;
     } catch (error) {
@@ -390,6 +400,12 @@ export const useContactsStore = create((set, get) => ({
   },
 
   updateContact: (contactId, updates) => {
+    if (!useMockApi() && updates?.relatedPersons) {
+      console.warn('[contacts-store] relatedPersons write blocked in API mode (DDL-26)');
+      const { relatedPersons, ...rest } = updates;
+      if (!Object.keys(rest).length) return;
+      updates = rest;
+    }
     void commitContactServerFirst(get, set, contactId, (contact) => {
       const next = { ...contact, ...updates };
       if (updates.relatedPersons) {
@@ -402,9 +418,19 @@ export const useContactsStore = create((set, get) => ({
 
   /**
    * ContactPerson CRUD — child of Company (companyId = contact.id).
+   * API mode: canonical Contact + CompanyContactRelationship only (DDL-26 cutover).
+   * Mock mode: legacy embedded relatedPersons (read/write).
    * @returns {string|null}
    */
   addContactPerson: (companyId, contactData) => {
+    if (!useMockApi()) {
+      void get().addContactPersonAsync(companyId, contactData);
+      return null;
+    }
+    return get().addContactPersonLegacy(companyId, contactData);
+  },
+
+  addContactPersonLegacy: (companyId, contactData) => {
     const fullName = String(contactData?.fullName || contactData?.name || '').trim();
     const mobile = String(contactData?.mobile || '').trim();
     if (!fullName || !mobile) return null;
@@ -455,7 +481,49 @@ export const useContactsStore = create((set, get) => ({
     return personId;
   },
 
+  addContactPersonAsync: async (companyId, contactData) => {
+    const fullName = String(contactData?.fullName || contactData?.name || '').trim();
+    const mobile = String(contactData?.mobile || '').trim();
+    if (!fullName || !mobile) return null;
+
+    if (useMockApi()) {
+      return get().addContactPersonLegacy(companyId, contactData);
+    }
+
+    const duplicateMatches = lookupMobileDomain(get().contacts, mobile);
+    try {
+      await ContactRepository.create({
+        fullName,
+        mobile,
+        email: String(contactData?.email || '').trim() || null,
+        companyId,
+        roleTitle: contactData?.jobPosition || contactData?.roleTitle || null,
+        isPrimary: Boolean(contactData?.isPrimary),
+        confirmDuplicate: duplicateMatches.length > 0,
+        payload: contactData?.gender ? { gender: contactData.gender } : {},
+      });
+      const company = await get().fetchCompanyById(companyId);
+      const normalized = normalizeMobile(mobile);
+      const created = company?.relatedPersons?.find(
+        (p) => normalizeMobile(p.mobile) === normalized,
+      );
+      return created?.id || null;
+    } catch (error) {
+      console.error('[contacts-store] addContactPersonAsync failed', error);
+      set({ error: error?.message || 'افزودن رابط ناموفق بود.' });
+      throw error;
+    }
+  },
+
   updateContactPerson: (companyId, contactPersonId, contactData) => {
+    if (!useMockApi()) {
+      void get().updateContactPersonAsync(companyId, contactPersonId, contactData);
+      return;
+    }
+    get().updateContactPersonLegacy(companyId, contactPersonId, contactData);
+  },
+
+  updateContactPersonLegacy: (companyId, contactPersonId, contactData) => {
     void commitContactServerFirst(get, set, companyId, (contact) => {
       const persons = contact.relatedPersons || [];
       if (!persons.some((p) => String(p.id) === String(contactPersonId))) return null;
@@ -476,13 +544,94 @@ export const useContactsStore = create((set, get) => ({
     });
   },
 
+  updateContactPersonAsync: async (companyId, contactPersonId, contactData) => {
+    if (useMockApi()) {
+      get().updateContactPersonLegacy(companyId, contactPersonId, contactData);
+      return contactPersonId;
+    }
+
+    const company = get().contacts.find((c) => String(c.id) === String(companyId));
+    let relationshipId = company?.relatedPersons?.find(
+      (p) => String(p.id) === String(contactPersonId),
+    )?.relationshipId;
+
+    if (!relationshipId) {
+      const items = await ContactRepository.listByCompany(companyId);
+      relationshipId = items.find(
+        (r) => String(r.contact?.id) === String(contactPersonId),
+      )?.id;
+    }
+    if (!relationshipId) {
+      throw new Error('ارتباط مخاطب با شرکت یافت نشد.');
+    }
+
+    try {
+      await ContactRepository.updateContact(contactPersonId, {
+        fullName: contactData.fullName,
+        mobile: contactData.mobile,
+        email: contactData.email,
+        payload: contactData.gender ? { gender: contactData.gender } : undefined,
+      });
+      await ContactRepository.updateRelationship(relationshipId, {
+        roleTitle: contactData.jobPosition || contactData.roleTitle,
+        ...(contactData.isPrimary !== undefined ? { isPrimary: Boolean(contactData.isPrimary) } : {}),
+      });
+      await get().fetchCompanyById(companyId);
+      return contactPersonId;
+    } catch (error) {
+      console.error('[contacts-store] updateContactPersonAsync failed', error);
+      set({ error: error?.message || 'ویرایش رابط ناموفق بود.' });
+      throw error;
+    }
+  },
+
   deleteContactPerson: (companyId, contactPersonId) => {
+    if (!useMockApi()) {
+      void get().deleteContactPersonAsync(companyId, contactPersonId);
+      return;
+    }
+    get().deleteContactPersonLegacy(companyId, contactPersonId);
+  },
+
+  deleteContactPersonLegacy: (companyId, contactPersonId) => {
     void commitContactServerFirst(get, set, companyId, (contact) => ({
       ...contact,
       relatedPersons: (contact.relatedPersons || []).filter(
         (person) => String(person.id) !== String(contactPersonId),
       ),
     }));
+  },
+
+  deleteContactPersonAsync: async (companyId, contactPersonId) => {
+    if (useMockApi()) {
+      get().deleteContactPersonLegacy(companyId, contactPersonId);
+      return true;
+    }
+
+    const company = get().contacts.find((c) => String(c.id) === String(companyId));
+    let relationshipId = company?.relatedPersons?.find(
+      (p) => String(p.id) === String(contactPersonId),
+    )?.relationshipId;
+
+    if (!relationshipId) {
+      const items = await ContactRepository.listByCompany(companyId);
+      relationshipId = items.find(
+        (r) => String(r.contact?.id) === String(contactPersonId),
+      )?.id;
+    }
+    if (!relationshipId) {
+      throw new Error('ارتباط مخاطب با شرکت یافت نشد.');
+    }
+
+    try {
+      await ContactRepository.endRelationship(relationshipId);
+      await get().fetchCompanyById(companyId);
+      return true;
+    } catch (error) {
+      console.error('[contacts-store] deleteContactPersonAsync failed', error);
+      set({ error: error?.message || 'حذف رابط ناموفق بود.' });
+      throw error;
+    }
   },
 
   /** Lookup helper for cross-module use (Nabz/Ofogh). */

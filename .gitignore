@@ -54,3 +54,6 @@ npm-debug.log*
 /test-results/
 /blob-report/
 /playwright/.cache/
+
+# Operator DB backups (local only — never commit dumps)
+backend/.operator-backups/

@@ -20,6 +20,8 @@ import attributeDefinitionRoutes from './routes/attributeDefinitions.js';
 import uomRoutes from './routes/uom.js';
 import brandRoutes from './routes/brands.js';
 import productRoutes from './routes/products.js';
+import identityRoutes from './routes/identity.js';
+import contactRoutes from './routes/contacts.js';
 
 // Keep existing AI rewrite endpoint (Liara) without duplication.
 import aiRoutes from '../../src/server/api/aiRoutes.js';
@@ -67,6 +69,8 @@ export function createApp() {
   app.use('/api/v1/uom', uomRoutes);
   app.use('/api/v1/brands', brandRoutes);
   app.use('/api/v1/products', productRoutes);
+  app.use('/api/v1/identity', identityRoutes);
+  app.use('/api/v1/contacts', contactRoutes);
   app.use('/api/ai', aiRoutes);
 
   app.use(notFound);

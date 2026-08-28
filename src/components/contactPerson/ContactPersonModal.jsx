@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Info, Trash2, X } from 'lucide-react';
 import { useContactsStore } from '../../stores/useContactsStore';
 import { isValidMobile } from '../../domain/contactPerson';
+import { useMockApi } from '../../api/useMockApi';
 import {
   CONTACT_PERSON_GENDERS,
   CONTACT_PERSON_JOB_POSITIONS,
@@ -32,10 +33,16 @@ export default function ContactPersonModal({
   onSaved,
   elevated = false,
 }) {
-  const addContactPerson = useContactsStore((s) => s.addContactPerson);
-  const updateContactPerson = useContactsStore((s) => s.updateContactPerson);
-  const deleteContactPerson = useContactsStore((s) => s.deleteContactPerson);
+  const addContactPersonAsync = useContactsStore((s) => s.addContactPersonAsync);
+  const updateContactPersonAsync = useContactsStore((s) => s.updateContactPersonAsync);
+  const deleteContactPersonAsync = useContactsStore((s) => s.deleteContactPersonAsync);
+  const addContactPersonLegacy = useContactsStore((s) => s.addContactPerson);
+  const updateContactPersonLegacy = useContactsStore((s) => s.updateContactPerson);
+  const deleteContactPersonLegacy = useContactsStore((s) => s.deleteContactPerson);
   const lookupMobile = useContactsStore((s) => s.lookupMobile);
+
+  const apiMode = !useMockApi();
+  const [saving, setSaving] = useState(false);
 
   // TODO: connect to RBAC — only managers/admins may delete ContactPersons
   const hasAdminPermission = true;
@@ -97,9 +104,9 @@ export default function ContactPersonModal({
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!canSubmit || !companyId) return;
+    if (!canSubmit || !companyId || saving) return;
 
     const payload = {
       fullName: String(form.fullName).trim(),
@@ -110,22 +117,46 @@ export default function ContactPersonModal({
       isPrimary: Boolean(form.isPrimary),
     };
 
-    if (isEdit) {
-      updateContactPerson(companyId, personId, payload);
-    } else {
-      addContactPerson(companyId, payload);
+    setSaving(true);
+    try {
+      if (apiMode) {
+        if (isEdit) {
+          await updateContactPersonAsync(companyId, personId, payload);
+        } else {
+          await addContactPersonAsync(companyId, payload);
+        }
+      } else if (isEdit) {
+        updateContactPersonLegacy(companyId, personId, payload);
+      } else {
+        addContactPersonLegacy(companyId, payload);
+      }
+      onSaved?.(payload);
+      onClose?.();
+    } catch {
+      // store sets error message
+    } finally {
+      setSaving(false);
     }
-    onSaved?.(payload);
-    onClose?.();
   };
 
-  const handleDelete = () => {
-    if (!isEdit || !companyId || !personId || !hasAdminPermission) return;
+  const handleDelete = async () => {
+    if (!isEdit || !companyId || !personId || !hasAdminPermission || saving) return;
     const label = String(form.fullName || '').trim() || 'این رابط';
     const ok = window.confirm(`حذف «${label}» قطعی است؟`);
     if (!ok) return;
-    deleteContactPerson(companyId, personId);
-    onClose?.();
+    setSaving(true);
+    try {
+      if (apiMode) {
+        await deleteContactPersonAsync(companyId, personId);
+      } else {
+        deleteContactPersonLegacy(companyId, personId);
+      }
+      onClose?.();
+    } catch {
+      // store sets error message
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -329,9 +360,9 @@ export default function ContactPersonModal({
               <button
                 type="submit"
                 className="contact-person-btn contact-person-btn--primary font-meem"
-                disabled={!canSubmit}
+                disabled={!canSubmit || saving}
               >
-                ذخیره
+                {saving ? 'در حال ذخیره…' : 'ذخیره'}
               </button>
             </div>
           </div>
