@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import OfoqRawLeadModal from './OfoqRawLeadModal';
 import OfoqKpis from './OfoqKpis';
-import OfoqToolbar from './OfoqToolbar';
 import OfoqPipelineBoard from './OfoqPipelineBoard';
 import ListPageLayout from '../../components/module/ListPageLayout';
 import ListToolbar from '../../components/module/ListToolbar';
@@ -24,8 +23,6 @@ const OFOGH_VIEWS = Object.freeze({
 export default function OfoqModule() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [globalQuery, setGlobalQuery] = useState('');
-  const [selectedStages, setSelectedStages] = useState([]);
-  const [globalDue, setGlobalDue] = useState(null);
   const [rawLeadModalOpen, setRawLeadModalOpen] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState(null);
   const canWriteLeads = useCan(PERMISSIONS.LEADS_WRITE);
@@ -98,45 +95,32 @@ export default function OfoqModule() {
           primaryDisabled={isLeads ? !canWriteLeads : true}
           primaryTitle={isLeads && !canWriteLeads ? 'شما مجوز ایجاد سرنخ را ندارید.' : undefined}
           filters={(
-            <div className="ofoq-toolbar-cluster" dir="rtl">
-              <nav className="ofoq-workspace-tabs" aria-label="حوزه‌های افق">
-                <button
-                  type="button"
-                  className={`ofoq-workspace-tabs__btn${isLeads ? ' is-active' : ''}`}
-                  aria-pressed={isLeads}
-                  data-testid="ofogh-tab-leads"
-                  onClick={() => setView(OFOGH_VIEWS.LEADS)}
-                >
-                  سرنخ‌ها
-                </button>
-                <button
-                  type="button"
-                  className={`ofoq-workspace-tabs__btn${!isLeads ? ' is-active' : ''}`}
-                  aria-pressed={!isLeads}
-                  data-testid="ofogh-tab-customers"
-                  onClick={() => setView(OFOGH_VIEWS.CUSTOMERS)}
-                >
-                  چرخه مشتری
-                </button>
-              </nav>
-              <OfoqToolbar
-                selectedStages={selectedStages}
-                onStagesChange={setSelectedStages}
-                dueFilter={globalDue}
-                onDueFilterChange={setGlobalDue}
-                entityScope={isLeads ? 'raw' : 'companies'}
-                onEntityScopeChange={() => {}}
-                hideEntityScope
-              />
-            </div>
+            <nav className="ofoq-workspace-tabs" aria-label="حوزه‌های افق">
+              <button
+                type="button"
+                className={`ofoq-workspace-tabs__btn${isLeads ? ' is-active' : ''}`}
+                aria-pressed={isLeads}
+                data-testid="ofogh-tab-leads"
+                onClick={() => setView(OFOGH_VIEWS.LEADS)}
+              >
+                سرنخ‌ها
+              </button>
+              <button
+                type="button"
+                className={`ofoq-workspace-tabs__btn${!isLeads ? ' is-active' : ''}`}
+                aria-pressed={!isLeads}
+                data-testid="ofogh-tab-customers"
+                onClick={() => setView(OFOGH_VIEWS.CUSTOMERS)}
+              >
+                چرخه مشتری
+              </button>
+            </nav>
           )}
         />
       )}
     >
       <OfoqPipelineBoard
         globalQuery={globalQuery}
-        selectedStages={selectedStages}
-        globalDue={globalDue}
         entityScope={isLeads ? 'raw' : 'companies'}
         boardMode={isLeads ? 'leads' : 'customers'}
         selectedLeadId={selectedLeadId}

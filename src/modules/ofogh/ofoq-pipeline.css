@@ -1,11 +1,3 @@
-/* —— Toolbar cluster: tabs + filters beside search —— */
-.ofoq-toolbar-cluster {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-}
-
 /* —— Workspace tabs: سرنخ‌ها | چرخه مشتری —— */
 .ofoq-workspace-tabs {
   display: inline-flex;
@@ -789,46 +781,6 @@
   color: var(--text-secondary);
 }
 
-/* ═══════════════════ نوار فیلتر سراسری بورد (سبک نبض) ═══════════════════ */
-
-.ofoq-filterbar {
-  gap: 0.75rem;
-  width: auto;
-  align-items: center;
-}
-
-.ofoq-filterbar__scope {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.15rem;
-  border-radius: 12px;
-  border: 1px solid var(--muted-border);
-  background: var(--glass-bg-strong);
-}
-
-.ofoq-filterbar__scope-btn {
-  border: none;
-  background: transparent;
-  padding: 0.35rem 0.65rem;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.ofoq-filterbar__scope-btn.is-active {
-  background: var(--muted-surface);
-  color: var(--text-primary);
-}
-
-.ofoq-filterbar__scope-btn:disabled,
-.ofoq-filterbar__stage-trigger:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 /* فیلتر افق داخل تولبار گلس است — نباید باکس گلس/فضای خالی جدا بسازد */
 .ofoq-pipeline .list-toolbar__filters {
   flex: 0 0 auto;
@@ -837,113 +789,6 @@
 
 .ofoq-pipeline .list-toolbar__buttons {
   margin-inline-start: auto;
-}
-
-.ofoq-filterbar__stage-select {
-  position: relative;
-}
-
-.ofoq-filterbar__stage-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.5rem 0.85rem;
-  border: 1px solid var(--muted-border);
-  border-radius: 12px;
-  background: var(--glass-bg-strong);
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-
-.ofoq-filterbar__stage-trigger:hover {
-  color: var(--text-primary);
-  border-color: var(--muted-border);
-}
-
-.ofoq-filterbar__stage-trigger.is-active {
-  color: var(--color-brand-red-glossy);
-  border-color: var(--danger-border);
-  background: var(--danger-surface);
-}
-
-.ofoq-filterbar__stage-popover {
-  /* پرتال روی body با مختصات fixed از JS — تا زیر بورد کانبان نرود */
-  position: fixed;
-  z-index: 90;
-  direction: rtl;
-  min-width: 13rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.55rem;
-  border-radius: 14px;
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  box-shadow:
-    var(--glass-inset-highlight-strong),
-    var(--shadow-md),
-    var(--shadow-lg);
-  animation: ofoq-fade-in 0.15s ease;
-}
-
-.ofoq-filterbar__group-title {
-  padding: 0.15rem 0.35rem;
-  font-size: 0.66rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  letter-spacing: 0.02em;
-}
-
-.ofoq-filterbar__stage-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: 9px;
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.ofoq-filterbar__stage-option:hover {
-  background: var(--muted-surface);
-}
-
-.ofoq-filterbar__stage-option input {
-  accent-color: var(--color-brand-red-glossy);
-}
-
-.ofoq-filterbar__stage-swatch {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.ofoq-filterbar__stage-clear {
-  align-self: flex-start;
-  margin-top: 0.25rem;
-  padding: 0.3rem 0.55rem;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  font-family: inherit;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--color-brand-red-glossy);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.ofoq-filterbar__stage-clear:hover {
-  background: var(--danger-surface);
 }
 
 /* ═══════════════════ مودال لید افق (Glassmorphism مرکزی) ═══════════════════ */
