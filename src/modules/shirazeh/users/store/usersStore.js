@@ -1,75 +1,89 @@
 import { create } from 'zustand';
-import { createEntityId, ENTITY_ID_PREFIX } from '../../../../domain/identity';
+import { UserRepository } from '../../../../api/repositories/UserRepository';
+import { getApiErrorMessage } from '../../../../api/apiErrors';
 
 /**
- * UI store for Shirazeh → Users management.
- * Mock-only until auth/user API exists.
- * User is platform identity — not part of Company/Order aggregates.
+ * UI controller for Shirazeh → Users.
+ * Cache only — all list/create/edit/status/password operations go through
+ * the canonical backend User API. No local user records.
  */
-
-const MOCK_USERS = [
-  {
-    id: 'u-1',
-    fullName: 'احسان محصصی',
-    mobile: '09121234567',
-    email: 'ehsan@jarian.local',
-    roleId: 'ceo',
-    lastLoginLabel: '۱۴۰۴/۰۵/۱۱ — ۰۹:۴۲',
-    status: 'active',
-    forcePasswordChange: false,
-  },
-  {
-    id: 'u-2',
-    fullName: 'علی',
-    mobile: '09138877665',
-    email: 'ali@jarian.local',
-    roleId: 'sales',
-    lastLoginLabel: '۱۴۰۴/۰۵/۱۰ — ۱۶:۱۸',
-    status: 'active',
-    forcePasswordChange: false,
-  },
-  {
-    id: 'u-3',
-    fullName: 'رضا',
-    mobile: '09105544332',
-    email: 'reza@jarian.local',
-    roleId: 'supply',
-    lastLoginLabel: '۱۴۰۴/۰۴/۲۸ — ۱۱:۰۵',
-    status: 'inactive',
-    forcePasswordChange: false,
-  },
-  {
-    id: 'u-4',
-    fullName: 'سارا نوری',
-    mobile: '09351234567',
-    email: 'sara@jarian.local',
-    roleId: 'ops',
-    lastLoginLabel: '۱۴۰۴/۰۵/۰۹ — ۰۸:۳۰',
-    status: 'active',
-    forcePasswordChange: true,
-  },
-];
 
 function emptyForm() {
   return {
-    fullName: '',
-    mobile: '',
-    email: '',
-    roleId: 'sales',
+    displayName: '',
+    username: '',
+    password: '',
+    roleCodes: [],
+    isActive: true,
+  };
+}
+
+function emptyPasswordForm() {
+  return { password: '' };
+}
+
+function readError(error, fallback) {
+  const data = error?.response?.data;
+  const message = getApiErrorMessage(error, fallback);
+  return {
+    message,
+    code: data?.error || error?.code || null,
   };
 }
 
 export const useUsersStore = create((set, get) => ({
-  users: structuredClone(MOCK_USERS),
+  users: [],
+  roles: [],
+  loading: false,
+  saving: false,
+  error: null,
+  errorCode: null,
+  loaded: false,
+
   modalOpen: false,
   editingUserId: null,
   form: emptyForm(),
+
+  passwordModalUserId: null,
+  passwordForm: emptyPasswordForm(),
+
+  loadUsers: async () => {
+    set({ loading: true, error: null, errorCode: null });
+    try {
+      const users = await UserRepository.listUsers();
+      set({ users: users || [], loaded: true, loading: false, error: null, errorCode: null });
+      return users;
+    } catch (error) {
+      const parsed = readError(error, 'بارگذاری کاربران ناموفق بود.');
+      set({
+        loading: false,
+        loaded: true,
+        error: parsed.message,
+        errorCode: parsed.code,
+      });
+      throw error;
+    }
+  },
+
+  loadRoles: async () => {
+    try {
+      const roles = await UserRepository.listRoles();
+      set({ roles: roles || [] });
+      return roles;
+    } catch (error) {
+      const parsed = readError(error, 'بارگذاری نقش‌ها ناموفق بود.');
+      set({ error: parsed.message, errorCode: parsed.code });
+      throw error;
+    }
+  },
 
   openAddModal: () =>
     set({
       modalOpen: true,
       editingUserId: null,
       form: emptyForm(),
+      error: null,
+      errorCode: null,
     }),
 
   openEditModal: (userId) => {
@@ -79,11 +93,14 @@ export const useUsersStore = create((set, get) => ({
       modalOpen: true,
       editingUserId: userId,
       form: {
-        fullName: user.fullName,
-        mobile: user.mobile,
-        email: user.email,
-        roleId: user.roleId,
+        displayName: user.displayName || '',
+        username: user.username || '',
+        password: '',
+        roleCodes: (user.roles || []).map((r) => r.code),
+        isActive: user.isActive !== false,
       },
+      error: null,
+      errorCode: null,
     });
   },
 
@@ -99,67 +116,144 @@ export const useUsersStore = create((set, get) => ({
       form: { ...state.form, [key]: value },
     })),
 
-  /**
-   * Explicit save — create or update from modal form.
-   * No auto-save.
-   */
-  saveUser: () => {
-    const { form, editingUserId, users } = get();
-    const fullName = String(form.fullName || '').trim();
-    const mobile = String(form.mobile || '').trim();
-    const email = String(form.email || '').trim();
-    const roleId = form.roleId || 'sales';
+  toggleFormRole: (code) =>
+    set((state) => {
+      const current = Array.isArray(state.form.roleCodes) ? state.form.roleCodes : [];
+      const next = current.includes(code)
+        ? current.filter((c) => c !== code)
+        : [...current, code];
+      return { form: { ...state.form, roleCodes: next } };
+    }),
 
-    if (!fullName || !mobile) return { ok: false, reason: 'required' };
+  saveUser: async () => {
+    const { form, editingUserId } = get();
+    const displayName = String(form.displayName || '').trim();
+    const username = String(form.username || '').trim();
+    const password = String(form.password || '');
+    const roleCodes = Array.isArray(form.roleCodes) ? form.roleCodes : [];
+    const isActive = form.isActive !== false;
 
-    if (editingUserId) {
-      set({
-        users: users.map((u) =>
-          (u.id === editingUserId
-            ? { ...u, fullName, mobile, email, roleId }
-            : u)),
+    if (!displayName) {
+      set({ error: 'نام نمایشی الزامی است.', errorCode: 'VALIDATION' });
+      return { ok: false, reason: 'required' };
+    }
+    if (!editingUserId && !username) {
+      set({ error: 'نام کاربری الزامی است.', errorCode: 'VALIDATION' });
+      return { ok: false, reason: 'required' };
+    }
+    if (!editingUserId && password.length < 8) {
+      set({ error: 'رمز عبور باید حداقل ۸ نویسه باشد.', errorCode: 'VALIDATION' });
+      return { ok: false, reason: 'password' };
+    }
+    if (!roleCodes.length) {
+      set({ error: 'حداقل یک نقش الزامی است.', errorCode: 'VALIDATION' });
+      return { ok: false, reason: 'roles' };
+    }
+
+    set({ saving: true, error: null, errorCode: null });
+    try {
+      if (editingUserId) {
+        const saved = await UserRepository.updateUser(editingUserId, {
+          displayName,
+          isActive,
+          roles: roleCodes,
+        });
+        set((state) => ({
+          users: state.users.map((u) => (u.id === saved.id ? saved : u)),
+          modalOpen: false,
+          editingUserId: null,
+          form: emptyForm(),
+          saving: false,
+        }));
+        return { ok: true, mode: 'edit', user: saved };
+      }
+
+      const saved = await UserRepository.createUser({
+        username,
+        displayName,
+        password,
+        roles: roleCodes,
+        isActive,
+      });
+      set((state) => ({
+        users: [saved, ...state.users.filter((u) => u.id !== saved.id)],
         modalOpen: false,
         editingUserId: null,
         form: emptyForm(),
-      });
-      return { ok: true, mode: 'edit' };
+        saving: false,
+      }));
+      return { ok: true, mode: 'create', user: saved };
+    } catch (error) {
+      const parsed = readError(error, 'ذخیره کاربر ناموفق بود.');
+      set({ saving: false, error: parsed.message, errorCode: parsed.code });
+      return { ok: false, reason: parsed.code, error: parsed.message };
     }
-
-    const next = {
-      id: createEntityId(ENTITY_ID_PREFIX.USER),
-      fullName,
-      mobile,
-      email,
-      roleId,
-      lastLoginLabel: '—',
-      status: 'active',
-      forcePasswordChange: true,
-    };
-
-    set({
-      users: [next, ...users],
-      modalOpen: false,
-      editingUserId: null,
-      form: emptyForm(),
-    });
-    return { ok: true, mode: 'create' };
   },
 
-  toggleUserStatus: (userId) =>
+  setUserActive: async (userId, isActive) => {
+    set({ saving: true, error: null, errorCode: null });
+    try {
+      const saved = await UserRepository.updateUser(userId, { isActive });
+      set((state) => ({
+        users: state.users.map((u) => (u.id === saved.id ? saved : u)),
+        saving: false,
+      }));
+      return { ok: true, user: saved };
+    } catch (error) {
+      const parsed = readError(error, 'تغییر وضعیت کاربر ناموفق بود.');
+      set({ saving: false, error: parsed.message, errorCode: parsed.code });
+      return { ok: false, reason: parsed.code, error: parsed.message };
+    }
+  },
+
+  toggleUserStatus: async (userId) => {
+    const user = get().users.find((u) => u.id === userId);
+    if (!user) return { ok: false, reason: 'USER_NOT_FOUND' };
+    return get().setUserActive(userId, !user.isActive);
+  },
+
+  openPasswordModal: (userId) =>
+    set({
+      passwordModalUserId: userId,
+      passwordForm: emptyPasswordForm(),
+    }),
+
+  closePasswordModal: () =>
+    set({
+      passwordModalUserId: null,
+      passwordForm: emptyPasswordForm(),
+    }),
+
+  setPasswordFormField: (key, value) =>
     set((state) => ({
-      users: state.users.map((u) => {
-        if (u.id !== userId) return u;
-        return {
-          ...u,
-          status: u.status === 'active' ? 'inactive' : 'active',
-        };
-      }),
+      passwordForm: { ...state.passwordForm, [key]: value },
     })),
 
-  /** Mark user to change password on next login. */
-  forcePasswordChange: (userId) =>
-    set((state) => ({
-      users: state.users.map((u) =>
-        (u.id === userId ? { ...u, forcePasswordChange: true } : u)),
-    })),
+  resetPassword: async () => {
+    const { passwordModalUserId, passwordForm } = get();
+    const password = String(passwordForm.password || '');
+    if (!passwordModalUserId) return { ok: false, reason: 'required' };
+    if (password.length < 8) {
+      set({ error: 'رمز عبور باید حداقل ۸ نویسه باشد.', errorCode: 'VALIDATION' });
+      return { ok: false, reason: 'password' };
+    }
+    set({ saving: true, error: null, errorCode: null });
+    try {
+      await UserRepository.resetPassword(passwordModalUserId, password);
+      set({
+        saving: false,
+        passwordModalUserId: null,
+        passwordForm: emptyPasswordForm(),
+      });
+      return { ok: true };
+    } catch (error) {
+      const parsed = readError(error, 'بازنشانی رمز عبور ناموفق بود.');
+      set({ saving: false, error: parsed.message, errorCode: parsed.code });
+      return { ok: false, reason: parsed.code, error: parsed.message };
+    }
+  },
+
+  clearError: () => set({ error: null, errorCode: null }),
 }));
+
+export default useUsersStore;

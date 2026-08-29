@@ -213,7 +213,6 @@ export const moduleData = {
   },
   shirazeh: {
     kpis: [
-      { label: 'کاربران فعال', value: '۲۴', trend: '+۲', trendDir: 'up', variant: 'accent' },
       { label: 'نقش‌های تعریف‌شده', value: '۸', trend: 'ثابت', trendDir: 'up' },
       { label: 'یکپارچه‌سازی‌ها', value: '۵', trend: '۱ جدید', trendDir: 'up' },
       { label: 'هشدار امنیتی', value: '۰', trend: 'ایمن', trendDir: 'up' },

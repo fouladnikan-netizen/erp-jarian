@@ -22,6 +22,7 @@ import brandRoutes from './routes/brands.js';
 import productRoutes from './routes/products.js';
 import identityRoutes from './routes/identity.js';
 import contactRoutes from './routes/contacts.js';
+import userRoutes from './routes/users.js';
 
 // Keep existing AI rewrite endpoint (Liara) without duplication.
 import aiRoutes from '../../src/server/api/aiRoutes.js';
@@ -71,6 +72,7 @@ export function createApp() {
   app.use('/api/v1/products', productRoutes);
   app.use('/api/v1/identity', identityRoutes);
   app.use('/api/v1/contacts', contactRoutes);
+  app.use('/api/v1/users', userRoutes);
   app.use('/api/ai', aiRoutes);
 
   app.use(notFound);
@@ -95,5 +97,6 @@ if (process.env.JARIAN_SKIP_LISTEN !== '1') {
     console.log(`[jarian-api] integrations: /api/v1/integrations`);
     console.log(`[jarian-api] correspondence: /api/v1/correspondence`);
     console.log(`[jarian-api] correspondence-types: /api/v1/correspondence-types`);
+    console.log(`[jarian-api] users: /api/v1/users`);
   });
 }

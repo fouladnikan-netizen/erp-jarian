@@ -36,6 +36,80 @@
   color: var(--text-secondary);
 }
 
+.shirazeh-users__kpi {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.shirazeh-users-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.shirazeh-users-banner--error {
+  color: var(--status-hesitant);
+  background: var(--warning-muted);
+  border: 1px solid var(--warning-border);
+}
+
+.shirazeh-users-banner__code {
+  font-family: var(--font-numeric);
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.shirazeh-users-banner__dismiss {
+  margin-inline-start: auto;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.shirazeh-users-readonly {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.shirazeh-users-table__empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.shirazeh-users-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.85rem;
+}
+
+.shirazeh-users-roles__empty {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.shirazeh-users-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.shirazeh-users-role input {
+  accent-color: var(--color-accent);
+}
+
 /* —— Shared glass buttons —— */
 .shirazeh-users-btn {
   display: inline-flex;
@@ -322,6 +396,12 @@
 .shirazeh-users-modal__select:focus {
   border-color: color-mix(in srgb, var(--color-accent) 45%, var(--surface));
   box-shadow: var(--accent-ring);
+}
+
+.shirazeh-users-modal__input:disabled,
+.shirazeh-users-modal__select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .shirazeh-users-modal__actions {

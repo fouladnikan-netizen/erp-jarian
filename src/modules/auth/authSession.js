@@ -5,6 +5,7 @@
  */
 
 import { ALL_PERMISSION_CODES } from '../../auth/permissions.catalog.js';
+import { useMockApi } from '../../api/useMockApi.js';
 
 const AUTH_TOKEN_KEY = 'jarian_auth_token';
 const AUTH_USER_KEY = 'jarian_auth_user';
@@ -74,7 +75,8 @@ export function subscribeAuthSession(fn) {
 }
 
 export function useMockAuth() {
-  return String(import.meta.env.VITE_USE_MOCK_API || '').toLowerCase() === 'true';
+  // Same production fail-safe as useMockApi — never mock-login in a production bundle.
+  return useMockApi();
 }
 
 export function getAuthToken() {

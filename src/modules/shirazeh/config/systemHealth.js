@@ -1,6 +1,7 @@
 /**
  * System health snapshot for Shirazeh dashboard cards.
- * Values are mock until monitoring APIs are wired.
+ * Non-user cards remain mock until monitoring APIs are wired.
+ * Active-user count is live (derived from canonical /api/v1/users).
  */
 
 export const SYSTEM_HEALTH_CARDS = [
@@ -15,8 +16,8 @@ export const SYSTEM_HEALTH_CARDS = [
   {
     id: 'users',
     label: 'کاربران فعال',
-    value: '۲۴',
-    hint: 'نشست جاری',
+    live: 'activeUsers',
+    hint: 'حساب‌های فعال',
     tone: 'accent',
     icon: 'Users',
   },
