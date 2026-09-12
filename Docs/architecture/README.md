@@ -6,6 +6,8 @@ Internal architecture docs for Jarian ERP. **No UX redesign.** Navigation/worksp
 
 ---
 
+**Start with the Phase 1 law:** [../ARCHITECTURE.md](../ARCHITECTURE.md) — 15 non-negotiable rules, target modular layout, Product SKU SSOT, master-data cascade policy.
+
 ## How to read these docs
 
 | Kind | How to use |
@@ -21,6 +23,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 
 ## Recommended reading order (new developers)
 
+0. [../ARCHITECTURE.md](../ARCHITECTURE.md) — Modular Monolith Phase 1 law (15 rules + catalog/sales/crm map)
 1. [../../README.md](../../README.md) — setup & module map  
 2. [../../CONTRIBUTING.md](../../CONTRIBUTING.md) — branches, checks, PR expectations  
 3. [CURSOR_RULES.md](./CURSOR_RULES.md) — mandatory theme + presentation + SSOT + entity pipeline rules  
@@ -42,6 +45,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 
 | Doc | Purpose |
 |-----|---------|
+| [../ARCHITECTURE.md](../ARCHITECTURE.md) | **Phase 1 law** — 15 rules, target domains, SKU SSOT, cascade policy |
 | [CURSOR_RULES.md](./CURSOR_RULES.md) | Index of `.cursor/rules` — mandatory vs contextual |
 | [01-CURRENT_INFORMATION_ARCHITECTURE.md](./01-CURRENT_INFORMATION_ARCHITECTURE.md) | Current IA (facts) |
 | [02-FUTURE_NAVIGATION_VISION.md](./02-FUTURE_NAVIGATION_VISION.md) | Target navigation — **not implemented** |
