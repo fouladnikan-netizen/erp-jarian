@@ -4,9 +4,11 @@ import { config } from './config.js';
 import { pool } from './db/pool.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 import { requestContext } from './middleware/requestContext.js';
+import { createCorsOptions } from './modules/shared/http/corsOptions.js';
+import { mountLegacyAiGateway } from './modules/shared/ai/legacyAiGateway.js';
 import authRoutes from './routes/auth.js';
 import companyRoutes from './routes/companies.js';
-import orderRoutes from './routes/orders.js';
+import { default as orderRoutes } from './modules/sales/presentation/orders.js';
 import leadRoutes from './routes/leads.js';
 import leadPipelineRoutes from './routes/leadPipelines.js';
 import activityRoutes from './routes/activities.js';
@@ -15,11 +17,11 @@ import taskRoutes from './routes/tasks.js';
 import integrationRoutes from './routes/integrations.js';
 import correspondenceRoutes from './routes/correspondence.js';
 import correspondenceTypeRoutes from './routes/correspondenceTypes.js';
-import productTaxonomyRoutes from './routes/productTaxonomy.js';
-import attributeDefinitionRoutes from './routes/attributeDefinitions.js';
-import uomRoutes from './routes/uom.js';
-import brandRoutes from './routes/brands.js';
-import productRoutes from './routes/products.js';
+import { default as productTaxonomyRoutes } from './modules/catalog/presentation/productTaxonomy.js';
+import { default as attributeDefinitionRoutes } from './modules/catalog/presentation/attributeDefinitions.js';
+import { default as uomRoutes } from './modules/catalog/presentation/uom.js';
+import { default as brandRoutes } from './modules/catalog/presentation/brands.js';
+import { default as productRoutes } from './modules/catalog/presentation/products.js';
 import identityRoutes from './routes/identity.js';
 import contactRoutes from './routes/contacts.js';
 import userRoutes from './routes/users.js';
@@ -27,14 +29,16 @@ import rbacRoutes from './routes/rbac.js';
 import organizationIdentityRoutes from './routes/organizationIdentity.js';
 import organizationRoutes from './routes/organization.js';
 import personaRoutes from './routes/personas.js';
-
-// Keep existing AI rewrite endpoint (Liara) without duplication.
-import aiRoutes from '../../src/server/api/aiRoutes.js';
+import { default as settingsReasonsRoutes } from './modules/settings/presentation/reasons.js';
 
 export function createApp() {
   const app = express();
 
-  app.use(cors({ origin: true, credentials: true }));
+  app.use(cors(createCorsOptions({
+    nodeEnv: config.nodeEnv,
+    appPublicUrl: config.appPublicUrl,
+    corsOrigins: config.corsOrigins,
+  })));
   // 20mb: correspondence attachments are stored as base64 JSON payloads
   // (DDL-23b), up to correspondenceService.MAX_ATTACHMENT_BYTES (15MB raw).
   app.use(express.json({ limit: '20mb' }));
@@ -68,7 +72,6 @@ export function createApp() {
   app.use('/api/v1/integrations', integrationRoutes);
   app.use('/api/v1/correspondence', correspondenceRoutes);
   app.use('/api/v1/correspondence-types', correspondenceTypeRoutes);
-  // Product Master (DDL-24) — Shirazeh taxonomy/attribute/UOM/Brand registries + Vitrin Product/SKU.
   app.use('/api/v1/product-taxonomy', productTaxonomyRoutes);
   app.use('/api/v1/attribute-definitions', attributeDefinitionRoutes);
   app.use('/api/v1/uom', uomRoutes);
@@ -81,7 +84,10 @@ export function createApp() {
   app.use('/api/v1/organization-identity', organizationIdentityRoutes);
   app.use('/api/v1/organization', organizationRoutes);
   app.use('/api/v1/personas', personaRoutes);
-  app.use('/api/ai', aiRoutes);
+  app.use('/api/v1/settings', settingsReasonsRoutes);
+
+  // Quarantined glue — not part of the modular graph. See modules/shared/ai.
+  mountLegacyAiGateway(app);
 
   app.use(notFound);
   app.use(errorHandler);
@@ -97,18 +103,7 @@ if (process.env.JARIAN_SKIP_LISTEN !== '1') {
     console.log(`[jarian-api] auth: POST /api/v1/auth/login`);
     console.log(`[jarian-api] companies: /api/v1/companies`);
     console.log(`[jarian-api] orders: /api/v1/orders`);
-    console.log(`[jarian-api] leads: /api/v1/leads`);
-    console.log(`[jarian-api] lead-pipelines: /api/v1/lead-pipelines`);
-    console.log(`[jarian-api] activities: /api/v1/activities`);
-    console.log(`[jarian-api] activity-types: /api/v1/activity-types`);
-    console.log(`[jarian-api] tasks: /api/v1/tasks`);
-    console.log(`[jarian-api] integrations: /api/v1/integrations`);
-    console.log(`[jarian-api] correspondence: /api/v1/correspondence`);
-    console.log(`[jarian-api] correspondence-types: /api/v1/correspondence-types`);
-    console.log(`[jarian-api] users: /api/v1/users`);
-    console.log(`[jarian-api] rbac: /api/v1/rbac`);
-    console.log(`[jarian-api] organization-identity: /api/v1/organization-identity`);
-    console.log(`[jarian-api] organization: /api/v1/organization`);
-    console.log(`[jarian-api] personas: /api/v1/personas`);
+    console.log(`[jarian-api] catalog: /api/v1/products`);
+    console.log(`[jarian-api] settings: /api/v1/settings`);
   });
 }

@@ -14,7 +14,7 @@ rbacPolicy:
   - products:manage-taxonomy
 databaseTable: product_groups, product_categories, product_types
 apiBasePath: /api/v1/product-taxonomy
-backendRepository: backend/src/repositories/productGroupRepository.js
+backendRepository: backend/src/modules/catalog/infrastructure/productGroupRepository.js
 frontendRepository: src/api/repositories/ProductTaxonomyRepository.js
 dependencies:
   - auth-user

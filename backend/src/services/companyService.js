@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { withTransaction } from '../db/pool.js';
 import { appError, fromZodError, notFoundError } from '../lib/errors.js';
+import { jsonRecord } from '../modules/shared/schemas/jsonRecord.js';
 import { newEntityId, writeAudit } from '../lib/ids.js';
 import * as companyRepo from '../repositories/companyRepository.js';
 import * as relationshipRepo from '../repositories/companyContactRelationshipRepository.js';
@@ -30,8 +31,18 @@ const createSchema = z.object({
   phone: z.string().trim().optional().nullable(),
   assigneeName: z.string().trim().optional().nullable(),
   assigneeRole: z.string().trim().optional().nullable(),
-  payload: z.record(z.string(), z.any()).optional(),
-  relatedPersons: z.array(z.record(z.string(), z.any())).optional(),
+  payload: z.object({
+    linkaIdentity: jsonRecord.optional(),
+  }).passthrough().optional(),
+  relatedPersons: z.array(z.object({
+    id: z.string().optional(),
+    fullName: z.string().optional(),
+    name: z.string().optional(),
+    role: z.string().optional(),
+    jobPosition: z.string().optional(),
+    mobile: z.string().optional(),
+    phone: z.string().optional(),
+  }).passthrough()).optional(),
   confirmDuplicate: z.boolean().optional().default(false),
 });
 

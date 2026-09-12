@@ -3,6 +3,7 @@ import {
   toDocumentOrganization,
 } from '../../domain/organizationIdentity';
 import { COMPANY_BRAND } from './proformaConfig';
+import { DOCUMENT_CHROME_TAGLINE } from '../../domain/settings/documentChrome.js';
 
 /**
  * Frozen copy of the pre-SSOT COMPANY_BRAND shape.
@@ -60,7 +61,7 @@ export function resolveSooratBarOrganization(stored) {
     return {
       tradeName: stored.tradeName || '',
       phone: stored.phone || '',
-      tagline: stored.tagline || COMPANY_BRAND.tagline,
+      tagline: stored.tagline || DOCUMENT_CHROME_TAGLINE,
     };
   }
   return {

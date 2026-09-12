@@ -14,7 +14,7 @@ rbacPolicy:
   - products:manage-taxonomy
 databaseTable: attribute_definitions, product_type_attributes
 apiBasePath: /api/v1/attribute-definitions
-backendRepository: backend/src/repositories/attributeDefinitionRepository.js
+backendRepository: backend/src/modules/catalog/infrastructure/attributeDefinitionRepository.js
 frontendRepository: src/api/repositories/AttributeDefinitionRepository.js
 dependencies:
   - product-taxonomy
