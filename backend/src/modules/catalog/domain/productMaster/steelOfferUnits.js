@@ -1,0 +1,145 @@
+/**
+ * Carbon-steel Product Type offer defaults (count / sales UOM).
+ * Runtime source of truth is PostgreSQL — do not import this from services,
+ * routes, RBAC, or UI. Seed is upsert-on-matching-types only.
+ *
+ * Operator table (2026-09-06): واحد عرضه = count, واحد فروش = sales.
+ * Type aliases: لوله جدارچاه → لوله جدار چاه; توری / توری فولادی → توری جوشی.
+ * IPE is the only type whose sales unit is شاخه; mesh uses متر مربع.
+ */
+
+export const TYPE_NAME_ALIASES = Object.freeze({
+  'لوله جدارچاه': 'لوله جدار چاه',
+  توری: 'توری جوشی',
+  'توری فولادی': 'توری جوشی',
+  'فلنج لبه‌دار (لپ جوینت)': 'فلنج لبه‌دار',
+});
+
+export const UOM_NAME_ALIASES = Object.freeze({
+  مترمربع: 'متر مربع',
+});
+
+export const RING_UOM = Object.freeze({
+  code: 'RING',
+  nameFa: 'حلقه',
+  category: 'COUNT',
+});
+
+export const STEEL_TYPE_OFFER_UNITS = Object.freeze([
+  Object.freeze({ typeName: 'میلگرد آلیاژی', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'میلگرد بستر', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'میلگرد کلاف', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'میلگرد حرارتی', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'میلگرد ساده', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'میلگرد آجدار', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'شفت', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'تیرآهن IPE', countUnitFa: 'شاخه', salesUnitFa: 'شاخه' }),
+  Object.freeze({ typeName: 'تیرآهن هاش', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ناودانی', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'نبشی', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'سپری', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق گالوانیزه', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق روغنی', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق گالوانیزه رنگی', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق آجدار فولادی', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق ضد سایش', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق ST52', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق پانچ', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق اسید شویی', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق ساده فولادی', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق A283', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق A36', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق Ck45', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'ورق A516', countUnitFa: 'برگ', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'تسمه فولادی', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'پروفیل مبلی', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'پروفیل', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'پروفیل صنعتی', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'پروفیل زد', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'پروفیل گالوانیزه', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'پروفیل چهارچوب', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'لوله مانیسمان', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'لوله درزدار', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'لوله تست آب', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'لوله تست گاز', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'لوله API', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'لوله گالوانیزه', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'لوله جدارچاه', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'لوله اسپیرال', countUnitFa: 'شاخه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'توری جوشی', countUnitFa: 'متر مربع', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'توری حصاری', countUnitFa: 'متر مربع', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'توری مرغی', countUnitFa: 'متر مربع', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'مش جوشی ساختمانی', countUnitFa: 'متر مربع', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'سیم فولادی', countUnitFa: 'حلقه', salesUnitFa: 'کیلوگرم' }),
+  Object.freeze({ typeName: 'زانو ۹۰ درجه مانیسمان', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'زانو ۴۵ درجه مانیسمان', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'زانو ۱۸۰ درجه مانیسمان (U-Bend)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'سه راهی مساوی مانیسمان', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'سه راهی تبدیلی مانیسمان', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'تبدیل هم‌مرکز مانیسمان', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'تبدیل غیرهم‌مرکز مانیسمان', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'کپ مانیسمان (درپوش)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'تبدیل لبه‌دار (استب اند)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'زانو ساکت‌ولد', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'سه راهی مساوی ساکت‌ولد', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'سه راهی تبدیلی ساکت‌ولد', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'کاپلینگ ساکت‌ولد (بوشن)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'نیم‌بوشن ساکت‌ولد', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره ماسوره ساکت‌ولد', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'کپ ساکت‌ولد', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'تردوولت / ساکوولت (اتصالات انشعابی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'زانو دنده‌ای فشار قوی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'سه راهی دنده‌ای فشار قوی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مغزی فشار قوی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'زانو دنده‌ای', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'سه راهی مساوی دنده‌ای', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'سه راهی تبدیلی دنده‌ای', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'چپقی دنده‌ای (زانو مغزی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مغزی دنده‌ای', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'بوشن دنده‌ای', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'تبدیل دنده‌ای (روپیچ توپیچ)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره ماسوره دنده‌ای', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'درپوش دنده‌ای (چهارگوش/شش‌گوش)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'فلنج گلودار جوشی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'فلنج اسلیپون (روکار)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'فلنج کور', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'فلنج ساکت‌ولد', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'فلنج دنده‌ای', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'فلنج لبه‌دار', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ شش‌گوش آچاری', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ آلن با سر (استوانه‌ای)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ آلن سرتخت (خزینه)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ آلن مغزی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ متری', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'استاد بولت (پیچ دو سر دنده)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ اطاقی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره شش‌گوش معمولی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره شش‌گوش سنگین (صنعتی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره قفلی (کاسه نمدی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره واشردار', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره کاسه‌دار (گنبدی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره پروانه‌ای (خروسکی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'مهره باریک (شش‌گوش نیم‌ارتفاع)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'واشر تخت معمولی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'واشر تخت پهن', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'واشر فنری', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'واشر ستاره‌ای (خورشیدی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'واشر چهارگوش (مخصوص نبشی/تیرآهن)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'رول بولت غلافی معمولی', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'رول بولت پروانه‌ای (مخصوص کناف)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'انکر بولت ال‌شکل (کاشت بتن)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'انکر بولت ضربه‌ای (تکه‌ای)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'رول بولت HSA / غلافی سنگین', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ سرمته‌ای واشردار (شیروانی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ سرمته‌ای سرتخت (خزینه)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ سرمته‌ای سرگرد (پانچی)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+  Object.freeze({ typeName: 'پیچ سازه به سازه (نوک مته‌ای)', countUnitFa: 'عدد', salesUnitFa: 'عدد' }),
+]);
+
+export function resolveTypeName(rawName) {
+  return TYPE_NAME_ALIASES[rawName] || rawName;
+}
+
+export function resolveUomName(rawName) {
+  return UOM_NAME_ALIASES[rawName] || rawName;
+}

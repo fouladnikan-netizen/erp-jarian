@@ -1,7 +1,9 @@
 /**
  * Canonical Organization Identity (DDL-28 / DDL-29) — Shirazeh-owned singleton.
  * Any document/UI that shows the operating company must read through this facade.
- * Do not keep a parallel COMPANY_BRAND / LETTER_ORG_LINE as live SSOT.
+ * Legal fields SSOT: GET/PUT /api/v1/organization-identity.
+ * Marketing tagline SSOT: backend/src/modules/settings/domain/documentChrome.js
+ * COMPANY_BRAND in nabz/proformaConfig is a deprecated compatibility view.
  */
 import {
   EMPTY_ORGANIZATION_IDENTITY,

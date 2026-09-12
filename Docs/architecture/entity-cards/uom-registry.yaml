@@ -14,7 +14,7 @@ rbacPolicy:
   - products:manage-taxonomy
 databaseTable: uom_registry, uom_conversions
 apiBasePath: /api/v1/uom
-backendRepository: backend/src/repositories/uomRepository.js
+backendRepository: backend/src/modules/catalog/infrastructure/uomRepository.js
 frontendRepository: src/api/repositories/UomRepository.js
 dependencies: []
 integrationPorts:

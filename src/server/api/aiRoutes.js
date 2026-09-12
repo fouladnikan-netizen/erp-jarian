@@ -1,3 +1,7 @@
+/**
+ * QUARANTINED glue — not a core backend module.
+ * Mount only via backend/src/modules/shared/ai/legacyAiGateway.js
+ */
 import { Router } from 'express';
 import { rewriteWithAI, extractAiContent } from '../services/aiService.js';
 

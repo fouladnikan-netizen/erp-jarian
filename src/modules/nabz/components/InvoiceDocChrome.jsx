@@ -1,6 +1,6 @@
 import headerBrand from '../../../assets/images/nikan-proforma-header.jpg';
 import { toPersianDigits, toPersianInvoiceText } from '../dateUtils';
-import { COMPANY_BRAND } from '../proformaConfig';
+import { DOCUMENT_CHROME_TAGLINE } from '../../../domain/settings/documentChrome.js';
 
 function orgFromViewModel(viewModel) {
   return viewModel?.organization && typeof viewModel.organization === 'object'
@@ -33,7 +33,7 @@ export function InvoiceDocBrandHeader({ viewModel }) {
               className="invoice-doc__brand-mark-img"
             />
           </div>
-          <p className="invoice-doc__tagline">{COMPANY_BRAND.tagline}</p>
+          <p className="invoice-doc__tagline">{DOCUMENT_CHROME_TAGLINE}</p>
           <div className="invoice-doc__company-ids">
             <span>شناسه ملی: {toPersianInvoiceText(org.nationalId)}</span>
             <span>شماره ثبت: {toPersianInvoiceText(org.registrationNumber)}</span>

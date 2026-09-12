@@ -14,7 +14,7 @@ rbacPolicy:
   - products:manage-brands
 databaseTable: brands
 apiBasePath: /api/v1/brands
-backendRepository: backend/src/repositories/brandRepository.js
+backendRepository: backend/src/modules/catalog/infrastructure/brandRepository.js
 frontendRepository: src/api/repositories/BrandRepository.js
 dependencies: []
 integrationPorts:

@@ -74,13 +74,8 @@ export function validatePaymentTerms(terms) {
   return null;
 }
 
-export const GATEWAY_CANCEL_REASONS = [
-  { value: 'high_price', label: 'قیمت بالا نسبت به بازار' },
-  { value: 'late_supply', label: 'عدم تامین به‌موقع کالا' },
-  { value: 'customer_withdraw', label: 'انصراف/تغییر تصمیم مشتری' },
-  { value: 'other', label: 'سایر موارد' },
-];
-
-export function getCancelReasonLabel(value) {
-  return GATEWAY_CANCEL_REASONS.find((item) => item.value === value)?.label || value;
-}
+/** UI view of settings SSOT — do not add a second cancel-reason list. */
+export {
+  GATEWAY_CANCEL_REASONS,
+  getCancelReasonLabel,
+} from '../../domain/settings/reasonRegistry.js';

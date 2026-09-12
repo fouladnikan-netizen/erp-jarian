@@ -1,23 +1,23 @@
+import {
+  DOCUMENT_CHROME_TAGLINE,
+  LEGACY_DOCUMENT_ORGANIZATION,
+} from '../../domain/settings/documentChrome.js';
+
 /**
- * Legacy operating-company chrome (pre–Organization Identity SSOT).
- *
- * Live documents must read Organization Identity (DDL-28 / DDL-29).
- * Keep this object only for:
- * - marketing tagline (not an Identity field)
- * - historical/issued documents that have no organizationSnapshot
- *
- * Do not treat this as a second SSOT. Bank rows below are a separate
- * multi-account list (case B) — not owned by Organization Identity.
+ * @deprecated Compatibility view — not SSOT.
+ * Legal fields: Organization Identity API (`organizationIdentityFacade`).
+ * Tagline: settings `documentChrome`.
+ * TODO(SSOT): remove remaining COMPANY_BRAND reads; use facade + DOCUMENT_CHROME_TAGLINE.
  */
 export const COMPANY_BRAND = {
-  name: 'پترو فولاد نیکان',
-  tagline: 'تأمین‌کننده تخصصی مقاطع فولادی، استنلس استیل و چوب روسی',
-  nationalId: '۱۴۰۱۳۹۹۸۰۵۵',
-  registrationNumber: '۶۴۲۴۹۰',
-  website: 'www.fouladnikan.com',
-  phone: '۰۲۱-۷۱۶۸۳۰۰۰',
-  postalCode: '۱۵۴۹۸۴۷۱۲۰',
-  address: 'تهران، بلوار میرداماد، خیابان مصدق جنوبی، کوچه تابان شرقی، پلاک ۳، واحد ۷',
+  name: LEGACY_DOCUMENT_ORGANIZATION.tradeName,
+  tagline: DOCUMENT_CHROME_TAGLINE,
+  nationalId: LEGACY_DOCUMENT_ORGANIZATION.nationalId,
+  registrationNumber: LEGACY_DOCUMENT_ORGANIZATION.registrationNumber,
+  website: LEGACY_DOCUMENT_ORGANIZATION.website,
+  phone: LEGACY_DOCUMENT_ORGANIZATION.phone,
+  postalCode: LEGACY_DOCUMENT_ORGANIZATION.postalCode,
+  address: LEGACY_DOCUMENT_ORGANIZATION.officialAddress,
 };
 
 /** Official operating-company bank accounts shown on Proforma (multi-account; not Identity SSOT). */
