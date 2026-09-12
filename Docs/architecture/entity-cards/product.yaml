@@ -6,16 +6,15 @@ ownerModule: vitrin
 aggregateRoot: Product
 ssot: postgresql
 clientState: zustand-cache
-lifecycle: "ACTIVE / INACTIVE. SKU immutable after creation (backend-generated, never included in any UPDATE). Inactive Products remain historically resolvable and are not selectable for new transactions, but are never hard-deleted. Lifecycle changes are audited."
-archivePolicy: soft-delete
+lifecycle: "ACTIVE / INACTIVE. SKU immutable after creation (backend-generated mnemonic `{group}-{category}-{type}-{identityValue…}`, DDL-24m). Unused Products (not referenced by any Order line, including archived) may be hard-deleted (DDL-24n). In-use Products remain historically resolvable; deactivate instead. Lifecycle and delete are audited."
+archivePolicy: hard-delete
 auditPolicy: append-only
 rbacPolicy:
   - products:read
   - products:write
   - products:lifecycle
-  - products:manage-relationships
   - products:bulk-import
-databaseTable: products, product_attribute_values, product_sku_counters, product_relationships, product_bulk_import_batches
+databaseTable: products, product_attribute_values, product_allowed_attribute_values, product_sku_counters, product_bulk_import_batches
 apiBasePath: /api/v1/products
 backendRepository: backend/src/repositories/productRepository.js
 frontendRepository: src/api/repositories/ProductRepository.js
@@ -31,5 +30,21 @@ integrationPorts:
 updatePolicy: SERVER_FIRST
 ddlRefs:
   - DDL-24
-migrationSafety: "017_product_master_products.sql + 018_product_master_bulk_import.sql, expand-only. sku has DB-level UNIQUE constraint, generated atomically via product_sku_counters (per-Product-Type variant sequence, INSERT..ON CONFLICT DO UPDATE..RETURNING, same pattern as correspondence_number_counters DDL-23a) in the GG-CC-TT-VV 8-digit format (DDL-24b). canonical_identity_key has DB-level UNIQUE constraint for exact-duplicate blocking (DDL-24d), computed from Product Type + normalized identity-relevant Master Attribute values (Persian/Latin numeral folding, numeric-format folding). Product names are generated (Product Type + ordered identity/display attributes) with a controlled displayNameOverride column that never feeds duplicate detection. weight_profile_type/weight_profile_coefficients model FIXED/PER_LENGTH/DIMENSIONAL/MANUAL_ACTUAL (DDL-24f). product_relationships models ALTERNATIVE/SUBSTITUTE/SUBSTITUTE_WITH_CONVERSION with self-link + duplicate-relation rejection. product_bulk_import_batches records every DRY_RUN/APPLY run for audit (DDL-24g)."
-notes: "DDL-24, DDL-24(b)-(h). catalogData.js (src/modules/vitrin/catalogData.js) stays a static, shape-compatible shim for the frozen Nabz product picker (src/modules/nabz/vitrinCategories.js) and Kanoon's supplier-capability suggestions — it is NOT this table's source of truth and must not be extended with new mock rows (DDL-24a). Nabz is not modified and has no FK into this table in this phase; see Docs/architecture/product-master-nabz-future-contract.md for the future Order Line contract."
+  - DDL-45
+  - DDL-46
+  - DDL-47
+  - DDL-49
+  - DDL-50
+  - DDL-55
+  - DDL-56
+  - DDL-57
+  - DDL-59
+  - DDL-60
+  - DDL-61
+  - DDL-62
+  - DDL-63
+  - DDL-64
+  - DDL-65
+  - DDL-66
+migrationSafety: "017_product_master_products.sql + 018_product_master_bulk_import.sql + 042 mnemonic sku_code on taxonomy + 045 product_allowed_attribute_values (DDL-45, kept) + 046 type-level value_scope/override_allowed_values (DDL-46, expand-only, no SKU rewrite) + 047 unit_weight/custom_length_allowed (count/sales reuse base_uom_id/sales_uom_id) + 053 drops product_relationships (DDL-59). sku UNIQUE. Issued SKU is `{groupSku}-{categorySku}-{typeSku}-{identityValue…}` from PRODUCT identity attributes (numeric + required ENUM, DDL-50). canonical_identity_key UNIQUE from Product Type + identity attribute values. TRANSACTION values are not stored on Product. Offer settings are copied from Product Type at create and then owned by the Product (DDL-47). Type-binding override_default_value may appear in generated_name when the live value is empty (DDL-55); mill-sheet sheet_length may use the width×thickness catalog (DDL-56). TRANSACTION defaults are not persisted on Product. تسمه فولادی mill width (`strip_width`) is required PRODUCT identity with thickness (DDL-57)."
+notes: "DDL-24, DDL-24(b) superseded for Product SKU format by DDL-24(m), DDL-24(c)-(h), DDL-24(n), DDL-24(p) required=identity superseded by DDL-46, DDL-45 product-form multi-select superseded by DDL-46, DDL-47 offer units, DDL-59 retires product_relationships. catalogData.js stays a static shim (DDL-24a). Brand is not concatenated into Product SKU. Order references are scanned from payload.items (no product_id FK yet). API aliases countUnitId→baseUomId, salesUnitId→salesUomId. DDL-52 GET/search derive generatedName from the live Type rule; stored generated_name is cache only. DDL-55 binding default is display/order-time only for TRANSACTION attributes. DDL-56 mill-sheet millimetre length is TRANSACTION and never identity. DDL-57 steel-flat mill width is PRODUCT identity on تسمه فولادی. DDL-60: operator catalog is Postgres + git snapshot, not test data. DDL-62: seamed/seamless welded fittings identity is Type shape + required PRODUCT fitting_material; size/sch are TRANSACTION, not cartesian SKUs (seamless 9×4=36). DDL-63: forged/threaded/flange fittings identity is Type + fitting_material; forged_class ≠ sch; flange_class ≠ sch ≠ forged_class; threaded class is optional Offer Variant (44+36+24 Products). DDL-64: fasteners identity is Type + required PRODUCT fastener_grade; metric size is TRANSACTION; millimetre length is TRANSACTION `length_mm` (DDL-66, not sheet_length). DDL-65: Russian wood identity is footboard thickness×width×stock length (10) and plywood thickness-only (44); 1220×2440 is TRANSACTION Offer Variant, never SKU; footboard metre length reuses `length` as PRODUCT required (DDL-66). DDL-66: shared Attribute Definition vocabulary — CREATE class + length_mm; wave duplicates deactivate; do not delete Products; frame_model→kind is Type-split debt."

@@ -1,22 +1,33 @@
 /**
- * Dev-only cleanup: wipes Product Master test/benchmark cruft (Groups,
- * Categories, Types, Products, and their 2-digit taxonomy code counters)
- * accumulated from repeated integration-test / benchmark runs against the
- * LOCAL dev database, then resets the atomic code counters so the
- * 99-per-scope ceiling (Task 3, DDL-24b) has room again.
+ * DANGER — wipes the ENTIRE Product Master catalog (operator rows included).
+ * This is not a test after-hook. Do not run against a live operator database.
+ *
+ * Integration tests must delete the ids they created
+ * (`productMasterFixtures.js`), not this script.
  *
  * Does NOT touch: users, roles, companies, orders, leads, activities, tasks,
- * correspondence, or any Nabz table — Product Master tables only.
+ * correspondence, attribute definitions, brands, or UOM.
  *
- * Run manually: node scripts/reset-product-master-test-data.js
+ * Requires JARIAN_WIPE_PRODUCT_MASTER=YES. Blocked when NODE_ENV=production.
+ *
+ *   JARIAN_WIPE_PRODUCT_MASTER=YES node backend/scripts/reset-product-master-test-data.js
  */
 import { pool } from '../src/db/pool.js';
+import { config } from '../src/config.js';
 
 async function main() {
+  if (config.nodeEnv === 'production') {
+    console.error('[reset] BLOCKED: refuse to wipe Product Master when NODE_ENV=production');
+    process.exit(1);
+  }
+  if (process.env.JARIAN_WIPE_PRODUCT_MASTER !== 'YES') {
+    console.error('[reset] BLOCKED: set JARIAN_WIPE_PRODUCT_MASTER=YES to wipe the operator catalog');
+    process.exit(1);
+  }
   await pool.query('BEGIN');
   try {
-    await pool.query('DELETE FROM product_relationships');
     await pool.query('DELETE FROM product_attribute_values');
+    await pool.query('DELETE FROM product_allowed_attribute_values');
     await pool.query('DELETE FROM products');
     await pool.query('DELETE FROM product_sku_counters');
     await pool.query('DELETE FROM product_type_attributes');
@@ -26,7 +37,7 @@ async function main() {
     await pool.query('DELETE FROM product_taxonomy_code_counters');
     await pool.query('DELETE FROM product_bulk_import_batches');
     await pool.query('COMMIT');
-    console.log('[reset] Product Master test data cleared; taxonomy code counters reset to empty.');
+    console.log('[reset] Product Master catalog cleared; taxonomy code counters reset.');
   } catch (err) {
     await pool.query('ROLLBACK');
     throw err;

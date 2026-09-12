@@ -230,12 +230,12 @@ export async function hydrateAuthProfile() {
  * Real backend: POST /api/v1/auth/login (Vite proxies /api → :3100).
  * Set VITE_USE_MOCK_API=true to keep offline mock login.
  */
-export async function authenticate({ username, password }) {
-  const trimmedUser = String(username || '').trim();
+export async function authenticate({ mobile, username, password }) {
+  const trimmedUser = String(mobile || username || '').trim();
   const trimmedPass = String(password || '');
 
   if (!trimmedUser || !trimmedPass) {
-    const error = new Error('شناسه کاربری و رمز عبور الزامی است.');
+    const error = new Error('شماره موبایل و رمز عبور الزامی است.');
     error.code = 'VALIDATION';
     throw error;
   }
@@ -244,7 +244,7 @@ export async function authenticate({ username, password }) {
     const response = await fetch('/api/v1/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: trimmedUser, password: trimmedPass }),
+      body: JSON.stringify({ mobile: trimmedUser, username: trimmedUser, password: trimmedPass }),
     });
 
     let data = null;

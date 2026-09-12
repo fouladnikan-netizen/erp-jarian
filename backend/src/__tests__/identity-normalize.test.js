@@ -25,6 +25,11 @@ describe('identity normalize (DDL-25)', () => {
     assert.equal(r.normalized, '09121234567');
   });
 
+  it('normalizes +98 and 0098 to domestic 09', () => {
+    assert.equal(normalizeMobile('+989121234567').normalized, '09121234567');
+    assert.equal(normalizeMobile('00989121234567').normalized, '09121234567');
+  });
+
   it('normalizes email', () => {
     const r = normalizeEmail('  Test@Example.COM ');
     assert.equal(r.ok, true);

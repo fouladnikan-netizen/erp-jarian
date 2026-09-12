@@ -13,9 +13,11 @@ describe('users display helpers', () => {
     ])).toBe('مدیر سیستم، کارشناس فروش');
   });
 
-  it('renders status from isActive', () => {
+  it('renders status from account status or isActive', () => {
     expect(formatUserStatus(true)).toBe('فعال');
     expect(formatUserStatus(false)).toBe('غیرفعال');
+    expect(formatUserStatus('INVITED')).toBe('دعوت‌شده');
+    expect(formatUserStatus('ACTIVE')).toBe('فعال');
   });
 
   it('counts active users from real list data', () => {
@@ -23,6 +25,8 @@ describe('users display helpers', () => {
       { isActive: true },
       { isActive: false },
       { isActive: true },
-    ])).toBe(2);
+      { status: 'INVITED', isActive: true },
+      { status: 'ACTIVE' },
+    ])).toBe(3);
   });
 });

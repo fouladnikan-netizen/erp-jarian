@@ -24,7 +24,7 @@ DDL-24a…h), `Docs/architecture/entity-cards/product.yaml`.
   `/api/v1/brands`.
 - **Vitrin** owns the real Product/SKU aggregate: `products` (SKU, generated
   name, lifecycle, canonical identity, UOM/weight-profile config),
-  `product_attribute_values`, `product_relationships`,
+  `product_attribute_values`,
   `product_bulk_import_batches`. API under `/api/v1/products`.
 - **Nabz** still reads product/category data exclusively from the frozen,
   static compatibility shim `src/modules/vitrin/catalogData.js` via
@@ -51,9 +51,9 @@ final naming is Nabz's call at implementation time):
 | `productNameSnapshot` | text, captured at line-creation time | Generated/override display name at the time of order creation — for printing/historical display; the live Product name may change (override edits) after the order is placed. |
 | `brandId` | FK → Shirazeh `brands.id`, nullable | Brand is selected **per transaction**, independent of Product identity (brand is explicitly not part of Product SKU identity — DDL-24d). |
 | `brandNameSnapshot` | text, nullable | Same snapshot rationale as `productNameSnapshot`. |
-| `transactionUomId` | FK → Shirazeh `uom_registry.id` | The UOM this specific transaction is quoted/sold/purchased in — may differ from the Product's `base_uom_id` (e.g. sold in شاخه, base tracked in KG); use `uom_conversions` to reconcile for reporting. |
+| `transactionUomId` | FK → Shirazeh `uom_registry.id` | Defaults to the Product's sales unit (`sales_uom_id` / `salesUnitId`). May differ from the Product's count unit (`base_uom_id`). Do not invent a line-level unit picker until a later UOM phase. |
 | `quantity` | numeric | In `transactionUomId` terms. |
-| `customAttributeValues` | JSONB, nullable | Values for attributes bound to the Product's Type with `attribute_role = TRANSACTION_ONLY` or `TRANSACTION_OVERRIDE_ALLOWED` (see §3) — e.g. a one-off cut length. **Never** written back into Vitrin's `product_attribute_values`; this is Nabz-only, transaction-scoped data. |
+| `customAttributeValues` | JSONB, nullable | Values for attributes bound to the Product's Type with `value_scope = TRANSACTION` (see §3) — e.g. a one-off cut length. **Never** written back into Vitrin's `product_attribute_values`; this is Nabz-only, transaction-scoped data. |
 | `actualWeightKg` | numeric, nullable | Real measured/settled weight for this transaction, entered at fulfillment time. |
 | `theoreticalWeightSnapshotKg` | numeric, nullable | Snapshot of the Product's weight-profile-computed theoretical weight *at the time the line was created* (see §4) — kept only as a historical reference point, never treated as authoritative once `actualWeightKg` exists. |
 
@@ -69,28 +69,69 @@ Vitrin's Product master weight-profile coefficients.
 
 ## 3. Master vs Transactional attribute resolution at order-entry time
 
-Shirazeh's `product_type_attributes.attribute_role` (`MASTER_ONLY` /
-`TRANSACTION_OVERRIDE_ALLOWED` / `TRANSACTION_ONLY`) already exists today and
-is queryable via `GET /api/v1/attribute-definitions/schema/:productTypeId`.
+Shirazeh's Product Type binding now has an explicit **Value Scope**
+(`product_type_attributes.value_scope` ∈ `PRODUCT` | `TRANSACTION`, DDL-46).
+Legacy `attribute_role` is kept in sync (`PRODUCT`→`MASTER_ONLY`,
+`TRANSACTION`→`TRANSACTION_ONLY`) and remains queryable via
+`GET /api/v1/attribute-definitions/schema/:productTypeId`.
 The future Nabz order-entry UI should, for the selected Product's Type:
 
-1. **`MASTER_ONLY`** attributes — display read-only (from the Product's
-   `product_attribute_values`); never editable on the order line.
-2. **`TRANSACTION_OVERRIDE_ALLOWED`** attributes — pre-fill from the Product's
-   master value, but allow the order line to override with a
-   transaction-specific value (stored in the line's `customAttributeValues`,
-   never written back to the Product master).
-3. **`TRANSACTION_ONLY`** attributes — never have a master value at all
-   (Shirazeh already rejects binding these as `is_identity_relevant`, DDL-24h);
-   always collected fresh per order line into `customAttributeValues`.
+1. **`PRODUCT` scope** — display read-only from the Product's
+   `product_attribute_values` (already chosen when the SKU was registered).
+   Never collect again on the order line. Required PRODUCT attributes were
+   mandatory at Product create; they are **not** automatically SKU identity.
+2. **`TRANSACTION` scope** — never stored on Product (Vitrin rejects them on
+   master write). Always collected per order line into `customAttributeValues`.
+   If the binding is `is_required`, the order line must have a value (this
+   validation is deferred until Nabz is unfrozen). TRANSACTION can never be
+   identity/SKU (DDL-24h).    If the binding has `override_default_value`
+   (DDL-55 «پیش‌فرض»), preselect that value on the line; the operator may
+   change it among the type's allowed options or an entered number. Leaving
+   it unchanged applies the default. Do **not** write that default back onto
+   the Product. Mill-sheet `sheet_length` (طول ورق, میل) preselects from the
+   width×thickness domain catalog when the live value is empty (DDL-56);
+   an entered millimetre length still wins.
+3. **ENUM option lists (DDL-46)** — do **not** render the full
+   `definition.allowedValues` catalog as the dropdown. Use the binding's
+   `effectiveAllowedValues` (type-level subset of the global catalog; empty
+   override inherits the catalog). Resolve with `src/modules/vitrin/public`
+   (`effectiveEnumOptions` / `resolveTypeAllowedValues`). Backend Order
+   validation (when Nabz is unfrozen) must reject a line ENUM that is not in
+   that type list — JSX-only filtering is not a security boundary.
+   Leftover `product.allowedAttributeValues` (DDL-45) is not the operator path.
 
 This is exactly the mechanism that implements the contract's **custom-size
 product strategy**: e.g. a Product Type "ورق سیاه" has `thickness`/`width` as
-`MASTER_ONLY` (they define which Product/SKU was selected), while a one-off
-`cutLength`/`customDimensions` attribute is bound as `TRANSACTION_ONLY` — a
-customer asking for "ورق سیاه 20mm 250×200mm" or "تیرآهن 14 طول 7.5m" does
-**not** force a new Product/SKU; the order line just carries the custom
-length/dimension as transaction data against the existing standard Product.
+`PRODUCT` (they define which Product was selected; they join SKU only when
+`is_identity_relevant`), while a one-off `cutLength`/`customDimensions`
+attribute is bound as `TRANSACTION` — a customer asking for "ورق سیاه 20mm
+250×200mm" or "تیرآهن 14 طول 7.5m" does **not** force a new Product/SKU; the
+order line just carries the custom length/dimension as transaction data
+against the existing standard Product.
+
+Grade example: global ENUM `grade`; میلگرد آجدار binding `Required=true`,
+`Scope=PRODUCT`, `Allowed=A2,A3,A4`. Vitrin stores one of those on the
+Product. The order line does not re-pick grade.
+
+### Offer settings (DDL-47) — consume, do not define
+
+After Product selection, Nabz reads Product offer fields via
+`src/modules/vitrin/public` (`resolveProductOfferSettings` /
+`isCustomLengthAllowed`). The order form must **not** show «واحد و عرضه»
+as settings:
+
+- Count unit (`base_uom_id` / `countUnitId`) — display only.
+- Sales unit (`sales_uom_id` / `salesUnitId`) — default `transactionUomId`.
+- `unitWeight` — read if present (commercial unit weight; separate from
+  `weight_profile_*`).
+- `customLengthAllowed` — if false, do not accept a free length outside the
+  Product's rules. If true, a custom length may be collected as transaction
+  data (the TRANSACTION length attribute in §3 remains the structured path
+  when that binding exists).
+
+Type defaults copy onto the Product at `createProduct` (including future
+order-time find-or-create SKU). Changing Type defaults later does not
+mutate existing Products.
 
 ---
 
@@ -107,10 +148,10 @@ When implemented, Nabz's order-entry flow should:
 1. Read the Product's `weight_profile_type` + `weight_profile_coefficients`.
 2. For `FIXED` → use `fixedWeightKg` directly per commercial unit.
 3. For `PER_LENGTH` → `weightPerMeterKg × requested length` (requested length
-   itself may be a `TRANSACTION_ONLY` attribute per §3, e.g. تیرآهن custom
+   itself may be a `TRANSACTION` attribute per §3, e.g. تیرآهن custom
    length 7.5m).
 4. For `DIMENSIONAL` → `density × thickness × width × length` (with
-   thickness/width possibly `MASTER_ONLY`, length possibly transaction-scoped
+   thickness/width possibly `PRODUCT` scope, length possibly transaction-scoped
    — e.g. ورق سیاه custom-cut sheet).
 5. For `MANUAL_ACTUAL` → there is no useful theoretical value; skip straight
    to requiring `actualWeightKg` at fulfillment.
@@ -128,7 +169,9 @@ When implemented, Nabz's order-entry flow should:
   `src/modules/vitrin/public/productPickerFacade.js`, wrapping
   `ProductRepository.searchProducts`), never `ProductRepository` or
   `products` directly from inside `src/modules/nabz/**` (module-boundary
-  rule: cross-module access only via ports/facades).
+  rule: cross-module access only via ports/facades). ENUM pickers on the
+  line (grade, etc.) must use `src/modules/vitrin/public` + the Product's
+  `allowedAttributeValues` (DDL-45), not a hardcoded per-type list.
 - Brand selection would call `BrandRepository.listBrands` /
   `checkDuplicate`/`createBrand` similarly through a Shirazeh-facing public
   facade — the Brand Registry API is already shaped to support a future
@@ -173,7 +216,8 @@ not reintroduce that anti-pattern in a new form.
   or `src/modules/nabz/**` file.
 - No implementation of any endpoint described in §2–§6 above.
 - No change to Order Line's current shape or to `createLineItemFromProduct`
-  in `src/modules/nabz/createOrder.js`.
+  in `src/modules/nabz/createOrder.js`. Consume Product offer settings through
+  `src/modules/vitrin/public` when Nabz is unfrozen (DDL-47).
 
 Everything in this document is a forward-looking design note only, to be
 picked up as its own dedicated, DDL-gated piece of work when Nabz is

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { UserRepository } from '../../../../api/repositories/UserRepository';
+import { OrganizationRepository } from '../../../../api/repositories/OrganizationRepository';
 import { getApiErrorMessage } from '../../../../api/apiErrors';
+import { normalizeUserMobile, normalizeUserEmail } from '../../../../domain/userAccount/normalize';
 
 /**
  * UI controller for Shirazeh → Users.
@@ -10,11 +12,13 @@ import { getApiErrorMessage } from '../../../../api/apiErrors';
 
 function emptyForm() {
   return {
-    displayName: '',
-    username: '',
-    password: '',
+    fullName: '',
+    mobile: '',
+    email: '',
+    unitId: '',
+    positionId: '',
     roleCodes: [],
-    isActive: true,
+    status: 'INVITED',
   };
 }
 
@@ -34,6 +38,8 @@ function readError(error, fallback) {
 export const useUsersStore = create((set, get) => ({
   users: [],
   roles: [],
+  units: [],
+  positions: [],
   loading: false,
   saving: false,
   error: null,
@@ -77,14 +83,33 @@ export const useUsersStore = create((set, get) => ({
     }
   },
 
-  openAddModal: () =>
+  loadOrganizationOptions: async () => {
+    try {
+      const [units, positions] = await Promise.all([
+        OrganizationRepository.listUnits(),
+        OrganizationRepository.listPositions(),
+      ]);
+      set({
+        units: (units || []).filter((u) => u.isActive !== false),
+        positions: positions || [],
+      });
+    } catch (error) {
+      const parsed = readError(error, 'بارگذاری ساختار سازمانی ناموفق بود.');
+      set({ error: parsed.message, errorCode: parsed.code });
+      throw error;
+    }
+  },
+
+  openAddModal: () => {
     set({
       modalOpen: true,
       editingUserId: null,
       form: emptyForm(),
       error: null,
       errorCode: null,
-    }),
+    });
+    void get().loadOrganizationOptions().catch(() => {});
+  },
 
   openEditModal: (userId) => {
     const user = get().users.find((u) => u.id === userId);
@@ -93,15 +118,18 @@ export const useUsersStore = create((set, get) => ({
       modalOpen: true,
       editingUserId: userId,
       form: {
-        displayName: user.displayName || '',
-        username: user.username || '',
-        password: '',
+        fullName: user.fullName || user.displayName || '',
+        mobile: user.mobile || '',
+        email: user.email || '',
+        unitId: user.organization?.unitId || '',
+        positionId: user.organization?.positionId || '',
         roleCodes: (user.roles || []).map((r) => r.code),
-        isActive: user.isActive !== false,
+        status: user.status || (user.isActive === false ? 'INACTIVE' : 'ACTIVE'),
       },
       error: null,
       errorCode: null,
     });
+    void get().loadOrganizationOptions().catch(() => {});
   },
 
   closeModal: () =>
@@ -112,9 +140,16 @@ export const useUsersStore = create((set, get) => ({
     }),
 
   setFormField: (key, value) =>
-    set((state) => ({
-      form: { ...state.form, [key]: value },
-    })),
+    set((state) => {
+      const form = { ...state.form, [key]: value };
+      if (key === 'unitId' && value !== state.form.unitId) {
+        const stillValid = (state.positions || []).some(
+          (p) => p.id === form.positionId && p.unitId === value,
+        );
+        if (!stillValid) form.positionId = '';
+      }
+      return { form };
+    }),
 
   toggleFormRole: (code) =>
     set((state) => {
@@ -127,36 +162,45 @@ export const useUsersStore = create((set, get) => ({
 
   saveUser: async () => {
     const { form, editingUserId } = get();
-    const displayName = String(form.displayName || '').trim();
-    const username = String(form.username || '').trim();
-    const password = String(form.password || '');
+    const fullName = String(form.fullName || '').trim();
     const roleCodes = Array.isArray(form.roleCodes) ? form.roleCodes : [];
-    const isActive = form.isActive !== false;
+    const mobileParsed = normalizeUserMobile(form.mobile);
+    const emailParsed = normalizeUserEmail(form.email);
 
-    if (!displayName) {
-      set({ error: 'نام نمایشی الزامی است.', errorCode: 'VALIDATION' });
+    if (!fullName) {
+      set({ error: 'نام و نام خانوادگی الزامی است.', errorCode: 'VALIDATION' });
       return { ok: false, reason: 'required' };
     }
-    if (!editingUserId && !username) {
-      set({ error: 'نام کاربری الزامی است.', errorCode: 'VALIDATION' });
-      return { ok: false, reason: 'required' };
+    if (!mobileParsed.ok) {
+      set({ error: 'شماره موبایل سازمانی نامعتبر است.', errorCode: 'VALIDATION' });
+      return { ok: false, reason: 'mobile' };
     }
-    if (!editingUserId && password.length < 8) {
-      set({ error: 'رمز عبور باید حداقل ۸ نویسه باشد.', errorCode: 'VALIDATION' });
-      return { ok: false, reason: 'password' };
+    if (String(form.email || '').trim() && !emailParsed.ok) {
+      set({ error: 'ایمیل سازمانی نامعتبر است.', errorCode: 'VALIDATION' });
+      return { ok: false, reason: 'email' };
     }
     if (!roleCodes.length) {
       set({ error: 'حداقل یک نقش الزامی است.', errorCode: 'VALIDATION' });
       return { ok: false, reason: 'roles' };
     }
 
+    const organization = form.unitId
+      ? {
+        unitId: form.unitId,
+        positionId: form.positionId || null,
+      }
+      : null;
+
     set({ saving: true, error: null, errorCode: null });
     try {
       if (editingUserId) {
         const saved = await UserRepository.updateUser(editingUserId, {
-          displayName,
-          isActive,
+          fullName,
+          mobile: mobileParsed.mobile,
+          email: emailParsed.email || '',
           roles: roleCodes,
+          status: form.status,
+          organization,
         });
         set((state) => ({
           users: state.users.map((u) => (u.id === saved.id ? saved : u)),
@@ -169,11 +213,11 @@ export const useUsersStore = create((set, get) => ({
       }
 
       const saved = await UserRepository.createUser({
-        username,
-        displayName,
-        password,
+        fullName,
+        mobile: mobileParsed.mobile,
+        email: emailParsed.email || '',
         roles: roleCodes,
-        isActive,
+        organization: organization || undefined,
       });
       set((state) => ({
         users: [saved, ...state.users.filter((u) => u.id !== saved.id)],
@@ -209,7 +253,8 @@ export const useUsersStore = create((set, get) => ({
   toggleUserStatus: async (userId) => {
     const user = get().users.find((u) => u.id === userId);
     if (!user) return { ok: false, reason: 'USER_NOT_FOUND' };
-    return get().setUserActive(userId, !user.isActive);
+    const currentlyInactive = (user.status || (user.isActive === false ? 'INACTIVE' : 'ACTIVE')) === 'INACTIVE';
+    return get().setUserActive(userId, currentlyInactive);
   },
 
   openPasswordModal: (userId) =>
@@ -239,15 +284,33 @@ export const useUsersStore = create((set, get) => ({
     }
     set({ saving: true, error: null, errorCode: null });
     try {
-      await UserRepository.resetPassword(passwordModalUserId, password);
-      set({
+      const result = await UserRepository.resetPassword(passwordModalUserId, password);
+      const saved = result?.user;
+      set((state) => ({
         saving: false,
         passwordModalUserId: null,
         passwordForm: emptyPasswordForm(),
-      });
+        users: saved
+          ? state.users.map((u) => (u.id === saved.id ? saved : u))
+          : state.users,
+      }));
       return { ok: true };
     } catch (error) {
       const parsed = readError(error, 'بازنشانی رمز عبور ناموفق بود.');
+      set({ saving: false, error: parsed.message, errorCode: parsed.code });
+      return { ok: false, reason: parsed.code, error: parsed.message };
+    }
+  },
+
+  resendInvitation: async (userId) => {
+    if (!userId) return { ok: false, reason: 'USER_NOT_FOUND' };
+    set({ saving: true, error: null, errorCode: null });
+    try {
+      const result = await UserRepository.resendInvitation(userId);
+      set({ saving: false });
+      return { ok: true, invitation: result?.invitation };
+    } catch (error) {
+      const parsed = readError(error, 'ارسال مجدد دعوتنامه ناموفق بود.');
       set({ saving: false, error: parsed.message, errorCode: parsed.code });
       return { ok: false, reason: parsed.code, error: parsed.message };
     }

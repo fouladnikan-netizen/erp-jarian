@@ -26,6 +26,9 @@ router.post('/groups', requirePermission('products:manage-taxonomy'), asyncHandl
 router.patch('/groups/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
   res.json({ group: await taxonomyService.updateGroup(req.params.id, req.body, req.auth.userId) });
 }));
+router.delete('/groups/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
+  res.json(await taxonomyService.deleteGroup(req.params.id, req.auth.userId));
+}));
 
 // ---- Categories ----
 router.get('/categories', requirePermission('products:read'), asyncHandler(async (req, res) => {
@@ -41,6 +44,9 @@ router.post('/categories', requirePermission('products:manage-taxonomy'), asyncH
 router.patch('/categories/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
   res.json({ category: await taxonomyService.updateCategory(req.params.id, req.body, req.auth.userId) });
 }));
+router.delete('/categories/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
+  res.json(await taxonomyService.deleteCategory(req.params.id, req.auth.userId));
+}));
 
 // ---- Product Types ----
 router.get('/types', requirePermission('products:read'), asyncHandler(async (req, res) => {
@@ -55,6 +61,9 @@ router.post('/types', requirePermission('products:manage-taxonomy'), asyncHandle
 }));
 router.patch('/types/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
   res.json({ productType: await taxonomyService.updateType(req.params.id, req.body, req.auth.userId) });
+}));
+router.delete('/types/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
+  res.json(await taxonomyService.deleteType(req.params.id, req.auth.userId));
 }));
 
 export default router;

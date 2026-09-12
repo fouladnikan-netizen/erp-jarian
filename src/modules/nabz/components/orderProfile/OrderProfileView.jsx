@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useJarianNotice } from '../../../../context/JarianNoticeContext';
 import { ORDER_TABS } from '../../config';
 import { ORDER_PROFILE_TABS } from '../../orderProfileConfig';
 import { getOrderGatewayPhase } from '../../gatewayService';
@@ -54,6 +55,7 @@ export default function OrderProfileView({
   onUpdateInquiry,
   onSetTargetInquiry,
 }) {
+  const { alert } = useJarianNotice();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(ORDER_PROFILE_TABS.GATEWAY);
   const orderPhase = getOrderGatewayPhase(order);
@@ -126,7 +128,7 @@ export default function OrderProfileView({
   const handleNextAction = (actionId) => {
     const result = executeGatewayHeaderAction(order, actionId);
     if (!result.accepted) {
-      window.alert(result.error || 'امکان انجام این اقدام وجود ندارد.');
+      void alert({ title: 'توجه', message: result.error || 'امکان انجام این اقدام وجود ندارد.' });
       return;
     }
     handleGatewayAdvance(result.order);
@@ -161,7 +163,7 @@ export default function OrderProfileView({
   const handleSendProforma = (version) => {
     updateOrder((current) => sendProformaToCustomer(current));
     const label = version?.documentNumber || order.code;
-    window.alert(`پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.`);
+    void alert({ title: 'ارسال شد', message: `پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.` });
   };
 
   const handleIssueProforma = () => {
@@ -196,6 +198,7 @@ export default function OrderProfileView({
   const handleDecisionSuccess = (payload) => {
     updateOrder((current) => markGatewayDecisionSuccess(current, payload));
     setDecisionDrawerOpen(false);
+    navigate('/nabz?view=opportunities&tab=current');
   };
 
   const handleDecisionFailed = (payload) => {
@@ -253,7 +256,7 @@ export default function OrderProfileView({
           }}
           onEditOrder={() => {
             if (!canEditWholeOrder()) {
-              window.alert('ویرایش کلی سفارش فقط برای نقش شوالیه فعال است.');
+              void alert({ title: 'توجه', message: 'ویرایش کلی سفارش فقط برای نقش شوالیه فعال است.' });
               return;
             }
             setEditDrawerOpen(true);
@@ -330,7 +333,7 @@ export default function OrderProfileView({
         onConfirm={(carrierId, selectedKeys) => {
           const result = issueShippingVoucher(order, carrierId, selectedKeys);
           if (!result.accepted) {
-            window.alert(result.reason || 'امکان صدور سفارش ارسال وجود ندارد.');
+            void alert({ title: 'توجه', message: result.reason || 'امکان صدور سفارش ارسال وجود ندارد.' });
             return;
           }
           updateOrder(() => result.order);

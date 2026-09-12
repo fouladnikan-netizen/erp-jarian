@@ -65,7 +65,7 @@ before(async () => {
   const co = await json('POST', '/api/v1/companies', {
     name: `Corr-Co-${Date.now()}`,
     entityType: 'CUSTOMER',
-    nationalId: `${Date.now()}`.slice(-10),
+    nationalId: `1${String(Date.now()).slice(-10)}`,
   });
   assert.equal(co.status, 201, JSON.stringify(co.data));
   companyId = co.data.company.id;
@@ -180,6 +180,7 @@ describe('OUTGOING lifecycle', () => {
     assert.equal(res.data.correspondence.status, 'FINAL');
     assert.ok(res.data.correspondence.officialNumber, 'expected an assigned official number');
     assert.match(res.data.correspondence.officialNumber, /^[۰-۹]+\/OUT\/[۰-۹]+$/);
+    assert.equal('organizationSnapshot' in res.data.correspondence, true);
 
     const audit = await query(
       `SELECT action FROM audit_log WHERE entity_id = $1 AND action = 'correspondence.finalize' LIMIT 1`,
@@ -220,6 +221,131 @@ describe('OUTGOING lifecycle', () => {
     const res = await json('GET', `/api/v1/correspondence?companyId=${encodeURIComponent(companyId)}`);
     assert.equal(res.status, 200);
     assert.ok(res.data.items.some((item) => item.id === id));
+  });
+});
+
+describe('DDL-30 organization snapshot at finalize', () => {
+  let identityRow;
+
+  async function restoreIdentity() {
+    if (!dbOk) return;
+    if (identityRow) {
+      await query(
+        `INSERT INTO organization_identity (
+           id, trade_name, legal_name, national_id, legal_person_type,
+           registration_number, economic_number, phone, email, website, fax,
+           province, city, official_address, postal_code,
+           bank_name, bank_account_number, iban, updated_by, created_at, updated_at
+         ) VALUES (
+           'org', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+         )
+         ON CONFLICT (id) DO UPDATE SET
+           trade_name = EXCLUDED.trade_name,
+           legal_name = EXCLUDED.legal_name,
+           national_id = EXCLUDED.national_id,
+           legal_person_type = EXCLUDED.legal_person_type,
+           registration_number = EXCLUDED.registration_number,
+           economic_number = EXCLUDED.economic_number,
+           phone = EXCLUDED.phone,
+           email = EXCLUDED.email,
+           website = EXCLUDED.website,
+           fax = EXCLUDED.fax,
+           province = EXCLUDED.province,
+           city = EXCLUDED.city,
+           official_address = EXCLUDED.official_address,
+           postal_code = EXCLUDED.postal_code,
+           bank_name = EXCLUDED.bank_name,
+           bank_account_number = EXCLUDED.bank_account_number,
+           iban = EXCLUDED.iban,
+           updated_by = EXCLUDED.updated_by,
+           updated_at = EXCLUDED.updated_at`,
+        [
+          identityRow.trade_name, identityRow.legal_name, identityRow.national_id,
+          identityRow.legal_person_type, identityRow.registration_number, identityRow.economic_number,
+          identityRow.phone, identityRow.email, identityRow.website, identityRow.fax,
+          identityRow.province, identityRow.city, identityRow.official_address, identityRow.postal_code,
+          identityRow.bank_name, identityRow.bank_account_number, identityRow.iban,
+          identityRow.updated_by, identityRow.created_at, identityRow.updated_at,
+        ],
+      );
+      await query(
+        `UPDATE organization_identity
+         SET phones = $1::jsonb, addresses = $2::jsonb, bank_accounts = $3::jsonb
+         WHERE id = 'org'`,
+        [
+          JSON.stringify(identityRow.phones ?? []),
+          JSON.stringify(identityRow.addresses ?? []),
+          JSON.stringify(identityRow.bank_accounts ?? []),
+        ],
+      );
+    } else {
+      await query(`DELETE FROM organization_identity WHERE id = 'org'`);
+    }
+  }
+
+  before(async () => {
+    if (!dbOk) return;
+    const snap = await query(`SELECT * FROM organization_identity WHERE id = 'org'`);
+    identityRow = snap.rows[0] || null;
+  });
+
+  after(async () => {
+    try {
+      await restoreIdentity();
+    } catch (err) {
+      console.warn('[correspondence-snapshot] identity restore failed:', err.message);
+    }
+  });
+
+  it('TEST-A freeze survives TEST-B identity change; new draft stays live', async (t) => {
+    if (!dbOk) return t.skip('no database');
+
+    const putA = await json('PUT', '/api/v1/organization-identity', {
+      tradeName: 'Snap Letter Co',
+      legalName: 'Snap Letter Legal',
+      nationalId: '11111111111',
+      phone: 'TEST-A',
+    });
+    assert.equal(putA.status, 200, JSON.stringify(putA.data));
+
+    const draft = await json('POST', '/api/v1/correspondence', {
+      direction: 'OUTGOING',
+      typeKey: 'OFFICIAL',
+      subject: 'نامه snapshot',
+      rawBody: 'متن پیش‌نویس نامه رسمی برای تست هویت.',
+      companyId,
+      recordDate: '1405/05/08',
+    });
+    assert.equal(draft.status, 201, JSON.stringify(draft.data));
+    assert.equal(draft.data.correspondence.organizationSnapshot, null);
+
+    const finalized = await json('POST', `/api/v1/correspondence/${draft.data.correspondence.id}/finalize`, {
+      finalBody: 'متن پیش‌نویس نامه رسمی برای تست هویت.',
+    });
+    assert.equal(finalized.status, 200, JSON.stringify(finalized.data));
+    assert.equal(finalized.data.correspondence.organizationSnapshot?.phone, 'TEST-A');
+    assert.equal(finalized.data.correspondence.organizationSnapshot?.tradeName, 'Snap Letter Co');
+
+    const putB = await json('PUT', '/api/v1/organization-identity', {
+      tradeName: 'Live Letter Co',
+      legalName: 'Live Letter Legal',
+      nationalId: '22222222222',
+      phone: 'TEST-B',
+    });
+    assert.equal(putB.status, 200, JSON.stringify(putB.data));
+
+    const reprint = await json('GET', `/api/v1/correspondence/${draft.data.correspondence.id}`);
+    assert.equal(reprint.status, 200);
+    assert.equal(reprint.data.correspondence.organizationSnapshot?.phone, 'TEST-A');
+
+    const liveDraft = await json('POST', '/api/v1/correspondence', {
+      direction: 'OUTGOING',
+      subject: 'پیش‌نویس live',
+      rawBody: 'پیش‌نویس جدید پس از تغییر هویت.',
+    });
+    assert.equal(liveDraft.status, 201, JSON.stringify(liveDraft.data));
+    assert.equal(liveDraft.data.correspondence.organizationSnapshot, null);
+    assert.equal(liveDraft.data.correspondence.status, 'DRAFT');
   });
 });
 

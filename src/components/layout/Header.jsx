@@ -1,6 +1,24 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTheme, THEMES } from '../../theme/ThemeContext';
 import UnifiedJarianCalendar from '../calendar/UnifiedJarianCalendar';
+
+const NABZ_VIEW_HEADERS = {
+  opportunities: { name: 'فرصت', subtitle: 'فروش و پیش‌فاکتور' },
+  supply: { name: 'توشه', subtitle: 'خرید و تأمین کالا' },
+  operations: { name: 'رهسپار', subtitle: 'ارسال و تحویل' },
+  outcome: { name: 'سرانجام', subtitle: 'نهایی‌سازی سفارش' },
+};
+
+function vitrinHeader(pathname) {
+  if (pathname.startsWith('/vitrin/structure')) {
+    return { name: 'ساختار کالا', subtitle: 'انواع کالا و قواعد محصول' };
+  }
+  if (pathname === '/vitrin' || pathname.startsWith('/vitrin/')) {
+    return { name: 'محصولات', subtitle: 'فهرست، جستجو و ثبت کالا' };
+  }
+  return null;
+}
 
 function CalendarIcon() {
   return (
@@ -39,15 +57,23 @@ function MoonIcon() {
 
 export default function Header({ module }) {
   const { theme, toggleTheme } = useTheme();
+  const { pathname, search } = useLocation();
   const isDark = theme === THEMES.DARK;
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const nabzView = module.id === 'nabz'
+    ? new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('view')
+    : null;
+  const nabzHeader = pathname.startsWith('/nabz') ? NABZ_VIEW_HEADERS[nabzView] : null;
+  const vitrinViewHeader = vitrinHeader(pathname);
+  const title = nabzHeader?.name || vitrinViewHeader?.name || module.name;
+  const subtitle = nabzHeader?.subtitle || vitrinViewHeader?.subtitle || module.subtitle || module.description;
 
   return (
     <header className="header" role="banner">
       <div className="header__inner">
         <div className="header__page">
-          <h1 className="header__title">{module.name}</h1>
-          <p className="header__desc">{module.description}</p>
+          <h1 className="header__title">{title}</h1>
+          <p className="header__desc">{subtitle}</p>
         </div>
 
         <div className="header__actions">

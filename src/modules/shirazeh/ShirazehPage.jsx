@@ -5,34 +5,41 @@ import {
   SETTINGS_MENU,
   SHIRAZEH_BASE_PATH,
 } from './config/settingsMenu';
+import { DEFINITIONS_MENU } from './config/definitionsMenu';
 import SystemHealthCards from './components/SystemHealthCards';
 import SettingsNavigation from './components/SettingsNavigation';
 import SettingsContent from './components/SettingsContent';
 import SettingsSectionPlaceholder from './components/SettingsSectionPlaceholder';
 import IntegrationsPage from './integrations/IntegrationsPage';
-import UsersPage from './users/UsersPage';
-import SecuritySettingsPage from './security/SecuritySettingsPage';
-import OrganizationStructurePage from './security/organization/OrganizationStructurePage';
 import './shirazeh.css';
 
 /**
  * Shirazeh master-detail shell.
  * Child routes render inside SettingsContent → Outlet (see App.jsx).
+ * Settings and Definitions share the same nav + content workspace.
  */
 export default function ShirazehPage() {
+  const location = useLocation();
+  const isDefinitions = location.pathname.startsWith(`${SHIRAZEH_BASE_PATH}/definitions`);
+
   return (
     <div className="module-page shirazeh-page" data-module="shirazeh" dir="rtl">
       <SystemHealthCards />
 
       <div className="shirazeh-workspace">
-        <SettingsNavigation items={SETTINGS_MENU} />
-        <SettingsContent />
+        <SettingsNavigation
+          items={isDefinitions ? DEFINITIONS_MENU : SETTINGS_MENU}
+          title={isDefinitions ? 'تعاریف' : 'تنظیمات'}
+          subtitle={isDefinitions ? 'اطلاعات پایه و ساختارهای مرجع سیستم' : undefined}
+          ariaLabel={isDefinitions ? 'بخش‌های تعاریف' : 'بخش‌های تنظیمات'}
+        />
+        <SettingsContent aria-label={isDefinitions ? 'محتوای تعاریف' : undefined} />
       </div>
     </div>
   );
 }
 
-export { SecuritySettingsPage, OrganizationStructurePage, IntegrationsPage, UsersPage };
+export { IntegrationsPage };
 
 /** Generic placeholder for sections without a dedicated page yet. */
 export function ShirazehPlaceholderSection() {
@@ -65,14 +72,6 @@ export function ShirazehSectionRoute() {
 
   if (sectionId === 'integrations') {
     return <IntegrationsPage />;
-  }
-
-  if (sectionId === 'users') {
-    return <UsersPage />;
-  }
-
-  if (sectionId === 'security') {
-    return <SecuritySettingsPage />;
   }
 
   return <ShirazehPlaceholderSection />;

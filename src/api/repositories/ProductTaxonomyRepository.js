@@ -32,6 +32,11 @@ export const ProductTaxonomyRepository = {
     const { data } = await apiClient.patch(`/product-taxonomy/groups/${id}`, patch);
     return data.group;
   },
+  async deleteGroup(id) {
+    if (useMockApi()) return null;
+    const { data } = await apiClient.delete(`/product-taxonomy/groups/${id}`);
+    return data;
+  },
 
   async listCategories({ groupId, includeInactive = true } = {}) {
     if (useMockApi()) return null;
@@ -50,6 +55,11 @@ export const ProductTaxonomyRepository = {
     const { data } = await apiClient.patch(`/product-taxonomy/categories/${id}`, patch);
     return data.category;
   },
+  async deleteCategory(id) {
+    if (useMockApi()) return null;
+    const { data } = await apiClient.delete(`/product-taxonomy/categories/${id}`);
+    return data;
+  },
 
   async listTypes({ categoryId, includeInactive = true } = {}) {
     if (useMockApi()) return null;
@@ -67,6 +77,11 @@ export const ProductTaxonomyRepository = {
     if (useMockApi()) return null;
     const { data } = await apiClient.patch(`/product-taxonomy/types/${id}`, patch);
     return data.productType;
+  },
+  async deleteType(id) {
+    if (useMockApi()) return null;
+    const { data } = await apiClient.delete(`/product-taxonomy/types/${id}`);
+    return data;
   },
 };
 

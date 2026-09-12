@@ -10,6 +10,7 @@
     "migrate": "node src/db/migrate.js",
     "seed": "node src/db/seed.js",
     "setup": "node src/db/migrate.js && node src/db/seed.js",
+    "snapshot:product-master": "node scripts/snapshot-product-master.js",
     "test": "node --test src/__tests__/**/*.test.js",
     "test:integration": "node --test src/__tests__/**/*.integration.test.js",
     "probe:linka-phase2": "node scripts/linka-phase2-probe.js"

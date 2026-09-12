@@ -1,6 +1,7 @@
 /**
- * Backend permission codes — FE catalog must match seed RBAC.
- * Do not invent codes here; extend backend seed first.
+ * Backend permission codes — FE catalog must match seed RBAC canonical codes.
+ * Structured metadata (resource/action/category/isSensitive) lives in
+ * GET /api/v1/rbac/permissions (DDL-36). Do not invent codes here.
  */
 export const PERMISSIONS = Object.freeze({
   COMPANIES_READ: 'companies:read',
@@ -20,7 +21,6 @@ export const PERMISSIONS = Object.freeze({
   PRODUCTS_READ: 'products:read',
   PRODUCTS_WRITE: 'products:write',
   PRODUCTS_LIFECYCLE: 'products:lifecycle',
-  PRODUCTS_MANAGE_RELATIONSHIPS: 'products:manage-relationships',
   PRODUCTS_MANAGE_TAXONOMY: 'products:manage-taxonomy',
   PRODUCTS_MANAGE_BRANDS: 'products:manage-brands',
   PRODUCTS_BULK_IMPORT: 'products:bulk-import',

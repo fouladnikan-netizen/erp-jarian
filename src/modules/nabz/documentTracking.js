@@ -1,10 +1,12 @@
 /**
  * متن استاندارد واتساپ برای لینک امن پیش‌فاکتور (Path B).
  * @param {string} secureLink
+ * @param {string} [organizationName] live Organization Identity trade name
  * @returns {string}
  */
-export function createWhatsAppMessage(secureLink) {
-  return [
+export function createWhatsAppMessage(secureLink, organizationName) {
+  const closing = String(organizationName || '').trim();
+  const lines = [
     'سلام',
     '',
     'پیش فاکتور شما آماده است.',
@@ -16,8 +18,9 @@ export function createWhatsAppMessage(secureLink) {
     'این لینک همیشه آخرین نسخه را نمایش می‌دهد.',
     '',
     'با احترام',
-    'پترو فولاد نیکان',
-  ].join('\n');
+  ];
+  if (closing) lines.push(closing);
+  return lines.join('\n');
 }
 
 /**

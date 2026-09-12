@@ -124,7 +124,7 @@ export function enterPhase2FromDecision(order, decidedAt) {
 }
 
 export function tryChangePhase2Stage(order, targetStageId) {
-  if (order.status === ORDER_TABS.SUCCESS || order.status === ORDER_TABS.FAILED) {
+  if (isOrderClosed(order) || order.status === ORDER_TABS.FAILED) {
     return {
       order,
       accepted: false,

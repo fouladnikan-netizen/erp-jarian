@@ -69,7 +69,8 @@ Classifications:
 |---------|-------|-------|
 | Company `1…8`, `rp-1-1` style persons | `contactsData.js` | **Temporary** (demo); freeze on first DB load |
 | Order numeric ids + `JR…` codes in seed | `ordersData.js` | **Temporary**; code is business key |
-| Org `root`, `sales`, `user-ali` | organization mock tree | **Temporary** |
+| Org `ou_root` + `users.id` on person nodes | `/api/v1/organization` | **Canonical** (DDL-37). Mock people `user-sara` / `user-ali` / `user-hossein` / `user-maryam` / `user-reza` were **not** mapped. |
+| Org `root`, `sales`, `user-ali` (Gahshomar referral fixture only) | `organizationTree.js` via `orgPeople.js` | **Temporary display directory** (DDL-23) — not security identity |
 | Users `u-1` … | usersStore MOCK | **Temporary** |
 | Campaign / catalog seed ids | kampayn / vitrin data | **Temporary** |
 

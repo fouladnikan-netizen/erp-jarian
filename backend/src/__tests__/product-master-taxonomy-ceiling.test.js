@@ -1,35 +1,26 @@
 /**
- * Taxonomy/SKU 2-digit code ceiling guard tests (Task 3 hardening pass,
- * DDL-24b). SKU format stays exactly GG-CC-TT-VV — these tests do NOT change
- * or migrate that format; they verify the existing atomic allocator
- * (`allocateTaxonomyCode` / `allocateSku`, both `INSERT..ON CONFLICT..
- * RETURNING` counters) behaves correctly right at and beyond the 99-code
- * ceiling: no value >99 is ever produced, no silent truncation, no wrapping
- * back to 00/01, exhaustion is a clear domain error (not a generic 500),
- * and concurrent requests near the ceiling never hand out a duplicate code.
- *
- * `product_taxonomy_code_counters.scope` has no FK — arbitrary throwaway
- * scope strings are used for the pure allocator tests so they don't consume
- * any of the real (FK-constrained, non-reclaimed) Group/Category/Type code
- * budget. Requires PostgreSQL (run: cd backend && npm run setup).
+ * Taxonomy 2-digit code ceiling guard tests (legacy numeric GG/CC/TT
+ * counters). Product SKU is mnemonic (DDL-24m) and is covered by
+ * sku-code.test.js — these tests only verify allocateTaxonomyCode.
  */
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import { createProductMasterFixtureTracker } from './helpers/productMasterFixtures.js';
 
 process.env.JARIAN_SKIP_LISTEN = '1';
 
 const { createApp } = await import('../index.js');
 const { pool } = await import('../db/pool.js');
 const { allocateTaxonomyCode, pad2 } = await import('../domain/productMaster/taxonomyCode.js');
-const { allocateSku } = await import('../domain/productMaster/skuGenerator.js');
 
 let server;
 let baseUrl;
 let token;
 let dbOk = false;
+const fixtures = createProductMasterFixtureTracker();
 
-async function json(method, path, body, authToken = token) {
+async function requestJson(method, path, body, authToken = token) {
   const headers = { 'Content-Type': 'application/json' };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
   const res = await fetch(`${baseUrl}${path}`, {
@@ -42,6 +33,8 @@ async function json(method, path, body, authToken = token) {
   try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
   return { status: res.status, data };
 }
+
+const json = fixtures.wrapJson(requestJson);
 
 const uniq = () => Math.random().toString(36).slice(2, 9);
 
@@ -65,8 +58,14 @@ before(async () => {
 });
 
 after(async () => {
-  if (server) await new Promise((resolve) => server.close(resolve));
-  await pool.end().catch(() => {});
+  try {
+    if (dbOk) await fixtures.cleanup(json);
+  } catch (err) {
+    console.warn('[product-master-taxonomy-ceiling] cleanup failed:', err.message);
+  } finally {
+    if (server) await new Promise((resolve) => server.close(resolve));
+    await pool.end().catch(() => {});
+  }
 });
 
 /** Fast-forward a throwaway (non-FK) taxonomy scope's counter without 98 real allocations. */
@@ -78,15 +77,15 @@ async function seedTaxonomyScopeAt(scope, nextSeq) {
   );
 }
 
-async function seedSkuCounterAt(productTypeId, nextSeq) {
-  await pool.query(
-    `INSERT INTO product_sku_counters (product_type_id, next_seq) VALUES ($1, $2)
-     ON CONFLICT (product_type_id) DO UPDATE SET next_seq = $2`,
-    [productTypeId, nextSeq],
-  );
-}
-
 describe('Taxonomy code ceiling — allocateTaxonomyCode boundary (98 / 99 / exhaustion)', () => {
+  it('skips occupied codes when the counter was reset below existing rows', async (t) => {
+    if (!dbOk) return t.skip('no database');
+    const scope = `TEST_SKIP_TAKEN_${uniq()}`;
+    await seedTaxonomyScopeAt(scope, 1);
+    const code = await allocateTaxonomyCode(pool, scope, new Set(['01']));
+    assert.equal(code, '02');
+  });
+
   it('allocates code 98 when the counter is fast-forwarded to the boundary', async (t) => {
     if (!dbOk) return t.skip('no database');
     const scope = `TEST_BOUNDARY_98_${uniq()}`;
@@ -182,59 +181,6 @@ describe('Taxonomy code ceiling — concurrency at/near exhaustion (no duplicate
   });
 });
 
-describe('SKU variant sequence (VV) ceiling — same guard applied to allocateSku', () => {
-  let productTypeId; let groupCode; let categoryCode; let typeCode;
-
-  before(async () => {
-    if (!dbOk) return;
-    const g = await json('POST', '/api/v1/product-taxonomy/groups', { name: `گروه-skuceiling-${uniq()}` });
-    const c = await json('POST', '/api/v1/product-taxonomy/categories', { groupId: g.data.group.id, name: `دسته-skuceiling-${uniq()}` });
-    const ty = await json('POST', '/api/v1/product-taxonomy/types', { categoryId: c.data.category.id, name: `نوع-skuceiling-${uniq()}` });
-    productTypeId = ty.data.productType.id;
-    groupCode = g.data.group.code;
-    categoryCode = c.data.category.code;
-    typeCode = ty.data.productType.code;
-  });
-
-  it('allocates variant sequence 98 and 99, producing valid 8-digit SKUs, without wrapping', async (t) => {
-    if (!dbOk) return t.skip('no database');
-    await seedSkuCounterAt(productTypeId, 98);
-    const first = await allocateSku(pool, { groupCode, categoryCode, typeCode, productTypeId });
-    const second = await allocateSku(pool, { groupCode, categoryCode, typeCode, productTypeId });
-    assert.equal(first.variantSeq, 98);
-    assert.equal(second.variantSeq, 99);
-    assert.match(first.sku, /^\d{8}$/);
-    assert.equal(first.sku, `${groupCode}${categoryCode}${typeCode}98`);
-    assert.equal(second.sku, `${groupCode}${categoryCode}${typeCode}99`);
-  });
-
-  it('the 100th variant allocation is rejected with SKU_VARIANT_SEQUENCE_EXHAUSTED, not a generic 500', async (t) => {
-    if (!dbOk) return t.skip('no database');
-    await seedSkuCounterAt(productTypeId, 100);
-    await assert.rejects(
-      () => allocateSku(pool, { groupCode, categoryCode, typeCode, productTypeId }),
-      (err) => {
-        assert.equal(err.code, 'SKU_VARIANT_SEQUENCE_EXHAUSTED');
-        assert.equal(err.status, 409);
-        return true;
-      },
-    );
-  });
-
-  it('concurrency at 1-remaining variant slot: exactly 1 concurrent SKU allocation succeeds, no duplicate SKUs', async (t) => {
-    if (!dbOk) return t.skip('no database');
-    await seedSkuCounterAt(productTypeId, 99);
-    const results = await Promise.allSettled(
-      Array.from({ length: 8 }, () => allocateSku(pool, { groupCode, categoryCode, typeCode, productTypeId })),
-    );
-    const fulfilled = results.filter((r) => r.status === 'fulfilled').map((r) => r.value.sku);
-    const rejected = results.filter((r) => r.status === 'rejected');
-    assert.equal(fulfilled.length, 1, `expected exactly 1 successful SKU allocation, got ${JSON.stringify(fulfilled)}`);
-    assert.equal(rejected.length, 7);
-    for (const r of rejected) assert.equal(r.reason.code, 'SKU_VARIANT_SEQUENCE_EXHAUSTED');
-  });
-});
-
 describe('Taxonomy code ceiling — end-to-end via the real API (pre-seeded exhaustion, no 500)', () => {
   it('creating a Type under a Category whose TYPE: scope is already exhausted returns 409 TAXONOMY_CODE_EXHAUSTED via HTTP, not a 500', async (t) => {
     if (!dbOk) return t.skip('no database');
@@ -244,5 +190,18 @@ describe('Taxonomy code ceiling — end-to-end via the real API (pre-seeded exha
     const res = await json('POST', '/api/v1/product-taxonomy/types', { categoryId: c.data.category.id, name: `نوع-e2e-ceiling-${uniq()}` });
     assert.equal(res.status, 409, JSON.stringify(res.data));
     assert.equal(res.data.error, 'TAXONOMY_CODE_EXHAUSTED');
+  });
+
+  it('creating a Type after the TYPE counter was reset below occupied codes returns 201, not a unique-constraint 500', async (t) => {
+    if (!dbOk) return t.skip('no database');
+    const suffix = uniq();
+    const g = await json('POST', '/api/v1/product-taxonomy/groups', { name: `گروه-skip-${suffix}` });
+    const c = await json('POST', '/api/v1/product-taxonomy/categories', { groupId: g.data.group.id, name: `دسته-skip-${suffix}` });
+    const first = await json('POST', '/api/v1/product-taxonomy/types', { categoryId: c.data.category.id, name: `نوع-skip-a-${suffix}` });
+    assert.equal(first.status, 201, JSON.stringify(first.data));
+    await seedTaxonomyScopeAt(`TYPE:${c.data.category.id}`, 1);
+    const second = await json('POST', '/api/v1/product-taxonomy/types', { categoryId: c.data.category.id, name: `نوع-skip-b-${suffix}` });
+    assert.equal(second.status, 201, JSON.stringify(second.data));
+    assert.notEqual(second.data.productType.code, first.data.productType.code);
   });
 });

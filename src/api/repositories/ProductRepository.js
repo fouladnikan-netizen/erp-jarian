@@ -59,21 +59,10 @@ export const ProductRepository = {
     const { data } = await apiClient.patch(`/products/${id}/deactivate`);
     return data.product;
   },
-
-  async listRelationships(productId) {
+  async deleteProduct(id) {
     if (useMockApi()) return null;
-    const { data } = await apiClient.get(`/products/${productId}/relationships`);
-    return data.items || [];
-  },
-  async createRelationship(payload) {
-    if (useMockApi()) return null;
-    const { data } = await apiClient.post('/products/relationships', payload);
-    return data.relationship;
-  },
-  async deactivateRelationship(id) {
-    if (useMockApi()) return null;
-    const { data } = await apiClient.patch(`/products/relationships/${id}/deactivate`);
-    return data.relationship;
+    const { data } = await apiClient.delete(`/products/${id}`);
+    return data;
   },
 
   /** @param {{ mode: 'DRY_RUN'|'APPLY', rows: object[] }} payload */

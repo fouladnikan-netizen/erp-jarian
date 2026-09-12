@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import { parseBulkImportText } from '../bulkImportParse.js';
 
-const SAMPLE = `groupName,categoryName,typeName,brandName,baseUomCode,attr:thickness,attr:width
-آهن‌آلات,ورق گرم,ورق سیاه,فولاد مبارکه,KG,6,1250`;
+const TEMPLATE_XLSX = '/templates/jarian-product-import.xlsx';
+const TEMPLATE_CSV = '/templates/jarian-product-import.csv';
+
+const SAMPLE = `groupName,categoryName,typeName,baseUomCode,attr:grade,attr:size
+مقاطع فولادی,میلگرد,میلگرد آجدار,PIECE,A2,8`;
 
 /**
- * Bulk Import / Mass Update (product contract, mandatory). CSV parsing is
+ * Bulk Import / Mass Update (product contract, mandatory). CSV/TSV parsing is
  * client-side (no new xlsx dependency); the backend is the single
  * authoritative validate/duplicate-check/apply path — this UI never creates
  * Products itself, only previews (DRY_RUN) then applies via the same API
@@ -16,28 +20,24 @@ export default function BulkImportModal({ onClose, onRun }) {
   const [batch, setBatch] = useState(null);
   const [error, setError] = useState('');
 
-  function parseCsv(text) {
-    const lines = text.trim().split(/\r?\n/).filter((l) => l.trim().length > 0);
-    if (lines.length < 2) throw new Error('حداقل یک ردیف هدر و یک ردیف داده لازم است.');
-    const headers = lines[0].split(',').map((h) => h.trim());
-    return lines.slice(1).map((line) => {
-      const cells = line.split(',').map((c) => c.trim());
-      const row = { attributes: {} };
-      headers.forEach((header, idx) => {
-        const value = cells[idx] ?? '';
-        if (!value) return;
-        if (header.startsWith('attr:')) row.attributes[header.slice(5)] = value;
-        else row[header] = value;
-      });
-      return row;
-    });
+  async function onPickFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (/\.xlsx$/i.test(file.name)) {
+      setError('فایل اکسل را با «Save As → CSV UTF-8» ذخیره کنید، یا همان CSV تمپلیت را پر کنید. ورود مستقیم xlsx در این پنجره پشتیبانی نمی‌شود.');
+      return;
+    }
+    setCsvText(await file.text());
+    setBatch(null);
+    setError('');
   }
 
   async function run(mode) {
     setError('');
     setBusy(true);
     try {
-      const rows = parseCsv(csvText);
+      const rows = parseBulkImportText(csvText);
       const result = await onRun({ mode, rows });
       setBatch(result);
     } catch (err) {
@@ -51,7 +51,7 @@ export default function BulkImportModal({ onClose, onRun }) {
     <div className="vitrin-modal-overlay" onClick={onClose} role="presentation">
       <div className="vitrin-modal vitrin-modal--wide" role="dialog" aria-modal="true" aria-label="ورود دسته‌ای کالا" onClick={(e) => e.stopPropagation()}>
         <header className="vitrin-modal__header">
-          <h2 className="vitrin-modal__title">ورود دسته‌ای کالا (CSV)</h2>
+          <h2 className="vitrin-modal__title">ورود دسته‌ای کالا</h2>
           <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label="بستن">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M18 6 6 18M6 6l12 12" />
@@ -60,11 +60,21 @@ export default function BulkImportModal({ onClose, onRun }) {
         </header>
         <div className="vitrin-modal__body">
           <p className="vitrin-form__hint">
-            ستون‌های لازم: groupName, categoryName, typeName — اختیاری: brandName, baseUomCode, salesUomCode,
-            purchaseUomCode, weightProfileType، و ویژگی‌های ساختاری با پیشوند <code dir="ltr">attr:کد_ویژگی</code>.
+            تمپلیت اکسل را پر کنید (برگه «محصولات»). نام گروه/دسته/نوع باید عین درخت فعلی باشد.
+            ستون‌های لازم: <code dir="ltr">groupName, categoryName, typeName</code>
+            — ویژگی‌ها با پیشوند <code dir="ltr">attr:کد</code>.
+            سلول خالی یعنی آن ویژگی برای این ردیف استفاده نشود.
           </p>
+          <div className="vitrin-form__field" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <a className="btn btn--outline" href={TEMPLATE_XLSX} download>دانلود تمپلیت اکسل</a>
+            <a className="btn btn--outline" href={TEMPLATE_CSV} download>دانلود CSV</a>
+            <label className="btn btn--outline">
+              بارگذاری CSV
+              <input type="file" accept=".csv,.tsv,.txt" onChange={onPickFile} hidden />
+            </label>
+          </div>
           <label className="vitrin-form__field">
-            <span className="vitrin-form__label">داده CSV</span>
+            <span className="vitrin-form__label">داده CSV / TSV</span>
             <textarea
               rows={8}
               dir="ltr"
@@ -83,7 +93,7 @@ export default function BulkImportModal({ onClose, onRun }) {
           {batch && (
             <div className="vitrin-profile-panel" style={{ marginTop: 12 }}>
               <p>
-                حالت: {batch.mode === 'DRY_RUN' ? 'پیش‌نمایش (بدون ثبت)' : 'اجرا شد'}
+                حالت: {batch.mode === 'DRY_RUN' ? 'پیش‌نمایش (بدون ثبت کالا)' : 'اجرا شد'}
                 {' · '}کل ردیف‌ها: {batch.totalRows?.toLocaleString('fa-IR')}
                 {' · '}پذیرفته/قابل‌پذیرش: {batch.acceptedRows?.toLocaleString('fa-IR')}
                 {' · '}رد شده: {batch.rejectedRows?.toLocaleString('fa-IR')}
@@ -95,7 +105,7 @@ export default function BulkImportModal({ onClose, onRun }) {
                     <tr key={r.rowIndex}>
                       <td>{(r.rowIndex + 1).toLocaleString('fa-IR')}</td>
                       <td>{r.status}</td>
-                      <td>{r.sku || r.message || (r.errors || []).map((e) => e.message).join('، ')}</td>
+                      <td>{r.message || (r.errors || []).map((e) => e.message).join('، ') || r.generatedName || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

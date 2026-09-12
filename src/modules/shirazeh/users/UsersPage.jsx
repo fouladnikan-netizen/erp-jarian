@@ -11,8 +11,8 @@ import PasswordResetModal from './components/PasswordResetModal';
 import './users.css';
 
 /**
- * Shirazeh → Users section (Outlet child for /shirazeh/users).
- * Canonical backend users table — no local/mock user records.
+ * Shirazeh → تعاریف → کاربران
+ * Canonical: /shirazeh/definitions/users
  */
 export default function UsersPage() {
   const canManage = useCan(PERMISSIONS.USERS_ADMIN);

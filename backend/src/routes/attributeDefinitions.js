@@ -19,6 +19,9 @@ router.post('/', requirePermission('products:manage-taxonomy'), asyncHandler(asy
 router.patch('/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
   res.json({ attributeDefinition: await attributeDefinitionService.updateDefinition(req.params.id, req.body, req.auth.userId) });
 }));
+router.delete('/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
+  res.json(await attributeDefinitionService.deleteDefinition(req.params.id, req.auth.userId));
+}));
 
 // Product Type <-> Attribute schema binding
 router.get('/schema/:productTypeId', requirePermission('products:read'), asyncHandler(async (req, res) => {
@@ -30,6 +33,9 @@ router.post('/bindings', requirePermission('products:manage-taxonomy'), asyncHan
 }));
 router.patch('/bindings/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
   res.json({ binding: await attributeDefinitionService.updateBinding(req.params.id, req.body, req.auth.userId) });
+}));
+router.delete('/bindings/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
+  res.json(await attributeDefinitionService.deleteBinding(req.params.id, req.auth.userId));
 }));
 
 export default router;

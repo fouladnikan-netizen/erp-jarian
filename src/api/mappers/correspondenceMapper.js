@@ -58,6 +58,7 @@ export function correspondenceFromApi(api) {
     issuedAt: api.issuedAt || null,
     issuedBy: api.issuedBy || null,
     issuerTitle: api.issuerTitle || null,
+    organizationSnapshot: api.organizationSnapshot || null,
     isLocked: isFinal,
     createdAt: api.createdAt,
     updatedAt: api.updatedAt,

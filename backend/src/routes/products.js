@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { asyncHandler } from '../middleware/errors.js';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import * as productService from '../services/productService.js';
-import * as relationshipService from '../services/productRelationshipService.js';
 import * as bulkImportService from '../services/productBulkImportService.js';
 
 const router = Router();
@@ -53,19 +52,11 @@ router.patch('/:id/activate', requirePermission('products:lifecycle'), asyncHand
 router.patch('/:id/deactivate', requirePermission('products:lifecycle'), asyncHandler(async (req, res) => {
   res.json({ product: await productService.setLifecycle(req.params.id, 'INACTIVE', req.auth.userId) });
 }));
-
-// Relationships
-router.get('/:id/relationships', requirePermission('products:read'), asyncHandler(async (req, res) => {
-  res.json({ items: await relationshipService.listForProduct(req.params.id) });
-}));
-router.post('/relationships', requirePermission('products:manage-relationships'), asyncHandler(async (req, res) => {
-  res.status(201).json({ relationship: await relationshipService.createRelationship(req.body, req.auth.userId) });
-}));
-router.patch('/relationships/:id/deactivate', requirePermission('products:manage-relationships'), asyncHandler(async (req, res) => {
-  res.json({ relationship: await relationshipService.deactivateRelationship(req.params.id, req.auth.userId) });
+router.delete('/:id', requirePermission('products:write'), asyncHandler(async (req, res) => {
+  res.json(await productService.deleteProduct(req.params.id, req.auth.userId));
 }));
 
-// Bulk import / mass update
+// Bulk import / Mass Update
 router.post('/bulk-import', requirePermission('products:bulk-import'), asyncHandler(async (req, res) => {
   const batch = await bulkImportService.runBulkImport(req.body, req.auth.userId);
   res.status(201).json({ batch });

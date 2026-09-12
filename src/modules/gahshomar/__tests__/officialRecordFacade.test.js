@@ -14,6 +14,7 @@ import {
 } from '../officialRecordFacade.js';
 import { LETTER_SUBJECT_TEMPLATES } from '../services/letterSubjectTemplates.js';
 import { ensureLetterHtml, htmlToPlainText } from '../services/letterHtml.js';
+import { setCachedOrganizationIdentity } from '../../../domain/organizationIdentity';
 
 const contactReceiver = {
   partyType: 'CONTACT',
@@ -197,5 +198,28 @@ describe('Gahshomar officialRecordFacade (MVP)', () => {
       },
     })).toBeNull();
     expect(issueOfficialRecord('rec-in-001', { subject: 'x' })).toBeNull();
+  });
+
+  it('issueOfficialRecord freezes organizationSnapshot from Identity cache', () => {
+    setCachedOrganizationIdentity({ tradeName: 'Org Snap Co', phone: 'TEST-A' });
+    const draft = createDraftRecord(RECORD_DIRECTION.OUTGOING);
+    const issued = issueOfficialRecord(draft.id, {
+      subject: 'نامه با هویت فریزشده',
+      body: '<p>با سلام و احترام</p><p>متن نهایی</p>',
+      participants: {
+        sender: draft.participants.sender,
+        receiver: contactReceiver,
+      },
+    });
+    expect(issued.organizationSnapshot).toEqual({ tradeName: 'Org Snap Co', phone: 'TEST-A' });
+
+    setCachedOrganizationIdentity({ tradeName: 'Live Co', phone: 'TEST-B' });
+    const reprint = getOfficialRecord(issued.id);
+    expect(reprint.organizationSnapshot.phone).toBe('TEST-A');
+    expect(reprint.isLocked).toBe(true);
+
+    const nextDraft = createDraftRecord(RECORD_DIRECTION.OUTGOING);
+    expect(nextDraft.isLocked).toBe(false);
+    expect(nextDraft.organizationSnapshot).toBeFalsy();
   });
 });

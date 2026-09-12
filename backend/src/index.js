@@ -23,6 +23,10 @@ import productRoutes from './routes/products.js';
 import identityRoutes from './routes/identity.js';
 import contactRoutes from './routes/contacts.js';
 import userRoutes from './routes/users.js';
+import rbacRoutes from './routes/rbac.js';
+import organizationIdentityRoutes from './routes/organizationIdentity.js';
+import organizationRoutes from './routes/organization.js';
+import personaRoutes from './routes/personas.js';
 
 // Keep existing AI rewrite endpoint (Liara) without duplication.
 import aiRoutes from '../../src/server/api/aiRoutes.js';
@@ -73,6 +77,10 @@ export function createApp() {
   app.use('/api/v1/identity', identityRoutes);
   app.use('/api/v1/contacts', contactRoutes);
   app.use('/api/v1/users', userRoutes);
+  app.use('/api/v1/rbac', rbacRoutes);
+  app.use('/api/v1/organization-identity', organizationIdentityRoutes);
+  app.use('/api/v1/organization', organizationRoutes);
+  app.use('/api/v1/personas', personaRoutes);
   app.use('/api/ai', aiRoutes);
 
   app.use(notFound);
@@ -98,5 +106,9 @@ if (process.env.JARIAN_SKIP_LISTEN !== '1') {
     console.log(`[jarian-api] correspondence: /api/v1/correspondence`);
     console.log(`[jarian-api] correspondence-types: /api/v1/correspondence-types`);
     console.log(`[jarian-api] users: /api/v1/users`);
+    console.log(`[jarian-api] rbac: /api/v1/rbac`);
+    console.log(`[jarian-api] organization-identity: /api/v1/organization-identity`);
+    console.log(`[jarian-api] organization: /api/v1/organization`);
+    console.log(`[jarian-api] personas: /api/v1/personas`);
   });
 }

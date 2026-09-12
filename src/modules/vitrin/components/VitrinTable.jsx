@@ -11,12 +11,13 @@ import StatusTag from '../../../components/module/StatusTag';
 import { useColumnExcelFilters } from '../../../hooks/useColumnExcelFilters';
 import { useListShell } from '../../../hooks/list';
 import VitrinRowActions from './VitrinRowActions';
+import { formatProductSizeDisplay, getProductSizeNumber } from '../productSize';
 
 const COLUMN_LABELS = {
   check: 'انتخاب',
   row: 'ردیف',
-  sku: 'کد کالا (SKU)',
   name: 'شرح کالا',
+  size: 'سایز',
   group: 'گروه کالا',
   category: 'دسته کالا',
   productType: 'نوع کالا',
@@ -28,24 +29,24 @@ const COLUMN_LABELS = {
 const VITRIN_COLUMN_DEFS = [
   { key: 'check', title: COLUMN_LABELS.check, defaultWidth: 52, resizable: false, locked: true, sortable: false, filterable: false },
   { key: 'row', title: COLUMN_LABELS.row, defaultWidth: 56, resizable: false, locked: true, sortable: false, filterable: false },
-  { key: 'sku', title: COLUMN_LABELS.sku, defaultWidth: 130, locked: true, filterable: true, numeric: true },
-  { key: 'name', title: COLUMN_LABELS.name, defaultWidth: 240, locked: true, filterable: true },
+  { key: 'name', title: COLUMN_LABELS.name, defaultWidth: 280, locked: true, filterable: true },
+  { key: 'size', title: COLUMN_LABELS.size, defaultWidth: 88, filterable: true, numeric: true },
   { key: 'group', title: COLUMN_LABELS.group, defaultWidth: 110, filterable: true },
   { key: 'category', title: COLUMN_LABELS.category, defaultWidth: 110, filterable: true },
   { key: 'productType', title: COLUMN_LABELS.productType, defaultWidth: 120, filterable: true },
   { key: 'brand', title: COLUMN_LABELS.brand, defaultWidth: 120, filterable: true },
   { key: 'status', title: COLUMN_LABELS.status, defaultWidth: 100, filterable: true },
-  { key: 'actions', title: COLUMN_LABELS.actions, defaultWidth: 90, resizable: false, locked: true, sortable: false, filterable: false },
+  { key: 'actions', title: COLUMN_LABELS.actions, defaultWidth: 110, resizable: false, locked: true, sortable: false, filterable: false },
 ];
 
 const FILTERABLE_KEYS = VITRIN_COLUMN_DEFS.filter((c) => c.filterable !== false).map((c) => c.key);
 
 function getRawValue(product, key) {
   switch (key) {
-    case 'sku':
-      return product.sku || '';
     case 'name':
       return product.displayNameOverride || product.generatedName || '';
+    case 'size':
+      return formatProductSizeDisplay(product);
     case 'group':
       return product.groupName || '—';
     case 'category':
@@ -64,10 +65,12 @@ function getRawValue(product, key) {
 export default function VitrinTable({
   products,
   listTitle,
+  emptyHint,
   selectedIds,
   onSelectionChange,
   onTitleClick,
   onToggleActive,
+  onDelete,
 }) {
   const {
     columnFilters,
@@ -94,8 +97,12 @@ export default function VitrinTable({
   const sortAccessors = useMemo(() => {
     const map = {};
     FILTERABLE_KEYS.forEach((key) => { map[key] = (row) => getRawValue(row, key); });
+    map.size = (row) => getProductSizeNumber(row);
     return map;
   }, []);
+
+  const sortTypes = useMemo(() => ({ size: 'number' }), []);
+  const defaultSorts = useMemo(() => [{ key: 'size', dir: 'asc' }], []);
 
   const scrollRef = useRef(null);
   const sentinelRef = useRef(null);
@@ -105,6 +112,8 @@ export default function VitrinTable({
     columnDefinitions: VITRIN_COLUMN_DEFS,
     rows: filteredProducts,
     sortAccessors,
+    sortTypes,
+    defaultSorts,
     scrollRef,
     sentinelRef,
   });
@@ -220,7 +229,7 @@ export default function VitrinTable({
               <tr>
                 <td colSpan={colSpan}>
                   <div className="empty-state">
-                    <p className="font-meem">کالایی در این نما یافت نشد.</p>
+                    <p className="font-meem">{emptyHint || 'کالایی در این نما یافت نشد.'}</p>
                   </div>
                 </td>
               </tr>
@@ -246,9 +255,6 @@ export default function VitrinTable({
                     if (col.key === 'row') {
                       return <td key={col.key} className="font-yekan">{(index + 1).toLocaleString('fa-IR')}</td>;
                     }
-                    if (col.key === 'sku') {
-                      return <td key={col.key} className="vitrin-table__code font-yekan" dir="ltr">{product.sku}</td>;
-                    }
                     if (col.key === 'name') {
                       return (
                         <td key={col.key}>
@@ -257,6 +263,9 @@ export default function VitrinTable({
                           </button>
                         </td>
                       );
+                    }
+                    if (col.key === 'size') {
+                      return <td key={col.key} className="font-vazir">{formatProductSizeDisplay(product)}</td>;
                     }
                     if (col.key === 'group') return <td key={col.key} className="font-meem">{product.groupName || '—'}</td>;
                     if (col.key === 'category') return <td key={col.key} className="font-meem">{product.categoryName || '—'}</td>;
@@ -272,7 +281,7 @@ export default function VitrinTable({
                     if (col.key === 'actions') {
                       return (
                         <td key={col.key} className="vitrin-table__actions-col">
-                          <VitrinRowActions product={product} onToggleActive={onToggleActive} />
+                          <VitrinRowActions product={product} onToggleActive={onToggleActive} onDelete={onDelete} />
                         </td>
                       );
                     }

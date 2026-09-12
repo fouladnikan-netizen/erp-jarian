@@ -33,18 +33,21 @@ export function normalizeNameKey(value) {
   return normalizeTextValue(value).replace(/[^\p{L}\p{N} ]+/gu, '').trim();
 }
 
-/** Iranian mobile: 09XXXXXXXXX (11 digits) or +989XXXXXXXXX. */
+/** Iranian mobile: 09XXXXXXXXX (11 digits), +98 / 0098, or 9XXXXXXXXX. */
 export function normalizeMobile(value) {
-  const digits = toAsciiDigits(String(value ?? '')).replace(/\D/g, '');
+  const digits = toAsciiDigits(String(value ?? '')).replace(/[\s-]/g, '').replace(/\D/g, '');
   if (!digits) return { ok: false, mobile: '', normalized: '' };
   let normalized = digits;
+  if (normalized.startsWith('0098')) {
+    normalized = normalized.slice(2);
+  }
   if (normalized.startsWith('98') && normalized.length === 12) {
     normalized = `0${normalized.slice(2)}`;
   }
   if (normalized.startsWith('9') && normalized.length === 10) {
     normalized = `0${normalized}`;
   }
-  if (normalized.length !== 11 || !normalized.startsWith('09')) {
+  if (normalized.length !== 11 || !/^09\d{9}$/.test(normalized)) {
     return { ok: false, mobile: normalized, normalized: normalized, error: 'شماره موبایل نامعتبر است.' };
   }
   return { ok: true, mobile: normalized, normalized };

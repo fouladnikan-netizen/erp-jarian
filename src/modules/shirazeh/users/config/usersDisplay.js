@@ -1,5 +1,5 @@
 /**
- * Presentational helpers for canonical backend roles.
+ * Presentational helpers for canonical backend roles and user status.
  * Role codes/labels come from GET /api/v1/users/meta/roles — not a local registry.
  */
 
@@ -17,8 +17,17 @@ export function formatRoleLabels(roles, fallbackRoles = []) {
   return roles.map((r) => getRoleLabel(r, fallbackRoles)).filter(Boolean).join('، ');
 }
 
-export function formatUserStatus(isActive) {
-  return isActive ? 'فعال' : 'غیرفعال';
+export function formatUserStatus(statusOrActive) {
+  if (statusOrActive === 'INVITED') return 'دعوت‌شده';
+  if (statusOrActive === 'INACTIVE' || statusOrActive === false) return 'غیرفعال';
+  if (statusOrActive === 'ACTIVE' || statusOrActive === true) return 'فعال';
+  return 'فعال';
+}
+
+export function userStatusTone(status) {
+  if (status === 'INVITED') return 'invited';
+  if (status === 'INACTIVE') return 'inactive';
+  return 'active';
 }
 
 export function formatUserCreatedAt(iso) {
@@ -38,5 +47,5 @@ export function formatUserCreatedAt(iso) {
 
 export function countActiveUsers(users) {
   if (!Array.isArray(users)) return 0;
-  return users.filter((u) => u?.isActive).length;
+  return users.filter((u) => (u?.status || (u?.isActive === false ? 'INACTIVE' : 'ACTIVE')) === 'ACTIVE').length;
 }

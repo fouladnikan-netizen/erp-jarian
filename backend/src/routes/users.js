@@ -35,8 +35,11 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
-    const user = await userService.createUser(req.body, req.auth.userId);
-    res.status(201).json({ user });
+    const result = await userService.createUser(req.body, req.auth.userId);
+    res.status(201).json({
+      user: result.user,
+      invitation: result.invitation,
+    });
   }),
 );
 
@@ -45,6 +48,15 @@ router.patch(
   asyncHandler(async (req, res) => {
     const user = await userService.updateUser(req.params.id, req.body, req.auth.userId);
     res.json({ user });
+  }),
+);
+
+router.post(
+  '/:id/invitation',
+  asyncHandler(async (req, res) => {
+    const invitation = await userService.resendInvitation(req.params.id, req.auth.userId);
+    const user = await userService.getUser(req.params.id);
+    res.json({ ok: true, user, invitation });
   }),
 );
 

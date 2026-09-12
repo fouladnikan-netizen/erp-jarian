@@ -10,7 +10,7 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { findNodeById, layoutOrganizationFlow } from '../treeUtils';
+import { ROOT_UNIT_ID, findNodeById, layoutOrganizationFlow } from '../treeUtils';
 import { useOrganizationStore } from '../store/organizationStore';
 import { organizationNodeTypes } from './OrganizationNode';
 
@@ -63,7 +63,7 @@ function OrganizationCanvasInner() {
   const onNodeDragStop = useCallback(
     (_event, node) => {
       setDragging(null);
-      if (node.id === 'root') {
+      if (node.id === ROOT_UNIT_ID) {
         setNodes(layout.nodes.map((n) => ({ ...n, selected: n.id === selectedNodeId })));
         return;
       }

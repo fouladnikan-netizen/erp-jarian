@@ -1,27 +1,10 @@
-import {
-  Activity,
-  AlertTriangle,
-  ChevronDown,
-  Radio,
-} from 'lucide-react';
-import {
-  PERMISSION_SCOPES,
-  PERMISSIONS_REGISTRY,
-  SECURITY_ROLES,
-} from '../config/permissionsRegistry';
+import { Activity, ChevronDown, Search } from 'lucide-react';
 import { usePermissionsStore } from '../store/permissionsStore';
+import { groupPermissionCatalog } from './rolePermissionDraft';
 import PermissionsActionBar from './PermissionsActionBar';
 import './permissions.css';
 
-const MODULE_ICONS = {
-  Activity,
-  Radio,
-};
-
-/** Stable fallback — never allocate a new object inside a Zustand selector. */
-const DEFAULT_GRANT = Object.freeze({ enabled: false, scope: 'OWN' });
-
-function GlassToggle({ checked, onChange, id, critical = false }) {
+function GlassToggle({ checked, onChange, id }) {
   return (
     <button
       type="button"
@@ -31,7 +14,6 @@ function GlassToggle({ checked, onChange, id, critical = false }) {
       className={[
         'perm-toggle',
         checked ? 'perm-toggle--on' : 'perm-toggle--off',
-        critical ? 'perm-toggle--critical' : '',
       ].filter(Boolean).join(' ')}
       onClick={onChange}
     >
@@ -40,93 +22,48 @@ function GlassToggle({ checked, onChange, id, critical = false }) {
   );
 }
 
-function ActionRow({ action }) {
-  const grant = usePermissionsStore((s) => {
-    if (Object.prototype.hasOwnProperty.call(s.pendingChanges, action.id)) {
-      return s.pendingChanges[action.id];
-    }
-    return s.rolePermissions[s.selectedRoleId]?.[action.id] ?? DEFAULT_GRANT;
-  });
+function ActionRow({ permission }) {
+  const enabled = usePermissionsStore((s) => s.isEnabled(permission.code));
   const togglePermission = usePermissionsStore((s) => s.togglePermission);
-  const setScope = usePermissionsStore((s) => s.setScope);
   const isPending = usePermissionsStore((s) =>
-    Object.prototype.hasOwnProperty.call(s.pendingChanges, action.id));
-
-  const isFinancial = action.type === 'financial' || action.isCritical;
+    Object.prototype.hasOwnProperty.call(s.pendingChanges, permission.code));
 
   return (
     <div
       className={[
         'perm-action-row',
-        isFinancial ? 'perm-action-row--financial' : '',
         isPending ? 'perm-action-row--pending' : '',
+        permission.isSensitive ? 'perm-action-row--sensitive' : '',
       ].filter(Boolean).join(' ')}
     >
       <div className="perm-action-row__label-wrap">
-        {isFinancial ? (
-          <AlertTriangle
-            className="perm-action-row__warn"
-            size={14}
-            strokeWidth={1.75}
-            aria-hidden="true"
-          />
-        ) : null}
         <div>
-          <p
-            className={[
-              'perm-action-row__label font-meem',
-              isFinancial ? 'perm-action-row__label--financial' : '',
-            ].filter(Boolean).join(' ')}
-          >
-            {action.label}
-          </p>
+          <p className="perm-action-row__label font-meem">{permission.labelFa}</p>
           <p className="perm-action-row__type font-yekan">
-            {action.type}
-            {action.id ? ` · ${action.id}` : ''}
+            {permission.code}
+            {permission.action ? ` · ${permission.action}` : ''}
           </p>
         </div>
+        {permission.isSensitive ? (
+          <span className="perm-sensitive-badge font-meem">دسترسی حساس</span>
+        ) : null}
       </div>
 
       <div className="perm-action-row__controls">
-        {action.hasScope ? (
-          <select
-            className="perm-scope font-meem"
-            value={grant.scope || 'OWN'}
-            disabled={!grant.enabled}
-            aria-label={`دامنه ${action.label}`}
-            onChange={(event) => setScope(action.id, event.target.value)}
-          >
-            {PERMISSION_SCOPES.map((scope) => (
-              <option key={scope.id} value={scope.id}>
-                {scope.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span className="perm-scope perm-scope--spacer" aria-hidden="true" />
-        )}
-
         <GlassToggle
-          id={`perm-toggle-${action.id}`}
-          checked={Boolean(grant.enabled)}
-          critical={isFinancial}
-          onChange={() => togglePermission(action.id)}
+          id={`perm-toggle-${permission.code.replace(/[^a-z0-9-]/gi, '-')}`}
+          checked={enabled}
+          onChange={() => togglePermission(permission.code)}
         />
       </div>
     </div>
   );
 }
 
-function ModuleCard({ module }) {
+function ModuleCard({ group }) {
   const expandedModuleId = usePermissionsStore((s) => s.expandedModuleId);
   const toggleModule = usePermissionsStore((s) => s.toggleModule);
-  const expanded = expandedModuleId === module.moduleId;
-  const Icon = MODULE_ICONS[module.icon] || Activity;
-  const resourceCount = module.resources.length;
-  const actionCount = module.resources.reduce(
-    (sum, resource) => sum + resource.actions.length,
-    0,
-  );
+  const expanded = expandedModuleId === group.resourceId;
 
   return (
     <div className={`perm-module${expanded ? ' perm-module--expanded' : ''}`}>
@@ -134,19 +71,15 @@ function ModuleCard({ module }) {
         type="button"
         className="perm-module__hit"
         aria-expanded={expanded}
-        onClick={() => toggleModule(module.moduleId)}
+        onClick={() => toggleModule(group.resourceId)}
       >
         <span className="perm-module__icon" aria-hidden="true">
-          <Icon size={18} strokeWidth={1.75} />
+          <Activity size={18} strokeWidth={1.75} />
         </span>
         <span className="perm-module__copy">
-          <span className="perm-module__name font-meem">{module.moduleName}</span>
+          <span className="perm-module__name font-meem">{group.resourceName}</span>
           <span className="perm-module__meta font-yekan">
-            {resourceCount.toLocaleString('fa-IR')}
-            {' '}
-            منبع ·
-            {' '}
-            {actionCount.toLocaleString('fa-IR')}
+            {group.permissions.length.toLocaleString('fa-IR')}
             {' '}
             دسترسی
           </span>
@@ -155,7 +88,6 @@ function ModuleCard({ module }) {
           className={`perm-module__chevron${expanded ? ' perm-module__chevron--open' : ''}`}
           size={16}
           strokeWidth={1.75}
-          aria-hidden="true"
         />
       </button>
 
@@ -164,28 +96,40 @@ function ModuleCard({ module }) {
         aria-hidden={!expanded}
       >
         <div className="perm-module__panel-inner">
-          {module.resources.map((resource) => (
-            <section key={resource.resourceId} className="perm-resource">
-              <h4 className="perm-resource__title font-meem">{resource.resourceName}</h4>
-              <div className="perm-resource__actions">
-                {resource.actions.map((action) => (
-                  <ActionRow key={action.id} action={action} />
-                ))}
-              </div>
-            </section>
-          ))}
+          <section className="perm-resource">
+            <div className="perm-resource__actions">
+              {group.permissions.map((permission) => (
+                <ActionRow key={permission.code} permission={permission} />
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     </div>
   );
 }
 
+function CategorySection({ group }) {
+  return (
+    <section className="perm-category" aria-label={group.category}>
+      <h3 className="perm-category__title font-meem">{group.category}</h3>
+      <div className="perm-category__resources">
+        {group.resources.map((resource) => (
+          <ModuleCard key={resource.resourceId} group={resource} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /**
- * Progressive-disclosure Permission Matrix with explicit save.
+ * Permission matrix bound to Backend structured catalog + role_permissions.
  */
 export default function PermissionMatrix() {
-  const selectedRoleId = usePermissionsStore((s) => s.selectedRoleId);
-  const selectRole = usePermissionsStore((s) => s.selectRole);
+  const catalog = usePermissionsStore((s) => s.catalog);
+  const permissionQuery = usePermissionsStore((s) => s.permissionQuery);
+  const setPermissionQuery = usePermissionsStore((s) => s.setPermissionQuery);
+  const groups = groupPermissionCatalog(catalog, permissionQuery);
 
   return (
     <div className="perm-matrix" dir="rtl">
@@ -193,30 +137,32 @@ export default function PermissionMatrix() {
         <div>
           <h2 className="perm-matrix__title font-meem">ماتریس دسترسی‌ها</h2>
           <p className="perm-matrix__subtitle font-meem">
-            تفکیک دسترسی داده، اقدام و مالی — ذخیره فقط با تأیید صریح
+            دسترسی نقش انتخاب‌شده از سامانه خوانده می‌شود و با تأیید صریح ذخیره می‌گردد
           </p>
         </div>
-
-        <label className="perm-role-select font-meem">
-          نقش
-          <select
-            className="perm-role-select__control font-meem"
-            value={selectedRoleId}
-            onChange={(event) => selectRole(event.target.value)}
-          >
-            {SECURITY_ROLES.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.label}
-              </option>
-            ))}
-          </select>
+        <label className="perm-search">
+          <span className="perm-search__icon" aria-hidden="true">
+            <Search size={16} strokeWidth={1.75} />
+          </span>
+          <input
+            type="search"
+            className="perm-search__input font-meem"
+            placeholder="جستجوی دسترسی، دسته یا کد"
+            value={permissionQuery}
+            onChange={(event) => setPermissionQuery(event.target.value)}
+            aria-label="جستجوی دسترسی"
+          />
         </label>
       </header>
 
       <div className="perm-matrix__modules">
-        {PERMISSIONS_REGISTRY.map((module) => (
-          <ModuleCard key={module.moduleId} module={module} />
-        ))}
+        {groups.length === 0 ? (
+          <p className="perm-matrix__empty font-meem">دسترسی‌ای با این جستجو یافت نشد.</p>
+        ) : (
+          groups.map((group) => (
+            <CategorySection key={group.category} group={group} />
+          ))
+        )}
       </div>
 
       <PermissionsActionBar />

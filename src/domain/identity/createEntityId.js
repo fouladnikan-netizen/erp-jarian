@@ -24,6 +24,7 @@ export const ENTITY_ID_PREFIX = Object.freeze({
   REVISION: 'rev',
   TADAROK_LINE: 'tl',
   ORG_DEPT: 'dept',
+  ORG_UNIT: 'ou',
   ORG_USER_NODE: 'user',
   LOADING_ASSIGNMENT: 'LA',
   PROFORMA_FILE: 'pf',

@@ -4,8 +4,10 @@ import {
   ensureEditableLetterBody,
   formatHonorableCompany,
   getLetterSignatory,
+  resolveLetterOrganization,
   resolveLetterRoleTitle,
 } from '../services/letterDocument';
+import { useOrganizationIdentity } from '../../../domain/organizationIdentity';
 import './printableOfficialLetter.css';
 
 /** @typedef {'letterhead' | 'plain'} PrintLetterVariant */
@@ -37,6 +39,7 @@ export default function PrintableOfficialLetter({
   record,
   variant = PRINT_LETTER_VARIANT.LETTERHEAD,
 }) {
+  const { identity } = useOrganizationIdentity();
   if (!record) return null;
 
   const withLetterhead = variant === PRINT_LETTER_VARIANT.LETTERHEAD;
@@ -48,6 +51,9 @@ export default function PrintableOfficialLetter({
   const issuerTitle = resolveLetterRoleTitle(record.issuerTitle)
     || resolveLetterRoleTitle(signatory.role)
     || signatory.title;
+  const letterOrg = resolveLetterOrganization(record, identity);
+  const orgCompany = letterOrg.tradeName;
+  const orgPhone = letterOrg.phone;
   const companyLine = formatHonorableCompany(resolveCompanyName(record));
   const personLine = String(record.attentionName || '').trim();
   const bodyHtml = ensureEditableLetterBody(record.body || '');
@@ -124,7 +130,7 @@ export default function PrintableOfficialLetter({
             <div className="printable-official-letter__closing font-meem">
               <strong>{issuerName}</strong>
               <strong>{issuerTitle}</strong>
-              <strong>{signatory.company}</strong>
+              <strong data-org-phone={orgPhone || undefined}>{orgCompany}</strong>
             </div>
           </div>
         </footer>

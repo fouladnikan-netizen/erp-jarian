@@ -3,6 +3,7 @@ import { COMPANY_BRAND } from '../../../proformaConfig';
 import { getShippingRecipient } from '../../../shippingService';
 import { getTodayJalali, getNowTimeFa } from '../../../dateUtils';
 import { toDisplayOrderCode } from '../../../orderCode';
+import { resolveSooratBarOrganization } from '../../../documentOrganization';
 import './PrintableSooratBar.css';
 
 function formatFa(value) {
@@ -30,6 +31,9 @@ export default function PrintableSooratBar({
   logistics = {},
   meta = {},
 }) {
+  const org = resolveSooratBarOrganization(meta.organizationSnapshot);
+  const tradeName = org.tradeName;
+  const tagline = org.tagline || COMPANY_BRAND.tagline;
   const recipient = getShippingRecipient(order || {});
   const buyerName = order?.customer || '—';
   const consigneeName = recipient?.name || '—';
@@ -56,12 +60,17 @@ export default function PrintableSooratBar({
         <div className="printable-sooratbar__brand">
           <img
             src={logo}
-            alt={COMPANY_BRAND.name}
+            alt={tradeName}
             className="printable-sooratbar__logo"
           />
           <div className="printable-sooratbar__brand-text">
-            <p className="printable-sooratbar__company font-meem">{COMPANY_BRAND.name}</p>
-            <p className="printable-sooratbar__tagline font-meem">{COMPANY_BRAND.tagline}</p>
+            <p
+              className="printable-sooratbar__company font-meem"
+              data-org-phone={org.phone || undefined}
+            >
+              {tradeName}
+            </p>
+            <p className="printable-sooratbar__tagline font-meem">{tagline}</p>
           </div>
         </div>
 
@@ -105,7 +114,7 @@ export default function PrintableSooratBar({
           <span className="printable-sooratbar__entity-value font-meem">
             شرکت
             {' '}
-            {COMPANY_BRAND.name}
+            {tradeName}
           </span>
         </div>
         <div className="printable-sooratbar__entity">

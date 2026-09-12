@@ -274,12 +274,12 @@
     margin: 0;
   }
 
-  body * {
+  body:has(.gahshomar-print-root) * {
     visibility: hidden !important;
   }
 
-  .gahshomar-print-root,
-  .gahshomar-print-root * {
+  body:has(.gahshomar-print-root) .gahshomar-print-root,
+  body:has(.gahshomar-print-root) .gahshomar-print-root * {
     visibility: visible !important;
   }
 

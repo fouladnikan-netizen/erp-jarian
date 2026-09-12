@@ -9,16 +9,9 @@ export const SETTINGS_MENU = [
   {
     id: 'general',
     label: 'عمومی',
-    description: 'هویت سازمانی، منطقه زمانی و تنظیمات پایه سامانه',
+    description: 'منطقه زمانی و تنظیمات پایه سامانه',
     path: `${SHIRAZEH_BASE_PATH}/general`,
     icon: 'Settings',
-  },
-  {
-    id: 'users',
-    label: 'کاربران و نقش‌ها',
-    description: 'مدیریت دسترسی، نقش‌ها و شوالیه‌های عملیاتی',
-    path: `${SHIRAZEH_BASE_PATH}/users`,
-    icon: 'Users',
   },
   {
     id: 'integrations',
@@ -42,25 +35,11 @@ export const SETTINGS_MENU = [
     icon: 'Mail',
   },
   {
-    id: 'product-master',
-    label: 'طبقه‌بندی و مرجع کالا',
-    description: 'گروه/دسته/نوع کالا، ویژگی‌ها، واحد اندازه‌گیری و برند مرکزی',
-    path: `${SHIRAZEH_BASE_PATH}/product-master`,
-    icon: 'Boxes',
-  },
-  {
     id: 'warehouses',
     label: 'انبارها',
     description: 'تعریف انبارها و آدرس‌های عملیاتی',
     path: `${SHIRAZEH_BASE_PATH}/warehouses`,
     icon: 'Warehouse',
-  },
-  {
-    id: 'security',
-    label: 'امنیت',
-    description: 'نشست‌ها، سیاست رمز عبور و لاگ دسترسی',
-    path: `${SHIRAZEH_BASE_PATH}/security`,
-    icon: 'Shield',
   },
   {
     id: 'appearance',

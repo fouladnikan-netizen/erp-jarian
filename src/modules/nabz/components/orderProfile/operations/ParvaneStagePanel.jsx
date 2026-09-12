@@ -14,6 +14,7 @@ import {
   returnParvaneToPishkesh,
 } from '../../../parvaneStageService';
 import QuotingOrderTable from '../../QuotingOrderTable';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 
 function formatProfitPercent(profit, total) {
   if (!total || total <= 0) return '۰';
@@ -65,6 +66,7 @@ export default function ParvaneStagePanel({
   compact = false,
   readOnly = false,
 }) {
+  const { alert, confirm } = useJarianNotice();
   const [driverNotes, setDriverNotes] = useState(order.parvaneDriverNotes || '');
   const live = isParvaneStageLive(order, operationalViewPhase) && !readOnly;
   const orderTotal = getParvaneOrderTotal(order);
@@ -85,20 +87,25 @@ export default function ParvaneStagePanel({
     onUpdateOrder?.((current) => updateOrderQuoting(current, { vatInclusive: next }));
   };
 
-  const handleIssuePermit = () => {
+  const handleIssuePermit = async () => {
     if (readOnly) return;
     const result = issueParvaneSupplyPermit(order, driverNotes);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان صدور دستور خرید وجود ندارد.');
+      await alert({ title: 'توجه', message: result.reason || 'امکان صدور دستور خرید وجود ندارد.' });
       return;
     }
     onUpdateOrder?.(() => result.order);
     onOperationalPhaseChange?.(getOrderOperationalPhase(result.order));
   };
 
-  const handleReturn = () => {
+  const handleReturn = async () => {
     if (readOnly) return;
-    if (!window.confirm('سفارش به مرحله پیش‌کش بازگردانده شود؟')) return;
+    const ok = await confirm({
+      title: 'بازگشت',
+      message: 'سفارش به مرحله پیش‌کش بازگردانده شود؟',
+      confirmLabel: 'بازگشت',
+    });
+    if (!ok) return;
     const result = returnParvaneToPishkesh(order, driverNotes);
     if (!result.accepted) return;
     onUpdateOrder?.(() => result.order);

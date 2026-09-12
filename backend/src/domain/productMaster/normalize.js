@@ -57,6 +57,15 @@ export function normalizeBooleanValue(value) {
  * Normalize a value according to its Attribute Definition dataType. Returns
  * `{ normalized, storage: { valueText, valueNumber, valueBoolean } }`.
  */
+/** Single numeric type is DECIMAL (DDL-24o). INTEGER is a legacy alias. */
+export function isNumericAttributeType(dataType) {
+  return dataType === 'DECIMAL' || dataType === 'INTEGER';
+}
+
+/**
+ * Normalize a value according to its Attribute Definition dataType. Returns
+ * `{ normalized, storage: { valueText, valueNumber, valueBoolean } }`.
+ */
 export function normalizeAttributeValue(dataType, rawValue) {
   switch (dataType) {
     case 'DECIMAL':
@@ -120,4 +129,48 @@ export function tokenOverlapSimilarity(a, b) {
   for (const t of ta) if (tb.has(t)) intersection += 1;
   const union = ta.size + tb.size - intersection;
   return union === 0 ? 0 : intersection / union;
+}
+
+const PERSIAN_SCRIPT = /[\u0600-\u06FF]/;
+const LATIN_CODEISH = /^[A-Za-z][A-Za-z0-9_\-\s]*$/;
+
+/** Operator-facing attribute `code`: lowercase latin, digits, underscore. */
+export function slugAttributeCode(raw) {
+  return String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
+    .replace(/[^a-z0-9_]/g, '');
+}
+
+/**
+ * Operators often type the Persian name into the first (rightmost in RTL)
+ * field and the Latin identifier into the second. Accept that order, and
+ * accept `Size` as `size`.
+ */
+export function prepareAttributeDefinitionInput(body = {}) {
+  let code = String(body.code ?? '').trim();
+  let nameFa = String(body.nameFa ?? '').trim();
+  if (PERSIAN_SCRIPT.test(code) && LATIN_CODEISH.test(nameFa) && !PERSIAN_SCRIPT.test(nameFa)) {
+    const swapped = code;
+    code = nameFa;
+    nameFa = swapped;
+  }
+  const dataType = body.dataType === 'INTEGER' ? 'DECIMAL' : body.dataType;
+  return { ...body, code: slugAttributeCode(code), nameFa, dataType };
+}
+
+/** Patch counterpart — only normalizes fields the operator actually sent. */
+export function prepareAttributeDefinitionPatch(body = {}) {
+  const patch = { ...body };
+  if (Object.prototype.hasOwnProperty.call(patch, 'dataType')) {
+    patch.dataType = patch.dataType === 'INTEGER' ? 'DECIMAL' : patch.dataType;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'code')) {
+    patch.code = slugAttributeCode(patch.code);
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, 'nameFa')) {
+    patch.nameFa = String(patch.nameFa ?? '').trim();
+  }
+  return patch;
 }

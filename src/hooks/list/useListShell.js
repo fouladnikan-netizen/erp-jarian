@@ -11,6 +11,7 @@ import { useListDataProvider, LIST_INFINITE_CHUNK_SIZE } from './useListDataProv
 import { applyMultiSort, nextSorts } from './useMultiSort';
 
 const MIN_COL_WIDTH = 56;
+const EMPTY_SORTS = [];
 
 /**
  * @param {{
@@ -20,6 +21,7 @@ const MIN_COL_WIDTH = 56;
  *   rows?: Array<any>,
  *   sortAccessors?: Record<string, Function>,
  *   sortTypes?: Record<string, string>,
+ *   defaultSorts?: Array<{ key: string, dir: 'asc'|'desc' }>,
  *   resetKey?: string|number,
  *   chunkSize?: number,
  *   onLoadMore?: Function,
@@ -37,6 +39,7 @@ export function useListShell(options = {}) {
     rows = [],
     sortAccessors,
     sortTypes,
+    defaultSorts = EMPTY_SORTS,
     resetKey,
     chunkSize = LIST_INFINITE_CHUNK_SIZE,
     onLoadMore,
@@ -72,12 +75,13 @@ export function useListShell(options = {}) {
 
   if (seenResetKey !== resetKey) {
     setSeenResetKey(resetKey);
-    setSorts([]);
+    setSorts(defaultSorts);
     setSortsHydrated(false);
   }
 
   if (ready && !sortsHydrated) {
-    setSorts(Array.isArray(preferences.sorts) ? preferences.sorts : []);
+    const saved = Array.isArray(preferences.sorts) ? preferences.sorts : [];
+    setSorts(saved.length ? saved : defaultSorts);
     setSortsHydrated(true);
   }
 
@@ -154,10 +158,10 @@ export function useListShell(options = {}) {
   const handleResetPreferences = useCallback(async () => {
     const next = await resetPreferences();
     resetColumns();
-    setSorts([]);
+    setSorts(defaultSorts);
     setSortsHydrated(true);
     return next;
-  }, [resetPreferences, resetColumns]);
+  }, [resetPreferences, resetColumns, defaultSorts]);
 
   return {
     listKey,

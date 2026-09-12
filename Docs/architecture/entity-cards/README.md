@@ -21,6 +21,8 @@ npm run check:entity-cards
 | [raw-lead.yaml](./raw-lead.yaml) | A | active |
 | [activity.yaml](./activity.yaml) | A | active |
 | [task.yaml](./task.yaml) | A | active |
+| [persona.yaml](./persona.yaml) | B | active |
+| [latin-lexicon.yaml](./latin-lexicon.yaml) | B | active |
 
 ## Adding a card
 

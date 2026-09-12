@@ -7,10 +7,12 @@ import assert from 'node:assert/strict';
 import {
   toAsciiDigits, normalizeNumericValue, normalizeTextValue, normalizeAttributeValue,
   buildCanonicalIdentityKey, normalizeBrandName, tokenOverlapSimilarity,
+  prepareAttributeDefinitionInput, prepareAttributeDefinitionPatch, slugAttributeCode, isNumericAttributeType,
 } from '../domain/productMaster/normalize.js';
 import { pad2 } from '../domain/productMaster/taxonomyCode.js';
-import { buildGeneratedName } from '../domain/productMaster/nameGenerator.js';
+import { buildGeneratedName, resolveEnumDisplayValue } from '../domain/productMaster/nameGenerator.js';
 import { validateWeightProfile } from '../domain/productMaster/weightProfile.js';
+import { applyAttributeBindingPolicy } from '../domain/productMaster/attributeBindingPolicy.js';
 
 describe('toAsciiDigits', () => {
   it('converts Persian digits', () => assert.equal(toAsciiDigits('۱۲۳'), '123'));
@@ -93,6 +95,46 @@ describe('buildGeneratedName', () => {
   it('falls back to bare Type name when no display attributes', () => {
     assert.equal(buildGeneratedName('ورق سیاه', []), 'ورق سیاه');
   });
+  it('omits kind name prefix and silent معمولی', () => {
+    const light = buildGeneratedName('ناودانی', [
+      { nameFa: 'سایز', sortOrder: 20, displayValue: 8, unitLabel: null },
+      { nameFa: 'نوع', sortOrder: 10, displayValue: 'سبک', omitName: true },
+    ]);
+    assert.equal(light, 'ناودانی | سبک | سایز: 8');
+    const plain = buildGeneratedName('ناودانی', [
+      { nameFa: 'سایز', sortOrder: 20, displayValue: 8, unitLabel: null },
+      { nameFa: 'نوع', sortOrder: 10, displayValue: '', omitName: true },
+    ]);
+    assert.equal(plain, 'ناودانی | سایز: 8');
+  });
+  it('omits ral name prefix so the color label stands alone', () => {
+    const name = buildGeneratedName('ورق گالوانیزه رنگی', [
+      { nameFa: 'ضخامت', sortOrder: 10, displayValue: '0.5', unitLabel: null },
+      { nameFa: 'رال', sortOrder: 30, displayValue: 'سفید رال ۹۰۱۶', omitName: true },
+    ]);
+    assert.equal(name, 'ورق گالوانیزه رنگی | ضخامت: 0.5 | سفید رال ۹۰۱۶');
+  });
+});
+
+describe('resolveEnumDisplayValue', () => {
+  const catalog = [
+    { value: 'plain', labelFa: 'معمولی' },
+    { value: 'light', labelFa: 'سبک' },
+    { value: 'europe', labelFa: 'هم وزن اروپا' },
+  ];
+  it('uses Persian labels and omits معمولی from the display name', () => {
+    assert.equal(resolveEnumDisplayValue(catalog, 'plain'), '');
+    assert.equal(resolveEnumDisplayValue(catalog, 'light'), 'سبک');
+    assert.equal(resolveEnumDisplayValue(catalog, 'europe'), 'هم وزن اروپا');
+    assert.equal(resolveEnumDisplayValue(
+      [{ value: 'معمولی', labelFa: 'معمولی' }, { value: 'سبک', labelFa: 'سبک' }],
+      'معمولی',
+    ), '');
+    assert.equal(resolveEnumDisplayValue(
+      [{ value: 'معمولی', labelFa: 'معمولی' }, { value: 'سبک', labelFa: 'سبک' }],
+      'سبک',
+    ), 'سبک');
+  });
 });
 
 describe('pad2 (taxonomy/SKU code formatting)', () => {
@@ -138,5 +180,96 @@ describe('validateWeightProfile', () => {
 describe('normalizeTextValue', () => {
   it('collapses internal whitespace and trims', () => {
     assert.equal(normalizeTextValue('  ورق   سیاه  '), 'ورق سیاه');
+  });
+});
+
+describe('prepareAttributeDefinitionInput — RTL name/code mix-up', () => {
+  it('slugs Size to size', () => {
+    assert.equal(slugAttributeCode('Size'), 'size');
+    const out = prepareAttributeDefinitionInput({ code: 'Size', nameFa: 'سایز', dataType: 'INTEGER' });
+    assert.equal(out.code, 'size');
+    assert.equal(out.nameFa, 'سایز');
+    assert.equal(out.dataType, 'DECIMAL');
+  });
+  it('swaps when Persian was typed into the code field', () => {
+    const out = prepareAttributeDefinitionInput({ code: 'سایز', nameFa: 'size', dataType: 'INTEGER' });
+    assert.equal(out.code, 'size');
+    assert.equal(out.nameFa, 'سایز');
+    assert.equal(out.dataType, 'DECIMAL');
+  });
+});
+
+describe('prepareAttributeDefinitionPatch', () => {
+  it('slugs code and coerces INTEGER without touching omitted fields', () => {
+    const out = prepareAttributeDefinitionPatch({ code: 'Weight_Class', dataType: 'INTEGER' });
+    assert.equal(out.code, 'weight_class');
+    assert.equal(out.dataType, 'DECIMAL');
+    assert.equal(Object.prototype.hasOwnProperty.call(out, 'nameFa'), false);
+  });
+});
+
+describe('INTEGER is an alias of DECIMAL (DDL-24o)', () => {
+  it('isNumericAttributeType covers DECIMAL and legacy INTEGER', () => {
+    assert.equal(isNumericAttributeType('DECIMAL'), true);
+    assert.equal(isNumericAttributeType('INTEGER'), true);
+    assert.equal(isNumericAttributeType('STRING'), false);
+  });
+  it('fractional values normalize for both DECIMAL and INTEGER', () => {
+    assert.equal(normalizeAttributeValue('DECIMAL', '6.5').normalized, '6.5');
+    assert.equal(normalizeAttributeValue('INTEGER', '6.5').normalized, '6.5');
+  });
+});
+
+describe('applyAttributeBindingPolicy (DDL-46 / DDL-49)', () => {
+  it('does not derive identity from required', () => {
+    const requiredNumeric = applyAttributeBindingPolicy({ isRequired: true, dataType: 'DECIMAL' });
+    assert.equal(requiredNumeric.isRequired, true);
+    assert.equal(requiredNumeric.isIdentityRelevant, true);
+    assert.equal(requiredNumeric.valueScope, 'PRODUCT');
+    assert.equal(requiredNumeric.isDisplayRelevant, true);
+
+    const optionalNumeric = applyAttributeBindingPolicy({ isRequired: false, dataType: 'DECIMAL' });
+    assert.equal(optionalNumeric.isRequired, false);
+    assert.equal(optionalNumeric.isIdentityRelevant, true);
+
+    const requiredEnum = applyAttributeBindingPolicy({ isRequired: true, dataType: 'ENUM' });
+    assert.equal(requiredEnum.isRequired, true);
+    assert.equal(requiredEnum.isIdentityRelevant, true);
+
+    const optionalEnum = applyAttributeBindingPolicy({ isRequired: false, dataType: 'ENUM' });
+    assert.equal(optionalEnum.isIdentityRelevant, false);
+  });
+  it('rejects required STRING on an active PRODUCT binding', () => {
+    assert.throws(
+      () => applyAttributeBindingPolicy({ isRequired: true, dataType: 'STRING' }),
+      (err) => err.code === 'ATTRIBUTE_REQUIRED_TYPE_INVALID',
+    );
+  });
+  it('allows deactivating a legacy required STRING binding', () => {
+    const row = applyAttributeBindingPolicy({ isActive: false }, { isRequired: true, dataType: 'STRING', valueScope: 'PRODUCT' });
+    assert.equal(row.isActive, false);
+  });
+  it('ignores client isIdentityRelevant and uses the numeric PRODUCT rule', () => {
+    const forced = applyAttributeBindingPolicy({ dataType: 'STRING', isIdentityRelevant: true });
+    assert.equal(forced.isIdentityRelevant, false);
+    const denied = applyAttributeBindingPolicy({ dataType: 'DECIMAL', isIdentityRelevant: false });
+    assert.equal(denied.isIdentityRelevant, true);
+  });
+  it('allows TRANSACTION that is required, but never identity', () => {
+    const row = applyAttributeBindingPolicy({ valueScope: 'TRANSACTION', isRequired: true, dataType: 'DECIMAL' });
+    assert.equal(row.valueScope, 'TRANSACTION');
+    assert.equal(row.attributeRole, 'TRANSACTION_ONLY');
+    assert.equal(row.isRequired, true);
+    assert.equal(row.isIdentityRelevant, false);
+  });
+  it('coerces TRANSACTION identity requests to false instead of rejecting', () => {
+    const row = applyAttributeBindingPolicy({ valueScope: 'TRANSACTION', isIdentityRelevant: true, dataType: 'DECIMAL' });
+    assert.equal(row.isIdentityRelevant, false);
+    assert.equal(row.valueScope, 'TRANSACTION');
+  });
+  it('maps legacy attributeRole to valueScope', () => {
+    const row = applyAttributeBindingPolicy({ attributeRole: 'TRANSACTION_ONLY', isRequired: false });
+    assert.equal(row.valueScope, 'TRANSACTION');
+    assert.equal(row.attributeRole, 'TRANSACTION_ONLY');
   });
 });

@@ -7,6 +7,7 @@ function mapRow(row) {
   return {
     id: row.id,
     code: row.code,
+    skuCode: row.sku_code,
     nameFa: row.name_fa,
     description: row.description,
     dataType: row.data_type,
@@ -58,21 +59,27 @@ export async function findByCode(code, client = null) {
   return res.rows[0] ? mapRow(res.rows[0]) : null;
 }
 
+export async function listSkuCodes(client = null) {
+  const run = runner(client);
+  const res = await run(`SELECT id, sku_code FROM attribute_definitions`);
+  return res.rows.map((row) => ({ id: row.id, skuCode: row.sku_code }));
+}
+
 export async function create(row, client = null) {
   const run = runner(client);
   const res = await run(
     `INSERT INTO attribute_definitions (
-       id, code, name_fa, description, data_type, uom_id, allowed_values, default_value,
+       id, code, sku_code, name_fa, description, data_type, uom_id, allowed_values, default_value,
        min_value, max_value, precision, is_searchable, is_filterable, is_reportable, is_sortable,
        is_active, created_by, updated_by
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17)
+     ) VALUES ($1,$2,$18,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17)
      RETURNING *`,
     [
       row.id, row.code, row.nameFa, row.description || null, row.dataType, row.uomId || null,
       row.allowedValues ? JSON.stringify(row.allowedValues) : null, row.defaultValue ?? null,
       row.minValue ?? null, row.maxValue ?? null, row.precision ?? null,
       row.isSearchable ?? true, row.isFilterable ?? true, row.isReportable ?? true, row.isSortable ?? false,
-      row.isActive ?? true, row.actorUserId || null,
+      row.isActive ?? true, row.actorUserId || null, row.skuCode,
     ],
   );
   return mapRow(res.rows[0]);
@@ -80,34 +87,64 @@ export async function create(row, client = null) {
 
 export async function update(id, patch, actorUserId, client = null) {
   const run = runner(client);
+  const has = (key) => Object.prototype.hasOwnProperty.call(patch, key);
   const res = await run(
     `UPDATE attribute_definitions SET
-      name_fa = COALESCE($2, name_fa),
-      description = COALESCE($3, description),
-      uom_id = COALESCE($4, uom_id),
-      allowed_values = COALESCE($5::jsonb, allowed_values),
-      default_value = COALESCE($6, default_value),
-      min_value = COALESCE($7, min_value),
-      max_value = COALESCE($8, max_value),
-      precision = COALESCE($9, precision),
-      is_searchable = COALESCE($10, is_searchable),
-      is_filterable = COALESCE($11, is_filterable),
-      is_reportable = COALESCE($12, is_reportable),
-      is_sortable = COALESCE($13, is_sortable),
-      is_active = COALESCE($14, is_active),
-      updated_by = $15,
+      code = CASE WHEN $2 THEN $3 ELSE code END,
+      data_type = CASE WHEN $4 THEN $5 ELSE data_type END,
+      name_fa = COALESCE($6, name_fa),
+      description = COALESCE($7, description),
+      uom_id = CASE WHEN $23 THEN $8 ELSE uom_id END,
+      allowed_values = CASE WHEN $9 THEN $10::jsonb ELSE allowed_values END,
+      default_value = CASE WHEN $24 THEN $11 ELSE default_value END,
+      min_value = COALESCE($12, min_value),
+      max_value = COALESCE($13, max_value),
+      precision = COALESCE($14, precision),
+      is_searchable = COALESCE($15, is_searchable),
+      is_filterable = COALESCE($16, is_filterable),
+      is_reportable = COALESCE($17, is_reportable),
+      is_sortable = COALESCE($18, is_sortable),
+      is_active = COALESCE($19, is_active),
+      sku_code = CASE WHEN $20 THEN $21 ELSE sku_code END,
+      updated_by = $22,
       updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
     [
-      id, patch.nameFa ?? null, patch.description ?? null, patch.uomId ?? null,
-      patch.allowedValues ? JSON.stringify(patch.allowedValues) : null, patch.defaultValue ?? null,
+      id,
+      has('code'), has('code') ? patch.code : null,
+      has('dataType'), has('dataType') ? patch.dataType : null,
+      patch.nameFa ?? null, patch.description ?? null,
+      has('uomId') ? (patch.uomId ?? null) : null,
+      has('allowedValues'), has('allowedValues')
+        ? (patch.allowedValues == null ? null : JSON.stringify(patch.allowedValues))
+        : null,
+      has('defaultValue') ? (patch.defaultValue || null) : null,
       patch.minValue ?? null, patch.maxValue ?? null, patch.precision ?? null,
       patch.isSearchable ?? null, patch.isFilterable ?? null, patch.isReportable ?? null, patch.isSortable ?? null,
-      patch.isActive ?? null, actorUserId || null,
+      patch.isActive ?? null,
+      has('skuCode'), has('skuCode') ? patch.skuCode : null,
+      actorUserId || null,
+      has('uomId'),
+      has('defaultValue'),
     ],
   );
   return res.rows[0] ? mapRow(res.rows[0]) : null;
 }
 
-export default { list, findById, findByIds, findByCode, create, update };
+export async function listByUom(uomId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT id, name_fa, code FROM attribute_definitions WHERE uom_id = $1 ORDER BY name_fa ASC`,
+    [uomId],
+  );
+  return res.rows.map((row) => ({ id: row.id, name: row.name_fa, code: row.code }));
+}
+
+export async function remove(id, client = null) {
+  const run = runner(client);
+  const res = await run(`DELETE FROM attribute_definitions WHERE id = $1 RETURNING id`, [id]);
+  return res.rowCount > 0;
+}
+
+export default { list, findById, findByIds, findByCode, listByUom, create, update, remove };

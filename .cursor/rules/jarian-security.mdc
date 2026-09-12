@@ -16,6 +16,7 @@ Read: `Docs/architecture/IDENTITY_MODEL.md`, `Docs/architecture/AUTHORIZATION_MO
 4. **Audit actor comes from JWT on the server.** Never trust a client-supplied `actorId` for authorization or audit authority.
 5. Prefer `can('orders:write')` over `role === 'admin'` for capability checks.
 6. **401** → invalid session / login. **403** → forbidden while still authenticated (do not auto-logout).
+7. **Persona ≠ Position ≠ Role.** Only Role → Permission authorizes. Do not infer Persona from Role, grant permissions from Position/Persona, persist persona on `users`, or rename Roles/Positions to Persona names (DDL-40).
 
 ## Allowed
 

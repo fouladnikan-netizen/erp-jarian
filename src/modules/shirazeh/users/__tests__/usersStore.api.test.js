@@ -16,6 +16,7 @@ vi.mock('../../../../api/repositories/UserRepository.js', () => ({
     createUser: vi.fn(),
     updateUser: vi.fn(),
     resetPassword: vi.fn(),
+    resendInvitation: vi.fn(),
   },
 }));
 
@@ -51,11 +52,13 @@ describe('useUsersStore API mode', () => {
       modalOpen: false,
       editingUserId: null,
       form: {
-        displayName: '',
-        username: '',
-        password: '',
+        fullName: '',
+        mobile: '',
+        email: '',
+        unitId: '',
+        positionId: '',
         roleCodes: [],
-        isActive: true,
+        status: 'INVITED',
       },
       passwordModalUserId: null,
       passwordForm: { password: '' },
@@ -90,41 +93,46 @@ describe('useUsersStore API mode', () => {
     UserRepository.createUser.mockResolvedValue({
       ...sampleUser,
       id: 'u_new',
-      username: 'nima',
+      fullName: 'نیما',
       displayName: 'نیما',
+      mobile: '09121234567',
     });
     useUsersStore.setState({
       form: {
-        displayName: 'نیما',
-        username: 'nima',
-        password: 'NimaPass8!',
+        fullName: 'نیما',
+        mobile: '09121234567',
+        email: '',
+        unitId: '',
+        positionId: '',
         roleCodes: ['sales'],
-        isActive: true,
+        status: 'INVITED',
       },
     });
     const result = await useUsersStore.getState().saveUser();
     expect(result.ok).toBe(true);
     expect(UserRepository.createUser).toHaveBeenCalledWith({
-      username: 'nima',
-      displayName: 'نیما',
-      password: 'NimaPass8!',
+      fullName: 'نیما',
+      mobile: '09121234567',
+      email: '',
       roles: ['sales'],
-      isActive: true,
+      organization: undefined,
     });
     expect(useUsersStore.getState().users[0].id).toBe('u_new');
     expect(useUsersStore.getState().modalOpen).toBe(false);
   });
 
   it('failed create does not fake a local user', async () => {
-    UserRepository.createUser.mockRejectedValue(apiError(409, 'USERNAME_EXISTS', 'تکراری'));
+    UserRepository.createUser.mockRejectedValue(apiError(409, 'MOBILE_EXISTS', 'تکراری'));
     useUsersStore.setState({
       modalOpen: true,
       form: {
-        displayName: 'نیما',
-        username: 'nima',
-        password: 'NimaPass8!',
+        fullName: 'نیما',
+        mobile: '09121234567',
+        email: '',
+        unitId: '',
+        positionId: '',
         roleCodes: ['sales'],
-        isActive: true,
+        status: 'INVITED',
       },
     });
     const result = await useUsersStore.getState().saveUser();
@@ -134,20 +142,23 @@ describe('useUsersStore API mode', () => {
     expect(useUsersStore.getState().modalOpen).toBe(true);
   });
 
-  it('edit request patches displayName/roles/status', async () => {
+  it('edit request patches fullName/roles/status', async () => {
     useUsersStore.setState({
       users: [sampleUser],
       editingUserId: 'u_1',
       form: {
-        displayName: 'سارا نوری',
-        username: 'sara',
-        password: '',
+        fullName: 'سارا نوری',
+        mobile: '09120000000',
+        email: '',
+        unitId: '',
+        positionId: '',
         roleCodes: ['sales', 'purchase'],
-        isActive: true,
+        status: 'ACTIVE',
       },
     });
     UserRepository.updateUser.mockResolvedValue({
       ...sampleUser,
+      fullName: 'سارا نوری',
       displayName: 'سارا نوری',
       roles: [
         { code: 'purchase', labelFa: 'تدارکات' },
@@ -157,9 +168,12 @@ describe('useUsersStore API mode', () => {
     const result = await useUsersStore.getState().saveUser();
     expect(result.ok).toBe(true);
     expect(UserRepository.updateUser).toHaveBeenCalledWith('u_1', {
-      displayName: 'سارا نوری',
-      isActive: true,
+      fullName: 'سارا نوری',
+      mobile: '09120000000',
+      email: '',
       roles: ['sales', 'purchase'],
+      status: 'ACTIVE',
+      organization: null,
     });
     expect(useUsersStore.getState().users[0].displayName).toBe('سارا نوری');
   });
@@ -208,5 +222,15 @@ describe('useUsersStore API mode', () => {
     expect(result.ok).toBe(false);
     expect(useUsersStore.getState().passwordModalUserId).toBe('u_1');
     expect(useUsersStore.getState().error).toBe('کاربر یافت نشد.');
+  });
+
+  it('resends invitation through API', async () => {
+    UserRepository.resendInvitation.mockResolvedValue({
+      ok: true,
+      invitation: { sent: true },
+    });
+    const result = await useUsersStore.getState().resendInvitation('u_1');
+    expect(result.ok).toBe(true);
+    expect(UserRepository.resendInvitation).toHaveBeenCalledWith('u_1');
   });
 });

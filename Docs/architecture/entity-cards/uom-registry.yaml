@@ -6,8 +6,8 @@ ownerModule: shirazeh
 aggregateRoot: UomRegistry
 ssot: postgresql
 clientState: zustand-cache
-lifecycle: "Centrally governed Units of Measure (KG, TON, METER, PIECE, SHEET, BRANCH, ROLL, PACK, ...) plus pairwise conversion rules (numerator/denominator, exact vs approximate). Create/deactivate; no hard delete since Products reference UOMs by id."
-archivePolicy: soft-delete
+lifecycle: "Centrally governed Units of Measure (KG, PIECE, METER, MM, INCH, SQUARE_METER, …) plus pairwise conversion rules (numerator/denominator, exact vs approximate). Create/update/deactivate. Unused units may be hard-deleted (DDL-24n); Products or Attribute Definitions that reference the unit block delete with a 409 listing dependents. Unused-unit delete also drops that unit's conversion rows. Numeric Attribute Definitions bind one uomId (measurement unit such as میل); Product Type default_count/sales units are a separate offer ring."
+archivePolicy: hard-delete
 auditPolicy: append-only
 rbacPolicy:
   - products:read
@@ -23,5 +23,7 @@ integrationPorts:
 updatePolicy: SERVER_FIRST
 ddlRefs:
   - DDL-24
-migrationSafety: "015_product_master_taxonomy.sql, expand-only, seeded with an initial common-unit set + one conversion example. uom_conversions rejects self-referential (from=to) and unknown/inactive UOM references at the service layer. Replaces the hardcoded PRODUCT_UNITS array in src/modules/vitrin/config.js as the real source of truth for new Vitrin UI — the legacy array stays only inside the frozen legacy Vitrin file."
-notes: "DDL-24(e). Registry-governed, not hardcoded in business logic. Conversions are registered once per UOM pair (Shirazeh-governed fact, e.g. '1 شاخه تیرآهن ≈ X KG'), reusable by any Product using that UOM pair — not product-scoped. Vitrin's products table references base_uom_id/sales_uom_id/purchase_uom_id from this registry."
+  - DDL-47
+  - DDL-60
+migrationSafety: "015_product_master_taxonomy.sql + 047 missing catalog units (SQUARE_METER, CUBIC_METER, PAIR, COIL) ON CONFLICT DO NOTHING + 051 MM/INCH length units for Attribute Definition uomId. Expand-only, seeded with an initial common-unit set + one conversion example. uom_conversions rejects self-referential (from=to) and unknown/inactive UOM references at the service layer. Replaces the hardcoded PRODUCT_UNITS array in src/modules/vitrin/config.js as the real source of truth for new Vitrin UI — the legacy array stays only inside the frozen legacy Vitrin file."
+notes: "DDL-24(e), DDL-24(n), DDL-47. Registry-governed, not hardcoded in business logic. Unused units may be hard-deleted; in-use units (Product, Product Type default, or Attribute Definition) return 409. Conversions are registered once per UOM pair (Shirazeh-governed fact, e.g. '1 شاخه تیرآهن ≈ X KG'), reusable by any Product using that UOM pair — not product-scoped. Product count unit is products.base_uom_id; sales unit is products.sales_uom_id. Product Type stores default_count_unit_id / default_sales_unit_id. No purchase/report UOM or conversion engine in DDL-47."

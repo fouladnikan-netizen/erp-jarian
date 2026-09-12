@@ -698,9 +698,14 @@
 }
 
 .saranjam-taxdoc__logo {
+  display: block;
   width: 42px;
   height: 42px;
+  min-width: 42px;
+  min-height: 42px;
   object-fit: contain;
+  object-position: center;
+  flex-shrink: 0;
 }
 
 .saranjam-taxdoc__top-company {
@@ -870,11 +875,16 @@
 }
 
 .saranjam-taxdoc__sign-logo {
+  display: block;
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   object-fit: contain;
+  object-position: center;
   margin-top: 0.35rem;
   opacity: 0.85;
+  flex-shrink: 0;
 }
 
 .saranjam-modal__footer {

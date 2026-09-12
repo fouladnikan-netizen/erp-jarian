@@ -1,3 +1,14 @@
+/**
+ * Legacy operating-company chrome (pre–Organization Identity SSOT).
+ *
+ * Live documents must read Organization Identity (DDL-28 / DDL-29).
+ * Keep this object only for:
+ * - marketing tagline (not an Identity field)
+ * - historical/issued documents that have no organizationSnapshot
+ *
+ * Do not treat this as a second SSOT. Bank rows below are a separate
+ * multi-account list (case B) — not owned by Organization Identity.
+ */
 export const COMPANY_BRAND = {
   name: 'پترو فولاد نیکان',
   tagline: 'تأمین‌کننده تخصصی مقاطع فولادی، استنلس استیل و چوب روسی',
@@ -9,6 +20,7 @@ export const COMPANY_BRAND = {
   address: 'تهران، بلوار میرداماد، خیابان مصدق جنوبی، کوچه تابان شرقی، پلاک ۳، واحد ۷',
 };
 
+/** Official operating-company bank accounts shown on Proforma (multi-account; not Identity SSOT). */
 export const PROFORMA_BANK_ACCOUNTS = [
   {
     bank: 'بانک اقتصاد نوین',

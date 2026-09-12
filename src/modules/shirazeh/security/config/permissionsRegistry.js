@@ -1,6 +1,7 @@
 /**
- * RBAC permission registry — Data / Action / Financial separation.
- * Icons are lucide name keys resolved in the UI.
+ * Legacy design catalog (OWN/TEAM/ALL theater).
+ * Live Shirazeh matrix reads `roles` / `permissions` / `role_permissions` via API.
+ * Do not use these ids as ops authority.
  */
 
 export const PERMISSION_SCOPES = [

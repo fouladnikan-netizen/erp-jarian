@@ -15,6 +15,10 @@ function mapProduct(row) {
     baseUomId: row.base_uom_id,
     salesUomId: row.sales_uom_id,
     purchaseUomId: row.purchase_uom_id,
+    countUnitId: row.base_uom_id,
+    salesUnitId: row.sales_uom_id,
+    unitWeight: row.unit_weight == null ? null : Number(row.unit_weight),
+    customLengthAllowed: Boolean(row.custom_length_allowed),
     weightProfileType: row.weight_profile_type,
     weightProfileCoefficients: row.weight_profile_coefficients,
     lifecycleStatus: row.lifecycle_status,
@@ -141,7 +145,21 @@ export async function search(filters = {}, client = null) {
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const limit = Math.min(Number(filters.limit) || 100, 500);
-  const res = await run(`${BASE_SELECT} ${where} ORDER BY p.created_at DESC LIMIT ${limit}`, params);
+  const res = await run(
+    `${BASE_SELECT} ${where}
+     ORDER BY (
+       SELECT pav.value_number
+       FROM product_attribute_values pav
+       JOIN attribute_definitions ad ON ad.id = pav.attribute_definition_id
+       WHERE pav.product_id = p.id
+         AND ad.code IN ('size', 'size_pipe')
+         AND pav.value_number IS NOT NULL
+       ORDER BY CASE ad.code WHEN 'size_pipe' THEN 0 ELSE 1 END
+       LIMIT 1
+     ) ASC NULLS LAST, p.generated_name ASC
+     LIMIT ${limit}`,
+    params,
+  );
   return res.rows.map(mapProduct);
 }
 
@@ -151,10 +169,77 @@ export async function listAttributeValues(productId, client = null) {
     `SELECT pav.*, ad.code AS attribute_code, ad.name_fa AS attribute_name_fa, ad.data_type
      FROM product_attribute_values pav
      JOIN attribute_definitions ad ON ad.id = pav.attribute_definition_id
-     WHERE pav.product_id = $1`,
+     WHERE pav.product_id = $1
+     ORDER BY ad.code ASC`,
     [productId],
   );
   return res.rows.map(mapAttributeValue);
+}
+
+export async function listAttributeValuesForProducts(productIds, client = null) {
+  if (!productIds?.length) return [];
+  const run = runner(client);
+  const res = await run(
+    `SELECT pav.*, ad.code AS attribute_code, ad.name_fa AS attribute_name_fa, ad.data_type
+     FROM product_attribute_values pav
+     JOIN attribute_definitions ad ON ad.id = pav.attribute_definition_id
+     WHERE pav.product_id = ANY($1::text[])
+     ORDER BY pav.product_id ASC, ad.code ASC`,
+    [productIds],
+  );
+  return res.rows.map(mapAttributeValue);
+}
+
+function mapAllowedAttributeValue(row) {
+  return {
+    productId: row.product_id,
+    attributeDefinitionId: row.attribute_definition_id,
+    value: row.value,
+    attributeCode: row.attribute_code,
+    attributeNameFa: row.attribute_name_fa,
+  };
+}
+
+const ALLOWED_VALUE_SELECT = `
+  SELECT paav.product_id, paav.attribute_definition_id, paav.value,
+         ad.code AS attribute_code, ad.name_fa AS attribute_name_fa
+  FROM product_allowed_attribute_values paav
+  JOIN attribute_definitions ad ON ad.id = paav.attribute_definition_id
+`;
+
+export async function listAllowedAttributeValues(productId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `${ALLOWED_VALUE_SELECT} WHERE paav.product_id = $1 ORDER BY ad.code ASC, paav.value ASC`,
+    [productId],
+  );
+  return res.rows.map(mapAllowedAttributeValue);
+}
+
+export async function listAllowedAttributeValuesForProducts(productIds, client = null) {
+  if (!productIds?.length) return [];
+  const run = runner(client);
+  const res = await run(
+    `${ALLOWED_VALUE_SELECT} WHERE paav.product_id = ANY($1::text[]) ORDER BY paav.product_id ASC, ad.code ASC, paav.value ASC`,
+    [productIds],
+  );
+  return res.rows.map(mapAllowedAttributeValue);
+}
+
+export async function replaceAllowedAttributeValues(productId, attributeDefinitionId, values, client = null) {
+  const run = runner(client);
+  await run(
+    `DELETE FROM product_allowed_attribute_values
+     WHERE product_id = $1 AND attribute_definition_id = $2`,
+    [productId, attributeDefinitionId],
+  );
+  for (const value of values) {
+    await run(
+      `INSERT INTO product_allowed_attribute_values (product_id, attribute_definition_id, value)
+       VALUES ($1, $2, $3)`,
+      [productId, attributeDefinitionId, value],
+    );
+  }
 }
 
 export async function create(row, client) {
@@ -163,12 +248,14 @@ export async function create(row, client) {
     `INSERT INTO products (
        id, sku, product_type_id, brand_id, generated_name, display_name_override,
        canonical_identity_key, base_uom_id, sales_uom_id, purchase_uom_id,
+       unit_weight, custom_length_allowed,
        weight_profile_type, weight_profile_coefficients, lifecycle_status, created_by, updated_by
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14,$14)
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15,$16,$16)
      RETURNING *`,
     [
       row.id, row.sku, row.productTypeId, row.brandId || null, row.generatedName, row.displayNameOverride || null,
       row.canonicalIdentityKey, row.baseUomId || null, row.salesUomId || null, row.purchaseUomId || null,
+      row.unitWeight ?? null, row.customLengthAllowed ?? false,
       row.weightProfileType || 'MANUAL_ACTUAL', JSON.stringify(row.weightProfileCoefficients || {}),
       row.lifecycleStatus || 'ACTIVE', row.actorUserId || null,
     ],
@@ -202,9 +289,11 @@ const NULLABLE_COLUMNS = {
   baseUomId: 'base_uom_id',
   salesUomId: 'sales_uom_id',
   purchaseUomId: 'purchase_uom_id',
+  unitWeight: 'unit_weight',
 };
 const NON_NULLABLE_COLUMNS = {
   weightProfileType: 'weight_profile_type',
+  customLengthAllowed: 'custom_length_allowed',
 };
 
 export async function update(id, patch, actorUserId, client = null) {
@@ -256,7 +345,148 @@ export async function setLifecycle(id, status, actorUserId, client = null) {
   return res.rows[0] ? mapProduct(res.rows[0]) : null;
 }
 
+export async function listByProductType(productTypeId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT id, sku, COALESCE(NULLIF(display_name_override, ''), generated_name) AS name, lifecycle_status
+     FROM products WHERE product_type_id = $1 ORDER BY sku ASC`,
+    [productTypeId],
+  );
+  return res.rows.map((row) => ({
+    id: row.id,
+    sku: row.sku,
+    name: row.name,
+    lifecycleStatus: row.lifecycle_status,
+  }));
+}
+
+export async function listByBrand(brandId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT id, sku, COALESCE(NULLIF(display_name_override, ''), generated_name) AS name
+     FROM products WHERE brand_id = $1 ORDER BY sku ASC`,
+    [brandId],
+  );
+  return res.rows.map((row) => ({ id: row.id, sku: row.sku, name: row.name }));
+}
+
+export async function listByUom(uomId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT DISTINCT id, sku, COALESCE(NULLIF(display_name_override, ''), generated_name) AS name
+     FROM products
+     WHERE base_uom_id = $1 OR sales_uom_id = $1 OR purchase_uom_id = $1
+     ORDER BY sku ASC`,
+    [uomId],
+  );
+  return res.rows.map((row) => ({ id: row.id, sku: row.sku, name: row.name }));
+}
+
+export async function listByAttributeDefinition(attributeDefinitionId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT DISTINCT p.id, p.sku, COALESCE(NULLIF(p.display_name_override, ''), p.generated_name) AS name
+     FROM products p
+     WHERE p.id IN (
+       SELECT product_id FROM product_attribute_values WHERE attribute_definition_id = $1
+       UNION
+       SELECT product_id FROM product_allowed_attribute_values WHERE attribute_definition_id = $1
+     )
+     ORDER BY p.sku ASC`,
+    [attributeDefinitionId],
+  );
+  return res.rows.map((row) => ({ id: row.id, sku: row.sku, name: row.name }));
+}
+
+export async function listByTypeAndAttributeDefinition(productTypeId, attributeDefinitionId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT DISTINCT p.id, p.sku, COALESCE(NULLIF(p.display_name_override, ''), p.generated_name) AS name
+     FROM products p
+     WHERE p.product_type_id = $1
+       AND p.id IN (
+         SELECT product_id FROM product_attribute_values WHERE attribute_definition_id = $2
+         UNION
+         SELECT product_id FROM product_allowed_attribute_values WHERE attribute_definition_id = $2
+       )
+     ORDER BY p.sku ASC`,
+    [productTypeId, attributeDefinitionId],
+  );
+  return res.rows.map((row) => ({ id: row.id, sku: row.sku, name: row.name }));
+}
+
+export async function deleteSkuCounter(productTypeId, client = null) {
+  const run = runner(client);
+  await run(`DELETE FROM product_sku_counters WHERE product_type_id = $1`, [productTypeId]);
+}
+
+export async function remove(id, client = null) {
+  const run = runner(client);
+  const res = await run(`DELETE FROM products WHERE id = $1 RETURNING id`, [id]);
+  return res.rowCount > 0;
+}
+
+export async function setGeneratedName(id, generatedName, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `UPDATE products SET generated_name = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
+    [id, generatedName],
+  );
+  return res.rows[0] ? mapProduct(res.rows[0]) : null;
+}
+
+export async function setCanonicalIdentityKey(id, canonicalIdentityKey, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `UPDATE products SET canonical_identity_key = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
+    [id, canonicalIdentityKey],
+  );
+  return res.rows[0] ? mapProduct(res.rows[0]) : null;
+}
+
+export async function listTextValuesForDefinition(attributeDefinitionId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT product_id, value_text
+     FROM product_attribute_values
+     WHERE attribute_definition_id = $1 AND value_text IS NOT NULL`,
+    [attributeDefinitionId],
+  );
+  return res.rows.map((row) => ({ productId: row.product_id, valueText: row.value_text }));
+}
+
+export async function listAllowedValuesForDefinition(attributeDefinitionId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT product_id, value
+     FROM product_allowed_attribute_values
+     WHERE attribute_definition_id = $1`,
+    [attributeDefinitionId],
+  );
+  return res.rows.map((row) => ({ productId: row.product_id, value: row.value }));
+}
+
+export async function deleteAttributeValuesMatching({ productTypeId, attributeDefinitionId, valueText }, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `DELETE FROM product_attribute_values pav
+     USING products p
+     WHERE pav.product_id = p.id
+       AND p.product_type_id = $1
+       AND pav.attribute_definition_id = $2
+       AND pav.value_text = $3
+     RETURNING pav.id`,
+    [productTypeId, attributeDefinitionId, valueText],
+  );
+  return res.rowCount;
+}
+
 export default {
   findById, findBySku, findByCanonicalIdentityKey, search, listAttributeValues,
-  create, insertAttributeValue, update, setLifecycle,
+  listAllowedAttributeValues, listAllowedAttributeValuesForProducts, replaceAllowedAttributeValues,
+  create, insertAttributeValue, update, setLifecycle, setGeneratedName, setCanonicalIdentityKey,
+  listTextValuesForDefinition, listAllowedValuesForDefinition,
+  deleteAttributeValuesMatching,
+  listByProductType, listByAttributeDefinition, listByTypeAndAttributeDefinition, listByUom, listByBrand,
+  deleteSkuCounter, remove,
 };

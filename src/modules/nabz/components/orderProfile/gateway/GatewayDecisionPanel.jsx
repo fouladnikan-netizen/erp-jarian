@@ -22,6 +22,7 @@ import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
 import DealCelebrationModal from './DealCelebrationModal';
 import GatewaySelect from './GatewaySelect';
 import PaymentTermsForm from './PaymentTermsForm';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 
 function formatPaymentTermsSummary(decision) {
   const terms = decision.paymentTerms || {};
@@ -56,6 +57,7 @@ export default function GatewayDecisionPanel({
   onSubmitSuccess,
   onSubmitFailed,
 }) {
+  const { alert } = useJarianNotice();
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const [paymentTerms, setPaymentTerms] = useState(() => getEmptyPaymentTerms());
   const [financeNotes, setFinanceNotes] = useState('');
@@ -79,12 +81,12 @@ export default function GatewayDecisionPanel({
   const handleSuccessSubmit = () => {
     const paymentError = validatePaymentTerms(paymentTerms);
     if (paymentError) {
-      window.alert(paymentError);
+      void alert({ title: 'توجه', message: paymentError });
       return;
     }
     const deliveryError = validateDeliveryInfo(deliveryInfo);
     if (deliveryError) {
-      window.alert(deliveryError);
+      void alert({ title: 'توجه', message: deliveryError });
       return;
     }
     setPendingSuccessPayload({
@@ -110,7 +112,7 @@ export default function GatewayDecisionPanel({
 
   const handleFailedSubmit = () => {
     if (cancelReason === 'other' && !cancelNotes.trim()) {
-      window.alert('لطفاً توضیحات علت لغو را وارد کنید.');
+      void alert({ title: 'توجه', message: 'لطفاً توضیحات علت لغو را وارد کنید.' });
       return;
     }
     onSubmitFailed?.({ cancelReason, cancelNotes });

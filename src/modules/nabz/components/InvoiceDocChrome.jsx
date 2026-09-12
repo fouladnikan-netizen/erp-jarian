@@ -2,10 +2,17 @@ import headerBrand from '../../../assets/images/nikan-proforma-header.jpg';
 import { toPersianDigits, toPersianInvoiceText } from '../dateUtils';
 import { COMPANY_BRAND } from '../proformaConfig';
 
+function orgFromViewModel(viewModel) {
+  return viewModel?.organization && typeof viewModel.organization === 'object'
+    ? viewModel.organization
+    : {};
+}
+
 /**
  * سربرگ برند پیش‌فاکتور — مشترک بین پیش‌فاکتور و حواله باربری
+ * هویت شرکت از viewModel.organization (Organization Identity یا snapshot نسخه).
  * @param {object} viewModel
- * @param {boolean} [viewModel.isOfficial=true] — غیررسمی: باکس می‌ماند، به‌جای لوگو «فولاد نیکان» و بدون شناسه‌ها
+ * @param {boolean} [viewModel.isOfficial=true] — غیررسمی: باکس می‌ماند، به‌جای لوگو نام تجاری و بدون شناسه‌ها
  * @param {string} [viewModel.documentNumberLabel] — پیش‌فرض: «شماره:»
  * @param {string} [viewModel.documentNumber] — پیش‌فرض: orderCode
  */
@@ -13,6 +20,7 @@ export function InvoiceDocBrandHeader({ viewModel }) {
   const numberLabel = viewModel.documentNumberLabel || 'شماره:';
   const numberValue = viewModel.documentNumber ?? viewModel.orderCode;
   const isOfficial = viewModel.isOfficial !== false;
+  const org = orgFromViewModel(viewModel);
 
   return (
     <header className={`invoice-doc__header${isOfficial ? '' : ' invoice-doc__header--unofficial'}`}>
@@ -27,14 +35,14 @@ export function InvoiceDocBrandHeader({ viewModel }) {
           </div>
           <p className="invoice-doc__tagline">{COMPANY_BRAND.tagline}</p>
           <div className="invoice-doc__company-ids">
-            <span>شناسه ملی: {toPersianInvoiceText(COMPANY_BRAND.nationalId)}</span>
-            <span>شماره ثبت: {toPersianInvoiceText(COMPANY_BRAND.registrationNumber)}</span>
+            <span>شناسه ملی: {toPersianInvoiceText(org.nationalId)}</span>
+            <span>شماره ثبت: {toPersianInvoiceText(org.registrationNumber)}</span>
           </div>
         </div>
       ) : (
         <div className="invoice-doc__header-brand invoice-doc__header-brand--unofficial">
           <div className="invoice-doc__brand-mark">
-            <span className="invoice-doc__brand-name">فولاد نیکان</span>
+            <span className="invoice-doc__brand-name">{org.tradeName}</span>
           </div>
         </div>
       )}
@@ -58,7 +66,8 @@ export function InvoiceDocBrandHeader({ viewModel }) {
  * فوتر شرکت پیش‌فاکتور — مشترک بین پیش‌فاکتور و حواله باربری
  * غیررسمی: باکس فوتر می‌ماند اما آدرس/تلفن/کدپستی شرکت نمایش داده نمی‌شود.
  */
-export function InvoiceDocFooter({ measure = false, isOfficial = true }) {
+export function InvoiceDocFooter({ measure = false, isOfficial = true, organization }) {
+  const org = organization && typeof organization === 'object' ? organization : {};
   if (!isOfficial) {
     return (
       <footer
@@ -75,19 +84,19 @@ export function InvoiceDocFooter({ measure = false, isOfficial = true }) {
       <div className="invoice-doc__footer-inner">
         <div>
           <span className="invoice-doc__footer-label">دفتر مرکزی:</span>{' '}
-          {COMPANY_BRAND.address}
+          {org.officialAddress}
         </div>
         <div className="invoice-doc__footer-contacts">
           <div>
             <span className="invoice-doc__footer-label">تلفن:</span>{' '}
-            <span className="invoice-doc__footer-phone">{toPersianDigits(COMPANY_BRAND.phone)}</span>
+            <span className="invoice-doc__footer-phone">{toPersianDigits(org.phone)}</span>
           </div>
           <div>
             <span className="invoice-doc__footer-label">کد پستی:</span>{' '}
-            {toPersianInvoiceText(COMPANY_BRAND.postalCode)}
+            {toPersianInvoiceText(org.postalCode)}
           </div>
         </div>
-        <div className="invoice-doc__footer-website">{COMPANY_BRAND.website}</div>
+        <div className="invoice-doc__footer-website">{org.website}</div>
       </div>
     </footer>
   );

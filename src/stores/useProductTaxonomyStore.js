@@ -49,6 +49,11 @@ export const useProductTaxonomyStore = create((set, get) => ({
     if (saved) set((s) => ({ groups: s.groups.map((g) => (g.id === id ? saved : g)), version: s.version + 1 }));
     return saved;
   },
+  deleteGroup: async (id) => {
+    if (useMockApi()) return null;
+    await ProductTaxonomyRepository.deleteGroup(id);
+    set((s) => ({ groups: s.groups.filter((g) => g.id !== id), version: s.version + 1 }));
+  },
 
   createCategory: async (payload) => {
     if (useMockApi()) return null;
@@ -62,6 +67,11 @@ export const useProductTaxonomyStore = create((set, get) => ({
     if (saved) set((s) => ({ categories: s.categories.map((c) => (c.id === id ? saved : c)), version: s.version + 1 }));
     return saved;
   },
+  deleteCategory: async (id) => {
+    if (useMockApi()) return null;
+    await ProductTaxonomyRepository.deleteCategory(id);
+    set((s) => ({ categories: s.categories.filter((c) => c.id !== id), version: s.version + 1 }));
+  },
 
   createType: async (payload) => {
     if (useMockApi()) return null;
@@ -74,6 +84,11 @@ export const useProductTaxonomyStore = create((set, get) => ({
     const saved = await ProductTaxonomyRepository.updateType(id, patch);
     if (saved) set((s) => ({ types: s.types.map((t) => (t.id === id ? saved : t)), version: s.version + 1 }));
     return saved;
+  },
+  deleteType: async (id) => {
+    if (useMockApi()) return null;
+    await ProductTaxonomyRepository.deleteType(id);
+    set((s) => ({ types: s.types.filter((t) => t.id !== id), version: s.version + 1 }));
   },
 }));
 

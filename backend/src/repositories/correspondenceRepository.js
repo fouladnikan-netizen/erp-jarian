@@ -31,6 +31,9 @@ export function mapCorrespondenceRow(row) {
     issuedAt: row.issued_at,
     issuedBy: row.issued_by,
     issuerTitle: row.issuer_title,
+    organizationSnapshot: row.organization_snapshot && typeof row.organization_snapshot === 'object'
+      ? row.organization_snapshot
+      : null,
     finalizedAt: row.finalized_at,
     finalizedBy: row.finalized_by,
     createdAt: row.created_at,
@@ -252,7 +255,7 @@ export async function update(id, data, actorUserId, client = null) {
  * same row is a no-op at the SQL level (defense in depth beyond the
  * counter-table transaction in the service layer).
  */
-export async function finalize(id, { officialNumber, finalBody, actorUserId, issuedAt, issuedBy, issuerTitle }, client = null) {
+export async function finalize(id, { officialNumber, finalBody, actorUserId, issuedAt, issuedBy, issuerTitle, organizationSnapshot }, client = null) {
   const run = runner(client);
   const res = await run(
     `UPDATE correspondence SET
@@ -264,11 +267,21 @@ export async function finalize(id, { officialNumber, finalBody, actorUserId, iss
       issued_at = COALESCE($5::timestamptz, NOW()),
       issued_by = COALESCE($6, issued_by),
       issuer_title = COALESCE($7, issuer_title),
+      organization_snapshot = COALESCE($8::jsonb, organization_snapshot),
       updated_by = $4,
       updated_at = NOW()
      WHERE id = $1 AND ${activeCorrespondenceWhere()} AND status = 'DRAFT'
      RETURNING *`,
-    [id, officialNumber, finalBody, actorUserId, issuedAt || null, issuedBy || null, issuerTitle || null],
+    [
+      id,
+      officialNumber,
+      finalBody,
+      actorUserId,
+      issuedAt || null,
+      issuedBy || null,
+      issuerTitle || null,
+      organizationSnapshot ? JSON.stringify(organizationSnapshot) : null,
+    ],
   );
   return res.rows[0] ? mapCorrespondenceRow(res.rows[0]) : null;
 }

@@ -27,23 +27,41 @@ export function pad2(n) {
  * 'TYPE:<categoryId>'). Throws a clear, reportable error instead of silently
  * wrapping past 99 (product contract: "report scalability issue rather than
  * blindly enforcing the format").
+ *
+ * `takenCodes` is the set of codes already used in that scope (e.g. existing
+ * Types in a Category). If a counter was reset below occupied codes — after
+ * deleting unused nodes — skip taken values instead of colliding on UNIQUE.
+ *
+ * @param {{ query: Function }} client
+ * @param {string} scope
+ * @param {Set<string>|string[]} [takenCodes]
  */
-export async function allocateTaxonomyCode(client, scope) {
-  const res = await client.query(
-    `INSERT INTO product_taxonomy_code_counters (scope, next_seq)
-     VALUES ($1, 2)
-     ON CONFLICT (scope) DO UPDATE SET next_seq = product_taxonomy_code_counters.next_seq + 1, updated_at = NOW()
-     RETURNING next_seq - 1 AS allocated`,
-    [scope],
-  );
-  const allocated = res.rows[0].allocated;
-  if (allocated > MAX_TWO_DIGIT) {
-    throw appError(
-      'TAXONOMY_CODE_EXHAUSTED',
-      `ظرفیت کد دورقمی این سطح طبقه‌بندی (حداکثر ۹۹) تمام شده است. این یک محدودیت واقعی مقیاس‌پذیری است و باید طراحی مجدد شود (طرح SKU جدید یا افزایش طول کد).`,
-      409,
-      { scope, allocated },
+export async function allocateTaxonomyCode(client, scope, takenCodes = new Set()) {
+  const taken = takenCodes instanceof Set ? takenCodes : new Set(takenCodes);
+  for (let attempt = 0; attempt <= MAX_TWO_DIGIT; attempt += 1) {
+    const res = await client.query(
+      `INSERT INTO product_taxonomy_code_counters (scope, next_seq)
+       VALUES ($1, 2)
+       ON CONFLICT (scope) DO UPDATE SET next_seq = product_taxonomy_code_counters.next_seq + 1, updated_at = NOW()
+       RETURNING next_seq - 1 AS allocated`,
+      [scope],
     );
+    const allocated = res.rows[0].allocated;
+    if (allocated > MAX_TWO_DIGIT) {
+      throw appError(
+        'TAXONOMY_CODE_EXHAUSTED',
+        'ظرفیت کد دورقمی این سطح طبقه‌بندی (حداکثر ۹۹) تمام شده است. این یک محدودیت واقعی مقیاس‌پذیری است و باید طراحی مجدد شود (طرح SKU جدید یا افزایش طول کد).',
+        409,
+        { scope, allocated },
+      );
+    }
+    const code = pad2(allocated);
+    if (!taken.has(code)) return code;
   }
-  return pad2(allocated);
+  throw appError(
+    'TAXONOMY_CODE_EXHAUSTED',
+    'ظرفیت کد دورقمی این سطح طبقه‌بندی (حداکثر ۹۹) تمام شده است. این یک محدودیت واقعی مقیاس‌پذیری است و باید طراحی مجدد شود (طرح SKU جدید یا افزایش طول کد).',
+    409,
+    { scope },
+  );
 }

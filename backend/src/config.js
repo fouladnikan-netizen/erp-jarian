@@ -22,6 +22,7 @@ export const config = {
     `postgresql://${encodeURIComponent(process.env.USER || 'postgres')}@127.0.0.1:5432/jarian`,
   jwtSecret: required('JWT_SECRET', 'jarian-dev-secret-change-me'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '12h',
+  appPublicUrl: String(process.env.APP_PUBLIC_URL || 'http://localhost:3000').replace(/\/+$/, ''),
   aiProvider: process.env.AI_PROVIDER || 'mock',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
 };

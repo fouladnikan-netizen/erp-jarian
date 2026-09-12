@@ -261,6 +261,9 @@ export function normalizeOfficialRecord(input = {}, options = {}) {
     issuerTitle: input.issuerTitle != null && input.issuerTitle !== ''
       ? String(input.issuerTitle).trim()
       : null,
+    organizationSnapshot: input.organizationSnapshot && typeof input.organizationSnapshot === 'object'
+      ? input.organizationSnapshot
+      : null,
     isLocked: Boolean(input.isLocked),
     /** Raw backend lifecycle value (DRAFT|FINAL) when sourced from the API — see BACKEND_STATUS. */
     backendStatus: input.backendStatus || null,

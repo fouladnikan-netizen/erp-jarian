@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProformaDocument from './components/ProformaDocument';
 import DocumentTrackingPanel from './components/DocumentTrackingPanel';
@@ -11,6 +11,9 @@ import {
   MOCK_DOCUMENT_TRACKING,
   createWhatsAppMessage,
 } from './documentTracking';
+import { useOrganizationIdentity, toDocumentOrganization } from '../../domain/organizationIdentity';
+import { useJarianNotice } from '../../context/JarianNoticeContext';
+import { resolveProformaOrganization } from './documentOrganization';
 import './proforma.css';
 
 const SEAL_IDLE = 'idle';
@@ -27,6 +30,7 @@ const SEND_CHANNELS = [
 ];
 
 export default function ProformaPreviewPage() {
+  const { alert, copyText } = useJarianNotice();
   const [payload, setPayload] = useState(null);
   const [sealState, setSealState] = useState(SEAL_IDLE);
   const [sendMenuOpen, setSendMenuOpen] = useState(false);
@@ -35,6 +39,8 @@ export default function ProformaPreviewPage() {
   const previewId = searchParams.get('id');
   const timersRef = useRef([]);
   const sendMenuRef = useRef(null);
+  const { identity } = useOrganizationIdentity();
+  const liveOrg = useMemo(() => toDocumentOrganization(identity), [identity]);
 
   useEffect(() => {
     document.fonts.load('400 1rem Meem');
@@ -110,7 +116,10 @@ export default function ProformaPreviewPage() {
     });
     setSendMenuOpen(false);
     if (!sent) {
-      window.alert('برای ارسال پیش‌فاکتور، این پنجره را از صفحه سفارش باز کنید یا از تب سوابق اقدام کنید.');
+      void alert({
+        title: 'توجه',
+        message: 'برای ارسال پیش‌فاکتور، این پنجره را از صفحه سفارش باز کنید یا از تب سوابق اقدام کنید.',
+      });
     }
   };
 
@@ -128,6 +137,14 @@ export default function ProformaPreviewPage() {
         size: '۲۴۸ کیلوبایت',
         note: 'نسخه مهر و امضا شده پیش‌فاکتور',
       },
+    });
+  };
+
+  const handlePrint = () => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.print();
+      });
     });
   };
 
@@ -164,6 +181,10 @@ export default function ProformaPreviewPage() {
   const isOfficial = payload.viewModel?.isOfficial !== false;
   const finalizeLabel = isOfficial ? 'تأیید، مهر و امضای رسمی' : 'تأیید';
   const finalizeBusyLabel = isOfficial ? 'در حال مهر و امضا…' : 'در حال تأیید…';
+  const organization = resolveProformaOrganization(payload, liveOrg);
+  const viewModel = payload.viewModel
+    ? { ...payload.viewModel, organization }
+    : payload.viewModel;
 
   return (
     <div className={`proforma-preview-page${isApproved ? ' proforma-preview-page--approved' : ''}${isOfficial ? '' : ' proforma-preview-page--unofficial'}`}>
@@ -176,7 +197,7 @@ export default function ProformaPreviewPage() {
       )}
 
       <ProformaDocument
-        viewModel={payload.viewModel}
+        viewModel={viewModel}
         terms={payload.terms}
         termsCustom={payload.termsCustom}
         sealState={sealState}
@@ -207,7 +228,7 @@ export default function ProformaPreviewPage() {
           {isApproved && (
             <div className="proforma-preview-page__approved-bar" role="group" aria-label="اقدامات پس از تایید">
               <span className="proforma-preview-page__status-pill">تایید شده</span>
-              <button type="button" className="btn btn--outline" onClick={() => window.print()}>
+              <button type="button" className="btn btn--outline" onClick={handlePrint}>
                 چاپ
               </button>
               <div className="proforma-preview-page__send-wrap" ref={sendMenuRef}>
@@ -254,15 +275,12 @@ export default function ProformaPreviewPage() {
             openedCount={MOCK_DOCUMENT_TRACKING.openedCount}
             lastOpenedAt={MOCK_DOCUMENT_TRACKING.lastOpenedAt}
             stepTimes={MOCK_DOCUMENT_TRACKING.stepTimes}
-            onCopyLink={async () => {
-              try {
-                await navigator.clipboard.writeText(MOCK_DOCUMENT_TRACKING.secureLink);
-              } catch {
-                window.prompt('لینک را کپی کنید:', MOCK_DOCUMENT_TRACKING.secureLink);
-              }
-            }}
+            onCopyLink={() => { void copyText(MOCK_DOCUMENT_TRACKING.secureLink, 'لینک پیگیری'); }}
             onSendWhatsApp={() => {
-              const text = createWhatsAppMessage(MOCK_DOCUMENT_TRACKING.secureLink);
+              const text = createWhatsAppMessage(
+                MOCK_DOCUMENT_TRACKING.secureLink,
+                organization.tradeName,
+              );
               const phone = String(payload.viewModel?.customerPhone || '').replace(/\D/g, '');
               const base = phone ? `https://wa.me/${phone}?text=` : 'https://wa.me/?text=';
               window.open(`${base}${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');

@@ -29,6 +29,11 @@ export const BrandRepository = {
     const { data } = await apiClient.patch(`/brands/${id}`, patch);
     return data.brand;
   },
+  async deleteBrand(id) {
+    if (useMockApi()) return null;
+    const { data } = await apiClient.delete(`/brands/${id}`);
+    return data;
+  },
 };
 
 export default BrandRepository;

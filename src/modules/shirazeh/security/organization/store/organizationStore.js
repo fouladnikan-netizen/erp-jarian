@@ -1,29 +1,63 @@
 import { create } from 'zustand';
-import { cloneOrganizationTree } from '../mockData/organizationTree';
+import { OrganizationRepository } from '../../../../../api/repositories/OrganizationRepository';
+import { getApiErrorMessage } from '../../../../../api/apiErrors';
 import {
+  ROOT_UNIT_ID,
   buildMoveAuditEvent,
   createDepartmentNode,
   createUserNode,
+  emptyOrganizationTree,
   findNodeById,
   findParentId,
   insertChild,
   moveNode,
   removeNodeById,
+  resolveDepartmentParentId,
 } from '../treeUtils';
 
 /**
  * UI working copy for Organization Designer.
- * Not a permanent store — saveChanges() is the future API boundary.
+ * Cache only — saveChanges() writes PostgreSQL via OrganizationRepository.
  */
 
+function readError(error, fallback) {
+  return getApiErrorMessage(error, fallback);
+}
+
 export const useOrganizationStore = create((set, get) => ({
-  tree: cloneOrganizationTree(),
+  tree: emptyOrganizationTree(),
   selectedNodeId: null,
   drawerOpen: false,
   draggingNodeId: null,
   dirty: false,
+  loading: false,
+  saving: false,
+  error: null,
   pendingAuditEvents: [],
-  roleReviewPrompt: null,
+  moveNotice: null,
+  assignPickerParentId: null,
+
+  loadTree: async () => {
+    set({ loading: true, error: null });
+    try {
+      const snapshot = await OrganizationRepository.getTree();
+      set({
+        tree: snapshot.tree || emptyOrganizationTree(),
+        dirty: false,
+        loading: false,
+        error: null,
+        pendingAuditEvents: [],
+        moveNotice: null,
+      });
+      return snapshot;
+    } catch (error) {
+      set({
+        loading: false,
+        error: readError(error, 'بارگذاری ساختار سازمانی ناموفق بود.'),
+      });
+      throw error;
+    }
+  },
 
   selectNode: (id) =>
     set({
@@ -35,10 +69,15 @@ export const useOrganizationStore = create((set, get) => ({
 
   setDragging: (id) => set({ draggingNodeId: id }),
 
+  openAssignPicker: (parentId) => {
+    const safeParent = resolveDepartmentParentId(get().tree, parentId || get().selectedNodeId);
+    set({ assignPickerParentId: safeParent });
+  },
+
+  closeAssignPicker: () => set({ assignPickerParentId: null }),
+
   addDepartment: (parentId, name = 'واحد جدید') => {
-    const parent = parentId || get().selectedNodeId || 'root';
-    const target = findNodeById(get().tree, parent);
-    const safeParent = target?.type === 'department' ? parent : 'root';
+    const safeParent = resolveDepartmentParentId(get().tree, parentId || get().selectedNodeId);
     const node = createDepartmentNode(name);
     set((state) => ({
       tree: insertChild(state.tree, safeParent, node),
@@ -49,7 +88,7 @@ export const useOrganizationStore = create((set, get) => ({
         ...state.pendingAuditEvents,
         {
           type: 'ORGANIZATION_CHANGED',
-          actor: 'admin',
+          actor: 'session',
           description: `واحد سازمانی «${name}» ایجاد شد`,
           createdAt: new Date().toISOString(),
         },
@@ -58,26 +97,34 @@ export const useOrganizationStore = create((set, get) => ({
     return node.id;
   },
 
-  addUser: (parentId, payload = {}) => {
-    const parent = parentId || get().selectedNodeId || 'root';
-    const target = findNodeById(get().tree, parent);
-    const safeParent = target?.type === 'department' ? parent : 'root';
+  assignUser: (parentId, user, extras = {}) => {
+    if (!user?.id) return null;
+    const safeParent = resolveDepartmentParentId(get().tree, parentId || get().selectedNodeId);
+    const existing = findNodeById(get().tree, user.id);
+    if (existing?.type === 'user') {
+      const result = get().relocateNode(user.id, safeParent);
+      get().updateNode(user.id, {
+        position: extras.position || existing.position || '',
+        isManager: extras.isManager === true,
+        name: user.displayName || existing.name,
+        username: user.username || existing.username || '',
+      });
+      set({ assignPickerParentId: null });
+      return result?.moved || existing.id;
+    }
     const dept = findNodeById(get().tree, safeParent);
-    const node = createUserNode({
-      name: payload.name || 'کاربر جدید',
-      position: payload.position || 'بدون سمت',
-      role: payload.role || dept?.defaultRole || 'MEMBER',
-    });
+    const node = createUserNode(user, extras);
     set((state) => ({
       tree: insertChild(state.tree, safeParent, node),
       dirty: true,
       selectedNodeId: node.id,
       drawerOpen: true,
+      assignPickerParentId: null,
       pendingAuditEvents: [
         ...state.pendingAuditEvents,
         {
           type: 'ORGANIZATION_CHANGED',
-          actor: 'admin',
+          actor: 'session',
           description: `کاربر «${node.name}» به واحد «${dept?.name || '—'}» افزوده شد`,
           createdAt: new Date().toISOString(),
         },
@@ -95,7 +142,7 @@ export const useOrganizationStore = create((set, get) => ({
   },
 
   deleteNode: (id) => {
-    if (id === 'root') return;
+    if (id === ROOT_UNIT_ID) return;
     const node = findNodeById(get().tree, id);
     const { tree } = removeNodeById(get().tree, id);
     set((state) => ({
@@ -107,8 +154,10 @@ export const useOrganizationStore = create((set, get) => ({
         ...state.pendingAuditEvents,
         {
           type: 'ORGANIZATION_CHANGED',
-          actor: 'admin',
-          description: `${node?.type === 'user' ? 'کاربر' : 'واحد'} «${node?.name || id}» حذف شد`,
+          actor: 'session',
+          description: node?.type === 'user'
+            ? `انتساب سازمانی «${node.name || id}» حذف شد (حساب کاربری باقی ماند)`
+            : `واحد «${node?.name || id}» حذف شد`,
           createdAt: new Date().toISOString(),
         },
       ],
@@ -116,8 +165,7 @@ export const useOrganizationStore = create((set, get) => ({
   },
 
   /**
-   * Move node under a department. Roles are NOT auto-changed.
-   * If a user moves, open role-review confirmation.
+   * Move node under a department. RBAC roles are never changed.
    */
   relocateNode: (nodeId, newParentId) => {
     const before = get().tree;
@@ -129,7 +177,7 @@ export const useOrganizationStore = create((set, get) => ({
       : null;
     const toParent = findNodeById(result.tree, result.toParentId);
     const audit = buildMoveAuditEvent({
-      actor: 'admin',
+      actor: 'session',
       node: result.node,
       fromParent,
       toParent,
@@ -139,67 +187,39 @@ export const useOrganizationStore = create((set, get) => ({
       tree: result.tree,
       dirty: true,
       pendingAuditEvents: [...state.pendingAuditEvents, audit],
-      roleReviewPrompt:
+      moveNotice:
         result.node.type === 'user'
           ? {
-              userId: result.node.id,
-              userName: result.node.name,
-              currentRole: result.node.role,
-              suggestedRole: toParent?.defaultRole || null,
-              fromDepartment: fromParent?.name || '—',
-              toDepartment: toParent?.name || '—',
-            }
-          : null,
+            userName: result.node.name,
+            fromDepartment: fromParent?.name || '—',
+            toDepartment: toParent?.name || '—',
+          }
+          : state.moveNotice,
     }));
 
     return result;
   },
 
-  dismissRoleReview: () => set({ roleReviewPrompt: null }),
+  dismissMoveNotice: () => set({ moveNotice: null }),
 
-  applySuggestedRole: () => {
-    const prompt = get().roleReviewPrompt;
-    if (!prompt?.suggestedRole) {
-      set({ roleReviewPrompt: null });
-      return;
-    }
-    get().updateNode(prompt.userId, { role: prompt.suggestedRole });
-    set((state) => ({
-      roleReviewPrompt: null,
-      pendingAuditEvents: [
-        ...state.pendingAuditEvents,
-        {
-          type: 'ORGANIZATION_CHANGED',
-          actor: 'admin',
-          description: `نقش سیستم «${prompt.userName}» به ${prompt.suggestedRole} به‌روز شد (پس از جابه‌جایی سازمانی)`,
-          createdAt: new Date().toISOString(),
-        },
-      ],
-    }));
-  },
-
-  /** Future: POST /api/v1/organization + flush audit to Notification/Audit engines */
   saveChanges: async () => {
-    const { pendingAuditEvents } = get();
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 450);
-    });
-    // TODO: apiClient.put('/organization', { tree })
-    // TODO: NotificationEngine / ActivityTimeline / AuditLog ← pendingAuditEvents
-    console.info('[organization] pending audit events', pendingAuditEvents);
-    set({ dirty: false, pendingAuditEvents: [] });
-    return { ok: true };
+    set({ saving: true, error: null });
+    try {
+      const snapshot = await OrganizationRepository.putTree(get().tree);
+      set({
+        tree: snapshot.tree || get().tree,
+        dirty: false,
+        saving: false,
+        error: null,
+        pendingAuditEvents: [],
+      });
+      return { ok: true, snapshot };
+    } catch (error) {
+      const message = readError(error, 'ذخیره ساختار سازمانی ناموفق بود.');
+      set({ saving: false, error: message });
+      throw error;
+    }
   },
-
-  resetFromMock: () =>
-    set({
-      tree: cloneOrganizationTree(),
-      dirty: false,
-      selectedNodeId: null,
-      drawerOpen: false,
-      pendingAuditEvents: [],
-      roleReviewPrompt: null,
-    }),
 
   getSelectedNode: () => {
     const { tree, selectedNodeId } = get();

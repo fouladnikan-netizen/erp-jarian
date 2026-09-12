@@ -127,6 +127,19 @@ New string/numeric IDs for created records use `src/domain/identity` (`createEnt
 
 ---
 
+## Latin lexicon (Product Structure FA→Latin)
+
+| Field | Value |
+|-------|--------|
+| **Owner Module** | شیرازه (Shirazeh); Vitrin `/vitrin/structure` is the admin surface |
+| **Aggregate** | LatinLexicon lookup (**DDL-48**, Tier B) |
+| **Current Storage** | PostgreSQL `latin_lexicon` via `/api/v1/latin-lexicon`; FE `LatinLexiconRepository` + Zustand cache |
+| **Lifecycle** | Seed bundled phrases/codes if the table is empty. Upsert on taxonomy/brand/attribute/UOM save when both FA and Latin/code are present. Soft deactivate (`is_active`). Unique `(fa_normalized, kind)`. |
+| **Forbidden** | External machine-translation APIs; treating `src/domain/productMaster/latinLexicon.js` as live SoR; letter-by-letter romanization |
+| **Future Direction** | Optional dedicated lexicon admin list; keep learning-on-save as the default growth path |
+
+---
+
 ## Product (catalog)
 
 | Field | Value |
@@ -166,15 +179,44 @@ See [MOWJ_CAMPAIGN_ARCHITECTURE.md](./MOWJ_CAMPAIGN_ARCHITECTURE.md).
 
 ---
 
+## Organization Identity (operating company)
+
+| Field | Value |
+|-------|--------|
+| **Owner Module** | شیرازه (Shirazeh) |
+| **Aggregate** | OrganizationIdentity singleton (**DDL-28**) — not Kanoon Company, not tenant |
+| **Current Storage** | PostgreSQL `organization_identity` via `/api/v1/organization-identity`; FE `OrganizationIdentityRepository` + `src/domain/organizationIdentity` facade (in-memory cache, not a second SoR) |
+| **Lifecycle** | GET empty until first PUT upsert; required `tradeName` / `legalName` / `nationalId`. GET is any authenticated session; PUT is `users:admin`. |
+| **Forbidden** | Reuse of Kanoon `companies`; logo binary/base64 in this table; multi-company / tenant_id; treating `COMPANY_BRAND` as live SSOT |
+| **Documents** | Live chrome reads Identity. Issued shipping / SooratBar / official letters freeze `organizationSnapshot` at issue/lock (**DDL-29/30**). Historical rows without snapshot keep `COMPANY_BRAND` / `LETTER_ORG_LINE` — never overlay live Identity. |
+| **Logo** | Canonical reference `logoFileId` → sibling table `organization_identity_logo` (**DDL-31**). Not on the identity row; not filesystem. Document surfaces still use static assets until a branding DDL. |
+| **Collections** | JSONB `phones` / `addresses` / `bank_accounts` (**DDL-32 / DDL-33 / DDL-34**). Structured items with `id` + `sortOrder` + explicit `isPrimary` (fallback `[0]`); legacy scalar columns dual-written from explicit primary. Phone `type` unused. `legal_person_type` unused in UI. `PROFORMA_BANK_ACCOUNTS` remains document settings. |
+| **Future Direction** | Letterhead upload; wire document chrome to canonical logo |
+
+---
+
 ## User / Org tree / RBAC role
 
 | Field | Value |
 |-------|--------|
 | **Owner Module** | شیرازه (Shirazeh) |
 | **Aggregate** | Platform identity (outside Company/Order) |
-| **Current Storage** | `usersStore`, organization tree utils, role registry |
-| **Lifecycle** | Mock user CRUD; org tree edits in security UI |
-| **Future Direction** | Auth-backed users; enforce RBAC on Nabz/Ofogh (today mostly not enforced) |
+| **Current Storage** | PostgreSQL `users` (**DDL-39**: mobile, email, account_status) / `user_roles` / `roles` / `permissions` (**DDL-36**) / `role_permissions`. Organization: `organization_units` / `organization_positions` / `user_organization_assignments` (**DDL-37**) referencing `users.id`. Auth challenges: `auth_challenges` (**DDL-41**) for invitation tokens and password-reset OTP. |
+| **Lifecycle** | User CRUD + Role CRUD + permission matrix + org tree via `/api/v1/organization` (`users:admin`). Position ≠ Role ≠ Persona (**DDL-40 / DDL-42**). Removing an org assignment never deletes the user. Create without password → INVITED → Faraz SMS set-password → ACTIVE. Login is mobile + password. Forgot-password is OTP, not admin reset. |
+| **Future Direction** | Keep User→Role→Permission separate from User→Unit→Position. Persona is a sibling Definitions catalog (**DDL-42**), not a User column. When HR exists, Employee profile may own name/mobile/email/placement; User keeps auth + roles. Sensitive flags catalog-only. Scope stays out. |
+
+---
+
+## Persona
+
+| Field | Value |
+|-------|--------|
+| **Owner Module** | شیرازه (Shirazeh) |
+| **Aggregate** | Persona catalog (**DDL-42**, extends **DDL-40**) |
+| **Current Storage** | PostgreSQL `personas` + `persona_role_links` via `/api/v1/personas`; FE `PersonaRepository` + React state cache |
+| **Lifecycle** | Seed six canonical codes if missing. Edit name/domain. Soft deactivate/reactivate. Code immutable after create. Role links are 1 Role : 1 Persona and 1 Persona : N Roles (`persona_role_links`). No hard delete. |
+| **Forbidden** | Persona on `users`; grant permissions from Persona; `if (persona === 'SALES')` business rules; merge with `organization_positions`; auto-map Position titles to Personas |
+| **Future Direction** | User assignment only with a later DDL |
 
 ---
 

@@ -25,14 +25,46 @@ import * as attributeDefinitionService from './attributeDefinitionService.js';
 import * as productService from './productService.js';
 import { normalizeTextValue } from '../domain/productMaster/normalize.js';
 
+const optionalTrimmed = z.preprocess(
+  (v) => (v === '' || v === undefined || v === null ? undefined : String(v).trim()),
+  z.string().min(1).optional(),
+);
+
+const optionalUnitWeight = z.preprocess(
+  (v) => {
+    if (v === '' || v === undefined || v === null) return undefined;
+    const n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
+    return Number.isFinite(n) ? n : v;
+  },
+  z.number().positive().optional(),
+);
+
+const optionalFlag = z.preprocess(
+  (v) => {
+    if (v === '' || v === undefined || v === null) return undefined;
+    if (typeof v === 'boolean') return v;
+    const s = String(v).trim().toLowerCase();
+    if (['true', '1', 'yes', 'y', 'بله'].includes(s)) return true;
+    if (['false', '0', 'no', 'n', 'خیر'].includes(s)) return false;
+    return v;
+  },
+  z.boolean().optional(),
+);
+
 const rowSchema = z.object({
   groupName: z.string().trim().min(1),
   categoryName: z.string().trim().min(1),
   typeName: z.string().trim().min(1),
-  brandName: z.string().trim().optional(),
-  baseUomCode: z.string().trim().optional(),
-  salesUomCode: z.string().trim().optional(),
-  purchaseUomCode: z.string().trim().optional(),
+  displayNameOverride: z.preprocess(
+    (v) => (v === '' || v === undefined || v === null ? undefined : String(v).trim()),
+    z.string().max(200).optional(),
+  ),
+  brandName: optionalTrimmed,
+  baseUomCode: optionalTrimmed,
+  salesUomCode: optionalTrimmed,
+  purchaseUomCode: optionalTrimmed,
+  unitWeight: optionalUnitWeight,
+  customLengthAllowed: optionalFlag,
   weightProfileType: z.enum(['FIXED', 'PER_LENGTH', 'DIMENSIONAL', 'MANUAL_ACTUAL']).optional(),
   attributes: z.record(z.string(), z.any()).optional().default({}),
 });
@@ -137,6 +169,7 @@ async function resolveRow(rawRow, rowIndex, seenIdentityKeys, cache) {
     const schema = await cache.getSchema(productType.id);
     const byCode = new Map(schema.map((e) => [e.definition.code, e.definition.id]));
     for (const [code, value] of Object.entries(row.attributes || {})) {
+      if (value === undefined || value === null || String(value).trim() === '') continue;
       const defId = byCode.get(code);
       if (!defId) {
         errors.push({ code: 'UNKNOWN_ATTRIBUTE', message: `ویژگی «${code}» برای نوع کالای «${row.typeName}» تعریف نشده است.` });
@@ -151,12 +184,17 @@ async function resolveRow(rawRow, rowIndex, seenIdentityKeys, cache) {
   const payload = {
     productTypeId: productType.id,
     brandId,
-    baseUomId, salesUomId, purchaseUomId,
     weightProfileType: row.weightProfileType || 'MANUAL_ACTUAL',
     weightProfileCoefficients: {},
     attributeValues,
     confirmDuplicate: true, // bulk import treats resolved rows as reviewed; exact-duplicate rows are skipped (idempotent), not blocked
   };
+  if (row.displayNameOverride) payload.displayNameOverride = row.displayNameOverride;
+  if (row.unitWeight !== undefined) payload.unitWeight = row.unitWeight;
+  if (row.customLengthAllowed !== undefined) payload.customLengthAllowed = row.customLengthAllowed;
+  if (row.baseUomCode) payload.baseUomId = baseUomId;
+  if (row.salesUomCode) payload.salesUomId = salesUomId;
+  if (row.purchaseUomCode) payload.purchaseUomId = purchaseUomId;
 
   // Run the SAME backend-authoritative validation createProduct would run
   // (required/range/enum/type checks, canonical identity) WITHOUT writing —

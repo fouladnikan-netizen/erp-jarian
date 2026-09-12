@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Building2, Pencil, Trash2, UserPlus, Users } from 'lucide-react';
+import { ROOT_UNIT_ID } from '../treeUtils';
 import { useOrganizationStore } from '../store/organizationStore';
 
 function MemberBadge({ count }) {
@@ -14,7 +15,8 @@ function MemberBadge({ count }) {
 
 export const DepartmentNode = memo(function DepartmentNode({ id, data, selected }) {
   const selectNode = useOrganizationStore((s) => s.selectNode);
-  const addUser = useOrganizationStore((s) => s.addUser);
+  const addDepartment = useOrganizationStore((s) => s.addDepartment);
+  const openAssignPicker = useOrganizationStore((s) => s.openAssignPicker);
   const deleteNode = useOrganizationStore((s) => s.deleteNode);
 
   return (
@@ -50,15 +52,27 @@ export const DepartmentNode = memo(function DepartmentNode({ id, data, selected 
         <button
           type="button"
           className="org-node__action"
+          title="افزودن واحد زیرمجموعه"
+          aria-label="افزودن واحد زیرمجموعه"
+          onClick={(event) => {
+            event.stopPropagation();
+            addDepartment(id);
+          }}
+        >
+          <Building2 size={13} strokeWidth={1.75} />
+        </button>
+        <button
+          type="button"
+          className="org-node__action"
           title="افزودن کاربر"
           onClick={(event) => {
             event.stopPropagation();
-            addUser(id);
+            openAssignPicker(id);
           }}
         >
           <UserPlus size={13} strokeWidth={1.75} />
         </button>
-        {id !== 'root' ? (
+        {id !== ROOT_UNIT_ID ? (
           <button
             type="button"
             className="org-node__action org-node__action--danger"
@@ -102,8 +116,10 @@ export const UserNode = memo(function UserNode({ id, data, selected }) {
         </span>
         <div className="org-node__text">
           <p className="org-node__title font-meem">{data.name}</p>
-          <p className="org-node__subtitle font-meem">{data.position}</p>
-          <p className="org-node__role font-yekan">{data.role}</p>
+          <p className="org-node__subtitle font-meem">{data.position || 'بدون سمت'}</p>
+          {data.mobile ? (
+            <p className="org-node__role font-yekan" dir="ltr">{data.mobile}</p>
+          ) : null}
         </div>
       </div>
       <div className="org-node__actions">
@@ -121,7 +137,8 @@ export const UserNode = memo(function UserNode({ id, data, selected }) {
         <button
           type="button"
           className="org-node__action org-node__action--danger"
-          title="حذف"
+          title="حذف انتساب"
+          aria-label="حذف انتساب"
           onClick={(event) => {
             event.stopPropagation();
             deleteNode(id);

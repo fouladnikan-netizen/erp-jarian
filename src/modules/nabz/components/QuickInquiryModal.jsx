@@ -27,6 +27,7 @@ import {
   inquiryToQuickDraft,
   validateQuickInquiryDraft,
 } from '../inquiryService';
+import { useJarianNotice } from '../../../context/JarianNoticeContext';
 import { MARGIN_MODES } from '../quotingConfig';
 import { listSuppliers } from '../suppliers';
 import {
@@ -397,6 +398,7 @@ export default function QuickInquiryModal({
   onDecisionFailed,
   onUpdateOrder,
 }) {
+  const { alert } = useJarianNotice();
   const navigate = useNavigate();
   const pipeline = useOrderPipelineView(order);
   const updateModalOrder = (orderUpdater) => {
@@ -502,7 +504,7 @@ export default function QuickInquiryModal({
   const handleSendProforma = (version) => {
     updateModalOrder((current) => sendProformaToCustomer(current));
     const label = version?.documentNumber || order.code;
-    window.alert(`پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.`);
+    void alert({ title: 'ارسال شد', message: `پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.` });
   };
 
   const handleIssueProforma = () => {

@@ -5,6 +5,11 @@ import { getQcInspectionForRow } from './qcInspectionConfig';
 import { advanceOperationalPhase } from './phase2Service';
 import { OPERATIONAL_PHASES } from './phase2Config';
 import { createEntityId, ENTITY_ID_PREFIX } from '../../domain/identity';
+import {
+  getCachedOrganizationIdentity,
+  toSooratBarOrganizationSnapshot,
+} from '../../domain/organizationIdentity';
+import { COMPANY_BRAND } from './proformaConfig';
 
 /** Two-phase dispatch states inside one table */
 export const LOAD_ITEM_STATUS = {
@@ -194,6 +199,7 @@ export function getAllLoadItems(order) {
         dispatchedAt: state.dispatchedAt || null,
         readyConfirmedAt: state.readyConfirmedAt || null,
         readyConfirmedBy: state.readyConfirmedBy || null,
+        organizationSnapshot: state.organizationSnapshot || null,
       } : null,
       // legacy alias used by older expand UI
       dispatch: status === LOAD_ITEM_STATUS.DISPATCHED ? {
@@ -289,6 +295,12 @@ export function buildSooratBarPayloadForAssignment(order, assignmentId) {
 
   const sample = items[0]?.assignment || {};
   const tripIndex = getAssignmentTripIndex(order, assignmentId);
+  const session = getLoadingSessions(order).find(
+    (entry) => String(entry.id) === String(assignmentId),
+  );
+  const organizationSnapshot = sample.organizationSnapshot
+    || session?.organizationSnapshot
+    || null;
 
   return {
     accepted: true,
@@ -313,6 +325,7 @@ export function buildSooratBarPayloadForAssignment(order, assignmentId) {
       assignmentId: String(assignmentId),
       date: sample.dispatchedAt?.split?.(' · ')?.[0] || undefined,
       time: sample.dispatchedAt?.split?.(' · ')?.[1] || undefined,
+      organizationSnapshot,
     },
   };
 }
@@ -566,6 +579,10 @@ function applyScaleWeightUpdate(order, {
   }
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
+  const snapshot = current.organizationSnapshot
+    || (markDispatched
+      ? toSooratBarOrganizationSnapshot(getCachedOrganizationIdentity(), COMPANY_BRAND.tagline)
+      : null);
   const lineStates = getResolvedLineStates(order);
   lineStates[id] = {
     ...current,
@@ -574,6 +591,7 @@ function applyScaleWeightUpdate(order, {
     loadingFee: feeNum,
     dispatchedAt: current.dispatchedAt || at,
     updatedAt: at,
+    ...(snapshot ? { organizationSnapshot: snapshot } : {}),
   };
 
   const sessions = getLoadingSessions(order).map((session) => {
@@ -591,6 +609,7 @@ function applyScaleWeightUpdate(order, {
         ? items.reduce((sum, item) => sum + (parsePositiveNumber(item.scaleWeight) || 0), 0)
         : session.actualWeight ?? null,
       phase: allDone ? 'completed' : 'assigned',
+      organizationSnapshot: session.organizationSnapshot || snapshot || null,
     };
   });
 

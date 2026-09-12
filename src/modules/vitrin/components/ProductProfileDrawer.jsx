@@ -1,87 +1,106 @@
 import { useEffect, useMemo, useState } from 'react';
+import OfferSettingsFields from '../../../components/productMaster/OfferSettingsFields';
+import { applyNpsInchSizeDisplay } from '../../../domain/productMaster/npsInchDisplay';
 
-const RELATIONSHIP_LABELS = {
-  ALTERNATIVE: 'جایگزین تجاری',
-  SUBSTITUTE: 'قابل‌جایگزینی',
-  SUBSTITUTE_WITH_CONVERSION: 'جایگزینی با ضریب تبدیل',
+const WEIGHT_PROFILE_LABELS = {
+  FIXED: 'ثابت (وزن استاندارد هر واحد)',
+  PER_LENGTH: 'بر واحد طول (کیلوگرم بر متر)',
+  DIMENSIONAL: 'محاسباتی از ابعاد (ضخامت × عرض × طول × چگالی)',
+  MANUAL_ACTUAL: 'بدون وزن نظری — فقط وزن واقعی تراکنش',
 };
 
+/** DDL-59: no Product-to-Product «روابط کالا» tab. */
 function buildTabs() {
   return [
     { id: 'specs', label: 'مشخصات ساختاری' },
-    { id: 'relationships', label: 'روابط کالا' },
-    { id: 'traceability', label: 'ردیابی (آینده)' },
+    { id: 'traceability', label: 'ردیابی کالا' },
   ];
+}
+
+function formatAttributeValue(product, value) {
+  if (value.dataType === 'BOOLEAN') return value.valueBoolean ? 'بله' : 'خیر';
+
+  if (value.valueNumber != null && Number.isFinite(Number(value.valueNumber))) {
+    const nps = applyNpsInchSizeDisplay({
+      typeName: product.productTypeName,
+      code: value.attributeCode,
+      displayValue: value.valueNumber,
+    });
+    if (nps.displayValue != null && nps.displayValue !== value.valueNumber) {
+      return nps.displayValue;
+    }
+    return Number(value.valueNumber).toLocaleString('fa-IR', { maximumFractionDigits: 4 });
+  }
+
+  return value.valueText || '—';
+}
+
+function weightProfileLabel(type) {
+  return WEIGHT_PROFILE_LABELS[type] || '—';
+}
+
+function taxonomyCrumb(product) {
+  return [product.groupName, product.categoryName, product.productTypeName]
+    .filter(Boolean)
+    .join(' / ');
 }
 
 /**
  * Product profile — structured attribute values only, no free-text specs
- * blob. Relationships are explicit/human-reviewed (DDL-24f). The
- * "traceability" tab is a labeled placeholder, not a copied order history —
- * see Docs/architecture/product-master-nabz-future-contract.md.
+ * blob. The "traceability" tab is a labeled placeholder, not a copied
+ * order history — see Docs/architecture/product-master-nabz-future-contract.md.
  */
 export default function ProductProfileDrawer({
   product,
   brands,
   uoms,
-  products,
   onClose,
   onToggleActive,
-  canManageRelationships = false,
-  listRelationships,
-  createRelationship,
-  deactivateRelationship,
+  onDelete,
+  onUpdate,
 }) {
   const tabs = useMemo(() => buildTabs(), []);
   const [activeTab, setActiveTab] = useState('specs');
-  const [relationships, setRelationships] = useState([]);
-  const [relTargetId, setRelTargetId] = useState('');
-  const [relType, setRelType] = useState('ALTERNATIVE');
-  const [relNumerator, setRelNumerator] = useState('1');
-  const [relDenominator, setRelDenominator] = useState('1');
-  const [relError, setRelError] = useState('');
+  const [offerError, setOfferError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [offer, setOffer] = useState(() => ({
+    countUnitId: product.countUnitId || product.baseUomId || '',
+    salesUnitId: product.salesUnitId || product.salesUomId || '',
+    unitWeight: product.unitWeight == null ? '' : String(product.unitWeight),
+    customLengthAllowed: Boolean(product.customLengthAllowed),
+  }));
 
   useEffect(() => {
     setActiveTab('specs');
-    void listRelationships(product.id).then(setRelationships);
-  }, [product.id, listRelationships]);
+    setOffer({
+      countUnitId: product.countUnitId || product.baseUomId || '',
+      salesUnitId: product.salesUnitId || product.salesUomId || '',
+      unitWeight: product.unitWeight == null ? '' : String(product.unitWeight),
+      customLengthAllowed: Boolean(product.customLengthAllowed),
+    });
+    setOfferError('');
+  }, [product.id, product.baseUomId, product.salesUomId, product.unitWeight, product.customLengthAllowed]);
 
   const brand = brands.find((b) => b.id === product.brandId);
-  const baseUom = uoms.find((u) => u.id === product.baseUomId);
-  const salesUom = uoms.find((u) => u.id === product.salesUomId);
-  const purchaseUom = uoms.find((u) => u.id === product.purchaseUomId);
+  const canEditOffer = typeof onUpdate === 'function';
   const isActive = product.lifecycleStatus !== 'INACTIVE';
+  const attributeValues = product.attributeValues || [];
+  const allowedGroups = product.allowedAttributeGroups || [];
 
-  const otherProducts = products.filter((p) => p.id !== product.id);
-
-  const handleCreateRelationship = async (e) => {
+  const handleSaveOffer = async (e) => {
     e.preventDefault();
-    setRelError('');
-    if (!relTargetId) return;
+    if (!canEditOffer) return;
+    setOfferError('');
     setBusy(true);
     try {
-      await createRelationship({
-        sourceProductId: product.id,
-        targetProductId: relTargetId,
-        relationshipType: relType,
-        conversionNumerator: relType === 'SUBSTITUTE_WITH_CONVERSION' ? Number(relNumerator) : undefined,
-        conversionDenominator: relType === 'SUBSTITUTE_WITH_CONVERSION' ? Number(relDenominator) : undefined,
+      await onUpdate(product.id, {
+        baseUomId: offer.countUnitId || null,
+        salesUomId: offer.salesUnitId || null,
+        unitWeight: offer.unitWeight === '' ? null : Number(offer.unitWeight),
+        customLengthAllowed: Boolean(offer.customLengthAllowed),
       });
-      setRelationships(await listRelationships(product.id));
-      setRelTargetId('');
     } catch (err) {
-      setRelError(err?.response?.data?.message || err?.message || 'ثبت رابطه ناموفق بود.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleDeactivateRelationship = async (id) => {
-    setBusy(true);
-    try {
-      await deactivateRelationship(id);
-      setRelationships(await listRelationships(product.id));
+      setOfferError(err?.response?.data?.message || err?.message || 'ذخیره واحد و عرضه ناموفق بود.');
     } finally {
       setBusy(false);
     }
@@ -97,26 +116,27 @@ export default function ProductProfileDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="vitrin-drawer__header">
-          <div>
+          <div className="vitrin-drawer__identity">
             <h2 className="vitrin-drawer__title">{product.displayNameOverride || product.generatedName}</h2>
-            <p className="vitrin-drawer__subtitle" dir="ltr" style={{ textAlign: 'right' }}>
-              SKU {product.sku}
-              {' · '}
-              {product.groupName} / {product.categoryName} / {product.productTypeName}
-            </p>
+            <p className="vitrin-drawer__subtitle">{taxonomyCrumb(product) || '—'}</p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="vitrin-drawer__header-actions">
             {typeof onToggleActive === 'function' && (
               <button type="button" className="btn btn--outline" onClick={() => onToggleActive(product)}>
                 {isActive ? 'غیرفعال کردن' : 'فعال کردن'}
               </button>
             )}
-            <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label="بستن">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
-            </button>
+            {typeof onDelete === 'function' && (
+              <button type="button" className="btn btn--outline-danger" onClick={() => onDelete(product)}>
+                حذف
+              </button>
+            )}
           </div>
+          <button type="button" className="vitrin-drawer__close" onClick={onClose} aria-label="بستن">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
         </header>
 
         <div className="vitrin-drawer__tabs" role="tablist">
@@ -137,105 +157,91 @@ export default function ProductProfileDrawer({
         <div className="vitrin-drawer__body">
           {activeTab === 'specs' && (
             <div className="vitrin-profile-panel">
-              <div className="vitrin-form__field">
-                <span className="vitrin-form__label">برند</span>
-                <p>{brand?.brandName || '— بدون برند —'}</p>
-              </div>
-              <div className="vitrin-form__field">
-                <span className="vitrin-form__label">واحدها</span>
-                <p>
-                  پایه: {baseUom?.nameFa || '—'}
-                  {salesUom ? ` · فروش: ${salesUom.nameFa}` : ''}
-                  {purchaseUom ? ` · خرید: ${purchaseUom.nameFa}` : ''}
-                </p>
-              </div>
-              <div className="vitrin-form__field">
-                <span className="vitrin-form__label">روش محاسبه وزن</span>
-                <p>{product.weightProfileType}</p>
-              </div>
-              <div className="vitrin-form__field">
-                <span className="vitrin-form__label">ویژگی‌های ساختاری</span>
-                {(product.attributeValues || []).length ? (
-                  <table className="jarian-table">
-                    <thead><tr><th>ویژگی</th><th>مقدار</th></tr></thead>
+              <section className="vitrin-profile-card" aria-labelledby={`product-${product.id}-attrs`}>
+                <h3 id={`product-${product.id}-attrs`} className="vitrin-profile-section__title">ویژگی‌های ساختاری</h3>
+                {attributeValues.length ? (
+                  <table className="jarian-table vitrin-profile-table">
+                    <thead>
+                      <tr>
+                        <th>ردیف</th>
+                        <th>ویژگی</th>
+                        <th>مقدار</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {product.attributeValues.map((v) => (
-                        <tr key={v.id}>
-                          <td>{v.attributeNameFa}</td>
-                          <td>{v.dataType === 'BOOLEAN' ? (v.valueBoolean ? 'بله' : 'خیر') : (v.valueNumber ?? v.valueText)}</td>
+                      {attributeValues.map((value, index) => (
+                        <tr key={value.id}>
+                          <td className="vitrin-profile-table__num">{(index + 1).toLocaleString('fa-IR')}</td>
+                          <td className="vitrin-profile-table__name">{value.attributeNameFa}</td>
+                          <td className="vitrin-profile-table__value">{formatAttributeValue(product, value)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 ) : (
-                  <p className="vitrin-profile-panel__empty">ویژگی ساختاری ثبت‌شده‌ای ندارد.</p>
+                  <p className="vitrin-profile-panel__empty vitrin-profile-panel__empty--inline">
+                    ویژگی ساختاری ثبت‌شده‌ای ندارد.
+                  </p>
                 )}
-              </div>
-            </div>
-          )}
+              </section>
 
-          {activeTab === 'relationships' && (
-            <div className="vitrin-profile-panel">
-              {canManageRelationships && (
-              <form className="vitrin-form__grid" onSubmit={handleCreateRelationship} style={{ marginBottom: 12 }}>
-                <label className="vitrin-form__field">
-                  <span className="vitrin-form__label">کالای مقابل</span>
-                  <select value={relTargetId} onChange={(e) => setRelTargetId(e.target.value)}>
-                    <option value="">— انتخاب کنید —</option>
-                    {otherProducts.map((p) => <option key={p.id} value={p.id}>{p.displayNameOverride || p.generatedName}</option>)}
-                  </select>
-                </label>
-                <label className="vitrin-form__field">
-                  <span className="vitrin-form__label">نوع رابطه</span>
-                  <select value={relType} onChange={(e) => setRelType(e.target.value)}>
-                    {Object.entries(RELATIONSHIP_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                  </select>
-                </label>
-                {relType === 'SUBSTITUTE_WITH_CONVERSION' && (
-                  <>
-                    <label className="vitrin-form__field">
-                      <span className="vitrin-form__label">صورت ضریب</span>
-                      <input type="number" step="any" dir="ltr" value={relNumerator} onChange={(e) => setRelNumerator(e.target.value)} />
-                    </label>
-                    <label className="vitrin-form__field">
-                      <span className="vitrin-form__label">مخرج ضریب</span>
-                      <input type="number" step="any" dir="ltr" value={relDenominator} onChange={(e) => setRelDenominator(e.target.value)} />
-                    </label>
-                  </>
-                )}
-                <button type="submit" className="btn btn--outline" disabled={busy || !relTargetId} style={{ alignSelf: 'end' }}>
-                  ثبت رابطه
-                </button>
-              </form>
-              )}
-              {relError && <p className="vitrin-form__error">{relError}</p>}
-
-              {relationships.length ? (
-                <table className="jarian-table">
-                  <thead><tr><th>کالای مقابل</th><th>نوع رابطه</th><th>وضعیت</th><th></th></tr></thead>
-                  <tbody>
-                    {relationships.map((r) => {
-                      const other = products.find((p) => p.id === (r.targetProductId === product.id ? r.sourceProductId : r.targetProductId));
-                      return (
-                        <tr key={r.id}>
-                          <td>{other?.displayNameOverride || other?.generatedName || '—'}</td>
-                          <td>{RELATIONSHIP_LABELS[r.relationshipType] || r.relationshipType}</td>
-                          <td>{r.isActive !== false ? 'فعال' : 'غیرفعال'}</td>
-                          <td>
-                            {r.isActive !== false && canManageRelationships && (
-                              <button type="button" className="btn btn--ghost" onClick={() => handleDeactivateRelationship(r.id)} disabled={busy}>
-                                غیرفعال کردن
-                              </button>
-                            )}
-                          </td>
+              {allowedGroups.length > 0 && (
+                <section className="vitrin-profile-card" aria-labelledby={`product-${product.id}-allowed`}>
+                  <h3 id={`product-${product.id}-allowed`} className="vitrin-profile-section__title">گزینه‌های مجاز برای سفارش</h3>
+                  <table className="jarian-table vitrin-profile-table">
+                    <thead>
+                      <tr>
+                        <th>ردیف</th>
+                        <th>ویژگی</th>
+                        <th>گزینه‌ها</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allowedGroups.map((group, index) => (
+                        <tr key={group.attributeDefinitionId}>
+                          <td className="vitrin-profile-table__num">{(index + 1).toLocaleString('fa-IR')}</td>
+                          <td className="vitrin-profile-table__name">{group.attributeNameFa}</td>
+                          <td className="vitrin-profile-table__value">{group.values.join('، ') || '—'}</td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="vitrin-profile-panel__empty">رابطه‌ای برای این کالا ثبت نشده است.</p>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
               )}
+
+              <form className="vitrin-profile-card vitrin-profile-card--offer" onSubmit={handleSaveOffer}>
+                <OfferSettingsFields
+                  variant="product"
+                  idPrefix={`product-${product.id}`}
+                  uoms={uoms}
+                  values={offer}
+                  onChange={setOffer}
+                  disabled={!canEditOffer || busy}
+                />
+                {offerError && <p className="vitrin-form__error">{offerError}</p>}
+                {canEditOffer && (
+                  <div className="offer-settings__actions">
+                    <button type="submit" className="btn btn--primary vitrin-drawer__save" disabled={busy}>
+                      ذخیره واحد و عرضه
+                    </button>
+                  </div>
+                )}
+              </form>
+
+              <section className="vitrin-profile-card" aria-label="روش محاسبه و برند">
+                <dl className="vitrin-profile-meta">
+                  <div className="vitrin-profile-meta__row">
+                    <dt>روش محاسبه وزن</dt>
+                    <dd>{weightProfileLabel(product.weightProfileType)}</dd>
+                  </div>
+                  <div className="vitrin-profile-meta__row">
+                    <dt>برند</dt>
+                    <dd className={brand?.brandName ? undefined : 'vitrin-profile-meta__empty'}>
+                      {brand?.brandName || 'بدون برند'}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
             </div>
           )}
 

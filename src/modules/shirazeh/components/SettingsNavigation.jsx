@@ -1,48 +1,62 @@
 import { NavLink } from 'react-router-dom';
 import {
   Settings,
-  Users,
   Plug,
   Warehouse,
-  Shield,
   Palette,
   DatabaseBackup,
   ListChecks,
   Mail,
   Boxes,
+  Landmark,
+  Users,
+  Network,
+  Shield,
+  Drama,
 } from 'lucide-react';
 import { SETTINGS_MENU, SHIRAZEH_BASE_PATH } from '../config/settingsMenu';
 
 const ICON_MAP = {
   Settings,
-  Users,
   Plug,
   Warehouse,
-  Shield,
   Palette,
   DatabaseBackup,
   ListChecks,
   Mail,
   Boxes,
+  Landmark,
+  Users,
+  Network,
+  Shield,
+  Drama,
 };
 
 /**
- * Configuration-driven settings sidebar.
- * NavLinks always use absolute /shirazeh/:id paths (never relative).
+ * Configuration-driven settings/definitions sidebar.
+ * NavLinks use each item's absolute path.
  */
-export default function SettingsNavigation({ items = SETTINGS_MENU }) {
+export default function SettingsNavigation({
+  items = SETTINGS_MENU,
+  title = 'تنظیمات',
+  subtitle,
+  ariaLabel = 'بخش‌های تنظیمات',
+}) {
   return (
-    <nav className="shirazeh-nav" aria-label="بخش‌های تنظیمات">
-      <p className="shirazeh-nav__title font-meem">تنظیمات</p>
+    <nav className={`shirazeh-nav${subtitle ? ' shirazeh-nav--with-subtitle' : ''}`} aria-label={ariaLabel}>
+      <p className="shirazeh-nav__title font-meem">{title}</p>
+      {subtitle ? (
+        <p className="shirazeh-nav__subtitle font-meem">{subtitle}</p>
+      ) : null}
       <ul className="shirazeh-nav__list">
         {items.map((item) => {
           const Icon = ICON_MAP[item.icon] || Settings;
-          const to = `${SHIRAZEH_BASE_PATH}/${item.id}`;
+          const to = item.path || `${SHIRAZEH_BASE_PATH}/${item.id}`;
           return (
             <li key={item.id}>
               <NavLink
                 to={to}
-                end={item.id !== 'security'}
+                end={Boolean(item.end)}
                 className={({ isActive }) =>
                   `shirazeh-nav__item${isActive ? ' shirazeh-nav__item--active' : ''}`
                 }

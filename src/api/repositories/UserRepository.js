@@ -49,6 +49,12 @@ export const UserRepository = {
     const { data } = await apiClient.post(`/users/${encodeURIComponent(id)}/password`, { password });
     return data;
   },
+
+  async resendInvitation(id) {
+    assertLiveApi();
+    const { data } = await apiClient.post(`/users/${encodeURIComponent(id)}/invitation`);
+    return data;
+  },
 };
 
 export default UserRepository;

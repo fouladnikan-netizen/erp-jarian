@@ -51,6 +51,7 @@ export function parseJalaliParts(dateStr) {
   const ascii = toAsciiDigits(dateStr || '');
   const [year, month, day] = ascii.split('/').map((n) => Number(n) || 0);
   return {
+    year,
     yy: year % 100,
     mm: month,
     dd: day,

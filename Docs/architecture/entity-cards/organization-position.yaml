@@ -1,0 +1,25 @@
+id: organization-position
+name: Organization Position
+tier: A
+status: active
+ownerModule: shirazeh
+aggregateRoot: OrganizationPosition
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Job title on a unit. Create/update title/code/sort. Soft-deactivate. Not an RBAC role — never grants user_roles."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - users:admin
+databaseTable: organization_positions
+apiBasePath: /api/v1/organization/positions
+backendRepository: backend/src/repositories/organizationRepository.js
+frontendRepository: src/api/repositories/OrganizationRepository.js
+dependencies:
+  - organization-unit
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-37
+migrationSafety: "032 new table organization_positions FK unit_id. Titles find-or-created per unit on assignment. No drops. No permission grants."
+notes: "Examples: کارشناس فروش, مدیر فروش. Position ≠ Role. Manager is on the assignment row, not this title."

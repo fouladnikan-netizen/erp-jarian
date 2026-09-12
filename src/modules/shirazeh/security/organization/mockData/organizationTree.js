@@ -1,10 +1,12 @@
 /**
- * Mock organization hierarchy for Shirazeh Security → Organization Designer.
+ * Gahshomar letter-referral display directory only (DDL-23).
+ * Independent mock person ids (user-sara, …) are NOT mapped to users.id.
+ * Shirazeh Organization Structure must not use this file as SoR.
  *
- * Concepts (do not mix):
+ * Concepts:
  * - type "department" | "user"
  * - position = organizational job title (Persian label for humans)
- * - role = system RBAC code (SALES_MANAGER, …) — independent from position
+ * - role on these fixtures is historical demo text — not live RBAC
  */
 
 export const ORGANIZATION_TREE = {

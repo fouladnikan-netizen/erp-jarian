@@ -25,5 +25,7 @@ ddlRefs:
   - DDL-03
   - DDL-07
   - DDL-18
-migrationSafety: "Expand-only preferred. 008 (A) demoted mid-flight success→current; 009 (B) restores SUCCESS+OPEN / SUCCESS+CLOSED. Backup required before prod migrate."
-notes: "Service orchestrates Zod + lifecycle rules (orderOutcomeClosure.js / orderLifecycle re-export) + TX + audit. Successful Purchase = status success (not CLOSED). Phase-2 runs under SUCCESS+OPEN."
+  - DDL-27
+  - DDL-30
+migrationSafety: "Expand-only preferred. 008 (A) demoted mid-flight success→current; 009 (B) restores SUCCESS+OPEN / SUCCESS+CLOSED. 023 adds order_code_daily_counters only — no rewrite of orders.code. Shipping/SooratBar organizationSnapshot lives in order payload JSON (DDL-30) — expand-only, no column, no backfill. Backup required before prod migrate."
+notes: "Service orchestrates Zod + lifecycle rules (orderOutcomeClosure.js / orderLifecycle re-export) + TX + audit. Successful Purchase = status success (not CLOSED). Phase-2 runs under SUCCESS+OPEN. Order code JR-{Y}{MM}{DD}{NN} allocated by nextOrderCode (DDL-27)."

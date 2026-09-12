@@ -98,6 +98,7 @@
 
   /* ── Tables ── */
   --table-head-bg: #e8faf7;
+  --table-head-bg-subtle: color-mix(in srgb, var(--bg-muted) 42%, var(--bg-surface));
   --table-row-odd-bg: #ffffff;
   --table-row-even-bg: rgba(243, 244, 246, 0.85);
   --table-row-hover-bg: color-mix(in srgb, var(--color-accent) 8%, transparent);
@@ -175,6 +176,7 @@
   --accent-ring: 0 0 0 3px var(--color-accent-muted);
 
   --radius-sm: 6px;
+  --radius-control: 8px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius: var(--radius-md);
@@ -228,6 +230,8 @@
   --print-border-soft: #cbd5e1;
   --print-surface: #f8fafc;
   --print-surface-muted: #f1f5f9;
+  --print-chrome: #020204;
+  --print-chrome-fg: #fefefe;
 
   /* ── Layout metrics (non-color) ── */
   --header-height: 60px;
@@ -277,6 +281,7 @@ html[data-theme='dark'] {
   --border-strong: #3a4150;
 
   --table-head-bg: #14322e;
+  --table-head-bg-subtle: color-mix(in srgb, var(--bg-muted) 55%, var(--bg-surface));
   --table-row-odd-bg: var(--bg-surface);
   --table-row-even-bg: var(--bg-muted);
   --table-row-hover-bg: color-mix(in srgb, var(--color-accent) 12%, transparent);

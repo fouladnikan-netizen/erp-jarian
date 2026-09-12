@@ -1,17 +1,17 @@
 /* پیش‌فاکتور — منطبق بر Assets/Invoice/code.html */
 
 :root {
-  --invoice-primary: var(--color-neutral-900);
-  --invoice-header-bg: var(--color-neutral-900);
-  --invoice-logo-file-bg: var(--color-neutral-900);
-  --invoice-primary-dim: var(--text-muted);
+  --invoice-primary: var(--print-ink);
+  --invoice-header-bg: var(--print-chrome);
+  --invoice-logo-file-bg: var(--print-chrome);
+  --invoice-primary-dim: var(--print-chrome-fg);
   --invoice-table-header: var(--color-brand-red);
-  --invoice-surface: var(--bg-paper);
-  --invoice-surface-low: var(--bg-muted);
-  --invoice-surface-variant: var(--border-default);
-  --invoice-on-surface: var(--text-primary);
-  --invoice-on-surface-variant: var(--text-secondary);
-  --invoice-note-muted: var(--text-secondary);
+  --invoice-surface: var(--print-paper);
+  --invoice-surface-low: var(--print-surface);
+  --invoice-surface-variant: var(--print-border-soft);
+  --invoice-on-surface: var(--print-ink);
+  --invoice-on-surface-variant: var(--print-muted);
+  --invoice-note-muted: var(--print-muted);
   --invoice-page-margin-x: 1.8cm;
 }
 
@@ -353,8 +353,8 @@
   padding-left: var(--invoice-page-margin-x);
   padding-right: var(--invoice-page-margin-x);
   padding-bottom: 0;
-  background: var(--color-white);
-  color: var(--invoice-on-surface);
+  background: var(--print-paper);
+  color: var(--print-ink);
   font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
   font-size: 13px;
   line-height: 1.45;
@@ -364,6 +364,7 @@
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -webkit-print-color-adjust: exact;
@@ -488,11 +489,13 @@
 
 .invoice-doc__brand-mark-img {
   display: block;
+  /* Current nikan-proforma-header.jpg is 1940×672; lock that rendered box (not width:auto). */
+  width: calc(3.6rem * 1940 / 672);
   height: 3.6rem;
-  width: auto;
   max-width: min(100%, 22rem);
   object-fit: contain;
   object-position: right center;
+  flex-shrink: 0;
 }
 
 .invoice-doc__tagline {
@@ -980,7 +983,7 @@ body.is-invoice-resizing[data-resize='row'] {
 /* فوتر — پایین هر صفحه A4 (جریان عادی، نه fixed) */
 .invoice-doc__footer {
   margin: auto 0 0;
-  background: var(--invoice-primary);
+  background: var(--invoice-header-bg);
   color: var(--color-white);
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
@@ -1071,7 +1074,9 @@ body.is-invoice-resizing[data-resize='row'] {
   }
 
   body:has(.proforma-preview-page) {
-    background: var(--color-white) !important;
+    background: var(--print-paper) !important;
+    color: var(--print-ink) !important;
+    color-scheme: light;
     margin: 0;
     padding: 0 !important;
     width: 210mm;
@@ -1080,6 +1085,11 @@ body.is-invoice-resizing[data-resize='row'] {
 
   .no-print {
     display: none !important;
+  }
+
+  .proforma-preview-page,
+  .proforma-preview-page * {
+    visibility: visible !important;
   }
 
   .invoice-doc__col-resize,
@@ -1091,7 +1101,8 @@ body.is-invoice-resizing[data-resize='row'] {
 
   .proforma-preview-page {
     padding: 0 !important;
-    background: var(--color-white) !important;
+    background: var(--print-paper) !important;
+    color: var(--print-ink) !important;
     font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif !important;
   }
 
@@ -1118,6 +1129,11 @@ body.is-invoice-resizing[data-resize='row'] {
     overflow: hidden !important;
     break-after: page;
     page-break-after: always;
+    background: var(--print-paper) !important;
+    color: var(--print-ink) !important;
+    color-scheme: light;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .invoice-doc--page.is-last {
@@ -1165,6 +1181,7 @@ body.is-invoice-resizing[data-resize='row'] {
   }
 
   .invoice-doc__brand-mark-img {
+    width: calc(3.6rem * 1940 / 672);
     height: 3.6rem;
     max-width: min(100%, 22rem);
   }

@@ -23,5 +23,8 @@ router.post('/', requirePermission('products:manage-brands'), asyncHandler(async
 router.patch('/:id', requirePermission('products:manage-brands'), asyncHandler(async (req, res) => {
   res.json({ brand: await brandService.updateBrand(req.params.id, req.body, req.auth.userId) });
 }));
+router.delete('/:id', requirePermission('products:manage-brands'), asyncHandler(async (req, res) => {
+  res.json(await brandService.deleteBrand(req.params.id, req.auth.userId));
+}));
 
 export default router;

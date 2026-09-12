@@ -4,6 +4,16 @@
   margin-top: 0;
 }
 
+.vitrin-page__alert {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-md, 10px);
+  background: var(--danger-surface);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+  font-size: 0.82rem;
+}
+
 /* Toolbar */
 .vitrin-toolbar__bar {
   flex-wrap: wrap;
@@ -119,6 +129,19 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
+}
+
+.vitrin-categories__row--nested {
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.vitrin-categories__label {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-inline-end: 0.15rem;
 }
 
 .vitrin-categories__add-sub {
@@ -276,6 +299,11 @@
   background: var(--color-accent-muted);
 }
 
+.vitrin-row-actions__btn--danger:hover {
+  color: var(--danger);
+  background: var(--danger-muted);
+}
+
 /* Modals — unified backdrop from overlays.css */
 .vitrin-modal-overlay {
   z-index: var(--z-modal-backdrop);
@@ -326,6 +354,21 @@
   padding-top: 0.5rem;
 }
 
+.vitrin-product-drawer.jarian-drawer {
+  background: var(--glass-bg-strong);
+  border-right: 1px solid var(--glass-border);
+}
+
+.vitrin-product-drawer .jarian-drawer__footer {
+  justify-content: flex-end;
+}
+
+.vitrin-product-drawer__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .vitrin-form__field {
   display: flex;
   flex-direction: column;
@@ -350,6 +393,13 @@
   font-family: inherit;
 }
 
+.vitrin-form__field textarea {
+  min-height: 3.4rem;
+  resize: vertical;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
 .vitrin-form__field input:focus,
 .vitrin-form__field select:focus,
 .vitrin-form__field textarea:focus {
@@ -360,10 +410,10 @@
 }
 
 .vitrin-form__readonly {
-  font-family: var(--font-mono, monospace);
-  letter-spacing: 0.08em;
-  direction: ltr;
-  text-align: center;
+  font-family: var(--font-primary);
+  letter-spacing: normal;
+  direction: rtl;
+  text-align: right;
   color: var(--color-accent-dark);
   font-weight: 700;
   background: var(--color-accent-muted) !important;
@@ -392,6 +442,36 @@
   font-size: 0.85rem;
 }
 
+.vitrin-form__field--full {
+  grid-column: 1 / -1;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.vitrin-form__field--full > legend {
+  padding: 0;
+}
+
+.vitrin-form__enum-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-50);
+}
+
+.vitrin-form__enum-option {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
 .vitrin-form__warning {
   font-size: 0.82rem;
   color: var(--warning);
@@ -417,67 +497,420 @@
   z-index: var(--z-backdrop);
 }
 
-.vitrin-drawer {
+aside.vitrin-drawer {
   width: min(560px, 94vw);
   z-index: var(--z-drawer);
+  container-type: inline-size;
+  container-name: vitrin-profile;
+  background: var(--bg-surface);
 }
 
 .vitrin-drawer__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 1.25rem;
-  border-bottom: 1px solid var(--border-default);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'identity close'
+    'actions close';
+  align-items: start;
+  column-gap: 0.75rem;
+  row-gap: 0.75rem;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.vitrin-drawer__identity {
+  grid-area: identity;
+  min-width: 0;
 }
 
 .vitrin-drawer__title {
-  font-size: 1.15rem;
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 1.25rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
 }
 
 .vitrin-drawer__subtitle {
   font-family: var(--font-secondary);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin: 0.35rem 0 0;
+  text-align: start;
+  line-height: 1.55;
+}
+
+.vitrin-drawer__header-actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.vitrin-drawer__header-actions:empty {
+  display: none;
+}
+
+.vitrin-drawer__header-actions .btn--outline,
+.vitrin-drawer__header-actions .btn--outline-danger {
+  min-height: 2.25rem;
+  padding-inline: 0.9rem;
+  border-radius: var(--radius-control);
+}
+
+.vitrin-drawer__header-actions .btn--outline-danger {
+  border-color: var(--danger-border);
+  color: var(--danger);
+  background: var(--bg-surface);
+}
+
+.vitrin-drawer__header-actions .btn--outline-danger:hover {
+  border-color: var(--danger);
+  background: var(--danger-muted);
+}
+
+.vitrin-drawer__header-actions .btn:focus-visible,
+.vitrin-drawer__close:focus-visible,
+.vitrin-drawer__tab:focus-visible,
+.vitrin-drawer__save:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.vitrin-drawer__close {
+  grid-area: close;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-control);
   color: var(--text-secondary);
-  margin-top: 0.25rem;
+  background: transparent;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.vitrin-drawer__close:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
 }
 
 .vitrin-drawer__tabs {
   display: flex;
-  border-bottom: 1px solid var(--border-default);
+  gap: 0.25rem;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--border-light);
   overflow-x: auto;
+  flex-shrink: 0;
+  background: var(--bg-surface);
 }
 
 .vitrin-drawer__tab {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: max-content;
-  padding: 0.75rem 0.85rem;
-  font-size: 0.75rem;
+  padding: 0.75rem 0.7rem 0.65rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-secondary);
+  background: transparent;
   border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
   white-space: nowrap;
-  transition: all var(--transition-fast);
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.vitrin-drawer__tab:hover {
+  color: var(--text-primary);
 }
 
 .vitrin-drawer__tab.is-active {
-  color: var(--color-accent-dark);
-  border-bottom-color: var(--color-accent);
-  background: var(--color-accent-muted);
+  color: var(--accent-hover);
+  border-bottom-color: var(--accent);
+  background: transparent;
 }
 
 .vitrin-drawer__body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.25rem;
+  padding: 1.5rem 1.25rem 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 .vitrin-profile-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
+}
+
+.vitrin-drawer .vitrin-profile-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.vitrin-drawer .vitrin-profile-card .vitrin-profile-section__title {
+  margin: 0;
+  padding: 0.75rem 1rem 0.5rem;
+  font-family: var(--font-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-primary);
+}
+
+.vitrin-profile-section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vitrin-profile-section__title {
+  margin: 0 0 0.1rem;
+  font-family: var(--font-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.vitrin-drawer .vitrin-profile-table {
+  width: 100%;
+  margin: 0;
+}
+
+.vitrin-drawer .vitrin-profile-table thead th {
+  background: var(--table-head-bg-subtle) !important;
+  background-color: var(--table-head-bg-subtle) !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding-block: 0.55rem;
+}
+
+.vitrin-drawer .vitrin-profile-table tbody td {
+  padding-block: 0.6rem;
+  vertical-align: middle;
+}
+
+.vitrin-drawer .vitrin-profile-table__num,
+.vitrin-drawer .vitrin-profile-table__value {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+.vitrin-drawer .vitrin-profile-table__name {
+  text-align: start !important;
+  font-weight: 500;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer {
+  padding: 0.25rem 0.15rem 1rem;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings {
+  margin: 0;
+  padding: 0.75rem 1rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__legend {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 0;
+  margin: 0 0 0.75rem;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field select,
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field input[type='number'] {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field select:focus-visible,
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field input:focus-visible {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field:has(.offer-settings__control) {
+  grid-column: 1 / -1;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__hint {
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field--check {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: start;
+  min-height: 2.25rem;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field--check .offer-settings__label {
+  order: 1;
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__field--check input[type='checkbox'] {
+  order: 0;
+  margin: 0;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .offer-settings__actions {
+  display: flex;
+  justify-content: stretch;
+  margin: 1rem 1rem 0;
+}
+
+.vitrin-drawer .vitrin-drawer__save {
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: var(--radius-control);
+}
+
+.vitrin-drawer .vitrin-profile-card--offer .vitrin-form__error {
+  margin: 0.75rem 1rem 0;
+}
+
+.vitrin-profile-meta {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.vitrin-profile-meta__row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 10rem) minmax(0, 1fr);
+  align-items: start;
+  column-gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.vitrin-profile-meta__row:last-child {
+  border-bottom: 0;
+}
+
+.vitrin-profile-meta dt {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.vitrin-profile-meta dd {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+.vitrin-profile-meta__empty {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.vitrin-profile-matrix {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.vitrin-profile-row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 9.5rem) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 1rem;
+  padding-block: 0.7rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.vitrin-profile-matrix .vitrin-profile-row:first-child,
+.vitrin-profile-section > .vitrin-profile-row:first-of-type {
+  border-top: 1px solid var(--border-light);
+}
+
+.vitrin-profile-row__label,
+.vitrin-profile-row dt {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.vitrin-profile-row__value,
+.vitrin-profile-row dd {
+  margin: 0;
+  font-family: var(--font-numeric);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.vitrin-profile-row__value--muted {
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .vitrin-profile-panel__edit {
@@ -508,9 +941,32 @@
 .vitrin-profile-panel__empty {
   font-family: var(--font-secondary);
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-align: center;
   padding: 2rem 1rem;
+  line-height: 1.7;
+}
+
+.vitrin-profile-panel__empty--inline {
+  text-align: start;
+  padding: 0.25rem 1rem 1rem;
+}
+
+@container vitrin-profile (max-width: 440px) {
+  .vitrin-drawer .vitrin-profile-card--offer .offer-settings__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vitrin-profile-meta__row {
+    grid-template-columns: 1fr;
+    row-gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .vitrin-drawer .vitrin-profile-card--offer .offer-settings__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .vitrin-standards {

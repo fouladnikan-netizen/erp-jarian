@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import logo from '../../../../../assets/images/nikan2.jpg';
-import { COMPANY_BRAND, PROFORMA_BANK_ACCOUNTS } from '../../../proformaConfig';
+import { PROFORMA_BANK_ACCOUNTS } from '../../../proformaConfig';
 import { formatAmountRial, toDisplayOrderCode } from '../../../orderCode';
 import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { getCustomerById } from '../../../customers';
@@ -8,6 +8,13 @@ import { getTodayJalali } from '../../../dateUtils';
 import { listCrmPaymentsAsCustomerPayments } from '../../../orderCrmService';
 import { buildSaranjamSettlementModel, getSaranjamDiscrepancy } from '../../../saranjamSettlementService';
 import { createEntityId, ENTITY_ID_PREFIX } from '../../../../../domain/identity';
+import {
+  getCachedOrganizationIdentity,
+  isDocumentOrganizationPopulated,
+  toDocumentOrganization,
+  useOrganizationIdentity,
+} from '../../../../../domain/organizationIdentity';
+import { legacyDocumentOrganizationFromBrand } from '../../../documentOrganization';
 import { printTaxInvoice } from './printTaxInvoice';
 import SaranjamSettlementLayout from './SaranjamSettlementLayout';
 import { OFFICIAL_VAT_RATE } from '../../../services/quotingService';
@@ -429,6 +436,7 @@ function TaxInvoiceModal({
   invoiceNumber,
   issueDate,
   mode = 'issue',
+  organization,
 }) {
   const isViewMode = mode === 'view';
   const canEdit = Boolean(isAdmin) && !isViewMode;
@@ -449,6 +457,7 @@ function TaxInvoiceModal({
   }, [draftItems]);
 
   const primaryBank = PROFORMA_BANK_ACCOUNTS[0];
+  const seller = organization && typeof organization === 'object' ? organization : {};
 
   const taxdocRef = useRef(null);
 
@@ -504,7 +513,7 @@ function TaxInvoiceModal({
           <header className="saranjam-taxdoc__top">
             <div className="saranjam-taxdoc__top-brand">
               <img src={logo} alt="" className="saranjam-taxdoc__logo" />
-              <span className="font-meem saranjam-taxdoc__top-company">{COMPANY_BRAND.name}</span>
+              <span className="font-meem saranjam-taxdoc__top-company">{seller.tradeName}</span>
             </div>
             <h1 className="saranjam-taxdoc__title font-meem">صورتحساب فروش کالا و خدمات</h1>
             <div className="saranjam-taxdoc__top-meta">
@@ -528,15 +537,15 @@ function TaxInvoiceModal({
 
           <PartyInfoBox
             sideLabel="فروشنده"
-            name={COMPANY_BRAND.name}
-            address={COMPANY_BRAND.address}
-            city="تهران"
-            province="تهران"
-            nationalId={COMPANY_BRAND.nationalId}
-            economicId={COMPANY_BRAND.nationalId}
-            postalCode={COMPANY_BRAND.postalCode}
-            registrationNumber={COMPANY_BRAND.registrationNumber}
-            phone={COMPANY_BRAND.phone}
+            name={seller.tradeName}
+            address={seller.officialAddress}
+            city={seller.city}
+            province={seller.province}
+            nationalId={seller.nationalId}
+            economicId={seller.economicNumber || seller.nationalId}
+            postalCode={seller.postalCode}
+            registrationNumber={seller.registrationNumber}
+            phone={seller.phone}
           />
 
           <PartyInfoBox
@@ -806,6 +815,8 @@ export default function SaranjamTab({
   const purchaseFileRefs = useRef({});
   const customerFileRef = useRef(null);
   const supplierFileRefs = useRef({});
+  const { identity } = useOrganizationIdentity();
+  const liveOrg = useMemo(() => toDocumentOrganization(identity), [identity]);
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [items, setItems] = useState(() => (
@@ -1057,6 +1068,7 @@ export default function SaranjamTab({
       salesInvoiceDate: issueDate,
       salesInvoiceSnapshot: snapshot,
       salesInvoiceTotalRial: total,
+      organizationSnapshot: toDocumentOrganization(getCachedOrganizationIdentity()),
     });
     showToast(
       saleModalMode === 'reissue'
@@ -1293,6 +1305,13 @@ export default function SaranjamTab({
         buyer={buyer}
         invoiceNumber={invoiceNumber}
         issueDate={issueDate}
+        organization={
+          salesInvoiceIssued && saleModalMode === 'view'
+            ? (isDocumentOrganizationPopulated(order?.saranjam?.organizationSnapshot)
+              ? order.saranjam.organizationSnapshot
+              : legacyDocumentOrganizationFromBrand())
+            : liveOrg
+        }
       />
 
       <PurchaseInvoiceModal

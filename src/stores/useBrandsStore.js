@@ -45,6 +45,11 @@ export const useBrandsStore = create((set, get) => ({
     if (saved) set((s) => ({ brands: s.brands.map((b) => (b.id === id ? saved : b)), version: s.version + 1 }));
     return saved;
   },
+  deleteBrand: async (id) => {
+    if (useMockApi()) return null;
+    await BrandRepository.deleteBrand(id);
+    set((s) => ({ brands: s.brands.filter((b) => b.id !== id), version: s.version + 1 }));
+  },
 }));
 
 export default useBrandsStore;

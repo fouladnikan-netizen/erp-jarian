@@ -15,6 +15,7 @@ import {
   updateItemScaleWeight,
 } from '../../../rahseparLoadingService';
 import PrintableSooratBar from './PrintableSooratBar';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 import './RahseparStagePanel.css';
 
 export function computeIsQcComplete(order) {
@@ -362,6 +363,7 @@ export default function RahseparStagePanel({
   compact = false,
   readOnly = false,
 }) {
+  const { alert } = useJarianNotice();
   const loadItems = useMemo(() => getAllLoadItems(order), [order]);
   const readyItems = useMemo(
     () => loadItems.filter((item) => item.status === LOAD_ITEM_STATUS.READY),
@@ -651,7 +653,7 @@ export default function RahseparStagePanel({
     if (readOnly) return;
     const result = finalizeRahseparOrder(order);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان نهایی‌سازی وجود ندارد.');
+      void alert({ title: 'توجه', message: result.reason || 'امکان نهایی‌سازی وجود ندارد.' });
       return;
     }
     onUpdateOrder?.(() => result.order);

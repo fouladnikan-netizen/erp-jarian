@@ -55,7 +55,10 @@ async function countActiveAdmins() {
 
 async function restoreSeedAdmin() {
   if (!seedAdminId) return;
-  await query(`UPDATE users SET is_active = TRUE WHERE id = $1`, [seedAdminId]);
+  await query(
+    `UPDATE users SET is_active = TRUE, account_status = 'ACTIVE' WHERE id = $1`,
+    [seedAdminId],
+  );
   await query(
     `INSERT INTO user_roles (user_id, role_code) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
     [seedAdminId, ADMIN_ROLE_CODE],
@@ -151,6 +154,8 @@ describe('users API mutations', () => {
     assert.equal(user.username, username);
     assert.equal(user.displayName, 'کاربر ایجاد');
     assert.equal(user.isActive, true);
+    assert.equal(user.status, 'ACTIVE');
+    assert.equal(user.hasPassword, true);
     assert.ok(user.roles.some((r) => r.code === 'sales'));
     assert.ok(user.roles[0].labelFa);
 
@@ -503,5 +508,107 @@ describe('users audit', () => {
     const res = await json('GET', '/api/v1/users/u_does_not_exist');
     assert.equal(res.status, 404);
     assert.equal(res.data.error, 'USER_NOT_FOUND');
+  });
+});
+
+describe('user profile + organization assignment (DDL-39)', () => {
+  it('creates INVITED user without password and generates internal username', async (t) => {
+    if (!dbOk) return t.skip('no database');
+    const mobile = `0912${String(Date.now()).slice(-7)}`.slice(0, 11);
+    const res = await json('POST', '/api/v1/users', {
+      fullName: 'کاربر تست سازمانی',
+      mobile,
+      email: `org-user-${stamp()}@example.com`,
+      roles: ['sales'],
+    });
+    assert.equal(res.status, 201, JSON.stringify(res.data));
+    const user = res.data.user;
+    assert.equal(user.fullName, 'کاربر تست سازمانی');
+    assert.equal(user.displayName, 'کاربر تست سازمانی');
+    assert.equal(user.mobile, mobile);
+    assert.equal(user.status, 'INVITED');
+    assert.equal(user.hasPassword, false);
+    assert.match(user.username, /^user_[0-9]+$/);
+    assert.equal(user.password, undefined);
+    assert.equal(res.data.invitation?.sent, true);
+
+    const login = await json('POST', '/api/v1/auth/login', {
+      username: user.username,
+      password: 'anything1',
+    }, null);
+    assert.equal(login.status, 401);
+
+    const adminStill = await json('POST', '/api/v1/auth/login', {
+      username: 'admin',
+      password: 'Admin123!',
+    }, null);
+    assert.equal(adminStill.status, 200, JSON.stringify(adminStill.data));
+  });
+
+  it('rejects duplicate mobile after normalization', async (t) => {
+    if (!dbOk) return t.skip('no database');
+    const unique = String(Date.now()).slice(-7);
+    const mobile = `0913${unique}`.slice(0, 11);
+    const first = await json('POST', '/api/v1/users', {
+      fullName: 'موبایل یک',
+      mobile,
+      roles: ['sales'],
+    });
+    assert.equal(first.status, 201, JSON.stringify(first.data));
+    const persian = mobile.replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+    const second = await json('POST', '/api/v1/users', {
+      fullName: 'موبایل دو',
+      mobile: persian,
+      roles: ['sales'],
+    });
+    assert.equal(second.status, 409, JSON.stringify(second.data));
+    assert.equal(second.data.error, 'MOBILE_EXISTS');
+  });
+
+  it('creates user with unit/position in one transaction without changing roles from position', async (t) => {
+    if (!dbOk) return t.skip('no database');
+    const unitRes = await json('POST', '/api/v1/organization/units', {
+      name: `فروش آزمون ${stamp()}`,
+      parentId: 'ou_root',
+    });
+    assert.equal(unitRes.status, 201, JSON.stringify(unitRes.data));
+    const unitId = unitRes.data.unit.id;
+    const expertRes = await json('POST', '/api/v1/organization/positions', {
+      unitId,
+      title: 'کارشناس فروش',
+    });
+    assert.equal(expertRes.status, 201, JSON.stringify(expertRes.data));
+    const managerRes = await json('POST', '/api/v1/organization/positions', {
+      unitId,
+      title: 'مدیر فروش',
+    });
+    assert.equal(managerRes.status, 201, JSON.stringify(managerRes.data));
+
+    const mobile = `0914${String(Date.now()).slice(-7)}`.slice(0, 11);
+    const created = await json('POST', '/api/v1/users', {
+      fullName: 'کارشناس آزمون',
+      mobile,
+      email: `sales-qa-${stamp()}@example.com`,
+      roles: ['sales'],
+      organization: { unitId, positionId: expertRes.data.position.id },
+    });
+    assert.equal(created.status, 201, JSON.stringify(created.data));
+    assert.equal(created.data.user.organization?.unitId, unitId);
+    assert.equal(created.data.user.organization?.positionId, expertRes.data.position.id);
+    assert.deepEqual(created.data.user.roles.map((r) => r.code), ['sales']);
+
+    const moved = await json('PATCH', `/api/v1/users/${created.data.user.id}`, {
+      organization: { unitId, positionId: managerRes.data.position.id },
+    });
+    assert.equal(moved.status, 200, JSON.stringify(moved.data));
+    assert.equal(moved.data.user.organization?.positionId, managerRes.data.position.id);
+    assert.deepEqual(moved.data.user.roles.map((r) => r.code), ['sales']);
+
+    const roleChanged = await json('PATCH', `/api/v1/users/${created.data.user.id}`, {
+      roles: ['purchase'],
+    });
+    assert.equal(roleChanged.status, 200, JSON.stringify(roleChanged.data));
+    assert.deepEqual(roleChanged.data.user.roles.map((r) => r.code), ['purchase']);
+    assert.equal(roleChanged.data.user.organization?.positionId, managerRes.data.position.id);
   });
 });

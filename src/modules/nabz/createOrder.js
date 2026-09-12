@@ -1,7 +1,7 @@
 import { ORDER_TABS } from './config';
 import { getCurrentUser, DEFAULT_ORDER_TYPE, DEFAULT_SALE_TYPE, SALES_TYPES } from './constants';
 import { getTodayJalali, getNowTimeFa, parseJalaliParts } from './dateUtils';
-import { buildOrderCodeDashed } from './orderCode';
+import { buildCanonicalOrderCode } from './orderCode';
 import { getCustomerById } from './customers';
 import { getDisplayName } from '../kanoon/columns';
 import { getDefaultQuoting } from './quotingConfig';
@@ -116,8 +116,8 @@ export function buildNewOrder({
   const customer = getCustomerById(customerId);
   const registeredDate = getTodayJalali();
   const registeredTime = getNowTimeFa();
-  const { yy, mm, dd } = parseJalaliParts(registeredDate);
-  const code = buildOrderCodeDashed(orders, { yy, mm, dd });
+  const { year, mm, dd } = parseJalaliParts(registeredDate);
+  const code = buildCanonicalOrderCode(orders, { year, mm, dd });
   const itemCount = lineItems.length;
   const nextId = orders.reduce((max, o) => Math.max(max, o.id), 0) + 1;
 

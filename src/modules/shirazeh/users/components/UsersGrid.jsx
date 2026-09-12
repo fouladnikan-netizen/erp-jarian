@@ -1,5 +1,5 @@
-import { Edit2, Key, Lock, Unlock } from 'lucide-react';
-import { formatRoleLabels, formatUserCreatedAt, formatUserStatus } from '../config/usersDisplay';
+import { Edit2, Key, Lock, Mail, Unlock } from 'lucide-react';
+import { formatRoleLabels, formatUserStatus, userStatusTone } from '../config/usersDisplay';
 import { useUsersStore } from '../store/usersStore';
 
 /**
@@ -13,7 +13,9 @@ export default function UsersGrid({ canManage = false }) {
   const openEditModal = useUsersStore((s) => s.openEditModal);
   const toggleUserStatus = useUsersStore((s) => s.toggleUserStatus);
   const openPasswordModal = useUsersStore((s) => s.openPasswordModal);
+  const resendInvitation = useUsersStore((s) => s.resendInvitation);
   const saving = useUsersStore((s) => s.saving);
+  const colSpan = canManage ? 5 : 4;
 
   return (
     <div className="shirazeh-users-grid" role="region" aria-label="فهرست کاربران">
@@ -21,46 +23,50 @@ export default function UsersGrid({ canManage = false }) {
         <table className="shirazeh-users-table">
           <thead>
             <tr>
-              <th className="font-meem">نام نمایشی</th>
-              <th className="font-meem">نام کاربری</th>
-              <th className="font-meem">نقش‌ها</th>
+              <th className="font-meem">کاربر</th>
+              <th className="font-meem">واحد سازمانی</th>
+              <th className="font-meem">نقش</th>
               <th className="font-meem">وضعیت</th>
-              <th className="font-meem">ایجاد شده</th>
               {canManage ? <th className="font-meem">عملیات</th> : null}
             </tr>
           </thead>
           <tbody>
             {loading && !users.length ? (
               <tr>
-                <td colSpan={canManage ? 6 : 5} className="shirazeh-users-table__empty font-meem">
+                <td colSpan={colSpan} className="shirazeh-users-table__empty font-meem">
                   در حال بارگذاری کاربران…
                 </td>
               </tr>
             ) : null}
             {loaded && !loading && !users.length ? (
               <tr>
-                <td colSpan={canManage ? 6 : 5} className="shirazeh-users-table__empty font-meem">
+                <td colSpan={colSpan} className="shirazeh-users-table__empty font-meem">
                   کاربری یافت نشد.
                 </td>
               </tr>
             ) : null}
             {users.map((user) => {
-              const active = user.isActive !== false;
+              const status = user.status || (user.isActive === false ? 'INACTIVE' : 'ACTIVE');
+              const tone = userStatusTone(status);
               return (
                 <tr key={user.id}>
                   <td className="shirazeh-users-table__name font-meem">
-                    <span>{user.displayName}</span>
+                    <span>{user.fullName || user.displayName}</span>
+                    {user.mobile ? (
+                      <span className="shirazeh-users-table__mobile font-yekan" dir="ltr">
+                        {user.mobile}
+                      </span>
+                    ) : null}
                   </td>
-                  <td className="font-yekan" dir="ltr">{user.username}</td>
+                  <td className="font-meem">{user.organization?.unitName || '—'}</td>
                   <td className="font-meem">{formatRoleLabels(user.roles)}</td>
                   <td>
                     <span
-                      className={`shirazeh-users-status shirazeh-users-status--${active ? 'active' : 'inactive'} font-meem`}
+                      className={`shirazeh-users-status shirazeh-users-status--${tone} font-meem`}
                     >
-                      {formatUserStatus(active)}
+                      {formatUserStatus(status)}
                     </span>
                   </td>
-                  <td className="font-yekan">{formatUserCreatedAt(user.createdAt)}</td>
                   {canManage ? (
                     <td>
                       <div className="shirazeh-users-actions" role="group" aria-label={`عملیات ${user.displayName}`}>
@@ -84,15 +90,27 @@ export default function UsersGrid({ canManage = false }) {
                         >
                           <Key size={16} strokeWidth={1.75} />
                         </button>
+                        {status === 'INVITED' ? (
+                          <button
+                            type="button"
+                            className="shirazeh-users-action"
+                            title="ارسال مجدد دعوتنامه"
+                            aria-label="ارسال مجدد دعوتنامه"
+                            disabled={saving}
+                            onClick={() => { void resendInvitation(user.id); }}
+                          >
+                            <Mail size={16} strokeWidth={1.75} />
+                          </button>
+                        ) : null}
                         <button
                           type="button"
-                          className={`shirazeh-users-action${active ? '' : ' shirazeh-users-action--warn'}`}
-                          title={active ? 'غیرفعال‌سازی حساب' : 'فعال‌سازی حساب'}
-                          aria-label={active ? 'غیرفعال‌سازی حساب' : 'فعال‌سازی حساب'}
+                          className={`shirazeh-users-action${status !== 'INACTIVE' ? '' : ' shirazeh-users-action--warn'}`}
+                          title={status !== 'INACTIVE' ? 'غیرفعال‌سازی حساب' : 'فعال‌سازی حساب'}
+                          aria-label={status !== 'INACTIVE' ? 'غیرفعال‌سازی حساب' : 'فعال‌سازی حساب'}
                           disabled={saving}
                           onClick={() => { void toggleUserStatus(user.id); }}
                         >
-                          {active ? (
+                          {status !== 'INACTIVE' ? (
                             <Lock size={16} strokeWidth={1.75} />
                           ) : (
                             <Unlock size={16} strokeWidth={1.75} />

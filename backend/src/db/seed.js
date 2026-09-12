@@ -1,39 +1,32 @@
 import bcrypt from 'bcryptjs';
-import { pool, query } from './pool.js';
+import { pool, query, withTransaction } from './pool.js';
+import { PERMISSION_CATALOG } from '../domain/rbac/permissionCatalog.js';
+import { seedInitialPersonas } from './seedPersonas.js';
+import { seedSteelBrands } from './seedSteelBrands.js';
+import { seedSteelOfferUnits } from './seedSteelOfferUnits.js';
+import { seedWellCasingSlotType } from './seedWellCasingSlotType.js';
+import { seedSeamlessPipeGrades } from './seedSeamlessPipeGrades.js';
+import { healSeamlessSchEnum } from './healSeamlessSchEnum.js';
+import { seedSheetMillLength } from './seedSheetMillLength.js';
+import { seedEnumOverrideHeal } from './seedEnumOverrideHeal.js';
+import { restoreProductMasterCatalog } from './productMasterCatalog.js';
 
 const ROLES = [
-  { code: 'admin', label_fa: 'مدیر سیستم' },
-  { code: 'sales_manager', label_fa: 'مدیر فروش' },
-  { code: 'sales', label_fa: 'کارشناس فروش' },
-  { code: 'purchase', label_fa: 'تدارکات' },
-  { code: 'accounting', label_fa: 'حسابداری' },
+  { code: 'admin', label_fa: 'مدیر سیستم', description: 'مدیریت کامل سامانه، کاربران و پیکربندی' },
+  { code: 'sales_manager', label_fa: 'مدیر فروش', description: 'مدیریت فروش و پیگیری تیم' },
+  { code: 'sales', label_fa: 'کارشناس فروش', description: 'کارشناس فروش — ثبت و پیگیری سفارش و مشتری' },
+  { code: 'purchase', label_fa: 'تدارکات', description: 'تدارکات و تأمین کالا' },
+  { code: 'accounting', label_fa: 'حسابداری', description: 'حسابداری — مشاهده سفارش، شرکت و مکاتبات' },
 ];
 
-const PERMISSIONS = [
-  { code: 'companies:read', label_fa: 'مشاهده شرکت‌ها' },
-  { code: 'companies:write', label_fa: 'ثبت/ویرایش شرکت' },
-  { code: 'orders:read', label_fa: 'مشاهده سفارش‌ها' },
-  { code: 'orders:write', label_fa: 'ثبت/ویرایش سفارش' },
-  { code: 'leads:read', label_fa: 'مشاهده سرنخ‌های خام' },
-  { code: 'leads:write', label_fa: 'ثبت/ویرایش سرنخ خام' },
-  { code: 'leads:convert', label_fa: 'تبدیل سرنخ به شرکت' },
-  { code: 'activities:read', label_fa: 'مشاهده فعالیت‌های پویش' },
-  { code: 'activities:write', label_fa: 'ثبت/ویرایش فعالیت پویش' },
-  { code: 'tasks:read', label_fa: 'مشاهده وظایف پویش' },
-  { code: 'tasks:write', label_fa: 'ثبت/ویرایش وظایف پویش' },
-  { code: 'correspondence:read', label_fa: 'مشاهده مکاتبات (گاه‌شمار)' },
-  { code: 'correspondence:write', label_fa: 'ثبت/ویرایش پیش‌نویس مکاتبه' },
-  { code: 'correspondence:finalize', label_fa: 'نهایی‌سازی و صدور شماره مکاتبه' },
-  { code: 'users:admin', label_fa: 'مدیریت کاربران' },
-  // Product Master (DDL-24) — Shirazeh taxonomy/attribute/UOM/Brand registries + Vitrin Product/SKU.
-  { code: 'products:read', label_fa: 'مشاهده کالاها (ویترین)' },
-  { code: 'products:write', label_fa: 'ثبت/ویرایش کالا (ویترین)' },
-  { code: 'products:lifecycle', label_fa: 'فعال/غیرفعال‌سازی کالا' },
-  { code: 'products:manage-relationships', label_fa: 'مدیریت روابط کالا' },
-  { code: 'products:manage-taxonomy', label_fa: 'مدیریت طبقه‌بندی/ویژگی/واحد کالا (شیرازه)' },
-  { code: 'products:manage-brands', label_fa: 'مدیریت رجیستری برند' },
-  { code: 'products:bulk-import', label_fa: 'ورود دسته‌ای کالا' },
-];
+const PERMISSIONS = PERMISSION_CATALOG.map((row) => ({
+  code: row.code,
+  label_fa: row.labelFa,
+  resource: row.resource,
+  action: row.action,
+  category: row.category,
+  is_sensitive: row.isSensitive,
+}));
 
 const ROLE_PERMS = {
   admin: PERMISSIONS.map((p) => p.code),
@@ -44,7 +37,7 @@ const ROLE_PERMS = {
     'activities:read', 'activities:write',
     'tasks:read', 'tasks:write',
     'correspondence:read', 'correspondence:write', 'correspondence:finalize',
-    'products:read', 'products:write', 'products:lifecycle', 'products:manage-relationships', 'products:bulk-import',
+    'products:read', 'products:write', 'products:lifecycle', 'products:bulk-import',
   ],
   sales: [
     'companies:read', 'companies:write',
@@ -75,17 +68,29 @@ async function seed() {
 
   for (const role of ROLES) {
     await query(
-      `INSERT INTO roles (code, label_fa) VALUES ($1, $2)
-       ON CONFLICT (code) DO UPDATE SET label_fa = EXCLUDED.label_fa`,
-      [role.code, role.label_fa],
+      `INSERT INTO roles (code, label_fa, description, is_active)
+       VALUES ($1, $2, $3, TRUE)
+       ON CONFLICT (code) DO UPDATE SET
+         label_fa = EXCLUDED.label_fa,
+         description = CASE
+           WHEN roles.description IS NULL OR roles.description = '' THEN EXCLUDED.description
+           ELSE roles.description
+         END`,
+      [role.code, role.label_fa, role.description],
     );
   }
 
   for (const perm of PERMISSIONS) {
     await query(
-      `INSERT INTO permissions (code, label_fa) VALUES ($1, $2)
-       ON CONFLICT (code) DO UPDATE SET label_fa = EXCLUDED.label_fa`,
-      [perm.code, perm.label_fa],
+      `INSERT INTO permissions (code, label_fa, resource, action, category, is_sensitive, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+       ON CONFLICT (code) DO UPDATE SET
+         label_fa = EXCLUDED.label_fa,
+         resource = EXCLUDED.resource,
+         action = EXCLUDED.action,
+         category = EXCLUDED.category,
+         is_sensitive = EXCLUDED.is_sensitive`,
+      [perm.code, perm.label_fa, perm.resource, perm.action, perm.category, perm.is_sensitive],
     );
   }
 
@@ -157,6 +162,55 @@ async function seed() {
     `INSERT INTO user_roles (user_id, role_code) VALUES ($1, 'sales')
      ON CONFLICT DO NOTHING`,
     [salesCId],
+  );
+
+  await seedInitialPersonas(query);
+  console.log('[seed] personas upserted (insert-missing only)');
+
+  const catalogSeed = await restoreProductMasterCatalog(query, withTransaction, adminId, {
+    onlyIfEmpty: true,
+  });
+  if (catalogSeed.restored) {
+    console.log(
+      `[seed] product master catalog restored (${catalogSeed.counts?.products || 0} products)`,
+    );
+  } else {
+    console.log(`[seed] product master catalog skipped (${catalogSeed.reason})`);
+  }
+
+  const brandSeed = await seedSteelBrands(adminId);
+  console.log(
+    `[seed] steel brands created ${brandSeed.created}, reused ${brandSeed.reused}, types bound ${brandSeed.boundTypes.length}`,
+  );
+
+  const offerSeed = await seedSteelOfferUnits(adminId);
+  console.log(
+    `[seed] steel offer units updated ${offerSeed.updated}${offerSeed.ringCreated ? ', created حلقه' : ''}`,
+  );
+
+  const slotSeed = await seedWellCasingSlotType(adminId);
+  console.log(
+    `[seed] well-casing slot type ${slotSeed.created ? 'created' : 'reused'}, bound ${slotSeed.bound}`,
+  );
+
+  const seamlessGradeSeed = await seedSeamlessPipeGrades(adminId);
+  console.log(
+    `[seed] seamless pipe grades added ${seamlessGradeSeed.added}, bound ${seamlessGradeSeed.bound}`,
+  );
+
+  const schEnumSeed = await healSeamlessSchEnum(adminId);
+  console.log(
+    `[seed] seamless sch ENUM migrated ${schEnumSeed.migrated}, alreadyOk ${Boolean(schEnumSeed.alreadyOk)}`,
+  );
+
+  const sheetLengthSeed = await seedSheetMillLength(adminId);
+  console.log(
+    `[seed] sheet mill length ${sheetLengthSeed.created ? 'created' : 'reused'}, bound ${sheetLengthSeed.bound} types`,
+  );
+
+  const enumHeal = await seedEnumOverrideHeal(adminId);
+  console.log(
+    `[seed] enum override heal bindings ${enumHeal.healed}, products ${enumHeal.remappedProducts}`,
   );
 
   const companyCount = await query(`SELECT COUNT(*)::int AS n FROM companies`);

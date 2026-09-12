@@ -7,11 +7,11 @@ import SettingsErrorBoundary from './SettingsErrorBoundary';
  * Error boundary keeps the Shirazeh shell mounted if a section crashes.
  * Keyed by pathname so a prior section crash does not stick on navigation.
  */
-export default function SettingsContent({ title, description, children }) {
+export default function SettingsContent({ title, description, children, 'aria-label': ariaLabel }) {
   const location = useLocation();
 
   return (
-    <section className="shirazeh-content" aria-label={title || 'محتوای تنظیمات'}>
+    <section className="shirazeh-content" aria-label={ariaLabel || title || 'محتوای تنظیمات'}>
       {(title || description) ? (
         <header className="shirazeh-content__header">
           {title ? (
@@ -24,7 +24,7 @@ export default function SettingsContent({ title, description, children }) {
       ) : null}
 
       <div className="shirazeh-content__body">
-        <SettingsErrorBoundary key={location.pathname}>
+        <SettingsErrorBoundary key={`${location.pathname}${location.search}`}>
           {children ?? <Outlet />}
         </SettingsErrorBoundary>
       </div>

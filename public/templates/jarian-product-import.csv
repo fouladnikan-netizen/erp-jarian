@@ -1,0 +1,7 @@
+﻿groupName,categoryName,typeName,displayNameOverride,brandName,baseUomCode,salesUomCode,purchaseUomCode,unitWeight,customLengthAllowed,weightProfileType,attr:alloy,attr:application_type,attr:coating,attr:color,attr:dimensions,attr:grade,attr:hardness_type,attr:head_style,attr:height,attr:length,attr:mesh_size,attr:rib_type,attr:schedule,attr:size,attr:standard,attr:supply_form,attr:thickness,attr:weight_class
+#گروه کالا — عین برگه انواع_کالا,دسته کالا — عین برگه انواع_کالا,نوع کالا — عین برگه انواع_کالا,نام نمایشی اختیاری؛ خالی = نام ساخته‌شده سیستم,نام برند از برگه برندها؛ خالی مجاز,کد واحد شمارش مثل PIECE یا KG — برگه واحدها,کد واحد فروش,کد واحد خرید,وزن واحد (عدد مثبت، کیلوگرم),TRUE یا FALSE,FIXED | PER_LENGTH | DIMENSIONAL | MANUAL_ACTUAL,نوع آلیاژ / STRING,نوع استفاده / ENUM,نوع پوشش / ENUM,رنگ / STRING,ابعاد / STRING,گرید / STRING,نوع سختی / DECIMAL,نوع واشر/سرپیچ / STRING,ارتفاع / DECIMAL,طول / DECIMAL,سایز چشمه / DECIMAL,نوع آج / STRING,رده / DECIMAL,سایز / DECIMAL,استاندارد / STRING,حالت عرضه / ENUM,ضخامت / DECIMAL,رده وزنی / ENUM
+مقاطع فولادی,میلگرد,میلگرد آجدار,,,,,,,,MANUAL_ACTUAL,,,,,,A2,,,,,,,,8,,,,
+مقاطع فولادی,پروفیل,پروفیل مبلی,,,,,,,,MANUAL_ACTUAL,,,,,20×20,,,,,,,,,,,,10,
+مقاطع فولادی,تیرآهن,تیرآهن هاش,,,,,,,,MANUAL_ACTUAL,,,,,,,,,,,,,,8,,,,light
+مقاطع فولادی,ورق سرد,ورق گالوانیزه,,,,,,,,MANUAL_ACTUAL,,,,,,,,,,,,,,,,,10,
+پیچ و مهره,پیچ,استاد بولت (پیچ دو سر دنده),,,,,,,,MANUAL_ACTUAL,,,سیاه,,,A2,,,,10,,,,8,,,,

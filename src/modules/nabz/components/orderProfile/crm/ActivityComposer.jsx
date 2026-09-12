@@ -15,6 +15,7 @@ import {
   listActiveActivityTypes,
   useActivityTypesVersion,
 } from '../../../../../domain/activityTypes/activityTypesFacade.js';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 
 /**
  * `payment` is a Nabz order-CRM-only concept — it never persists as a
@@ -59,6 +60,7 @@ function readFileAsDataUrl(file) {
 }
 
 export default function ActivityComposer({ onSubmit }) {
+  const { alert } = useJarianNotice();
   const [activityType, setActivityType] = useState(CRM_ACTIVITY_TYPES.CALL);
   const [body, setBody] = useState('');
   const [needsFollowUp, setNeedsFollowUp] = useState(false);
@@ -102,7 +104,7 @@ export default function ActivityComposer({ onSubmit }) {
         receiptMimeType: file.type || '',
       }));
     } catch {
-      window.alert('خواندن فایل فیش واریزی ناموفق بود.');
+      void alert({ title: 'توجه', message: 'خواندن فایل فیش واریزی ناموفق بود.' });
     }
   };
 
@@ -113,7 +115,7 @@ export default function ActivityComposer({ onSubmit }) {
     if (isPayment) {
       const amount = parseMoneyInput(payment.amountRial);
       if (!amount || amount <= 0 || !payment.date) {
-        window.alert('برای دریافت وجه، مبلغ و تاریخ را تکمیل کنید.');
+        void alert({ title: 'توجه', message: 'برای دریافت وجه، مبلغ و تاریخ را تکمیل کنید.' });
         return;
       }
       onSubmit({
@@ -137,7 +139,7 @@ export default function ActivityComposer({ onSubmit }) {
     if (!trimmedBody) return;
 
     if (needsFollowUp && (!followUp.date || !followUp.time || !followUp.actionType)) {
-      window.alert('لطفاً تاریخ، ساعت و نوع اقدام بعدی را تکمیل کنید.');
+      void alert({ title: 'توجه', message: 'لطفاً تاریخ، ساعت و نوع اقدام بعدی را تکمیل کنید.' });
       return;
     }
 

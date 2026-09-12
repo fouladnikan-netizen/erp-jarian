@@ -4,6 +4,15 @@
  * read-only hook (see Docs/architecture/product-master-nabz-future-contract.md),
  * never a copied `relatedOrders` array.
  */
+export function computeStructureKpis(groups, categories, types, products) {
+  return [
+    { label: 'گروه‌ها', value: (groups?.length || 0).toLocaleString('fa-IR'), variant: 'accent' },
+    { label: 'دسته‌ها', value: (categories?.length || 0).toLocaleString('fa-IR') },
+    { label: 'انواع کالا', value: (types?.length || 0).toLocaleString('fa-IR') },
+    { label: 'محصولات', value: (products?.length || 0).toLocaleString('fa-IR') },
+  ];
+}
+
 export function computeVitrinKpis(products, taxonomyGroups) {
   const activeProducts = products.filter((p) => p.lifecycleStatus !== 'INACTIVE');
   const groupsInUse = new Set(products.map((p) => p.groupId).filter(Boolean));

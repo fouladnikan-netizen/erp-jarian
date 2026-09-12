@@ -1,10 +1,32 @@
 /**
  * Pure tree helpers for organization hierarchy.
  * Position (job title) and role (RBAC code) stay independent.
- * Org nodes are Shirazeh-owned platform structure — not Company/Order aggregates.
+ * Person node id === users.id. Units persist as organization_units.
  */
 
 import { createEntityId, ENTITY_ID_PREFIX } from '../../../../domain/identity';
+
+export const ROOT_UNIT_ID = 'ou_root';
+
+export const ORG_POSITION_SUGGESTIONS = [
+  'مدیر فروش',
+  'کارشناس فروش',
+  'مدیر بازرگانی',
+  'کارشناس بازرگانی',
+  'مسئول ارسال',
+];
+
+export function emptyOrganizationTree() {
+  return {
+    id: ROOT_UNIT_ID,
+    type: 'department',
+    name: 'سازمان',
+    code: 'ROOT',
+    sortOrder: 0,
+    isActive: true,
+    children: [],
+  };
+}
 
 export function walkTree(node, visit, parent = null) {
   visit(node, parent);
@@ -33,6 +55,51 @@ export function countMembers(node) {
     if (n.type === 'user') count += 1;
   });
   return count;
+}
+
+export function collectUserIds(root) {
+  const ids = [];
+  if (!root) return ids;
+  walkTree(root, (node) => {
+    if (node.type === 'user') ids.push(node.userId || node.id);
+  });
+  return ids;
+}
+
+export function resolveDepartmentParentId(root, candidateId) {
+  if (!root) return ROOT_UNIT_ID;
+  const target = candidateId ? findNodeById(root, candidateId) : null;
+  if (target?.type === 'department') return target.id;
+  if (target?.type === 'user') return findParentId(root, target.id) || ROOT_UNIT_ID;
+  return ROOT_UNIT_ID;
+}
+
+/**
+ * Department options for a parent picker.
+ * excludeSubtreeId omits that unit and its descendants (cannot be own parent).
+ */
+export function collectDepartmentOptions(root, { excludeSubtreeId } = {}) {
+  const excluded = new Set();
+  if (excludeSubtreeId) {
+    const subtree = findNodeById(root, excludeSubtreeId);
+    if (subtree) {
+      walkTree(subtree, (node) => {
+        if (node.type === 'department') excluded.add(node.id);
+      });
+    }
+  }
+
+  const options = [];
+  const visit = (node, depth) => {
+    if (node?.type === 'department' && !excluded.has(node.id)) {
+      options.push({ id: node.id, name: node.name, depth });
+    }
+    (node.children || []).forEach((child) => {
+      if (child.type === 'department') visit(child, depth + 1);
+    });
+  };
+  visit(root, 0);
+  return options;
 }
 
 export function removeNodeById(root, id) {
@@ -74,14 +141,13 @@ export function insertChild(root, parentId, child) {
  */
 export function moveNode(root, nodeId, newParentId) {
   if (nodeId === newParentId) return { tree: root, moved: false, reason: 'same' };
-  if (nodeId === root.id) return { tree: root, moved: false, reason: 'root' };
+  if (nodeId === root.id || nodeId === ROOT_UNIT_ID) return { tree: root, moved: false, reason: 'root' };
 
   const target = findNodeById(root, newParentId);
   if (!target || target.type !== 'department') {
     return { tree: root, moved: false, reason: 'invalid-target' };
   }
 
-  // Prevent dropping a node into its own descendant
   let isDescendant = false;
   const moving = findNodeById(root, nodeId);
   if (!moving) return { tree: root, moved: false, reason: 'missing' };
@@ -108,30 +174,37 @@ export function moveNode(root, nodeId, newParentId) {
   };
 }
 
-export function createDepartmentNode(name, defaultRole = 'MEMBER') {
+export function createDepartmentNode(name) {
+  const id = createEntityId(ENTITY_ID_PREFIX.ORG_UNIT);
   return {
-    id: createEntityId(ENTITY_ID_PREFIX.ORG_DEPT),
+    id,
     type: 'department',
     name,
-    defaultRole,
+    code: id.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 48),
     children: [],
   };
 }
 
-export function createUserNode({ name, position, role }) {
+/** Person node identity is users.id — never a synthetic org-only person. */
+export function createUserNode(user, extras = {}) {
+  const userId = user.userId || user.id;
   return {
-    id: createEntityId(ENTITY_ID_PREFIX.ORG_USER_NODE),
+    id: userId,
     type: 'user',
-    name,
-    position: position || 'بدون سمت',
-    role: role || 'MEMBER',
+    userId,
+    name: user.displayName || user.fullName || user.name || user.username || userId,
+    username: user.username || '',
+    mobile: user.mobile || '',
+    position: extras.position || '',
+    positionId: extras.positionId || null,
+    isManager: extras.isManager === true,
   };
 }
 
 /** Layout tree → React Flow nodes/edges (top-down, RTL-friendly x). */
 export function layoutOrganizationFlow(root) {
   const NODE_W = 220;
-  const NODE_H = 96;
+  const NODE_H = 108;
   const GAP_X = 36;
   const GAP_Y = 88;
 
@@ -158,7 +231,7 @@ export function layoutOrganizationFlow(root) {
         ...node,
         memberCount: node.type === 'department' ? countMembers(node) : undefined,
       },
-      draggable: node.id !== 'root',
+      draggable: node.id !== ROOT_UNIT_ID,
     });
 
     const kids = node.children || [];

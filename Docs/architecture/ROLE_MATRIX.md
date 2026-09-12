@@ -2,9 +2,11 @@
 
 > **Status:** Product-facing role definitions for **future** RBAC.  
 > **Not implemented.** Does not replace Nabz/Shirazeh vocabularies yet.  
-> **Related:** [AUTHORIZATION_MODEL.md](./AUTHORIZATION_MODEL.md), [DATA_ACCESS_POLICY.md](./DATA_ACCESS_POLICY.md)
+> **Related:** [AUTHORIZATION_MODEL.md](./AUTHORIZATION_MODEL.md), [DATA_ACCESS_POLICY.md](./DATA_ACCESS_POLICY.md), [IDENTITY_MODEL.md](./IDENTITY_MODEL.md)
 
 Map loosely to today’s nicknames where helpful — **do not** treat this as a rename mandate.
+
+**DDL-40 / DDL-42 / DDL-44:** Persian working-domain names (شوالیه, سامورایی, مُستوفی, قافله‌سالار, عیارگر, سپهسالار) are **Personas** (`personas` table), not RBAC Roles and not Organization Positions. A Role may link to one Persona for catalog identity; Persona still does not grant permissions. Do not rename `roles` or `organization_positions` to Persona names.
 
 ---
 

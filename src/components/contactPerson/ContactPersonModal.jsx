@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Info, Trash2, X } from 'lucide-react';
 import { useContactsStore } from '../../stores/useContactsStore';
+import { useJarianNotice } from '../../context/JarianNoticeContext';
 import { isValidMobile } from '../../domain/contactPerson';
 import { useMockApi } from '../../api/useMockApi';
 import {
@@ -40,6 +41,7 @@ export default function ContactPersonModal({
   const updateContactPersonLegacy = useContactsStore((s) => s.updateContactPerson);
   const deleteContactPersonLegacy = useContactsStore((s) => s.deleteContactPerson);
   const lookupMobile = useContactsStore((s) => s.lookupMobile);
+  const { confirm } = useJarianNotice();
 
   const apiMode = !useMockApi();
   const [saving, setSaving] = useState(false);
@@ -142,7 +144,13 @@ export default function ContactPersonModal({
   const handleDelete = async () => {
     if (!isEdit || !companyId || !personId || !hasAdminPermission || saving) return;
     const label = String(form.fullName || '').trim() || 'این رابط';
-    const ok = window.confirm(`حذف «${label}» قطعی است؟`);
+    const ok = await confirm({
+      title: 'حذف',
+      entity: label,
+      message: 'حذف این رابط قطعی است؟',
+      confirmLabel: 'حذف',
+      danger: true,
+    });
     if (!ok) return;
     setSaving(true);
     try {

@@ -73,6 +73,7 @@ export async function createOrder(body, actorUserId) {
       assertLegalCustomerHasNationalId(company);
     }
 
+    // DDL-27: omit code → server allocates JR-{Y}{MM}{DD}{NN}. Explicit code is fixtures/tests only.
     const code = data.code || (await orderRepo.nextOrderCode(client));
 
     await orderRepo.insert({

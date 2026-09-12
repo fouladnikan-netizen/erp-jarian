@@ -12,6 +12,7 @@ import * as correspondenceRepo from '../repositories/correspondenceRepository.js
 import * as companyRepo from '../repositories/companyRepository.js';
 import * as orderRepo from '../repositories/orderRepository.js';
 import * as correspondenceTypeService from './correspondenceTypeService.js';
+import * as organizationIdentityRepo from '../repositories/organizationIdentityRepository.js';
 import { rewriteCorrespondenceText } from './correspondenceAiService.js';
 import { checkCriticalValuePreservation } from '../domain/correspondence/criticalValuePreservation.js';
 import { registryDirectionCode, toRegistryYearShort, formatOfficialNumber } from '../domain/correspondence/registryNumber.js';
@@ -76,6 +77,14 @@ const aiRewriteSchema = z.object({
 });
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024; // 15MB — base64-in-Postgres, keep conservative.
+
+function letterOrganizationSnapshotFromIdentity(identity) {
+  if (!identity) return null;
+  const tradeName = String(identity.tradeName || '').trim();
+  const phone = String(identity.phone || '').trim();
+  if (!tradeName && !phone) return null;
+  return { tradeName, phone };
+}
 
 const attachmentSchema = z.object({
   fileName: z.string().trim().min(1),
@@ -299,6 +308,8 @@ export async function finalizeCorrespondence(id, body, actorUserId) {
     );
     const seq = counterRes.rows[0].next_seq - 1;
     const officialNumber = formatOfficialNumber(yearShort, code, seq);
+    const identity = await organizationIdentityRepo.get();
+    const organizationSnapshot = letterOrganizationSnapshotFromIdentity(identity);
 
     const row = await correspondenceRepo.finalize(id, {
       officialNumber,
@@ -307,6 +318,7 @@ export async function finalizeCorrespondence(id, body, actorUserId) {
       issuedAt: new Date().toISOString(),
       issuedBy: parsed.data.issuedBy || null,
       issuerTitle: parsed.data.issuerTitle || null,
+      organizationSnapshot,
     }, client);
 
     if (!row) {

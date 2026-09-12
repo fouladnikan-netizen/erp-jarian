@@ -139,6 +139,18 @@
   color: var(--text-secondary);
 }
 
+.shirazeh-nav--with-subtitle .shirazeh-nav__title {
+  margin-bottom: 0.25rem;
+}
+
+.shirazeh-nav__subtitle {
+  margin: 0 0.55rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
 .shirazeh-nav__list {
   list-style: none;
   margin: 0;

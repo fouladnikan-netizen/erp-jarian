@@ -5,12 +5,34 @@
  */
 
 import { getCurrentUser, CURRENT_USER_ROLE, USER_ROLES } from '../../nabz/constants';
+import { primaryPhone } from '../../../domain/organizationIdentity';
 import { escapeHtml, ensureLetterHtml, htmlToPlainText, plainTextToHtml } from './letterHtml';
 
 export const LETTER_BISMILLAH = 'به نام یکتا خالق هستی';
 export const LETTER_GREETING = 'با سلام و احترام';
-/** Closing org line on letters (left-aligned signatory block). */
+/** Legacy freeze for issued/locked letters that have no organizationSnapshot. Not live SSOT. */
 export const LETTER_ORG_LINE = 'پترو فولاد نیکان';
+
+/**
+ * Draft → live Organization Identity.
+ * Locked with snapshot → freeze.
+ * Locked without snapshot → LETTER_ORG_LINE (never overlay live Identity).
+ */
+export function resolveLetterOrganization(record, liveIdentity) {
+  if (record?.isLocked) {
+    const stored = record.organizationSnapshot;
+    const tradeName = String(stored?.tradeName || '').trim();
+    const phone = String(stored?.phone || '').trim();
+    if (tradeName || phone) {
+      return { tradeName: tradeName || LETTER_ORG_LINE, phone };
+    }
+    return { tradeName: LETTER_ORG_LINE, phone: '' };
+  }
+  return {
+    tradeName: String(liveIdentity?.tradeName || '').trim(),
+    phone: primaryPhone(liveIdentity),
+  };
+}
 
 /**
  * Letter-only display titles for internal roles.

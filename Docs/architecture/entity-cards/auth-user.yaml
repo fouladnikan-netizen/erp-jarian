@@ -1,0 +1,27 @@
+id: auth-user
+name: Auth User
+tier: A
+status: active
+ownerModule: shirazeh
+aggregateRoot: User
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "System account. Create without password as INVITED (internal username user_N). Faraz SMS invitation + set-password → ACTIVE. INACTIVE disables authentication. Soft status only — no hard delete. Login identifier is mobile; username is internal compatibility. Organization placement is a sibling assignment, not User columns. Roles stay in user_roles. Persona is a sibling Definitions catalog (DDL-42), not a User column."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - users:admin
+databaseTable: users
+apiBasePath: /api/v1/users
+backendRepository: backend/src/repositories/userRepository.js
+frontendRepository: src/api/repositories/UserRepository.js
+dependencies: []
+integrationPorts:
+  - farazSms
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-39
+  - DDL-40
+  - DDL-41
+migrationSafety: "034 additive mobile/email/account_status; password_hash nullable for INVITED. 035 adds auth_challenges only (hashed secrets, no raw token/OTP). Unique indexes after empty-column audit. Existing username/password_hash/user_roles unchanged. No persona columns (Persona is a sibling table, DDL-42)."
+notes: "fullName is display_name. Login identifier is mobile; username remains internal. Invitation and forgot-password are User auth lifecycle, not RBAC. Persona is persisted separately (DDL-42) — do not add personaId on users. Future HR (همراهان) may own employee profile fields; User keeps authentication identity, account status, and security roles."

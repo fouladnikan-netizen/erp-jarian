@@ -12,7 +12,7 @@ function formatInvoiceNumber(amount, { withCurrency = false } = {}) {
   return formatJarianMoney(amount, { withCurrency });
 }
 
-function ProformaTermsBlock({ terms, termsCustom }) {
+function ProformaTermsBlock({ terms, termsCustom, tradeName = '' }) {
   if (termsCustom && terms) {
     return (
       <div className="invoice-doc__terms-custom">
@@ -22,10 +22,14 @@ function ProformaTermsBlock({ terms, termsCustom }) {
     );
   }
 
+  const bankHeading = tradeName
+    ? `اطلاعات حساب‌های بانکی به‌نام «${tradeName}»`
+    : 'اطلاعات حساب‌های بانکی';
+
   return (
     <>
       <div className="invoice-doc__accounts">
-        <h4 className="invoice-doc__terms-heading">اطلاعات حساب‌های بانکی به‌نام «پترو فولاد نیکان»</h4>
+        <h4 className="invoice-doc__terms-heading">{bankHeading}</h4>
         <div className="invoice-doc__accounts-list">
           {PROFORMA_BANK_ACCOUNTS.map((account) => (
             <p key={account.sheba}>
@@ -243,22 +247,22 @@ function TotalsBlock({ viewModel, measure = false }) {
   );
 }
 
-function TermsFootBlock({ terms, termsCustom, sealState, isOfficial = true, measure = false }) {
+function TermsFootBlock({ terms, termsCustom, sealState, isOfficial = true, measure = false, tradeName = '' }) {
   return (
     <div
       className="invoice-doc__terms-foot"
       data-measure={measure ? 'terms' : undefined}
     >
       <section className="invoice-doc__terms-section">
-        <ProformaTermsBlock terms={terms} termsCustom={termsCustom} />
+        <ProformaTermsBlock terms={terms} termsCustom={termsCustom} tradeName={tradeName} />
       </section>
       {isOfficial ? <ProformaSeal sealState={sealState} /> : null}
     </div>
   );
 }
 
-function DocFooter({ measure = false, isOfficial = true }) {
-  return <InvoiceDocFooter measure={measure} isOfficial={isOfficial} />;
+function DocFooter({ measure = false, isOfficial = true, organization }) {
+  return <InvoiceDocFooter measure={measure} isOfficial={isOfficial} organization={organization} />;
 }
 
 /**
@@ -333,6 +337,18 @@ function packPages(rowHeights, headerH, colHeadH, totalsH, termsH, bodyMax) {
   return pages;
 }
 
+function pagePlansEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  return a.every((page, index) => {
+    const other = b[index];
+    return page.showTotals === other.showTotals
+      && page.showTerms === other.showTerms
+      && page.rowIndexes.length === other.rowIndexes.length
+      && page.rowIndexes.every((rowIndex, i) => rowIndex === other.rowIndexes[i]);
+  });
+}
+
 function InvoicePage({
   viewModel,
   terms,
@@ -401,12 +417,13 @@ function InvoicePage({
             termsCustom={termsCustom}
             sealState={sealState}
             isOfficial={isOfficial}
+            tradeName={viewModel.organization?.tradeName || ''}
           />
         )}
       </div>
 
       {/* فوتر — همیشه */}
-      <DocFooter isOfficial={isOfficial} />
+      <DocFooter isOfficial={isOfficial} organization={viewModel.organization} />
     </article>
   );
 }
@@ -420,6 +437,7 @@ export default function ProformaDocument({
 }) {
   const measureRef = useRef(null);
   const dragRef = useRef(null);
+  const printingRef = useRef(false);
   const lines = viewModel.lines || [];
   const [pagePlan, setPagePlan] = useState(null);
   const [colWidths, setColWidths] = useState(DEFAULT_COL_WIDTHS);
@@ -448,10 +466,13 @@ export default function ProformaDocument({
       subtotal: viewModel.subtotal,
       vat: viewModel.vatAmount,
       grand: viewModel.grandTotal,
+      orgPhone: viewModel.organization?.phone,
+      orgAddress: viewModel.organization?.officialAddress,
+      orgTrade: viewModel.organization?.tradeName,
       colWidths,
       rowHPx,
     }),
-    [lines, terms, termsCustom, sealState, viewModel.isOfficial, viewModel.showVatBreakdown, viewModel.subtotal, viewModel.vatAmount, viewModel.grandTotal, colWidths, rowHPx],
+    [lines, terms, termsCustom, sealState, viewModel.isOfficial, viewModel.showVatBreakdown, viewModel.subtotal, viewModel.vatAmount, viewModel.grandTotal, viewModel.organization, colWidths, rowHPx],
   );
 
   useLayoutEffect(() => {
@@ -459,6 +480,8 @@ export default function ProformaDocument({
     if (!root) return undefined;
 
     const measure = () => {
+      if (printingRef.current || window.matchMedia?.('print')?.matches) return;
+
       const bodyEl = root.querySelector('.invoice-doc__page-body');
       const headerEl = root.querySelector('[data-measure="header"]');
       const colHeadEl = root.querySelector('[data-measure="colhead"]');
@@ -473,8 +496,19 @@ export default function ProformaDocument({
       const bodyMax = bodyEl?.clientHeight || Math.max(120, root.clientHeight - 80);
       const rowHeights = Array.from(rowEls).map((el) => el.offsetHeight || 0);
 
-      setPagePlan(packPages(rowHeights, headerH, colHeadH, totalsH, termsH, bodyMax));
+      const next = packPages(rowHeights, headerH, colHeadH, totalsH, termsH, bodyMax);
+      setPagePlan((prev) => (pagePlansEqual(prev, next) ? prev : next));
     };
+
+    const onBeforePrint = () => {
+      printingRef.current = true;
+    };
+    const onAfterPrint = () => {
+      printingRef.current = false;
+      measure();
+    };
+    window.addEventListener('beforeprint', onBeforePrint);
+    window.addEventListener('afterprint', onAfterPrint);
 
     measure();
 
@@ -491,6 +525,8 @@ export default function ProformaDocument({
     return () => {
       cancelled = true;
       ro?.disconnect();
+      window.removeEventListener('beforeprint', onBeforePrint);
+      window.removeEventListener('afterprint', onAfterPrint);
     };
   }, [measureKey]);
 
@@ -607,7 +643,7 @@ export default function ProformaDocument({
         </div>
       )}
 
-      <div className="invoice-doc-stack__measure" aria-hidden="true">
+      <div className="invoice-doc-stack__measure no-print" aria-hidden="true">
         <article
           className={`invoice-doc invoice-doc--page invoice-doc--measure${isOfficial ? '' : ' invoice-doc--unofficial'}`}
           ref={measureRef}
@@ -633,10 +669,11 @@ export default function ProformaDocument({
               termsCustom={termsCustom}
               sealState={sealState}
               isOfficial={isOfficial}
+              tradeName={viewModel.organization?.tradeName || ''}
               measure
             />
           </div>
-          <DocFooter measure isOfficial={isOfficial} />
+          <DocFooter measure isOfficial={isOfficial} organization={viewModel.organization} />
         </article>
       </div>
 

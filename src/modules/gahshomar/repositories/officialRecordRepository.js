@@ -5,6 +5,7 @@
  */
 
 import { getTodayJalali } from '../../nabz/dateUtils';
+import { getCachedOrganizationIdentity, toLetterOrganizationSnapshot } from '../../../domain/organizationIdentity';
 import {
   ORG_SELF,
   RECORD_DIRECTION,
@@ -219,6 +220,7 @@ export function toDetailPresentationModel(record, options = {}) {
     issuedAt: record.issuedAt,
     issuedBy: record.issuedBy,
     issuerTitle: record.issuerTitle || null,
+    organizationSnapshot: record.organizationSnapshot || null,
     threadPreview: thread.map((item) => ({
       id: item.id,
       number: item.registryNumber || item.number,
@@ -329,6 +331,8 @@ export function repositoryIssueRecord(id, meta = {}) {
     issuedAt: meta.issuedAt || new Date().toISOString(),
     issuedBy: meta.issuedBy || ORG_SELF.name,
     issuerTitle: meta.issuerTitle || existing.issuerTitle || null,
+    organizationSnapshot: existing.organizationSnapshot
+      || toLetterOrganizationSnapshot(getCachedOrganizationIdentity()),
     isLocked: true,
     updatedAt: new Date().toISOString(),
   };

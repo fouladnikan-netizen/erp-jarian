@@ -10,6 +10,8 @@ import { getCarrierById } from './carriers';
 import { getWarehouseById } from './warehouses';
 import { resolveAssigneeMobile } from './proformaService';
 import { SHIPPING_FORM_NUMBER } from './shippingConfig';
+import { getCachedOrganizationIdentity, toDocumentOrganization, toShippingOrganizationSnapshot, isDocumentOrganizationPopulated } from '../../domain/organizationIdentity';
+import { legacyDocumentOrganizationFromBrand } from './documentOrganization';
 
 function buildRowFromPurchaseLine(order, line, index, preview) {
   const po = line.purchaseOrder || {};
@@ -126,6 +128,13 @@ export function buildShippingDocumentViewModel(order, carrierId, selectedRowKeys
 
   const carrier = getCarrierById(carrierId) || { name: '—', phone: '—', address: '—' };
   const shipping = getOrderShippingRecord(order);
+  const isIssued = Boolean(shipping?.issuedAt);
+  let organization = toDocumentOrganization(getCachedOrganizationIdentity());
+  if (isIssued) {
+    organization = isDocumentOrganizationPopulated(shipping?.organizationSnapshot)
+      ? shipping.organizationSnapshot
+      : legacyDocumentOrganizationFromBrand();
+  }
 
   return {
     orderCode: order.code,
@@ -146,6 +155,7 @@ export function buildShippingDocumentViewModel(order, carrierId, selectedRowKeys
     voucherNumber: shipping?.voucherNumber
       || `BB-${order.code.slice(-6)}-${Date.now().toString().slice(-4)}`,
     selectedRowKeys: items.map((row) => row.shippingRowKey),
+    organization,
   };
 }
 
@@ -172,6 +182,7 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
   }
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
+  const organizationSnapshot = toShippingOrganizationSnapshot(getCachedOrganizationIdentity());
   const shippingVoucher = {
     carrierId,
     voucherNumber: viewModel.voucherNumber,
@@ -179,11 +190,12 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
     issuedBy: getCurrentUser(),
     selectedRowKeys: keys,
     itemCount: viewModel.items.length,
+    organizationSnapshot,
   };
 
   return {
     accepted: true,
-    viewModel,
+    viewModel: { ...viewModel, organization: organizationSnapshot },
     order: {
       ...order,
       shippingVoucher,

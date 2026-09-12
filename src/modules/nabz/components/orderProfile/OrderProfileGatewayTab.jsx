@@ -13,6 +13,7 @@ import GatewayMorphTable from './gateway/GatewayMorphTable';
 import GatewayFinancialSummary from './gateway/GatewayFinancialSummary';
 import GatewayPishkeshPanel from './gateway/GatewayPishkeshPanel';
 import OrderProfileOperationsTab from './OrderProfileOperationsTab';
+import { useJarianNotice } from '../../../../context/JarianNoticeContext';
 
 export default function OrderProfileGatewayTab({
   order,
@@ -28,6 +29,7 @@ export default function OrderProfileGatewayTab({
   onOperationalPhaseChange,
   onReturnToGateway,
 }) {
+  const { confirm } = useJarianNotice();
   const preview = useMemo(() => calculateQuotingPreview(order), [order]);
   const saleType = preview.saleType || order.saleType || DEFAULT_SALE_TYPE;
 
@@ -64,13 +66,25 @@ export default function OrderProfileGatewayTab({
     ));
   };
 
-  const handleDeleteItem = (itemIndex) => {
-    if (!window.confirm('این قلم از سفارش حذف شود؟')) return;
+  const handleDeleteItem = async (itemIndex) => {
+    const ok = await confirm({
+      title: 'حذف',
+      message: 'این قلم از سفارش حذف شود؟',
+      confirmLabel: 'حذف',
+      danger: true,
+    });
+    if (!ok) return;
     onUpdateOrder?.((current) => removeGatewayOrderItem(current, itemIndex));
   };
 
-  const handleDeleteInquiry = (itemIndex, inquiryId) => {
-    if (!window.confirm('این استعلام حذف شود؟')) return;
+  const handleDeleteInquiry = async (itemIndex, inquiryId) => {
+    const ok = await confirm({
+      title: 'حذف',
+      message: 'این استعلام حذف شود؟',
+      confirmLabel: 'حذف',
+      danger: true,
+    });
+    if (!ok) return;
     onUpdateOrder?.((current) => removeGatewayInquiry(current, itemIndex, inquiryId));
   };
 

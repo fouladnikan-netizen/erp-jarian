@@ -5,20 +5,29 @@
  */
 import { z } from 'zod';
 import { appError, fromZodError, notFoundError } from '../lib/errors.js';
+import { withTransaction } from '../db/pool.js';
 import { newEntityId, writeAudit } from '../lib/ids.js';
+import { throwInUse } from '../domain/productMaster/deleteGuard.js';
 import { normalizeBrandName, tokenOverlapSimilarity } from '../domain/productMaster/normalize.js';
+import { pickSkuCode, skuCodeKey } from '../domain/productMaster/skuCode.js';
 import * as brandRepo from '../repositories/brandRepository.js';
+import * as productRepo from '../repositories/productRepository.js';
+import * as typeRepo from '../repositories/productTypeRepository.js';
 
 const SIMILARITY_WARN_THRESHOLD = 0.5;
 
 const createSchema = z.object({
   brandName: z.string().trim().min(1).max(160),
   legalName: z.string().trim().max(200).optional(),
+  nameLatin: z.string().trim().max(160).optional(),
+  skuCode: z.string().trim().max(16).optional(),
   confirmDuplicate: z.boolean().optional().default(false),
 });
 const patchSchema = z.object({
   brandName: z.string().trim().min(1).max(160).optional(),
   legalName: z.string().trim().max(200).optional(),
+  nameLatin: z.string().trim().max(160).optional(),
+  skuCode: z.string().trim().max(16).optional(),
   isActive: z.boolean().optional(),
 }).refine((d) => Object.keys(d).length > 0, { message: 'empty patch' });
 
@@ -61,12 +70,34 @@ export async function createBrand(body, actorUserId) {
   }
 
   const normalizedName = normalizeBrandName(parsed.data.brandName);
+  const id = newEntityId('brand');
+  const taken = new Set((await brandRepo.listSkuCodes()).map((r) => skuCodeKey(r.skuCode)));
+  let skuCode;
+  try {
+    skuCode = pickSkuCode({
+      latinName: parsed.data.nameLatin || parsed.data.brandName,
+      explicit: parsed.data.skuCode,
+      takenKeys: taken,
+    });
+  } catch (err) {
+    if (err.code !== 'SKU_CODE_SOURCE_MISSING') throw err;
+    skuCode = pickSkuCode({
+      explicit: `B${id.replace(/[^a-zA-Z0-9]/g, '').slice(-3)}`,
+      takenKeys: taken,
+    });
+  }
   const row = await brandRepo.create({
-    id: newEntityId('brand'), brandName: parsed.data.brandName, legalName: parsed.data.legalName, normalizedName, actorUserId,
+    id,
+    brandName: parsed.data.brandName,
+    legalName: parsed.data.legalName,
+    nameLatin: parsed.data.nameLatin || null,
+    skuCode,
+    normalizedName,
+    actorUserId,
   });
   await writeAudit({
     actorUserId, action: 'brand.create', entityType: 'brand', entityId: row.id,
-    detail: { brandName: row.brandName, duplicateOverride: probable.length > 0 },
+    detail: { brandName: row.brandName, skuCode, duplicateOverride: probable.length > 0 },
   });
   return row;
 }
@@ -75,9 +106,49 @@ export async function updateBrand(id, body, actorUserId) {
   await getBrand(id);
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) throw fromZodError(parsed, 'داده‌های برند نامعتبر است.');
-  const row = await brandRepo.update(id, parsed.data, actorUserId);
+  const patch = { ...parsed.data };
+  if (patch.skuCode) {
+    patch.skuCode = pickSkuCode({
+      explicit: patch.skuCode,
+      takenKeys: new Set(
+        (await brandRepo.listSkuCodes()).filter((r) => r.id !== id).map((r) => skuCodeKey(r.skuCode)),
+      ),
+    });
+  }
+  const row = await brandRepo.update(id, patch, actorUserId);
   await writeAudit({ actorUserId, action: 'brand.update', entityType: 'brand', entityId: id, detail: parsed.data });
   return row;
 }
 
-export default { listBrands, getBrand, checkBrandDuplicate, createBrand, updateBrand };
+export async function deleteBrand(id, actorUserId) {
+  await getBrand(id);
+  const usedProducts = await productRepo.listByBrand(id);
+  if (usedProducts.length) {
+    throwInUse({
+      code: 'BRAND_IN_USE',
+      entityLabel: 'برند',
+      dependencyLabel: 'کالا',
+      verb: 'استفاده',
+      items: usedProducts,
+    });
+  }
+  const usedTypes = await typeRepo.listByAllowedBrand(id);
+  if (usedTypes.length) {
+    throwInUse({
+      code: 'BRAND_IN_USE',
+      entityLabel: 'برند',
+      dependencyLabel: 'نوع کالا',
+      verb: 'استفاده',
+      items: usedTypes,
+    });
+  }
+  return withTransaction(async (client) => {
+    await writeAudit({
+      actorUserId, action: 'brand.delete', entityType: 'brand', entityId: id, detail: { id },
+    }, client);
+    await brandRepo.remove(id, client);
+    return { ok: true };
+  });
+}
+
+export default { listBrands, getBrand, checkBrandDuplicate, createBrand, updateBrand, deleteBrand };

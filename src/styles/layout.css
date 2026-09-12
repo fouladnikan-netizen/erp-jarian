@@ -147,18 +147,25 @@
 }
 
 .sidebar__logo {
+  display: block;
   object-fit: contain;
+  object-position: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .sidebar--expanded .sidebar__logo {
   width: 152px;
+  min-width: 152px;
   height: 64px;
+  min-height: 64px;
 }
 
 .sidebar--collapsed .sidebar__logo {
   width: 53px;
+  min-width: 53px;
   height: 53px;
+  min-height: 53px;
 }
 
 /* حالت شب: بخش‌های مشکی لوگو سفید شوند؛ hue-rotate قرمز «نیکان» را قرمز نگه می‌دارد */
@@ -243,6 +250,7 @@ html[data-theme='dark'] .sidebar__logo {
 }
 
 .sidebar__link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -261,7 +269,18 @@ html[data-theme='dark'] .sidebar__logo {
 .sidebar__link.is-active {
   background: var(--color-accent-muted);
   color: var(--color-accent-dark);
-  border-right: 3px solid var(--color-accent);
+}
+
+.sidebar__link.is-active::before {
+  content: '';
+  position: absolute;
+  inset-block: 0.55rem;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0;
+  background: var(--color-accent-dark);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-accent-dark) 45%, transparent);
+  pointer-events: none;
 }
 
 .sidebar--collapsed .sidebar__link {
@@ -270,8 +289,7 @@ html[data-theme='dark'] .sidebar__logo {
 }
 
 .sidebar--collapsed .sidebar__link.is-active {
-  border-right: none;
-  box-shadow: inset -3px 0 0 var(--color-accent);
+  box-shadow: none;
 }
 
 .sidebar__icon {
@@ -279,14 +297,20 @@ html[data-theme='dark'] .sidebar__logo {
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-muted);
   flex-shrink: 0;
   color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.sidebar__icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .sidebar__link.is-active .sidebar__icon {
-  background: color-mix(in srgb, var(--color-accent-dark) 15%, transparent);
+  background: transparent;
   color: var(--color-accent-dark);
 }
 
@@ -307,6 +331,7 @@ html[data-theme='dark'] .sidebar__logo {
 
 .sidebar__name {
   font-size: 0.875rem;
+  font-weight: 700;
   line-height: 1.3;
   white-space: nowrap;
 }
@@ -336,6 +361,55 @@ html[data-theme='dark'] .sidebar__logo {
 
 .sidebar__item {
   position: relative;
+}
+
+.sidebar--expanded .sidebar__list > .sidebar__item,
+.sidebar--expanded .sidebar__list > .sidebar__group {
+  margin-bottom: 0.55rem;
+}
+
+.sidebar__group {
+  margin-bottom: 0.55rem;
+}
+
+.sidebar__group-toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.sidebar__group-toggle .sidebar__chevron {
+  margin-inline-start: auto;
+  color: var(--text-secondary);
+}
+
+.sidebar__chevron--group-open {
+  transform: rotate(-90deg);
+}
+
+.sidebar__sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0.05rem;
+  padding-inline-start: 0.7rem;
+}
+
+.sidebar__sublist .sidebar__item {
+  margin-bottom: 0.08rem;
+}
+
+.sidebar__sublist .sidebar__link {
+  font-weight: 400;
+  padding-block: 0.42rem;
+}
+
+.sidebar__sublist .sidebar__name {
+  font-weight: 400;
+  font-size: 0.8125rem;
 }
 
 /* ——— محتوای اصلی ——— */

@@ -3,6 +3,11 @@
  */
 import { query } from '../db/pool.js';
 import { activeOrderWhere } from '../db/activeScope.js';
+import {
+  formatJarianOrderCode,
+  jalaliDayKey,
+  jalaliPartsFromInstant,
+} from '../domain/order/jarianOrderCode.js';
 
 export function mapOrderRow(row) {
   return {
@@ -26,17 +31,35 @@ function runner(client) {
   return client ? client.query.bind(client) : query;
 }
 
-export async function nextOrderCode(client = null) {
+/**
+ * Canonical next order code (DDL-27): JR-{Y}{MM}{DD}{NN}, daily Jalali serial.
+ * @param {import('pg').PoolClient | null} client
+ * @param {{ year: number, month: number, day: number } | null} [jalaliParts]
+ */
+export async function nextOrderCode(client = null, jalaliParts = null) {
   const run = runner(client);
-  // Count ALL rows (including soft-deleted/archived), not just active ones —
-  // `code` is globally UNIQUE across the whole table (orders_code_key), so
-  // basing the next number on an active-only count can regenerate a number
-  // already used by a since-archived order and collide on insert.
-  const res = await run(
-    `SELECT COUNT(*)::int AS n FROM orders WHERE code LIKE 'JR-%'`,
-  );
-  const n = (res.rows[0]?.n || 0) + 1;
-  return `JR-${String(n).padStart(6, '0')}`;
+  const parts = jalaliParts || jalaliPartsFromInstant(new Date());
+  const dayKey = jalaliDayKey(parts);
+
+  for (let attempt = 0; attempt < 99; attempt += 1) {
+    const counterRes = await run(
+      `INSERT INTO order_code_daily_counters (jalali_date, next_seq)
+       VALUES ($1, 2)
+       ON CONFLICT (jalali_date)
+       DO UPDATE SET next_seq = order_code_daily_counters.next_seq + 1, updated_at = NOW()
+       RETURNING next_seq`,
+      [dayKey],
+    );
+    const sequence = (counterRes.rows[0]?.next_seq || 1) - 1;
+    const code = formatJarianOrderCode({ ...parts, sequence });
+    const taken = await run(
+      `SELECT 1 FROM orders WHERE code = $1 LIMIT 1`,
+      [code],
+    );
+    if (!taken.rows.length) return code;
+  }
+
+  throw new Error('ORDER_CODE_DAY_EXHAUSTED');
 }
 
 export async function findMany({
@@ -166,4 +189,27 @@ export async function softDelete(id, actorUserId, client = null) {
      WHERE id = $1 AND ${activeOrderWhere()}`,
     [id, actorUserId],
   );
+}
+
+/**
+ * Nabz has no product_id FK. Scan fat-document line items, including archived
+ * orders (DDL-24n). Matches payload.items[].productId or snapshot sku.
+ */
+export async function findOrdersReferencingProduct({ productId, sku = null } = {}, client = null) {
+  if (!productId && !sku) return [];
+  const run = runner(client);
+  const res = await run(
+    `SELECT id, code
+     FROM orders
+     WHERE jsonb_typeof(COALESCE(payload->'items', '[]'::jsonb)) = 'array'
+       AND EXISTS (
+         SELECT 1
+         FROM jsonb_array_elements(COALESCE(payload->'items', '[]'::jsonb)) AS item
+         WHERE ($1::text IS NOT NULL AND item->>'productId' = $1)
+            OR ($2::text IS NOT NULL AND $2 <> '' AND item->>'sku' = $2)
+       )
+     ORDER BY created_at DESC`,
+    [productId || null, sku || null],
+  );
+  return res.rows.map((row) => ({ id: row.id, code: row.code, name: row.code }));
 }

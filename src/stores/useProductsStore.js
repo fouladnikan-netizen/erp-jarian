@@ -1,8 +1,8 @@
 /**
- * Product/SKU cache (Vitrin) — Zustand UI cache only. PostgreSQL is SSOT via
- * ProductRepository (Vitrin-owned, DDL-24). Backend is authoritative for SKU
- * generation, canonical-identity duplicate blocking, schema validation, and
- * lifecycle — this store never re-implements any of that.
+ * Product cache (Vitrin) — Zustand UI cache only. PostgreSQL is SSOT via
+ * ProductRepository (Vitrin-owned, DDL-24 / DDL-49). Backend is authoritative for
+ * SKU generation, canonical-identity reuse, schema validation, and lifecycle —
+ * this store never re-implements any of that.
  */
 import { create } from 'zustand';
 import { ProductRepository } from '../api/repositories/ProductRepository';
@@ -39,7 +39,15 @@ export const useProductsStore = create((set, get) => ({
   createProduct: async (payload) => {
     if (useMockApi()) return null;
     const saved = await ProductRepository.createProduct(payload);
-    if (saved) set((s) => ({ products: [saved, ...s.products], version: s.version + 1 }));
+    if (saved) {
+      set((s) => {
+        const exists = s.products.some((p) => p.id === saved.id);
+        return {
+          products: exists ? s.products.map((p) => (p.id === saved.id ? saved : p)) : [saved, ...s.products],
+          version: s.version + 1,
+        };
+      });
+    }
     return saved;
   },
 
@@ -59,17 +67,10 @@ export const useProductsStore = create((set, get) => ({
     return saved;
   },
 
-  listRelationships: async (productId) => {
-    if (useMockApi()) return [];
-    return ProductRepository.listRelationships(productId) || [];
-  },
-  createRelationship: async (payload) => {
+  deleteProduct: async (id) => {
     if (useMockApi()) return null;
-    return ProductRepository.createRelationship(payload);
-  },
-  deactivateRelationship: async (id) => {
-    if (useMockApi()) return null;
-    return ProductRepository.deactivateRelationship(id);
+    await ProductRepository.deleteProduct(id);
+    set((s) => ({ products: s.products.filter((p) => p.id !== id), version: s.version + 1 }));
   },
 
   runBulkImport: async (payload) => {

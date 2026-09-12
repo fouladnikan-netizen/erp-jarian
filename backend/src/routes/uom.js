@@ -19,6 +19,9 @@ router.post('/', requirePermission('products:manage-taxonomy'), asyncHandler(asy
 router.patch('/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
   res.json({ uom: await uomService.updateUom(req.params.id, req.body, req.auth.userId) });
 }));
+router.delete('/:id', requirePermission('products:manage-taxonomy'), asyncHandler(async (req, res) => {
+  res.json(await uomService.deleteUom(req.params.id, req.auth.userId));
+}));
 
 router.get('/:id/conversions', requirePermission('products:read'), asyncHandler(async (req, res) => {
   res.json({ items: await uomService.listConversions({ fromUomId: req.params.id }) });

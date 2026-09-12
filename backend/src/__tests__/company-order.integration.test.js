@@ -182,6 +182,20 @@ describe('Order via repository path', () => {
     assert.equal(res.data.order.status, 'current');
   });
 
+  it('allocates JR-YMMDDNN when client omits code', async (t) => {
+    if (!dbOk) return t.skip('no database');
+    const res = await json('POST', '/api/v1/orders', {
+      companyId,
+      title: 'Canonical numbered order',
+      stageId: 'inquiry',
+      status: 'open',
+      payload: { items: [{ name: 'pipe' }] },
+    });
+    assert.equal(res.status, 201, JSON.stringify(res.data));
+    assert.match(res.data.order?.code || '', /^JR-\d{7}$/);
+    await json('DELETE', `/api/v1/orders/${res.data.order.id}`);
+  });
+
   it('updates with version and bumps version', async (t) => {
     if (!dbOk) return t.skip('no database');
     const res = await json('PATCH', `/api/v1/orders/${orderId}`, {

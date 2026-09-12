@@ -23,6 +23,11 @@ export const UomRepository = {
     const { data } = await apiClient.patch(`/uom/${id}`, patch);
     return data.uom;
   },
+  async deleteUom(id) {
+    if (useMockApi()) return null;
+    const { data } = await apiClient.delete(`/uom/${id}`);
+    return data;
+  },
 
   async listConversions(fromUomId) {
     if (useMockApi()) return null;

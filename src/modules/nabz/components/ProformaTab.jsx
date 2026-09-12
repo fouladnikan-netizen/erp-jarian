@@ -11,6 +11,8 @@ import {
   createWhatsAppMessage,
 } from '../documentTracking';
 import DocumentTrackingPanel from './DocumentTrackingPanel';
+import { useOrganizationIdentity } from '../../../domain/organizationIdentity';
+import { useJarianNotice } from '../../../context/JarianNoticeContext';
 
 /**
  * محتوای خلاصه پیش‌فاکتور در نمایش سریع.
@@ -22,6 +24,8 @@ export default function ProformaTab({
   onTermsChange,
   onToggleTermsEdit,
 }) {
+  const { identity } = useOrganizationIdentity();
+  const { copyText } = useJarianNotice();
   const viewModel = useMemo(() => buildProformaViewModel(order), [order]);
 
   const tracking = useMemo(() => ({
@@ -30,33 +34,18 @@ export default function ProformaTab({
   }), [viewModel.documentNumber, order?.code]);
 
   const handleCopyLink = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(tracking.secureLink);
-    } catch {
-      window.prompt('لینک را کپی کنید:', tracking.secureLink);
-    }
-  }, [tracking.secureLink]);
+    await copyText(tracking.secureLink, 'لینک پیگیری');
+  }, [copyText, tracking.secureLink]);
 
   const handleSendWhatsApp = useCallback(() => {
-    const text = createWhatsAppMessage(tracking.secureLink);
+    const text = createWhatsAppMessage(tracking.secureLink, identity.tradeName);
     const phone = String(order?.phone || order?.mobile || '').replace(/\D/g, '');
     const base = phone ? `https://wa.me/${phone}?text=` : 'https://wa.me/?text=';
     window.open(`${base}${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-  }, [tracking.secureLink, order?.phone, order?.mobile]);
+  }, [tracking.secureLink, order?.phone, order?.mobile, identity.tradeName]);
 
   return (
     <div className="nabz-proforma-tab">
-      <DocumentTrackingPanel
-        documentId={tracking.documentId}
-        secureLink={tracking.secureLink}
-        status={tracking.status}
-        openedCount={tracking.openedCount}
-        lastOpenedAt={tracking.lastOpenedAt}
-        stepTimes={tracking.stepTimes}
-        onCopyLink={handleCopyLink}
-        onSendWhatsApp={handleSendWhatsApp}
-      />
-
       <div className="nabz-proforma-table-wrap">
         <table className="nabz-proforma-table jarian-table">
           <thead>
@@ -131,6 +120,17 @@ export default function ProformaTab({
           <span>نیاز به ویرایش شروط است</span>
         </label>
       </section>
+
+      <DocumentTrackingPanel
+        documentId={tracking.documentId}
+        secureLink={tracking.secureLink}
+        status={tracking.status}
+        openedCount={tracking.openedCount}
+        lastOpenedAt={tracking.lastOpenedAt}
+        stepTimes={tracking.stepTimes}
+        onCopyLink={handleCopyLink}
+        onSendWhatsApp={handleSendWhatsApp}
+      />
     </div>
   );
 }

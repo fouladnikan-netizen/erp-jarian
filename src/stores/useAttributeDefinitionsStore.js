@@ -10,6 +10,7 @@ import { useMockApi } from '../api/useMockApi';
 export const useAttributeDefinitionsStore = create((set, get) => ({
   definitions: [],
   schemaByType: {},
+  schemaErrorByType: {},
   loaded: false,
   error: null,
   version: 0,
@@ -30,9 +31,25 @@ export const useAttributeDefinitionsStore = create((set, get) => ({
 
   fetchSchemaForType: async (productTypeId) => {
     if (!productTypeId || useMockApi()) return [];
-    const schema = await AttributeDefinitionRepository.getSchemaForType(productTypeId, { includeInactive: true }) || [];
-    set((s) => ({ schemaByType: { ...s.schemaByType, [productTypeId]: schema }, version: s.version + 1 }));
-    return schema;
+    try {
+      const schema = await AttributeDefinitionRepository.getSchemaForType(productTypeId, { includeInactive: false }) || [];
+      set((s) => ({
+        schemaByType: { ...s.schemaByType, [productTypeId]: schema },
+        schemaErrorByType: { ...s.schemaErrorByType, [productTypeId]: null },
+        version: s.version + 1,
+      }));
+      return schema;
+    } catch (error) {
+      console.error('[attribute-definitions-store] fetchSchemaForType failed', error);
+      const message = error?.response?.data?.message
+        || error?.message
+        || 'بارگذاری ویژگی‌های این نوع کالا ناموفق بود.';
+      set((s) => ({
+        schemaErrorByType: { ...s.schemaErrorByType, [productTypeId]: message },
+        version: s.version + 1,
+      }));
+      return [];
+    }
   },
 
   createDefinition: async (payload) => {
@@ -44,8 +61,26 @@ export const useAttributeDefinitionsStore = create((set, get) => ({
   updateDefinition: async (id, patch) => {
     if (useMockApi()) return null;
     const saved = await AttributeDefinitionRepository.updateDefinition(id, patch);
-    if (saved) set((s) => ({ definitions: s.definitions.map((d) => (d.id === id ? saved : d)), version: s.version + 1 }));
+    if (saved) {
+      set((s) => ({
+        definitions: s.definitions.map((d) => (d.id === id ? saved : d)),
+        schemaByType: Object.fromEntries(
+          Object.entries(s.schemaByType).map(([typeId, schema]) => [
+            typeId,
+            (schema || []).map((entry) => (
+              entry.definition?.id === id ? { ...entry, definition: saved } : entry
+            )),
+          ]),
+        ),
+        version: s.version + 1,
+      }));
+    }
     return saved;
+  },
+  deleteDefinition: async (id) => {
+    if (useMockApi()) return null;
+    await AttributeDefinitionRepository.deleteDefinition(id);
+    set((s) => ({ definitions: s.definitions.filter((d) => d.id !== id), version: s.version + 1 }));
   },
 
   bindAttribute: async (payload) => {
@@ -59,6 +94,11 @@ export const useAttributeDefinitionsStore = create((set, get) => ({
     const saved = await AttributeDefinitionRepository.updateBinding(id, patch);
     if (saved && productTypeId) await get().fetchSchemaForType(productTypeId);
     return saved;
+  },
+  deleteBinding: async (id, productTypeId) => {
+    if (useMockApi()) return null;
+    await AttributeDefinitionRepository.deleteBinding(id);
+    if (productTypeId) await get().fetchSchemaForType(productTypeId);
   },
 }));
 

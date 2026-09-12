@@ -6,8 +6,8 @@ ownerModule: shirazeh
 aggregateRoot: ProductType
 ssot: postgresql
 clientState: zustand-cache
-lifecycle: "Extensible 3-level taxonomy Group -> Category -> Product Type. Create/rename/reorder/activate/deactivate. Inactive nodes stay historically resolvable for Products already referencing them; no hard delete."
-archivePolicy: soft-delete
+lifecycle: "Extensible 3-level taxonomy Group -> Category -> Product Type. Create/rename/reorder/activate/deactivate. Each node has a mnemonic latin sku_code (DDL-24m). Unused empty nodes may be hard-deleted (DDL-24n) so sku_code can be reused; a Group with Categories, a Category with Types, or a Type with Products (including INACTIVE) is blocked with a 409 listing dependents. Inactive in-use nodes stay historically resolvable."
+archivePolicy: hard-delete
 auditPolicy: append-only
 rbacPolicy:
   - products:read
@@ -24,5 +24,13 @@ integrationPorts:
 updatePolicy: SERVER_FIRST
 ddlRefs:
   - DDL-24
-migrationSafety: "015_product_master_taxonomy.sql, expand-only, IF NOT EXISTS/ON CONFLICT. Group/Category/Type 2-digit taxonomy codes allocated atomically per parent scope via product_taxonomy_code_counters (INSERT..ON CONFLICT DO UPDATE..RETURNING, same pattern as correspondence_number_counters DDL-23a). products.group_id/category_id/product_type_id reference these tables; deactivating a node does not cascade-delete or block reads of Products already referencing it."
-notes: "DDL-24, DDL-24(b). Shirazeh owns taxonomy+schema; Vitrin (see product.yaml) owns actual Product/SKU. Group/Category/Type codes feed the GG-CC-TT segments of the Product SKU (DDL-24b) but the taxonomy tables themselves have no knowledge of SKU — code allocation is a pure counter concern. Master-detail navigation (tree endpoint /api/v1/product-taxonomy/tree) mirrors the target UX (Group -> Category -> Type -> Attribute Schema), not 9 disconnected CRUD tables."
+  - DDL-47
+  - DDL-52
+  - DDL-53
+  - DDL-54
+  - DDL-56
+  - DDL-57
+  - DDL-60
+  - DDL-61
+migrationSafety: "015_product_master_taxonomy.sql + 039/040/041 latin-name columns + 042 mnemonic sku_code + 047 Type offer defaults (default_count_unit_id, default_sales_unit_id, default_unit_weight, custom_length_allowed) + 050 display_name_rule JSONB (DDL-52), expand-only, IF NOT EXISTS/ON CONFLICT. Group/Category/Type 2-digit taxonomy codes remain allocated but Product SKU uses sku_code (DDL-24m). name_latin on groups/categories/types feeds default sku_code suggestion; sku_code is unique per scope (group global, category per group, type per category). Changing Type offer defaults or display-name rule does not rewrite existing Products. DDL-53 adds optional includeUnit on attribute tokens inside the same JSONB — no new column. DDL-54 adds optional `literal` tokens (`literalId` from a closed catalog) in the same JSONB — no new table."
+notes: "DDL-24, DDL-24(b) numeric codes retained, DDL-24(j)–(n), DDL-47, DDL-52, DDL-53, DDL-54, DDL-56. Shirazeh owns taxonomy+schema API; Vitrin owns Product/SKU and the Product Type admin UI under /vitrin/structure (ساختار کالا). sku_code (not the 2-digit code) is the segment used in Product SKU. Group, Category, and Type Latin names feed default sku_code suggestion and remain display labels. DELETE is conditional (DDL-24n). Product Type offer defaults copy onto Product at create. display_name_rule is Type-owned display naming only — never SKU. Unit text in the generated name is resolved from Attribute Definition uomId → UOM registry; includeUnit is a flag only. Display literals (شاخه، برگ، ابعاد، ×، *) are closed catalog ids, not Attribute Definitions and not identity. Mill-sheet Types bind TRANSACTION `sheet_length` and may point the display-name length token at that definition (DDL-56). تسمه فولادی mill width (`strip_width`) is required PRODUCT identity with thickness (DDL-57). DDL-60: live Postgres + git snapshot is the operator catalog, not test data."

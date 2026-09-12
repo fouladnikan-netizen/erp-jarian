@@ -64,16 +64,22 @@ export async function create(row, client = null) {
 
 export async function update(id, patch, actorUserId, client = null) {
   const run = runner(client);
+  const has = (key) => Object.prototype.hasOwnProperty.call(patch, key);
   const res = await run(
     `UPDATE uom_registry SET
-      name_fa = COALESCE($2, name_fa),
-      category = COALESCE($3, category),
-      is_active = COALESCE($4, is_active),
-      updated_by = $5,
+      code = CASE WHEN $2 THEN $3 ELSE code END,
+      name_fa = COALESCE($4, name_fa),
+      category = COALESCE($5, category),
+      is_active = COALESCE($6, is_active),
+      updated_by = $7,
       updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
-    [id, patch.nameFa ?? null, patch.category ?? null, patch.isActive ?? null, actorUserId || null],
+    [
+      id,
+      has('code'), has('code') ? patch.code : null,
+      patch.nameFa ?? null, patch.category ?? null, patch.isActive ?? null, actorUserId || null,
+    ],
   );
   return res.rows[0] ? mapUom(res.rows[0]) : null;
 }
@@ -114,4 +120,27 @@ export async function createConversion(row, client = null) {
   return mapConversion(res.rows[0]);
 }
 
-export default { list, findById, findByCode, create, update, listConversions, findConversion, createConversion };
+export async function listInvolvingUom(uomId, client = null) {
+  const run = runner(client);
+  const res = await run(
+    `SELECT * FROM uom_conversions WHERE from_uom_id = $1 OR to_uom_id = $1 ORDER BY created_at ASC`,
+    [uomId],
+  );
+  return res.rows.map(mapConversion);
+}
+
+export async function deleteConversionsForUom(uomId, client = null) {
+  const run = runner(client);
+  await run(`DELETE FROM uom_conversions WHERE from_uom_id = $1 OR to_uom_id = $1`, [uomId]);
+}
+
+export async function remove(id, client = null) {
+  const run = runner(client);
+  const res = await run(`DELETE FROM uom_registry WHERE id = $1 RETURNING id`, [id]);
+  return res.rowCount > 0;
+}
+
+export default {
+  list, findById, findByCode, create, update, remove,
+  listConversions, findConversion, createConversion, listInvolvingUom, deleteConversionsForUom,
+};

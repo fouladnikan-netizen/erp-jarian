@@ -7,6 +7,7 @@ import {
   getEffectiveStageId,
   MOZENE_LOCKED_MESSAGE,
 } from '../orderStageService';
+import { countOrderLineItems } from '../inquiryService';
 import ProformaRevisionTag, { getProformaRevisionNumber } from './ProformaRevisionTag';
 
 export default function NabzKanban({
@@ -181,7 +182,7 @@ export default function NabzKanban({
                             شوالیه: {order.assignee}
                           </span>
                           <div className="nabz-kanban-card__footer">
-                            <span>{order.itemCount.toLocaleString('fa-IR')} آیتم</span>
+                            <span>{countOrderLineItems(order).toLocaleString('fa-IR')} آیتم</span>
                             <span>
                               {formatOrderAmount(order) || (
                                 <span className="nabz-kanban-card__unpriced">{UNPRICED_LABEL}</span>

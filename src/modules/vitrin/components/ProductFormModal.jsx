@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { JarianDrawer } from '../../../components/ui';
 import { useAttributeDefinitionsStore } from '../../../stores/useAttributeDefinitionsStore';
+import { effectiveEnumOptions, isProductScope, productAttributeDefaults } from '../../../domain/productMaster/allowedAttributeValues';
+import { previewCreatedProductName } from '../../../domain/productMaster/displayNameRule';
+import { seedOfferSettingsFromType } from '../../../domain/productMaster/offerSettings';
+import OfferSettingsFields from '../../../components/productMaster/OfferSettingsFields';
 
 const WEIGHT_PROFILE_TYPES = [
   { value: 'FIXED', label: 'ثابت (وزن استاندارد هر واحد)', coefficientKey: 'weightPerUnit', coefficientLabel: 'وزن ثابت هر واحد (کیلوگرم)' },
@@ -10,7 +15,9 @@ const WEIGHT_PROFILE_TYPES = [
 
 function AttributeField({ definition, binding, uoms, value, onChange }) {
   const uom = uoms.find((u) => u.id === definition.uomId);
-  const label = `${definition.nameFa}${uom ? ` (${uom.code})` : ''}${binding.isRequired ? ' *' : ''}`;
+  const required = Boolean(binding.isRequired) && isProductScope(binding);
+  const label = `${definition.nameFa}${uom ? ` (${uom.code})` : ''}${required ? ' *' : ''}`;
+  const enumOptions = effectiveEnumOptions(definition, binding);
 
   if (definition.dataType === 'ENUM') {
     return (
@@ -18,7 +25,7 @@ function AttributeField({ definition, binding, uoms, value, onChange }) {
         <span className="vitrin-form__label">{label}</span>
         <select value={value ?? ''} onChange={(e) => onChange(e.target.value)}>
           <option value="">— انتخاب کنید —</option>
-          {(definition.allowedValues || []).map((v) => (
+          {enumOptions.map((v) => (
             <option key={v.value} value={v.value}>{v.labelFa || v.value}</option>
           ))}
         </select>
@@ -33,7 +40,8 @@ function AttributeField({ definition, binding, uoms, value, onChange }) {
       </label>
     );
   }
-  const inputType = definition.dataType === 'DECIMAL' || definition.dataType === 'INTEGER'
+  const isNumeric = definition.dataType === 'DECIMAL' || definition.dataType === 'INTEGER';
+  const inputType = isNumeric
     ? 'number'
     : definition.dataType === 'DATE' ? 'date' : 'text';
   return (
@@ -41,7 +49,7 @@ function AttributeField({ definition, binding, uoms, value, onChange }) {
       <span className="vitrin-form__label">{label}</span>
       <input
         type={inputType}
-        step={definition.dataType === 'DECIMAL' ? 'any' : undefined}
+        step={isNumeric ? 'any' : undefined}
         min={binding.overrideMin ?? definition.minValue ?? undefined}
         max={binding.overrideMax ?? definition.maxValue ?? undefined}
         value={value ?? ''}
@@ -55,23 +63,32 @@ function AttributeField({ definition, binding, uoms, value, onChange }) {
 /**
  * Schema-driven Product creation (product contract "VITRIN UI EXPECTATIONS").
  * Group -> Category -> Product Type narrows the form; attribute fields come
- * from the Product Type's effective Attribute Schema (DDL-24c) — never a
- * static steel-only form. All identity/duplicate/SKU logic is backend-only;
- * this form only surfaces the 409 warning and lets the user confirm.
+ * from the Product Type's effective Attribute Schema (DDL-24c / DDL-46) — never a
+ * static steel-only form. Identity, uniqueness, and SKU are backend-only;
+ * this form confirms probable-name duplicates and otherwise submits names and attributes.
  */
-export default function ProductFormModal({ groups, categories, types, brands, uoms, onClose, onSubmit }) {
+export default function ProductFormModal({
+  open = true,
+  groups,
+  categories,
+  types,
+  brands,
+  uoms,
+  onClose,
+  onSubmit,
+}) {
   const fetchSchemaForType = useAttributeDefinitionsStore((s) => s.fetchSchemaForType);
   const schemaByType = useAttributeDefinitionsStore((s) => s.schemaByType);
+  const schemaErrorByType = useAttributeDefinitionsStore((s) => s.schemaErrorByType);
 
   const [groupId, setGroupId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [productTypeId, setProductTypeId] = useState('');
   const [brandId, setBrandId] = useState('');
   const [displayNameOverride, setDisplayNameOverride] = useState('');
+  const [overrideTouched, setOverrideTouched] = useState(false);
   const [attributeValues, setAttributeValues] = useState({});
-  const [baseUomId, setBaseUomId] = useState('');
-  const [salesUomId, setSalesUomId] = useState('');
-  const [purchaseUomId, setPurchaseUomId] = useState('');
+  const [offer, setOffer] = useState(seedOfferSettingsFromType());
   const [weightProfileType, setWeightProfileType] = useState('MANUAL_ACTUAL');
   const [weightCoefficient, setWeightCoefficient] = useState('');
   const [error, setError] = useState('');
@@ -81,6 +98,15 @@ export default function ProductFormModal({ groups, categories, types, brands, uo
   const categoryOptions = categories.filter((c) => c.groupId === groupId && c.isActive !== false);
   const typeOptions = types.filter((t) => t.categoryId === categoryId && t.isActive !== false);
   const schema = schemaByType[productTypeId] || [];
+  const schemaError = productTypeId ? schemaErrorByType[productTypeId] : null;
+  const productSchema = schema.filter((e) => isProductScope(e.binding));
+  const selectedType = types.find((t) => t.id === productTypeId);
+  const selectedGroup = groups.find((g) => g.id === groupId);
+  const selectedCategory = categories.find((c) => c.id === categoryId);
+  const allowedBrandIds = selectedType?.allowedBrandIds || [];
+  const brandOptions = brands
+    .filter((b) => b.isActive !== false)
+    .filter((b) => !allowedBrandIds.length || allowedBrandIds.includes(b.id));
 
   useEffect(() => {
     if (productTypeId) void fetchSchemaForType(productTypeId);
@@ -88,18 +114,41 @@ export default function ProductFormModal({ groups, categories, types, brands, uo
 
   useEffect(() => { setCategoryId(''); setProductTypeId(''); }, [groupId]);
   useEffect(() => { setProductTypeId(''); }, [categoryId]);
-  useEffect(() => { setAttributeValues({}); setProbable(null); }, [productTypeId]);
+  useEffect(() => {
+    setProbable(null);
+    setBrandId('');
+    setDisplayNameOverride('');
+    setOverrideTouched(false);
+    setOffer(seedOfferSettingsFromType(types.find((t) => t.id === productTypeId)));
+    setAttributeValues(
+      productTypeId && schemaByType[productTypeId]
+        ? productAttributeDefaults(schemaByType[productTypeId])
+        : {},
+    );
+  }, [productTypeId]);
+  useEffect(() => {
+    if (!productTypeId) return;
+    const loaded = schemaByType[productTypeId];
+    if (!loaded) return;
+    setAttributeValues((prev) => (
+      Object.keys(prev).length ? prev : productAttributeDefaults(loaded)
+    ));
+  }, [productTypeId, schemaByType]);
 
   const previewName = useMemo(() => {
-    const type = types.find((t) => t.id === productTypeId);
-    if (!type) return '———';
-    const displayParts = schema
-      .filter((e) => e.binding.isDisplayRelevant)
-      .sort((a, b) => a.binding.sortOrder - b.binding.sortOrder)
-      .map((e) => attributeValues[e.definition.id])
-      .filter((v) => v !== undefined && v !== '' && v !== null);
-    return [type.name, ...displayParts].join(' | ');
-  }, [types, productTypeId, schema, attributeValues]);
+    if (!selectedType) return '';
+    return previewCreatedProductName({
+      type: selectedType,
+      group: selectedGroup,
+      category: selectedCategory,
+      schema,
+      attributeValues,
+      uoms,
+      emptyAsPlaceholder: true,
+    }) || '';
+  }, [selectedType, selectedGroup, selectedCategory, schema, attributeValues, uoms]);
+
+  const overrideValue = overrideTouched ? displayNameOverride : previewName;
 
   async function submit(confirmDuplicate = false) {
     setError('');
@@ -112,11 +161,16 @@ export default function ProductFormModal({ groups, categories, types, brands, uo
       const payload = {
         productTypeId,
         brandId: brandId || null,
-        displayNameOverride: displayNameOverride.trim() || null,
+        displayNameOverride: (() => {
+          const typed = overrideValue.trim();
+          if (!typed || typed === previewName.trim()) return null;
+          return typed;
+        })(),
         attributeValues,
-        baseUomId: baseUomId || null,
-        salesUomId: salesUomId || null,
-        purchaseUomId: purchaseUomId || null,
+        baseUomId: offer.countUnitId || null,
+        salesUomId: offer.salesUnitId || null,
+        unitWeight: offer.unitWeight === '' ? null : Number(offer.unitWeight),
+        customLengthAllowed: Boolean(offer.customLengthAllowed),
         weightProfileType,
         weightProfileCoefficients,
         confirmDuplicate,
@@ -127,7 +181,8 @@ export default function ProductFormModal({ groups, categories, types, brands, uo
       if (data?.error === 'PRODUCT_PROBABLE_DUPLICATE') {
         setProbable(data.details?.probable || []);
       } else if (data?.error === 'PRODUCT_DUPLICATE_EXACT') {
-        setError(`این کالا قبلاً با کد ${data.details?.existingSku || ''} ثبت شده است — امکان ثبت تکراری وجود ندارد.`);
+        onClose();
+        return;
       } else {
         setError(data?.message || err?.message || 'ثبت کالا ناموفق بود.');
       }
@@ -144,17 +199,27 @@ export default function ProductFormModal({ groups, categories, types, brands, uo
   };
 
   return (
-    <div className="vitrin-modal-overlay" onClick={onClose} role="presentation">
-      <div className="vitrin-modal vitrin-modal--wide" role="dialog" aria-modal="true" aria-label="ثبت کالای جدید" onClick={(e) => e.stopPropagation()}>
-        <header className="vitrin-modal__header">
-          <h2 className="vitrin-modal__title">ثبت کالای جدید</h2>
-          <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label="بستن">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
+    <JarianDrawer
+      open={open}
+      onClose={onClose}
+      title="ثبت کالای جدید"
+      size="lg"
+      className="vitrin-product-drawer"
+      footer={(
+        <>
+          <button type="button" className="btn btn--outline" onClick={onClose}>انصراف</button>
+          <button
+            type="submit"
+            form="vitrin-product-create-form"
+            className="btn btn--primary"
+            disabled={busy || !productTypeId}
+          >
+            ثبت کالا
           </button>
-        </header>
-        <form className="vitrin-modal__body" onSubmit={handleSubmit}>
+        </>
+      )}
+    >
+        <form id="vitrin-product-create-form" className="vitrin-product-drawer__form" onSubmit={handleSubmit}>
           <div className="vitrin-form__grid">
             <label className="vitrin-form__field">
               <span className="vitrin-form__label">گروه کالا</span>
@@ -181,63 +246,59 @@ export default function ProductFormModal({ groups, categories, types, brands, uo
 
           {productTypeId && (
             <>
-              {schema.length > 0 && (
+              {schemaError ? (
+                <p className="vitrin-form__hint" role="alert">
+                  ویژگی‌های این نوع بارگذاری نشد.
+                  {' '}
+                  <button type="button" className="btn btn--outline" onClick={() => { void fetchSchemaForType(productTypeId); }}>
+                    تلاش دوباره
+                  </button>
+                </p>
+              ) : null}
+              {productSchema.length > 0 && (
                 <div className="vitrin-form__grid">
-                  {schema
-                    .filter((e) => e.binding.attributeRole !== 'TRANSACTION_ONLY')
-                    .map(({ binding, definition }) => (
-                      <AttributeField
-                        key={definition.id}
-                        definition={definition}
-                        binding={binding}
-                        uoms={uoms}
-                        value={attributeValues[definition.id]}
-                        onChange={(v) => setAttributeValues((prev) => ({ ...prev, [definition.id]: v }))}
-                      />
-                    ))}
+                  {productSchema.map(({ binding, definition }) => (
+                    <AttributeField
+                      key={definition.id}
+                      definition={definition}
+                      binding={binding}
+                      uoms={uoms}
+                      value={attributeValues[definition.id]}
+                      onChange={(v) => setAttributeValues((prev) => ({ ...prev, [definition.id]: v }))}
+                    />
+                  ))}
                 </div>
               )}
 
               <label className="vitrin-form__field">
-                <span className="vitrin-form__label">نام نمایشی تولیدشده (پیش‌نمایش)</span>
-                <input type="text" className="vitrin-form__readonly" value={previewName} readOnly aria-readonly="true" />
-                <span className="vitrin-form__hint">از نوع کالا + ویژگی‌های شناسایی‌کننده ساخته می‌شود — منبع حقیقت داده ساختاریافته است.</span>
+                <span className="vitrin-form__label">عنوان نمایشی جایگزین (اختیاری)</span>
+                <textarea
+                  rows={2}
+                  dir="rtl"
+                  value={overrideValue}
+                  onChange={(e) => {
+                    setOverrideTouched(true);
+                    setDisplayNameOverride(e.target.value);
+                  }}
+                  placeholder="پیش‌نمایش نام از ساختار همین نوع کالا"
+                />
+                <span className="vitrin-form__hint">همان ساختار نام این نوع کالا. فیلدهای خالی به‌صورت {'{نام ویژگی}'} می‌مانند تا پر شوند.</span>
               </label>
               <label className="vitrin-form__field">
-                <span className="vitrin-form__label">عنوان نمایشی جایگزین (اختیاری)</span>
-                <input type="text" value={displayNameOverride} onChange={(e) => setDisplayNameOverride(e.target.value)} placeholder="در صورت نیاز به نام تجاری متفاوت" />
+                <span className="vitrin-form__label">برند (اختیاری)</span>
+                <select value={brandId} onChange={(e) => setBrandId(e.target.value)}>
+                  <option value="">— بدون برند —</option>
+                  {brandOptions.map((b) => <option key={b.id} value={b.id}>{b.brandName}</option>)}
+                </select>
               </label>
 
-              <div className="vitrin-form__grid">
-                <label className="vitrin-form__field">
-                  <span className="vitrin-form__label">برند (اختیاری)</span>
-                  <select value={brandId} onChange={(e) => setBrandId(e.target.value)}>
-                    <option value="">— بدون برند —</option>
-                    {brands.filter((b) => b.isActive !== false).map((b) => <option key={b.id} value={b.id}>{b.brandName}</option>)}
-                  </select>
-                </label>
-                <label className="vitrin-form__field">
-                  <span className="vitrin-form__label">واحد پایه</span>
-                  <select value={baseUomId} onChange={(e) => setBaseUomId(e.target.value)}>
-                    <option value="">— انتخاب کنید —</option>
-                    {uoms.map((u) => <option key={u.id} value={u.id}>{u.nameFa}</option>)}
-                  </select>
-                </label>
-                <label className="vitrin-form__field">
-                  <span className="vitrin-form__label">واحد فروش (اختیاری)</span>
-                  <select value={salesUomId} onChange={(e) => setSalesUomId(e.target.value)}>
-                    <option value="">— مانند واحد پایه —</option>
-                    {uoms.map((u) => <option key={u.id} value={u.id}>{u.nameFa}</option>)}
-                  </select>
-                </label>
-                <label className="vitrin-form__field">
-                  <span className="vitrin-form__label">واحد خرید (اختیاری)</span>
-                  <select value={purchaseUomId} onChange={(e) => setPurchaseUomId(e.target.value)}>
-                    <option value="">— مانند واحد پایه —</option>
-                    {uoms.map((u) => <option key={u.id} value={u.id}>{u.nameFa}</option>)}
-                  </select>
-                </label>
-              </div>
+              <OfferSettingsFields
+                variant="product"
+                idPrefix="product-create"
+                uoms={uoms}
+                values={offer}
+                onChange={setOffer}
+              />
 
               <div className="vitrin-form__grid">
                 <label className="vitrin-form__field">
@@ -273,12 +334,7 @@ export default function ProductFormModal({ groups, categories, types, brands, uo
             </div>
           )}
 
-          <footer className="vitrin-modal__footer">
-            <button type="button" className="btn btn--outline" onClick={onClose}>انصراف</button>
-            <button type="submit" className="btn btn--primary" disabled={busy || !productTypeId}>ثبت کالا</button>
-          </footer>
         </form>
-      </div>
-    </div>
+    </JarianDrawer>
   );
 }

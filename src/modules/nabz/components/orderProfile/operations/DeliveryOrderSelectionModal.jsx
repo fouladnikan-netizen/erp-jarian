@@ -3,6 +3,7 @@ import { listCarriers } from '../../../carriers';
 import { getFulfilledPurchaseRows, getOrderShippingRecord } from '../../../shippingService';
 import { JarianProductCell } from '../../../../../components/jarian/JarianPresentation';
 import GatewaySelect from '../gateway/GatewaySelect';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 
 export default function DeliveryOrderSelectionModal({
   open,
@@ -10,6 +11,7 @@ export default function DeliveryOrderSelectionModal({
   onClose,
   onConfirm,
 }) {
+  const { alert } = useJarianNotice();
   const rows = useMemo(
     () => (open && order ? getFulfilledPurchaseRows(order) : []),
     [open, order],
@@ -50,14 +52,14 @@ export default function DeliveryOrderSelectionModal({
     setSelectedKeys(allSelected ? [] : [...rowKeys]);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!selectedKeys.length) {
-      window.alert('حداقل یک قلم کالا را برای سفارش ارسال انتخاب کنید.');
+      await alert({ title: 'توجه', message: 'حداقل یک قلم کالا را برای سفارش ارسال انتخاب کنید.' });
       return;
     }
     if (!carrierId) {
-      window.alert('باربری را انتخاب کنید.');
+      await alert({ title: 'توجه', message: 'باربری را انتخاب کنید.' });
       return;
     }
     onConfirm?.(carrierId, selectedKeys);

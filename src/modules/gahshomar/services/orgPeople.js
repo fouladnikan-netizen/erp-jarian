@@ -1,6 +1,7 @@
 /**
  * Org people for Gahshomar incoming-letter referral (پترو فولاد نیکان).
- * Letter / compose only — not a global directory API.
+ * Letter / compose only — not a global directory API and not Shirazeh SoR.
+ * Walks the historical ORGANIZATION_TREE fixture (independent mock person ids).
  */
 
 import { getCurrentUser } from '../../nabz/constants';

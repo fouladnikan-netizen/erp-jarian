@@ -11,6 +11,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import { createProductMasterFixtureTracker } from './helpers/productMasterFixtures.js';
 
 process.env.JARIAN_SKIP_LISTEN = '1';
 
@@ -23,8 +24,9 @@ let token;
 let dbOk = false;
 let sharedGroupId;
 let sharedGroupName;
+const fixtures = createProductMasterFixtureTracker();
 
-async function json(method, path, body, authToken = token) {
+async function requestJson(method, path, body, authToken = token) {
   const headers = { 'Content-Type': 'application/json' };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
   const res = await fetch(`${baseUrl}${path}`, {
@@ -37,6 +39,8 @@ async function json(method, path, body, authToken = token) {
   try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
   return { status: res.status, data };
 }
+
+const json = fixtures.wrapJson(requestJson);
 
 const uniq = () => Math.random().toString(36).slice(2, 9);
 
@@ -70,8 +74,14 @@ before(async () => {
 });
 
 after(async () => {
-  if (server) await new Promise((resolve) => server.close(resolve));
-  await pool.end().catch(() => {});
+  try {
+    if (dbOk) await fixtures.cleanup(json);
+  } catch (err) {
+    console.warn('[product-master-bulk-import-scale] cleanup failed:', err.message);
+  } finally {
+    if (server) await new Promise((resolve) => server.close(resolve));
+    await pool.end().catch(() => {});
+  }
 });
 
 async function makeFixture(label) {

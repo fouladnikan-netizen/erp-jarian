@@ -15,27 +15,25 @@ import ProductProfileDrawer from './components/ProductProfileDrawer';
 import BulkImportModal from './components/BulkImportModal';
 import ListPageLayout from '../../components/module/ListPageLayout';
 import ListToolbar from '../../components/module/ListToolbar';
+import { useJarianNotice } from '../../context/JarianNoticeContext';
 import './vitrin.css';
 
 /**
- * Vitrin — actual Product/SKU administration (DDL-24). Taxonomy/Attribute
- * Schema/UOM/Brand registries are Shirazeh-owned and administered there;
- * Vitrin only consumes them via the Product Master backend (PostgreSQL is
- * SSOT — see CLIENT_STATE_SSOT.md). No local mock catalog is used here.
+ * Vitrin — Product catalog administration (DDL-24 / DDL-49). Taxonomy/Attribute
+ * Schema/UOM/Brand registries remain Shirazeh-owned on the API; their admin UI
+ * lives under Vitrin → ساختار کالا (`/vitrin/structure`).
  */
 export default function VitrinPage() {
   const canWrite = useCan(PERMISSIONS.PRODUCTS_WRITE);
   const canLifecycle = useCan(PERMISSIONS.PRODUCTS_LIFECYCLE);
   const canBulkImport = useCan(PERMISSIONS.PRODUCTS_BULK_IMPORT);
-  const canManageRelationships = useCan(PERMISSIONS.PRODUCTS_MANAGE_RELATIONSHIPS);
 
   const products = useProductsStore((s) => s.products);
   const search = useProductsStore((s) => s.search);
   const createProduct = useProductsStore((s) => s.createProduct);
+  const updateProduct = useProductsStore((s) => s.updateProduct);
   const setActive = useProductsStore((s) => s.setActive);
-  const listRelationships = useProductsStore((s) => s.listRelationships);
-  const createRelationship = useProductsStore((s) => s.createRelationship);
-  const deactivateRelationship = useProductsStore((s) => s.deactivateRelationship);
+  const deleteProduct = useProductsStore((s) => s.deleteProduct);
   const runBulkImport = useProductsStore((s) => s.runBulkImport);
 
   const groups = useProductTaxonomyStore((s) => s.groups);
@@ -48,9 +46,9 @@ export default function VitrinPage() {
 
   const brands = useBrandsStore((s) => s.brands);
   const fetchBrands = useBrandsStore((s) => s.fetchAll);
+  const { confirm, alert } = useJarianNotice();
 
   const [searchText, setSearchText] = useState('');
-  const [chipGroupId, setChipGroupId] = useState(null);
   const [filterGroupId, setFilterGroupId] = useState(null);
   const [filterCategoryId, setFilterCategoryId] = useState(null);
   const [filterTypeId, setFilterTypeId] = useState(null);
@@ -67,28 +65,29 @@ export default function VitrinPage() {
     void fetchBrands();
   }, [fetchTaxonomy, fetchUoms, fetchBrands]);
 
-  const effectiveGroupId = filterGroupId || chipGroupId;
   useEffect(() => {
     void search({
       text: searchText || undefined,
-      groupId: effectiveGroupId || undefined,
+      groupId: filterGroupId || undefined,
       categoryId: filterCategoryId || undefined,
       productTypeId: filterTypeId || undefined,
       brandId: filterBrandId || undefined,
       includeInactive,
       limit: 500,
     });
-  }, [search, searchText, effectiveGroupId, filterCategoryId, filterTypeId, filterBrandId, includeInactive]);
+  }, [search, searchText, filterGroupId, filterCategoryId, filterTypeId, filterBrandId, includeInactive]);
 
   const kpis = useMemo(() => computeVitrinKpis(products, groups), [products, groups]);
 
   const listTitle = useMemo(() => {
-    if (chipGroupId) {
-      const group = groups.find((g) => g.id === chipGroupId);
-      if (group) return `فهرست کالاهای ${group.name}`;
-    }
+    const type = types.find((t) => t.id === filterTypeId);
+    if (type) return `فهرست کالاهای ${type.name}`;
+    const category = categories.find((c) => c.id === filterCategoryId);
+    if (category) return `فهرست کالاهای ${category.name}`;
+    const group = groups.find((g) => g.id === filterGroupId);
+    if (group) return `فهرست کالاهای ${group.name}`;
     return 'فهرست کالاهای مرجع';
-  }, [groups, chipGroupId]);
+  }, [groups, categories, types, filterGroupId, filterCategoryId, filterTypeId]);
 
   const handleCreateProduct = async (payload) => {
     await createProduct(payload);
@@ -101,10 +100,54 @@ export default function VitrinPage() {
     setProfileProduct((prev) => (prev?.id === product.id ? { ...prev, lifecycleStatus: nextActive ? 'ACTIVE' : 'INACTIVE' } : prev));
   };
 
-  const handleSelectGroup = (groupId) => {
-    setChipGroupId(groupId);
-    if (groupId) setFilterGroupId(null);
+  const handleDeleteProduct = async (product) => {
+    const label = product.displayNameOverride || product.generatedName || 'کالا';
+    const ok = await confirm({
+      title: 'حذف',
+      entity: label,
+      message: 'این کالا حذف شود؟',
+      hint: 'اگر در سفارشی استفاده شده باشد، حذف انجام نمی‌شود.',
+      confirmLabel: 'حذف',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await deleteProduct(product.id);
+      setProfileProduct((prev) => (prev?.id === product.id ? null : prev));
+    } catch (err) {
+      await alert({
+        title: 'خطا',
+        message: err?.response?.data?.message || err?.message || 'حذف کالا ناموفق بود.',
+        danger: true,
+      });
+    }
   };
+
+  const handleSelectGroup = (groupId) => {
+    setFilterGroupId(groupId);
+    setFilterCategoryId(null);
+    setFilterTypeId(null);
+    setSelectedIds(new Set());
+  };
+
+  const handleSelectCategory = (categoryId) => {
+    setFilterCategoryId(categoryId);
+    setFilterTypeId(null);
+    setSelectedIds(new Set());
+  };
+
+  const handleSelectType = (typeId) => {
+    setFilterTypeId(typeId);
+    setSelectedIds(new Set());
+  };
+
+  const emptyHint = filterTypeId
+    ? 'کالایی در این نوع نیست'
+    : filterCategoryId
+      ? 'کالایی در این دسته نیست'
+      : filterGroupId
+        ? 'کالایی در این گروه نیست'
+        : null;
 
   return (
     <ListPageLayout
@@ -113,14 +156,14 @@ export default function VitrinPage() {
       kpis={<VitrinKpis kpis={kpis} />}
       toolbar={(
         <ListToolbar
-          searchPlaceholder="جستجو در نام کالا یا SKU..."
+          searchPlaceholder="جستجو در نام کالا..."
           searchValue={searchText}
           onSearchChange={setSearchText}
           primaryLabel={canWrite ? 'ثبت کالای جدید' : ''}
           onPrimaryClick={canWrite ? () => setProductModalOpen(true) : undefined}
           secondary={canBulkImport ? (
             <button type="button" className="btn btn--outline-danger font-meem" onClick={() => setBulkImportOpen(true)}>
-              ورود دسته‌ای (CSV)
+              ورود دسته‌ای
             </button>
           ) : null}
           filters={(
@@ -130,11 +173,11 @@ export default function VitrinPage() {
               types={types}
               brands={brands}
               filterGroupId={filterGroupId}
-              onFilterGroupChange={setFilterGroupId}
+              onFilterGroupChange={handleSelectGroup}
               filterCategoryId={filterCategoryId}
-              onFilterCategoryChange={setFilterCategoryId}
+              onFilterCategoryChange={handleSelectCategory}
               filterTypeId={filterTypeId}
-              onFilterTypeChange={setFilterTypeId}
+              onFilterTypeChange={handleSelectType}
               filterBrandId={filterBrandId}
               onFilterBrandChange={setFilterBrandId}
               includeInactive={includeInactive}
@@ -142,7 +185,17 @@ export default function VitrinPage() {
             />
           )}
           belowSearch={(
-            <CategoryChips groups={groups} selectedGroupId={chipGroupId} onSelectGroup={handleSelectGroup} />
+            <CategoryChips
+              groups={groups}
+              categories={categories}
+              types={types}
+              selectedGroupId={filterGroupId}
+              selectedCategoryId={filterCategoryId}
+              selectedTypeId={filterTypeId}
+              onSelectGroup={handleSelectGroup}
+              onSelectCategory={handleSelectCategory}
+              onSelectType={handleSelectType}
+            />
           )}
         />
       )}
@@ -150,23 +203,24 @@ export default function VitrinPage() {
       <VitrinTable
         products={products}
         listTitle={listTitle}
+        emptyHint={emptyHint}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onTitleClick={setProfileProduct}
         onToggleActive={canLifecycle ? handleToggleActive : undefined}
+        onDelete={canWrite ? handleDeleteProduct : undefined}
       />
 
-      {productModalOpen && (
-        <ProductFormModal
-          groups={groups}
-          categories={categories}
-          types={types}
-          brands={brands}
-          uoms={uoms}
-          onClose={() => setProductModalOpen(false)}
-          onSubmit={handleCreateProduct}
-        />
-      )}
+      <ProductFormModal
+        open={productModalOpen}
+        groups={groups}
+        categories={categories}
+        types={types}
+        brands={brands}
+        uoms={uoms}
+        onClose={() => setProductModalOpen(false)}
+        onSubmit={handleCreateProduct}
+      />
 
       {bulkImportOpen && (
         <BulkImportModal onClose={() => setBulkImportOpen(false)} onRun={runBulkImport} />
@@ -177,13 +231,10 @@ export default function VitrinPage() {
           product={products.find((p) => p.id === profileProduct.id) || profileProduct}
           brands={brands}
           uoms={uoms}
-          products={products}
           onClose={() => setProfileProduct(null)}
           onToggleActive={canLifecycle ? handleToggleActive : undefined}
-          canManageRelationships={canManageRelationships}
-          listRelationships={listRelationships}
-          createRelationship={createRelationship}
-          deactivateRelationship={deactivateRelationship}
+          onDelete={canWrite ? handleDeleteProduct : undefined}
+          onUpdate={canWrite ? updateProduct : undefined}
         />
       )}
     </ListPageLayout>

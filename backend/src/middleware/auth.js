@@ -4,12 +4,14 @@ import { query } from '../db/pool.js';
 
 export async function loadUserAuth(userId) {
   const userRes = await query(
-    `SELECT id, username, display_name, is_active
+    `SELECT id, username, display_name, is_active, account_status, password_hash
      FROM users WHERE id = $1`,
     [userId],
   );
   const user = userRes.rows[0];
   if (!user || !user.is_active) return null;
+  if (user.account_status && user.account_status !== 'ACTIVE') return null;
+  if (!user.password_hash) return null;
 
   const rolesRes = await query(
     `SELECT role_code FROM user_roles WHERE user_id = $1`,

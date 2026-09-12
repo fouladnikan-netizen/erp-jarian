@@ -23,6 +23,11 @@ export const AttributeDefinitionRepository = {
     const { data } = await apiClient.patch(`/attribute-definitions/${id}`, patch);
     return data.attributeDefinition;
   },
+  async deleteDefinition(id) {
+    if (useMockApi()) return null;
+    const { data } = await apiClient.delete(`/attribute-definitions/${id}`);
+    return data;
+  },
 
   /** Effective, inherited schema for a Product Type (DDL-24c). */
   async getSchemaForType(productTypeId, { includeInactive = false } = {}) {
@@ -41,6 +46,11 @@ export const AttributeDefinitionRepository = {
     if (useMockApi()) return null;
     const { data } = await apiClient.patch(`/attribute-definitions/bindings/${id}`, patch);
     return data.binding;
+  },
+  async deleteBinding(id) {
+    if (useMockApi()) return null;
+    const { data } = await apiClient.delete(`/attribute-definitions/bindings/${id}`);
+    return data;
   },
 };
 
