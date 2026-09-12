@@ -88,11 +88,12 @@ describe('productIdentityPolicy is the SKU / identity SSOT', () => {
   });
 
   it('create and taxonomy services import the policy, not a second generator', () => {
-    const productService = readFileSync(join(here, '../services/productService.js'), 'utf8');
-    const taxonomyService = readFileSync(join(here, '../services/productTaxonomyService.js'), 'utf8');
-    const brandService = readFileSync(join(here, '../services/brandService.js'), 'utf8');
-    const attrService = readFileSync(join(here, '../services/attributeDefinitionService.js'), 'utf8');
-    const skuGenerator = readFileSync(join(here, '../domain/productMaster/skuGenerator.js'), 'utf8');
+    const productService = readFileSync(join(here, '../modules/catalog/application/productService.js'), 'utf8');
+    const taxonomyService = readFileSync(join(here, '../modules/catalog/application/productTaxonomyService.js'), 'utf8');
+    const brandService = readFileSync(join(here, '../modules/catalog/application/brandService.js'), 'utf8');
+    const attrService = readFileSync(join(here, '../modules/catalog/application/attributeDefinitionService.js'), 'utf8');
+    const skuGenerator = readFileSync(join(here, '../modules/catalog/domain/productMaster/skuGenerator.js'), 'utf8');
+    const productShim = readFileSync(join(here, '../services/productService.js'), 'utf8');
 
     assert.match(productService, /from '\.\.\/domain\/productMaster\/productIdentityPolicy\.js'/);
     assert.doesNotMatch(productService, /from '\.\.\/domain\/productMaster\/skuGenerator\.js'/);
@@ -100,6 +101,7 @@ describe('productIdentityPolicy is the SKU / identity SSOT', () => {
     assert.match(brandService, /from '\.\.\/domain\/productMaster\/productIdentityPolicy\.js'/);
     assert.match(attrService, /from '\.\.\/domain\/productMaster\/productIdentityPolicy\.js'/);
     assert.match(skuGenerator, /from '\.\/productIdentityPolicy\.js'/);
+    assert.match(productShim, /modules\/catalog\/application\/productService\.js/);
   });
 });
 
