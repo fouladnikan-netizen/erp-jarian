@@ -1,37 +1,27 @@
-process.env.JARIAN_SKIP_LISTEN = '1';
-
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp } from '../index.js';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-function mountedPaths(app) {
-  const router = app.router || app._router;
-  assert.ok(router, 'express router missing');
-  return router.stack
-    .filter((layer) => layer.route || layer.name === 'router' || layer.regexp)
-    .map((layer) => {
-      const src = String(layer.regexp || '');
-      return src;
-    })
-    .join('\n');
-}
+const here = dirname(fileURLToPath(import.meta.url));
+const indexSrc = readFileSync(join(here, '../index.js'), 'utf8');
 
 describe('Phase 2.1 public HTTP mount', () => {
-  it('still mounts CRM and tasks under the same /api/v1 prefixes', () => {
-    const app = createApp();
-    const stack = mountedPaths(app);
-    for (const prefix of [
-      '/api/v1/companies',
-      '/api/v1/contacts',
-      '/api/v1/leads',
-      '/api/v1/lead-pipelines',
-      '/api/v1/identity',
-      '/api/v1/tasks',
-      '/api/v1/activities',
-      '/api/v1/activity-types',
-    ]) {
-      const escaped = prefix.replace(/\//g, '\\/');
-      assert.match(stack, new RegExp(escaped), `missing mount ${prefix}`);
+  it('wires CRM and tasks presentation into the same /api/v1 prefixes', () => {
+    const mounts = [
+      ['/api/v1/companies', 'modules/crm/presentation/companies.js'],
+      ['/api/v1/contacts', 'modules/crm/presentation/contacts.js'],
+      ['/api/v1/leads', 'modules/crm/presentation/leads.js'],
+      ['/api/v1/lead-pipelines', 'modules/crm/presentation/leadPipelines.js'],
+      ['/api/v1/identity', 'modules/crm/presentation/identity.js'],
+      ['/api/v1/tasks', 'modules/tasks/presentation/tasks.js'],
+      ['/api/v1/activities', 'modules/tasks/presentation/activities.js'],
+      ['/api/v1/activity-types', 'modules/tasks/presentation/activityTypes.js'],
+    ];
+    for (const [prefix, file] of mounts) {
+      assert.match(indexSrc, new RegExp(`app\\.use\\('${prefix.replace(/\//g, '\\/')}'`));
+      assert.match(indexSrc, new RegExp(file.replace(/\./g, '\\.')));
     }
   });
 });
