@@ -10,11 +10,11 @@ import {
   normalizeCreateDefaults,
 } from '../domain/order/orderRules.js';
 import { z } from 'zod';
-import * as companyRepo from '../../../repositories/companyRepository.js';
+import { findCompanyById } from '../../crm/public/subjectReferences.js';
 import { assertLegalCustomerHasNationalId } from '../domain/order/nationalIdOrderGate.js';
 import { assertCompanyAllowedForOrder } from '../domain/order/supplierOrderGate.js';
 import { assertOrderTaxPolicy } from '../domain/order/taxPolicy.js';
-import { recomputeCustomerLifecycle } from '../../../services/customerLifecycleService.js';
+import { recomputeCustomerLifecycle } from '../../crm/public/customerLifecycle.js';
 import { ORDER_STATUS } from '../domain/order/orderRules.js';
 
 /**
@@ -84,7 +84,7 @@ export async function createOrder(body, actorUserId) {
 
   await withTransaction(async (client) => {
     if (data.companyId) {
-      const company = await companyRepo.findById(data.companyId, {}, client);
+      const company = await findCompanyById(data.companyId, {}, client);
       if (!company) {
         throw validationError('شرکت سفارش یافت نشد.', { companyId: ['INVALID'] });
       }
@@ -176,7 +176,7 @@ export async function updateOrder(id, body, actorUserId) {
 
   await withTransaction(async (client) => {
     if (writeData.companyId) {
-      const company = await companyRepo.findById(writeData.companyId, {}, client);
+      const company = await findCompanyById(writeData.companyId, {}, client);
       if (!company) {
         throw validationError('شرکت سفارش یافت نشد.', { companyId: ['INVALID'] });
       }
