@@ -12,8 +12,11 @@ import {
 } from '../modules/catalog/domain/productMaster/productIdentityPolicy.js';
 import { findForbiddenMasterCascades } from '../domain/productMaster/deleteGuard.js';
 import { MODULE_ID as correspondenceId } from '../modules/correspondence/index.js';
-import { MODULE_ID as tasksId } from '../modules/tasks/index.js';
+import { MODULE_ID as tasksId, HTTP_BASE as tasksHttp } from '../modules/tasks/index.js';
 import { GATEWAY_CANCEL_REASONS } from '../modules/settings/index.js';
+import { findCompanyById } from '../modules/crm/public/subjectReferences.js';
+import { listCompanies } from '../modules/crm/application/companyService.js';
+import { listTasks } from '../modules/tasks/application/taskService.js';
 
 describe('Phase 2 modular layout', () => {
   it('keeps product identity SSOT on the catalog module and identical via shim', () => {
@@ -28,9 +31,16 @@ describe('Phase 2 modular layout', () => {
     assert.equal(typeof findForbiddenMasterCascades, 'function');
   });
 
-  it('declares correspondence and tasks module shells', () => {
+  it('declares correspondence shell and fleshed-out tasks module', () => {
     assert.equal(correspondenceId, 'correspondence');
     assert.equal(tasksId, 'tasks');
+    assert.ok(tasksHttp.includes('/api/v1/tasks'));
+    assert.equal(typeof listTasks, 'function');
+  });
+
+  it('exposes CRM application and public subject port', () => {
+    assert.equal(typeof listCompanies, 'function');
+    assert.equal(typeof findCompanyById, 'function');
   });
 
   it('owns cancel reasons in settings', () => {

@@ -6,7 +6,7 @@ Internal architecture docs for Jarian ERP. **No UX redesign.** Navigation/worksp
 
 ---
 
-**Start with the Phase 1 law:** [../ARCHITECTURE.md](../ARCHITECTURE.md) — 15 non-negotiable rules, target modular layout, Product SKU SSOT, master-data cascade policy.
+**Start with the Phase 2.1 law:** [../ARCHITECTURE.md](../ARCHITECTURE.md) — 15 non-negotiable rules, modular backend (catalog/sales/crm/tasks), Product SKU SSOT, master-data cascade policy.
 
 ## How to read these docs
 
@@ -23,7 +23,7 @@ Cursor agent rules: [CURSOR_RULES.md](./CURSOR_RULES.md) · contribution: [../..
 
 ## Recommended reading order (new developers)
 
-0. [../ARCHITECTURE.md](../ARCHITECTURE.md) — Modular Monolith Phase 1 law (15 rules + catalog/sales/crm map)
+0. [../ARCHITECTURE.md](../ARCHITECTURE.md) — Modular Monolith Phase 2.1 law (15 rules + catalog/sales/crm/tasks map)
 1. [../../README.md](../../README.md) — setup & module map  
 2. [../../CONTRIBUTING.md](../../CONTRIBUTING.md) — branches, checks, PR expectations  
 3. [CURSOR_RULES.md](./CURSOR_RULES.md) — mandatory theme + presentation + SSOT + entity pipeline rules  

@@ -1,6 +1,6 @@
-# جریان — معماری قانون‌مند (Modular Monolith, Phase 2)
+# جریان — معماری قانون‌مند (Modular Monolith, Phase 2.1)
 
-> **وضعیت:** فاز ۲ — ۱۴۰۵/۰۶/۲۱ (2026-09-12). روی قانون فاز ۱ ساخته شده؛ آن را برنمی‌گرداند.  
+> **وضعیت:** فاز ۲.۱ — ۱۴۰۵/۰۶/۲۱ (2026-09-12). روی فاز ۲ سوار است؛ قانون فاز ۱ را برنمی‌گرداند.  
 > **این سند بازنویسی Nest/TS نیست.** مرزهای backend را *واقعی* می‌کند؛ URL عمومی عوض نمی‌شود.  
 > **مرتبط:** [architecture/README.md](./architecture/README.md) · [architecture/DOMAIN_DECISION_LOG.md](./architecture/DOMAIN_DECISION_LOG.md) · [architecture/ENTITY_DELIVERY_PIPELINE.md](./architecture/ENTITY_DELIVERY_PIPELINE.md) · [architecture/ENTITY_OWNERSHIP.md](./architecture/ENTITY_OWNERSHIP.md) · [architecture/BACKEND_FOUNDATION.md](./architecture/BACKEND_FOUNDATION.md) · [architecture/SSOT.md](./architecture/SSOT.md)
 
@@ -16,7 +16,7 @@ Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز م
 |---|--------|-------------------------|
 | 1 | **یک قابلیت برای هر ماژول** — یک ماژول یک مسئولیت دامنه دارد؛ رجیستری موازی نسازید. | [ENTITY_OWNERSHIP.md](./architecture/ENTITY_OWNERSHIP.md) · جدول نقشهٔ §۲ |
 | 2 | **منطق دامنه در کنترلر/روت نیست** — روت فقط HTTP + RBAC + فراخوانی سرویس است. | `backend/src/modules/*/presentation` و shimهای `routes/` نازک؛ قواعد در `modules/*/domain` و `application` |
-| 3 | **دسترسی مستقیم به جدول ماژول دیگر ممنوع** — SQL فقط از repository مالک. | `modules/*/infrastructure` · پورت `sales/public/orderProductReferences.js` · [PERSISTENCE_BOUNDARY.md](./architecture/PERSISTENCE_BOUNDARY.md) |
+| 3 | **دسترسی مستقیم به جدول ماژول دیگر ممنوع** — SQL فقط از repository مالک. | `modules/*/infrastructure` · پورت‌های `sales/public/*` · `crm/public/*` · `tasks/public/*` · [PERSISTENCE_BOUNDARY.md](./architecture/PERSISTENCE_BOUNDARY.md) |
 | 4 | **ارتباط بین‌ماژولی فقط از رابط عمومی / پورت / رویداد** — نه store داخلی، نه JOIN پنهان. | FE: `src/modules/*/public` · BE: `backend/src/modules/*/public` · `npm run check:module-boundaries` |
 | 5 | **هویت کالا / SKU دقیقاً یک پیاده‌سازی دارد** | `backend/src/modules/catalog/domain/productMaster/productIdentityPolicy.js` — §۳ (shim: `backend/src/domain/productMaster/`) |
 | 6 | **CASCADE مخرب روی دادهٔ پایه ممنوع** | §۴ · `modules/catalog/domain/productMaster/deleteGuard.js` |
@@ -34,7 +34,7 @@ Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز م
 
 ---
 
-## ۲. Modular Monolith — آنچه فاز ۲ جابه‌جا کرد
+## ۲. Modular Monolith — آنچه فاز ۲ و ۲.۱ جابه‌جا کرد
 
 ### مقصد (target bounded contexts)
 
@@ -42,8 +42,8 @@ Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز م
 |-------|---------|------------|------------------------|-----------------|
 | **catalog** | taxonomy + schema + UOM + Brand + Product/SKU | شیرازه / ویترین | `src/modules/shirazeh/productMaster`, `vitrin` | **کامل** — `backend/src/modules/catalog/{domain,application,infrastructure,presentation}` |
 | **sales** | سفارش، پیش‌فاکتور، درگاه، تدارک، رهسپار، سرانجام | نبض | `src/modules/nabz` | **کامل برای Order** — `modules/sales/*` |
-| **crm** | شرکت / تماس / تأمین + سرنخ / چرخه | کانون + افق | `kanoon`, `ofogh` | **دامنه منتقل شد**؛ application/routes هنوز در مسیر قدیمی (Phase 2.1) |
-| **tasks** | فعالیت و وظیفه | پویش | `src/modules/pooyesh` | **پوسته + مالکیت** — `modules/tasks` |
+| **crm** | شرکت / تماس / تأمین + سرنخ / چرخه | کانون + افق | `kanoon`, `ofogh` | **کامل** — `modules/crm/{domain,application,infrastructure,presentation,public}` |
+| **tasks** | فعالیت و وظیفه | پویش | `src/modules/pooyesh` | **کامل** — `modules/tasks/{application,infrastructure,presentation,public}` |
 | **correspondence** | دبیرخانه | گاه‌شمار | `src/modules/gahshomar` | **دامنه منتقل شد** — `modules/correspondence` |
 | **settings** | هویت سازمان، دلایل لغو، chrome اسناد، RBAC/کاربر | شیرازه | `src/modules/shirazeh` | **دامنه هویت + registry** — `modules/settings` |
 | **shared** | CORS/JWT، jsonRecord، قرنطینه AI | — | — | `backend/src/modules/shared` |
@@ -57,17 +57,17 @@ Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز م
 ```text
 backend/src/
   modules/
-    catalog/           Product Master (moved)
-    sales/             Order (moved)
-    crm/               companyIdentity, customerLifecycle, rawLeadGate
-    correspondence/    domain/correspondence
-    tasks/             ownership shell (activity + task)
+    catalog/           Product Master (Phase 2)
+    sales/             Order (Phase 2) + companyOrderReferences port
+    crm/               Company / Contact / Lead + subjectReferences + lifecycle port
+    correspondence/    domain/correspondence (application still Phase 3)
+    tasks/             Activity + Task (Phase 2.1) + companyActivityReferences port
     settings/          organizationIdentity + reasonRegistry + documentChrome
     shared/            schemas, CORS/JWT, AI quarantine
   domain/              SHIMS → modules/*/domain
-  services/            SHIMS for moved catalog/sales; live CRM/tasks/settings services
-  repositories/        SHIMS for moved catalog/sales; live remaining repos
-  routes/              SHIMS for moved catalog/sales; live remaining routers
+  services/            SHIMS for moved catalog/sales/crm/tasks; live settings/correspondence/auth
+  repositories/        SHIMS for moved catalog/sales/crm/tasks; live remaining repos
+  routes/              SHIMS for moved catalog/sales/crm/tasks; live remaining routers
   middleware/          JWT, RBAC, requestId, errors (kernel)
   lib/                 AppError, ids (kernel)
   db/migrations/
@@ -91,6 +91,12 @@ URL عمومی بدون تغییر: `/api/v1/products`, `/orders`, `/companies`,
 | `backend/src/domain/companyIdentity/*` | `modules/crm/domain/companyIdentity/*` |
 | `backend/src/domain/customerLifecycle/*` | `modules/crm/domain/customerLifecycle/*` |
 | `backend/src/domain/rawLeadGate.js` | `modules/crm/domain/rawLeadGate.js` |
+| `backend/src/services/{company,contact,lead,leadPipeline,identityMatching,companyEnrichment,customerLifecycle}Service.js`, `contactOrchestration.js` | `modules/crm/application/*` |
+| `backend/src/repositories/{company,contact,companyContactRelationship,lead,leadPipeline,identityDecision}Repository.js` | `modules/crm/infrastructure/*` |
+| `backend/src/routes/{companies,contacts,leads,leadPipelines,identity}.js` | `modules/crm/presentation/*` |
+| `backend/src/services/{task,activity,activityType}Service.js` | `modules/tasks/application/*` |
+| `backend/src/repositories/{task,activity,activityType}Repository.js` | `modules/tasks/infrastructure/*` |
+| `backend/src/routes/{tasks,activities,activityTypes}.js` | `modules/tasks/presentation/*` |
 | `backend/src/domain/correspondence/*` | `modules/correspondence/domain/correspondence/*` |
 | `backend/src/domain/organizationIdentity/*` | `modules/settings/domain/organizationIdentity/*` |
 
@@ -99,7 +105,11 @@ Shim فقط `export *` / `export { default }` است. منطق جدید را د�
 Cross-module امروز:
 
 - catalog → sales فقط از `modules/sales/public/orderProductReferences.js` (ارجاع کالا روی خط سفارش).
-- sales → crm از `modules/crm/domain/rawLeadGate.js` و `companyIdentity` (جلالی). Phase 3 این‌ها را پشت پورت رویداد می‌برد.
+- sales → crm از `modules/crm/public/subjectReferences.js` (شرکت سفارش) و `modules/crm/public/customerLifecycle.js`؛ دامنهٔ `rawLeadGate` / `companyIdentity` (جلالی) هنوز مستقیم است.
+- crm → sales از `modules/sales/public/companyOrderReferences.js` (حقایق سفارش برای چرخه).
+- crm → tasks از `modules/tasks/public/companyActivityReferences.js` (فعالیت‌های شرکت برای چرخه).
+- tasks → crm از `modules/crm/public/subjectReferences.js` (صحت مرجع COMPANY / RAW_LEAD).
+- Phase 3 این پورت‌های lookup را با رویداد / read-model جایگزین می‌کند.
 
 ---
 
@@ -174,12 +184,18 @@ Cross-module امروز:
 
 ---
 
-## ۷. بک‌لاگ Phase 2.1 / 3 / 4 (عمداً معوق)
+## ۷. آنچه فاز ۲.۱ انجام داد + بک‌لاگ Phase 3 / 4
 
-### Phase 2.1 — تکمیل جابه‌جایی بدون تغییر رفتار
+### Phase 2.1 — انجام شد (بدون تغییر رفتار / URL)
 
-- انتقال `companyService` / `contactService` / `lead*` / `identityMatching` به `modules/crm/{application,infrastructure,presentation}`.
-- انتقال `taskService` / `activity*` به `modules/tasks`.
+- `companyService` / `contactService` / `lead*` / `identityMatching` / `companyEnrichment` / `contactOrchestration` / `customerLifecycle` به `modules/crm/{application,infrastructure,presentation}`.
+- `taskService` / `activity*` به `modules/tasks/{application,infrastructure,presentation}`.
+- پورت‌های عمومی: `crm/public/subjectReferences`, `crm/public/customerLifecycle`, `sales/public/companyOrderReferences`, `tasks/public/companyActivityReferences`.
+- Shim مسیرهای قدیمی باقی است؛ تست‌ها و `backend/scripts/recompute-customer-lifecycle.js` همان import را دارند.
+- فرمول SKU / `productIdentityPolicy` بدون تغییر (DDL-24m).
+
+### هنوز معوق (عمداً در این PR نیست)
+
 - انتقال `correspondence*` application/routes به `modules/correspondence`.
 - انتقال `user` / `rbac` / `persona` / `organization` (درخت) / `auth` به `modules/settings` یا `shared` (auth cross-cutting).
 - الزام کد `LEAD_REJECT` روی archive سرنخ.
@@ -188,7 +204,7 @@ Cross-module امروز:
 
 ### Phase 3 — مرز سخت بین‌ماژول
 
-- رویداد داخلی به‌جای `orderProductReferences` و JOIN/اسکن `orders.payload.items`.
+- رویداد داخلی به‌جای `orderProductReferences` / `companyOrderReferences` و JOIN/اسکن `orders.payload.items`.
 - پورت CRM برای `gregorianToJalali` / national-id gates به‌جای import دامنهٔ خام.
 - API جدا برای موج (marketing).
 - Ayeneh فقط از قراردادهای public می‌خواند.
