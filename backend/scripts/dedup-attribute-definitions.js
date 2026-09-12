@@ -25,7 +25,6 @@ import {
 } from '../src/domain/productMaster/attributeDedupMap.js';
 import { millSheetTypeNames } from '../src/domain/productMaster/sheetMillLength.js';
 import { FRAME_PROFILE_MODEL_OPTIONS, FRAME_PROFILE_TYPE_NAME } from '../src/domain/productMaster/frameProfileCatalog.js';
-import { FLANGE_TYPE_LATIN_BY_NAME, FLANGE_TYPE_NAME_ALIASES } from '../src/domain/productMaster/flangeCatalog.js';
 import {
   FASTENER_LENGTH_MAX_MM,
   FASTENER_LENGTH_MIN_MM,
@@ -34,7 +33,12 @@ import {
 } from '../src/domain/productMaster/fastenerCatalog.js';
 import { forgedFittingBindingPlan, FORGED_FITTING_TYPE_NAMES } from '../src/domain/productMaster/forgedFittingCatalog.js';
 import { threadedFittingBindingPlan, THREADED_FITTING_TYPE_NAMES } from '../src/domain/productMaster/threadedFittingCatalog.js';
-import { flangeBindingPlan, FLANGE_TYPE_NAMES } from '../src/domain/productMaster/flangeCatalog.js';
+import {
+  flangeBindingPlan,
+  FLANGE_TYPE_LATIN_BY_NAME,
+  FLANGE_TYPE_NAME_ALIASES,
+  FLANGE_TYPE_NAMES,
+} from '../src/domain/productMaster/flangeCatalog.js';
 import {
   seamlessWeldedFittingBindingPlan,
   SEAMLESS_WELDED_FITTING_TYPE_NAMES,

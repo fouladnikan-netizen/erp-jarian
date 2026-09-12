@@ -5,6 +5,7 @@
  */
 
 import { SUPPLY_FORM_CODE } from './sheetMillLength.js';
+export { SUPPLY_FORM_CODE };
 
 export const KIND_CODE = 'kind';
 export const CLASS_CODE = 'class';
