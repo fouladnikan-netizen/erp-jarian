@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { appError, fromZodError, notFoundError } from '../lib/errors.js';
 import { withTransaction } from '../db/pool.js';
 import { newEntityId, writeAudit } from '../lib/ids.js';
-import { throwInUse } from '../domain/productMaster/deleteGuard.js';
+import { assertUnused } from '../domain/productMaster/deleteGuard.js';
 import * as uomRepo from '../repositories/uomRepository.js';
 import * as productRepo from '../repositories/productRepository.js';
 import * as typeRepo from '../repositories/productTypeRepository.js';
@@ -95,34 +95,28 @@ export async function updateUom(id, body, actorUserId) {
 export async function deleteUom(id, actorUserId) {
   await getUom(id);
   const usedProducts = await productRepo.listByUom(id);
-  if (usedProducts.length) {
-    throwInUse({
-      code: 'UOM_IN_USE',
-      entityLabel: 'واحد اندازه‌گیری',
-      dependencyLabel: 'کالا',
-      verb: 'استفاده',
-      items: usedProducts,
-    });
-  }
+  assertUnused({
+    code: 'UOM_IN_USE',
+    entityLabel: 'واحد اندازه‌گیری',
+    dependencyLabel: 'کالا',
+    verb: 'استفاده',
+    items: usedProducts,
+  });
   const usedTypes = await typeRepo.listByUom(id);
-  if (usedTypes.length) {
-    throwInUse({
-      code: 'UOM_IN_USE',
-      entityLabel: 'واحد اندازه‌گیری',
-      dependencyLabel: 'نوع کالا',
-      verb: 'استفاده',
-      items: usedTypes,
-    });
-  }
+  assertUnused({
+    code: 'UOM_IN_USE',
+    entityLabel: 'واحد اندازه‌گیری',
+    dependencyLabel: 'نوع کالا',
+    verb: 'استفاده',
+    items: usedTypes,
+  });
   const usedAttrs = await attrRepo.listByUom(id);
-  if (usedAttrs.length) {
-    throwInUse({
-      code: 'UOM_IN_USE',
-      entityLabel: 'واحد اندازه‌گیری',
-      dependencyLabel: 'ویژگی',
-      items: usedAttrs,
-    });
-  }
+  assertUnused({
+    code: 'UOM_IN_USE',
+    entityLabel: 'واحد اندازه‌گیری',
+    dependencyLabel: 'ویژگی',
+    items: usedAttrs,
+  });
   return withTransaction(async (client) => {
     await writeAudit({
       actorUserId, action: 'uom.delete', entityType: 'uom', entityId: id, detail: { id },
