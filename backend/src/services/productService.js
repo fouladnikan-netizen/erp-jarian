@@ -9,15 +9,19 @@ import { z } from 'zod';
 import { appError, fromZodError, notFoundError, validationError } from '../lib/errors.js';
 import { withTransaction } from '../db/pool.js';
 import { newEntityId, writeAudit } from '../lib/ids.js';
-import { normalizeAttributeValue, tokenOverlapSimilarity, buildCanonicalIdentityKey, isNumericAttributeType } from '../domain/productMaster/normalize.js';
+import { normalizeAttributeValue, tokenOverlapSimilarity, isNumericAttributeType } from '../domain/productMaster/normalize.js';
 import { buildGeneratedName, resolveEnumDisplayValue } from '../domain/productMaster/nameGenerator.js';
 import {
   buildDisplayNameFromRule,
   hasDisplayNameRule,
 } from '../domain/productMaster/displayNameRule.js';
-import { allocateSku } from '../domain/productMaster/skuGenerator.js';
+import {
+  allocateProductSku,
+  assertSkuImmutable,
+  buildProductIdentityKey,
+} from '../domain/productMaster/productIdentityPolicy.js';
 import { validateWeightProfile } from '../domain/productMaster/weightProfile.js';
-import { throwInUse } from '../domain/productMaster/deleteGuard.js';
+import { assertUnused } from '../domain/productMaster/deleteGuard.js';
 import { isAllowedSubsetEnum, resolveTypeAllowedValues, liveAttributeValuesByCode, resolveBindingDefault } from '../domain/productMaster/allowedAttributeValues.js';
 import { applyNpsInchSizeDisplay } from '../domain/productMaster/npsInchDisplay.js';
 import { applySheetLengthDisplay, isSheetLengthApplicable, isSheetLengthAttribute } from '../domain/productMaster/sheetMillLength.js';
@@ -92,26 +96,7 @@ const updateSchema = z.object({
   confirmDuplicate: z.boolean().optional().default(false),
 }).refine((d) => Object.keys(d).length > 0, { message: 'empty patch' });
 
-// SKU is immutable once issued (mnemonic DDL-24m) — an explicit attempt to
-// send `sku` in a PATCH must be REJECTED (400 + stable error code), not
-// silently stripped by Zod's default unknown-key handling. Applies to every
-// caller/role — this check runs before any RBAC-specific branching, so
-// there is no admin bypass (jarian-security.mdc: backend is the boundary).
-const IMMUTABLE_FIELDS_ON_UPDATE = ['sku'];
-
-function assertNoImmutableFieldMutation(body) {
-  const attempted = IMMUTABLE_FIELDS_ON_UPDATE.filter(
-    (field) => body && Object.prototype.hasOwnProperty.call(body, field),
-  );
-  if (attempted.length) {
-    throw appError(
-      'SKU_IMMUTABLE',
-      'شناسه کالای SKU پس از صدور غیرقابل تغییر است و در درخواست ویرایش نمی‌تواند ارسال شود.',
-      400,
-      { field: attempted[0], immutableFields: attempted },
-    );
-  }
-}
+// SKU immutability is defined once in productIdentityPolicy (DDL-24m / DDL-24i).
 
 /**
  * Validate raw attribute values against a Product Type's Attribute Schema
@@ -502,7 +487,7 @@ export async function prepareProductCreate(body) {
 
   const attributeEntries = await validateAttributeValues(data.productTypeId, data.attributeValues);
   const allowedEntries = await validateAllowedAttributeValues(data.productTypeId, data.allowedAttributeValues);
-  const canonicalIdentityKey = buildCanonicalIdentityKey(
+  const canonicalIdentityKey = buildProductIdentityKey(
     data.productTypeId,
     attributeEntries.filter((e) => e.isIdentityRelevant),
   );
@@ -532,7 +517,7 @@ export async function createProduct(body, actorUserId) {
 
   try {
     return await withTransaction(async (client) => {
-      const { sku } = allocateSku({
+      const { sku } = allocateProductSku({
         groupSkuCode: group.skuCode,
         categorySkuCode: category.skuCode,
         typeSkuCode: productType.skuCode,
@@ -630,7 +615,7 @@ export async function searchProducts(query = {}) {
 
 export async function updateProduct(id, body, actorUserId) {
   const existing = await getProduct(id);
-  assertNoImmutableFieldMutation(body);
+  assertSkuImmutable(body);
   const parsed = updateSchema.safeParse(aliasProductOfferInput(body));
   if (!parsed.success) throw fromZodError(parsed, 'داده‌های ویرایش محصول نامعتبر است.');
   const data = parsed.data;
@@ -665,7 +650,7 @@ export async function updateProduct(id, body, actorUserId) {
     ]));
     attributeEntries = await validateAttributeValues(existing.productTypeId, { ...currentValues, ...data.attributeValues });
 
-    canonicalIdentityKey = buildCanonicalIdentityKey(existing.productTypeId, attributeEntries.filter((e) => e.isIdentityRelevant));
+    canonicalIdentityKey = buildProductIdentityKey(existing.productTypeId, attributeEntries.filter((e) => e.isIdentityRelevant));
     if (canonicalIdentityKey !== existing.canonicalIdentityKey) {
       const clash = await productRepo.findByCanonicalIdentityKey(canonicalIdentityKey);
       if (clash && clash.id !== id) {
@@ -743,15 +728,13 @@ export async function setLifecycle(id, status, actorUserId) {
 export async function deleteProduct(id, actorUserId) {
   const product = await getProduct(id);
   const orders = await orderRepo.findOrdersReferencingProduct({ productId: id, sku: product.sku });
-  if (orders.length) {
-    throwInUse({
-      code: 'PRODUCT_IN_USE',
-      entityLabel: 'کالا',
-      dependencyLabel: 'سفارش',
-      verb: 'فراخوانده',
-      items: orders,
-    });
-  }
+  assertUnused({
+    code: 'PRODUCT_IN_USE',
+    entityLabel: 'کالا',
+    dependencyLabel: 'سفارش',
+    verb: 'فراخوانده',
+    items: orders,
+  });
   return withTransaction(async (client) => {
     await writeAudit({
       actorUserId, action: 'product.delete', entityType: 'product', entityId: id,

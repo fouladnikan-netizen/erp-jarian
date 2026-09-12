@@ -39,6 +39,7 @@ Assets/Invoice/
 Docs/*
 !Docs/architecture/
 !Docs/architecture/**
+!Docs/ARCHITECTURE.md
 screenshots/
 
 # Duplicate raw assets (canonical copies are in src/assets/)

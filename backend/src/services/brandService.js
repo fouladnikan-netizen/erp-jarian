@@ -7,9 +7,9 @@ import { z } from 'zod';
 import { appError, fromZodError, notFoundError } from '../lib/errors.js';
 import { withTransaction } from '../db/pool.js';
 import { newEntityId, writeAudit } from '../lib/ids.js';
-import { throwInUse } from '../domain/productMaster/deleteGuard.js';
+import { assertUnused } from '../domain/productMaster/deleteGuard.js';
 import { normalizeBrandName, tokenOverlapSimilarity } from '../domain/productMaster/normalize.js';
-import { pickSkuCode, skuCodeKey } from '../domain/productMaster/skuCode.js';
+import { pickSkuCode, skuCodeKey } from '../domain/productMaster/productIdentityPolicy.js';
 import * as brandRepo from '../repositories/brandRepository.js';
 import * as productRepo from '../repositories/productRepository.js';
 import * as typeRepo from '../repositories/productTypeRepository.js';
@@ -123,25 +123,21 @@ export async function updateBrand(id, body, actorUserId) {
 export async function deleteBrand(id, actorUserId) {
   await getBrand(id);
   const usedProducts = await productRepo.listByBrand(id);
-  if (usedProducts.length) {
-    throwInUse({
-      code: 'BRAND_IN_USE',
-      entityLabel: 'برند',
-      dependencyLabel: 'کالا',
-      verb: 'استفاده',
-      items: usedProducts,
-    });
-  }
+  assertUnused({
+    code: 'BRAND_IN_USE',
+    entityLabel: 'برند',
+    dependencyLabel: 'کالا',
+    verb: 'استفاده',
+    items: usedProducts,
+  });
   const usedTypes = await typeRepo.listByAllowedBrand(id);
-  if (usedTypes.length) {
-    throwInUse({
-      code: 'BRAND_IN_USE',
-      entityLabel: 'برند',
-      dependencyLabel: 'نوع کالا',
-      verb: 'استفاده',
-      items: usedTypes,
-    });
-  }
+  assertUnused({
+    code: 'BRAND_IN_USE',
+    entityLabel: 'برند',
+    dependencyLabel: 'نوع کالا',
+    verb: 'استفاده',
+    items: usedTypes,
+  });
   return withTransaction(async (client) => {
     await writeAudit({
       actorUserId, action: 'brand.delete', entityType: 'brand', entityId: id, detail: { id },

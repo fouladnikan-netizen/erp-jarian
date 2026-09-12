@@ -7,7 +7,7 @@ import {
   buildProductSku,
   formatIdentitySkuSegment,
 } from '../domain/productMaster/skuCode.js';
-import { allocateSku } from '../domain/productMaster/skuGenerator.js';
+import { allocateProductSku as allocateSku } from '../domain/productMaster/productIdentityPolicy.js';
 
 describe('mnemonic SKU codes (DDL-24m)', () => {
   it('takes two-letter initials from significant Latin words', () => {

@@ -88,7 +88,7 @@ Code lives mainly under `src/modules/`. Shared kits: `src/domain/`, `src/compone
 
 ## Architecture documentation
 
-Start here: **[Docs/architecture/README.md](./Docs/architecture/README.md)** (reading order for new developers).
+Start here: **[Docs/ARCHITECTURE.md](./Docs/ARCHITECTURE.md)** (Phase 1 Modular Monolith law) then **[Docs/architecture/README.md](./Docs/architecture/README.md)** (reading order).
 
 Highlights:
 
