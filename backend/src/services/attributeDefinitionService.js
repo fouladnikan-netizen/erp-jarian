@@ -6,9 +6,8 @@ import { z } from 'zod';
 import { appError, fromZodError, notFoundError } from '../lib/errors.js';
 import { withTransaction } from '../db/pool.js';
 import { newEntityId, writeAudit } from '../lib/ids.js';
-import { pickSkuCode, skuCodeKey } from '../domain/productMaster/skuCode.js';
+import { pickSkuCode, skuCodeKey, buildProductIdentityKey } from '../domain/productMaster/productIdentityPolicy.js';
 import {
-  buildCanonicalIdentityKey,
   normalizeAttributeValue,
   prepareAttributeDefinitionInput,
   prepareAttributeDefinitionPatch,
@@ -29,7 +28,7 @@ import {
   remapOrphanEnumValue,
   resolveTypeAllowedValues,
 } from '../domain/productMaster/attributeBindingPolicy.js';
-import { throwInUse } from '../domain/productMaster/deleteGuard.js';
+import { assertUnused } from '../domain/productMaster/deleteGuard.js';
 import * as attrRepo from '../repositories/attributeDefinitionRepository.js';
 import * as bindingRepo from '../repositories/productTypeAttributeRepository.js';
 import * as typeRepo from '../repositories/productTypeRepository.js';
@@ -167,7 +166,7 @@ async function planEnumOptionRename(definitionId, oldOptions, newOptions) {
   }
   if (orphanIds.size) {
     const products = await productRepo.listByAttributeDefinition(definitionId);
-    throwInUse({
+    assertUnused({
       code: 'ATTRIBUTE_ENUM_VALUE_IN_USE',
       entityLabel: 'گزینه فهرست',
       dependencyLabel: 'کالا',
@@ -249,7 +248,7 @@ async function rebuildIdentityAfterEnumRename(productIds, actorUserId) {
         code: entry.definition.code,
         normalized: byDef.get(entry.definition.id)?.normalizedValue || '',
       }));
-    const key = buildCanonicalIdentityKey(product.productTypeId, identity);
+    const key = buildProductIdentityKey(product.productTypeId, identity);
     if (key === product.canonicalIdentityKey) continue;
     const clash = await productRepo.findByCanonicalIdentityKey(key);
     if (clash && clash.id !== product.id) {
@@ -374,24 +373,20 @@ export async function deleteDefinition(id, actorUserId) {
   await getDefinition(id);
   await bindingRepo.removeInactiveByAttributeDefinition(id);
   const boundTypes = await bindingRepo.listTypesByAttributeDefinition(id);
-  if (boundTypes.length) {
-    throwInUse({
-      code: 'ATTRIBUTE_DEFINITION_IN_USE',
-      entityLabel: 'ویژگی',
-      dependencyLabel: 'نوع کالا',
-      items: boundTypes,
-    });
-  }
+  assertUnused({
+    code: 'ATTRIBUTE_DEFINITION_IN_USE',
+    entityLabel: 'ویژگی',
+    dependencyLabel: 'نوع کالا',
+    items: boundTypes,
+  });
   const usedProducts = await productRepo.listByAttributeDefinition(id);
-  if (usedProducts.length) {
-    throwInUse({
-      code: 'ATTRIBUTE_DEFINITION_IN_USE',
-      entityLabel: 'ویژگی',
-      dependencyLabel: 'کالا',
-      verb: 'استفاده',
-      items: usedProducts,
-    });
-  }
+  assertUnused({
+    code: 'ATTRIBUTE_DEFINITION_IN_USE',
+    entityLabel: 'ویژگی',
+    dependencyLabel: 'کالا',
+    verb: 'استفاده',
+    items: usedProducts,
+  });
   return withTransaction(async (client) => {
     await writeAudit({
       actorUserId, action: 'attribute_definition.delete', entityType: 'attribute_definition', entityId: id,
@@ -559,15 +554,13 @@ export async function deleteBinding(id, actorUserId) {
     existing.productTypeId,
     existing.attributeDefinitionId,
   );
-  if (usedProducts.length) {
-    throwInUse({
-      code: 'ATTRIBUTE_BINDING_IN_USE',
-      entityLabel: 'اتصال ویژگی',
-      dependencyLabel: 'کالا',
-      verb: 'استفاده',
-      items: usedProducts,
-    });
-  }
+  assertUnused({
+    code: 'ATTRIBUTE_BINDING_IN_USE',
+    entityLabel: 'اتصال ویژگی',
+    dependencyLabel: 'کالا',
+    verb: 'استفاده',
+    items: usedProducts,
+  });
   return withTransaction(async (client) => {
     await writeAudit({
       actorUserId,

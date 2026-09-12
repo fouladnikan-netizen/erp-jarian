@@ -1,19 +1,15 @@
 /**
- * Mnemonic SKU codes (DDL-24m). Supersedes the 8-digit GG-CC-TT-VV product
- * SKU of DDL-24b.
+ * String mechanics for mnemonic sku_code / Product SKU segments (DDL-24m).
  *
- * Each Group / Category / Type / Attribute Definition / Brand gets a short
- * Latin `sku_code`. Default: 2-letter suggestion from the Latin name
- * (initials of the first two significant words, or the first two letters of
- * a single long word). Collision in that item's scope → 3 leading letters,
- * then more leading letters if still taken. Operator override is always
- * allowed (Black, IPE, ST52, Sq).
+ * Policy (which attributes are identity, formula, immutability) lives in
+ * `productIdentityPolicy.js` — do not add a second generator here.
  *
- * Product SKU = `{group}-{category}-{type}-{identityValue…}` e.g.
- * `CS-HR-Black-10` or `CS-Pr-Sq-2-40-40`. Identity values are the bound
- * *required* attribute values (DDL-24p), in binding sort order — not the
- * attribute's own sku_code. Brand sku_code is stored but is not
- * part of the Product SKU.
+ * Node sku_code: 2–16 `[A-Za-z][A-Za-z0-9]*`. Default from Latin name
+ * (initials / short token). Collision → longer prefix. Operator override
+ * always allowed. Brand sku_code is stored but is not part of Product SKU.
+ *
+ * `buildProductSku` only joins already-chosen parts. Callers that decide
+ * identity must go through `allocateProductSku`.
  */
 import { appError } from '../../lib/errors.js';
 import { toAsciiDigits, isNumericAttributeType } from './normalize.js';

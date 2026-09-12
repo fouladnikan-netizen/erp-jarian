@@ -11,8 +11,8 @@ import { withTransaction } from '../db/pool.js';
 import { writeAudit, newEntityId } from '../lib/ids.js';
 import { normalizeTextValue } from '../domain/productMaster/normalize.js';
 import { allocateTaxonomyCode } from '../domain/productMaster/taxonomyCode.js';
-import { pickSkuCode, skuCodeKey } from '../domain/productMaster/skuCode.js';
-import { throwInUse } from '../domain/productMaster/deleteGuard.js';
+import { pickSkuCode, skuCodeKey } from '../domain/productMaster/productIdentityPolicy.js';
+import { assertUnused } from '../domain/productMaster/deleteGuard.js';
 import { assertPositiveUnitWeight } from '../domain/productMaster/offerSettings.js';
 import { DISPLAY_NAME_LITERALS, normalizeDisplayNameRule } from '../domain/productMaster/displayNameRule.js';
 import * as groupRepo from '../repositories/productGroupRepository.js';
@@ -217,14 +217,12 @@ export async function updateGroup(id, body, actorUserId) {
 export async function deleteGroup(id, actorUserId) {
   await getGroup(id);
   const dependents = await categoryRepo.list({ groupId: id, includeInactive: true });
-  if (dependents.length) {
-    throwInUse({
-      code: 'PRODUCT_GROUP_IN_USE',
-      entityLabel: 'گروه',
-      dependencyLabel: 'دسته',
-      items: dependents.map((row) => ({ id: row.id, name: row.name, skuCode: row.skuCode })),
-    });
-  }
+  assertUnused({
+    code: 'PRODUCT_GROUP_IN_USE',
+    entityLabel: 'گروه',
+    dependencyLabel: 'دسته',
+    items: dependents.map((row) => ({ id: row.id, name: row.name, skuCode: row.skuCode })),
+  });
   return withTransaction(async (client) => {
     await writeAudit({
       actorUserId, action: 'product_group.delete', entityType: 'product_group', entityId: id,
@@ -319,14 +317,12 @@ export async function updateCategory(id, body, actorUserId) {
 export async function deleteCategory(id, actorUserId) {
   await getCategory(id);
   const dependents = await typeRepo.list({ categoryId: id, includeInactive: true });
-  if (dependents.length) {
-    throwInUse({
-      code: 'PRODUCT_CATEGORY_IN_USE',
-      entityLabel: 'دسته',
-      dependencyLabel: 'نوع کالا',
-      items: dependents.map((row) => ({ id: row.id, name: row.name, skuCode: row.skuCode })),
-    });
-  }
+  assertUnused({
+    code: 'PRODUCT_CATEGORY_IN_USE',
+    entityLabel: 'دسته',
+    dependencyLabel: 'نوع کالا',
+    items: dependents.map((row) => ({ id: row.id, name: row.name, skuCode: row.skuCode })),
+  });
   return withTransaction(async (client) => {
     await writeAudit({
       actorUserId, action: 'product_category.delete', entityType: 'product_category', entityId: id,
@@ -436,14 +432,12 @@ export async function updateType(id, body, actorUserId) {
 export async function deleteType(id, actorUserId) {
   await getType(id);
   const dependents = await productRepo.listByProductType(id);
-  if (dependents.length) {
-    throwInUse({
-      code: 'PRODUCT_TYPE_IN_USE',
-      entityLabel: 'نوع کالا',
-      dependencyLabel: 'کالا',
-      items: dependents.map((row) => ({ id: row.id, name: row.name, sku: row.sku })),
-    });
-  }
+  assertUnused({
+    code: 'PRODUCT_TYPE_IN_USE',
+    entityLabel: 'نوع کالا',
+    dependencyLabel: 'کالا',
+    items: dependents.map((row) => ({ id: row.id, name: row.name, sku: row.sku })),
+  });
   return withTransaction(async (client) => {
     await writeAudit({
       actorUserId, action: 'product_type.delete', entityType: 'product_type', entityId: id,
