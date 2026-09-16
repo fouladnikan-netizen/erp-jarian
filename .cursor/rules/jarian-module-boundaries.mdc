@@ -24,7 +24,7 @@ Allowed:    modules/pooyesh/* → subjectEntity.port → kanoon/ofogh public
 |--------|--------------|----------------|
 | Company | Kanoon | `modules/kanoon/public` |
 | Raw Lead | Ofogh | `modules/ofogh/public` |
-| Order | Nabz | `modules/nabz/public` |
+| Order | Sales (canonical) / Nabz (product shim) | `modules/sales/public` · `modules/nabz/public` re-export |
 | Activity | Pooyesh | `interactionFacade` / `pooyesh/public` |
 | Task | Pooyesh | `taskFacade` |
 

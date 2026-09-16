@@ -12,6 +12,7 @@ import { resolveAssigneeMobile } from './proformaService';
 import { SHIPPING_FORM_NUMBER } from './shippingConfig';
 import { getCachedOrganizationIdentity, toDocumentOrganization, toShippingOrganizationSnapshot, isDocumentOrganizationPopulated } from '../../domain/organizationIdentity';
 import { legacyDocumentOrganizationFromBrand } from './documentOrganization';
+import { getDocumentChromeTagline } from '../sales/settings/documentChromeFacade.js';
 
 function buildRowFromPurchaseLine(order, line, index, preview) {
   const po = line.purchaseOrder || {};
@@ -129,7 +130,10 @@ export function buildShippingDocumentViewModel(order, carrierId, selectedRowKeys
   const carrier = getCarrierById(carrierId) || { name: '—', phone: '—', address: '—' };
   const shipping = getOrderShippingRecord(order);
   const isIssued = Boolean(shipping?.issuedAt);
-  let organization = toDocumentOrganization(getCachedOrganizationIdentity());
+  let organization = {
+    ...toDocumentOrganization(getCachedOrganizationIdentity()),
+    tagline: getDocumentChromeTagline(),
+  };
   if (isIssued) {
     organization = isDocumentOrganizationPopulated(shipping?.organizationSnapshot)
       ? shipping.organizationSnapshot
@@ -182,7 +186,10 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
   }
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
-  const organizationSnapshot = toShippingOrganizationSnapshot(getCachedOrganizationIdentity());
+  const organizationSnapshot = {
+    ...toShippingOrganizationSnapshot(getCachedOrganizationIdentity()),
+    tagline: getDocumentChromeTagline(),
+  };
   const shippingVoucher = {
     carrierId,
     voucherNumber: viewModel.voucherNumber,

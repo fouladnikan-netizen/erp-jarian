@@ -1,5 +1,6 @@
 /**
- * @deprecated Compatibility shim — canonical is `src/modules/sales/public`.
+ * Sales public barrel — Order query contracts for other modules.
+ * Product UI remains under `src/modules/nabz` (re-export shims).
  */
 export {
   listOrders,
@@ -11,4 +12,4 @@ export {
   useOrdersForCompany,
   useCreateOrderDirect,
   ordersFacade,
-} from '../../sales/public/index.js';
+} from './ordersFacade.js';

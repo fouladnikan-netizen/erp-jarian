@@ -9,7 +9,7 @@ import {
   getCachedOrganizationIdentity,
   toSooratBarOrganizationSnapshot,
 } from '../../domain/organizationIdentity';
-import { DOCUMENT_CHROME_TAGLINE } from '../../domain/settings/documentChrome.js';
+import { getDocumentChromeTagline } from '../sales/settings/documentChromeFacade.js';
 
 /** Two-phase dispatch states inside one table */
 export const LOAD_ITEM_STATUS = {
@@ -581,7 +581,7 @@ function applyScaleWeightUpdate(order, {
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
   const snapshot = current.organizationSnapshot
     || (markDispatched
-      ? toSooratBarOrganizationSnapshot(getCachedOrganizationIdentity(), DOCUMENT_CHROME_TAGLINE)
+      ? toSooratBarOrganizationSnapshot(getCachedOrganizationIdentity(), getDocumentChromeTagline())
       : null);
   const lineStates = getResolvedLineStates(order);
   lineStates[id] = {

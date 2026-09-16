@@ -1,7 +1,7 @@
-# جریان — معماری قانون‌مند (Modular Monolith, Phase 2.1)
+# جریان — معماری قانون‌مند (Modular Monolith, Phase 3)
 
-> **وضعیت:** فاز ۲.۱ — ۱۴۰۵/۰۶/۲۱ (2026-09-12). روی فاز ۲ سوار است؛ قانون فاز ۱ را برنمی‌گرداند.  
-> **این سند بازنویسی Nest/TS نیست.** مرزهای backend را *واقعی* می‌کند؛ URL عمومی عوض نمی‌شود.  
+> **وضعیت:** فاز ۳ — ۱۴۰۵/۰۶/۲۵ (2026-09-16). روی فاز ۲.۱ سوار است؛ قانون فاز ۱ را برنمی‌گرداند.  
+> **این سند بازنویسی Nest/TS نیست.** مرزهای frontend فروش را با backend `sales` هم‌نام می‌کند؛ URL عمومی عوض نمی‌شود.  
 > **مرتبط:** [architecture/README.md](./architecture/README.md) · [architecture/DOMAIN_DECISION_LOG.md](./architecture/DOMAIN_DECISION_LOG.md) · [architecture/ENTITY_DELIVERY_PIPELINE.md](./architecture/ENTITY_DELIVERY_PIPELINE.md) · [architecture/ENTITY_OWNERSHIP.md](./architecture/ENTITY_OWNERSHIP.md) · [architecture/BACKEND_FOUNDATION.md](./architecture/BACKEND_FOUNDATION.md) · [architecture/SSOT.md](./architecture/SSOT.md)
 
 Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز ممنوع است.**
@@ -41,14 +41,14 @@ Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز م
 | دامنه | قابلیت | مالک محصول | Frontend (هنوز فارسی) | Backend Phase 2 |
 |-------|---------|------------|------------------------|-----------------|
 | **catalog** | taxonomy + schema + UOM + Brand + Product/SKU | شیرازه / ویترین | `src/modules/shirazeh/productMaster`, `vitrin` | **کامل** — `backend/src/modules/catalog/{domain,application,infrastructure,presentation}` |
-| **sales** | سفارش، پیش‌فاکتور، درگاه، تدارک، رهسپار، سرانجام | نبض | `src/modules/nabz` | **کامل برای Order** — `modules/sales/*` |
+| **sales** | سفارش، پیش‌فاکتور، درگاه، تدارک، رهسپار، سرانجام | نبض | `src/modules/sales` (canonical) · `src/modules/nabz` shim | **کامل برای Order** — `modules/sales/*` |
 | **crm** | شرکت / تماس / تأمین + سرنخ / چرخه | کانون + افق | `kanoon`, `ofogh` | **کامل** — `modules/crm/{domain,application,infrastructure,presentation,public}` |
 | **tasks** | فعالیت و وظیفه | پویش | `src/modules/pooyesh` | **کامل** — `modules/tasks/{application,infrastructure,presentation,public}` |
 | **correspondence** | دبیرخانه | گاه‌شمار | `src/modules/gahshomar` | **دامنه منتقل شد** — `modules/correspondence` |
 | **settings** | هویت سازمان، دلایل لغو، chrome اسناد، RBAC/کاربر | شیرازه | `src/modules/shirazeh` | **دامنه هویت + registry** — `modules/settings` |
 | **shared** | CORS/JWT، jsonRecord، قرنطینه AI | — | — | `backend/src/modules/shared` |
-| **marketing** | کمپین | موج | `src/modules/mowj` | عمدتاً FE — Phase 3+ |
-| **analytics** | داشبورد | آینه | `src/modules/ayeneh` | خواندن از قرارداد عمومی — Phase 3+ |
+| **marketing** | کمپین | موج | `src/modules/mowj` | عمدتاً FE — Phase 4 |
+| **analytics** | داشبورد | آینه | `src/modules/ayeneh` | خواندن از قرارداد عمومی — Phase 4 |
 
 `src/modules/registry.js` شناسهٔ محصول را نگه می‌دارد. دامنهٔ انگلیسی **نام پوشهٔ backend** است، نه نام منوی کاربر.
 
@@ -60,7 +60,7 @@ backend/src/
     catalog/           Product Master (Phase 2)
     sales/             Order (Phase 2) + companyOrderReferences port
     crm/               Company / Contact / Lead + subjectReferences + lifecycle port
-    correspondence/    domain/correspondence (application still Phase 3)
+    correspondence/    domain/correspondence (application still Phase 4)
     tasks/             Activity + Task (Phase 2.1) + companyActivityReferences port
     settings/          organizationIdentity + reasonRegistry + documentChrome
     shared/            schemas, CORS/JWT, AI quarantine
@@ -88,6 +88,10 @@ URL عمومی بدون تغییر: `/api/v1/products`, `/orders`, `/companies`,
 | `backend/src/services/orderService.js` | `modules/sales/application/orderService.js` |
 | `backend/src/repositories/orderRepository.js` | `modules/sales/infrastructure/orderRepository.js` |
 | `backend/src/routes/orders.js` | `modules/sales/presentation/orders.js` |
+| `src/modules/nabz/store/useNabzStore.ts` | `src/modules/sales/store/useSalesStore.ts` |
+| `src/modules/nabz/public/*` | `src/modules/sales/public/*` |
+| `src/modules/nabz/documentOrganization.js` | `src/modules/sales/documentOrganization.js` |
+| `src/modules/nabz/NabzOrdersContext.jsx` | `src/modules/sales/SalesOrdersContext.jsx` |
 | `backend/src/domain/companyIdentity/*` | `modules/crm/domain/companyIdentity/*` |
 | `backend/src/domain/customerLifecycle/*` | `modules/crm/domain/customerLifecycle/*` |
 | `backend/src/domain/rawLeadGate.js` | `modules/crm/domain/rawLeadGate.js` |
@@ -109,7 +113,7 @@ Cross-module امروز:
 - crm → sales از `modules/sales/public/companyOrderReferences.js` (حقایق سفارش برای چرخه).
 - crm → tasks از `modules/tasks/public/companyActivityReferences.js` (فعالیت‌های شرکت برای چرخه).
 - tasks → crm از `modules/crm/public/subjectReferences.js` (صحت مرجع COMPANY / RAW_LEAD).
-- Phase 3 این پورت‌های lookup را با رویداد / read-model جایگزین می‌کند.
+- Phase 4 این پورت‌های lookup را با رویداد / read-model جایگزین می‌کند.
 
 ---
 
@@ -149,15 +153,15 @@ Cross-module امروز:
 |--------|------|-------------|
 | نام حقوقی، شناسه ملی، نشانی، لوگو | `GET/PUT /api/v1/organization-identity` · `modules/settings/domain/organizationIdentity` | `organizationIdentityFacade` |
 | شعار بازاریابی (tagline) | `modules/settings/domain/documentChrome.js` · `GET /api/v1/settings/document-chrome` | `DOCUMENT_CHROME_TAGLINE` |
-| `COMPANY_BRAND` در نبض | **منسوخ** — view سازگاری برای اسناد تاریخی بدون snapshot | `src/modules/nabz/proformaConfig.js` |
+| `COMPANY_BRAND` در نبض | **منسوخ** — view سازگاری برای اسناد تاریخی بدون snapshot | `src/modules/sales/settings/legacyCompanyBrand.js` (nabz `proformaConfig` re-export) |
 
-اسناد جدید باید از Organization Identity + tagline تنظیمات بخوانند. `COMPANY_BRAND` فقط reprint تاریخی است.
+اسناد جدید باید از Organization Identity + tagline تنظیمات بخوانند. `COMPANY_BRAND` فقط reprint تاریخی است. UI زنده tagline را از `GET /api/v1/settings/document-chrome` (`documentChromeFacade`) می‌خواند، نه از `COMPANY_BRAND`.
 
 ### دلایل لغو / رد
 
 | مفهوم | SSOT | آینه |
 |--------|------|------|
-| لغو درگاه | `modules/settings/domain/reasonRegistry.js` (`GATEWAY_CANCEL`) | `src/domain/settings/reasonRegistry.js` → `gatewayDecisionConfig.js` |
+| لغو درگاه | `modules/settings/domain/reasonRegistry.js` (`GATEWAY_CANCEL`) | `src/domain/settings/reasonRegistry.js` → sales `reasonRegistryFacade` (API cache) · nabz `gatewayDecisionConfig` shim |
 | رد سرنخ | همان registry (`LEAD_REJECT`) — کاتالوگ اولیه؛ متن آزاد lead archive هنوز پذیرفته می‌شود | Phase 2.1: الزام کد |
 
 `GET /api/v1/settings/reasons?scope=GATEWAY_CANCEL`
@@ -184,41 +188,41 @@ Cross-module امروز:
 
 ---
 
-## ۷. آنچه فاز ۲.۱ انجام داد + بک‌لاگ Phase 3 / 4
+## ۷. آنچه فاز ۳ انجام داد + بک‌لاگ Phase 4
 
-### Phase 2.1 — انجام شد (بدون تغییر رفتار / URL)
+### Phase 2.1 — انجام شد (مرجع)
 
-- `companyService` / `contactService` / `lead*` / `identityMatching` / `companyEnrichment` / `contactOrchestration` / `customerLifecycle` به `modules/crm/{application,infrastructure,presentation}`.
-- `taskService` / `activity*` به `modules/tasks/{application,infrastructure,presentation}`.
-- پورت‌های عمومی: `crm/public/subjectReferences`, `crm/public/customerLifecycle`, `sales/public/companyOrderReferences`, `tasks/public/companyActivityReferences`.
-- Shim مسیرهای قدیمی باقی است؛ تست‌ها و `backend/scripts/recompute-customer-lifecycle.js` همان import را دارند.
+- CRM / tasks application+infrastructure+presentation + پورت‌های public.
 - فرمول SKU / `productIdentityPolicy` بدون تغییر (DDL-24m).
 
-### هنوز معوق (عمداً در این PR نیست)
+### Phase 3 — انجام شد (بدون تغییر URL / فرمول SKU)
 
-- انتقال `correspondence*` application/routes به `modules/correspondence`.
-- انتقال `user` / `rbac` / `persona` / `organization` (درخت) / `auth` به `modules/settings` یا `shared` (auth cross-cutting).
-- الزام کد `LEAD_REJECT` روی archive سرنخ.
-- حذف تدریجی خواندن `COMPANY_BRAND` از UI زنده.
-- جابه‌جایی پوشهٔ frontend (`nabz` → `sales`) پشت facade — پرریسک؛ فعلاً نه.
+- ماژول frontend canonical فروش: `src/modules/sales` (store، public facade، document chrome، reason registry، documentOrganization).
+- `src/modules/nabz` برای همان سطح‌ها **re-export shim** است (صفحات/کامپوننت‌های نبض جابه‌جا نشدند).
+- یک نمونهٔ Zustand: `useSalesStore` ≡ `useNabzStore`. `NabzOrdersContext` فقط facade است؛ SoR سفارش = `GET/PATCH /api/v1/orders`.
+- جزئیات سفارش اگر در کش نباشد از `OrderRepository.getOrderById` پر می‌شود (بدون dual-source لیست seed).
+- chrome زنده: `GET /api/v1/settings/document-chrome` (`documentChromeFacade`) + Organization Identity. `COMPANY_BRAND` فقط reprint تاریخی.
+- علت لغو زنده: `GET /api/v1/settings/reasons?scope=GATEWAY_CANCEL` (`reasonRegistryFacade`). لیست دامنه فقط fallback / mock است.
+- hydrate بعد از لاگین chrome + reasons را هم بار می‌کند.
 
-### Phase 3 — مرز سخت بین‌ماژول
+### Phase 4 — بک‌لاگ باقی‌مانده
 
 - رویداد داخلی به‌جای `orderProductReferences` / `companyOrderReferences` و JOIN/اسکن `orders.payload.items`.
 - پورت CRM برای `gregorianToJalali` / national-id gates به‌جای import دامنهٔ خام.
 - API جدا برای موج (marketing).
 - Ayeneh فقط از قراردادهای public می‌خواند.
-
-### Phase 4
-
-- Nest/TS فقط *بعد از* تثبیت مرزها — نه به‌جای آن.
+- انتقال `correspondence*` application/routes به `modules/correspondence`.
+- انتقال `user` / `rbac` / `persona` / `organization` (درخت) / `auth` به `modules/settings` یا `shared`.
+- الزام کد `LEAD_REJECT` روی archive سرنخ.
+- جابه‌جایی کامل صفحات UI `nabz/` به `sales/` (هنوز پرریسک؛ shim کافی است).
 - ادغام مدل وضعیت سفارش UI ↔ دامنه (هنوز dual-runtime است).
+- Nest/TS فقط *بعد از* تثبیت مرزها — نه به‌جای آن.
 
 ---
 
 ## ۸. آنچه این فاز انجام نمی‌دهد
 
-- جابه‌جایی `src/modules/nabz` به `sales/` یا شکستن Express به چند پکیج  
+- جابه‌جایی تمام صفحات/کامپوننت‌های `src/modules/nabz` یا شکستن Express به چند پکیج  
 - تبدیل کل backend به Nest/TypeScript  
 - حذف `catalogData.js` / `productCode.js`  
 - تغییر فرمول SKUهای صادرشده  

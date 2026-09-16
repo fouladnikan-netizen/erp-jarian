@@ -1,5 +1,5 @@
 import logo from '../../../../../assets/images/nikan2.jpg';
-import { DOCUMENT_CHROME_TAGLINE } from '../../../../../domain/settings/documentChrome.js';
+import { resolveDocumentTagline } from '../../../../sales/settings/documentChromeFacade.js';
 import { getShippingRecipient } from '../../../shippingService';
 import { getTodayJalali, getNowTimeFa } from '../../../dateUtils';
 import { toDisplayOrderCode } from '../../../orderCode';
@@ -33,7 +33,7 @@ export default function PrintableSooratBar({
 }) {
   const org = resolveSooratBarOrganization(meta.organizationSnapshot);
   const tradeName = org.tradeName;
-  const tagline = org.tagline || DOCUMENT_CHROME_TAGLINE;
+  const tagline = org.tagline || resolveDocumentTagline(org);
   const recipient = getShippingRecipient(order || {});
   const buyerName = order?.customer || '—';
   const consigneeName = recipient?.name || '—';

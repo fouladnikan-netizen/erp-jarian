@@ -1,6 +1,6 @@
 import headerBrand from '../../../assets/images/nikan-proforma-header.jpg';
 import { toPersianDigits, toPersianInvoiceText } from '../dateUtils';
-import { DOCUMENT_CHROME_TAGLINE } from '../../../domain/settings/documentChrome.js';
+import { useDocumentChromeTagline } from '../../sales/settings/documentChromeFacade.js';
 
 function orgFromViewModel(viewModel) {
   return viewModel?.organization && typeof viewModel.organization === 'object'
@@ -17,10 +17,13 @@ function orgFromViewModel(viewModel) {
  * @param {string} [viewModel.documentNumber] — پیش‌فرض: orderCode
  */
 export function InvoiceDocBrandHeader({ viewModel }) {
+  const liveTagline = useDocumentChromeTagline();
   const numberLabel = viewModel.documentNumberLabel || 'شماره:';
   const numberValue = viewModel.documentNumber ?? viewModel.orderCode;
   const isOfficial = viewModel.isOfficial !== false;
   const org = orgFromViewModel(viewModel);
+  const storedTagline = typeof org.tagline === 'string' ? org.tagline.trim() : '';
+  const tagline = storedTagline || liveTagline;
 
   return (
     <header className={`invoice-doc__header${isOfficial ? '' : ' invoice-doc__header--unofficial'}`}>
@@ -33,7 +36,7 @@ export function InvoiceDocBrandHeader({ viewModel }) {
               className="invoice-doc__brand-mark-img"
             />
           </div>
-          <p className="invoice-doc__tagline">{DOCUMENT_CHROME_TAGLINE}</p>
+          <p className="invoice-doc__tagline">{tagline}</p>
           <div className="invoice-doc__company-ids">
             <span>شناسه ملی: {toPersianInvoiceText(org.nationalId)}</span>
             <span>شماره ثبت: {toPersianInvoiceText(org.registrationNumber)}</span>
