@@ -13,6 +13,7 @@ export {
   buildProductIdentityKey,
 } from './domain/productMaster/productIdentityPolicy.js';
 export { assertUnused } from './domain/productMaster/deleteGuard.js';
+export { findProductOrderUsage } from './application/productOrderUsageQuery.js';
 export { default as productRoutes } from './presentation/products.js';
 export { default as brandRoutes } from './presentation/brands.js';
 export { default as uomRoutes } from './presentation/uom.js';

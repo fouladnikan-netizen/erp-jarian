@@ -3,7 +3,7 @@ import { fromZodError, notFoundError, conflictError, validationError } from '../
 import { newEntityId, writeAudit } from '../../../lib/ids.js';
 import * as orderRepo from '../infrastructure/orderRepository.js';
 import { jsonRecord } from '../../shared/schemas/jsonRecord.js';
-import { assertOrderPartyIsCompany } from '../../crm/domain/rawLeadGate.js';
+import { assertOrderPartyIsCompany } from '../../crm/public/orderParty.js';
 import {
   assertOrderLifecycleUpdate,
   assertOrderArchiveAllowed,
@@ -14,8 +14,9 @@ import { findCompanyById } from '../../crm/public/subjectReferences.js';
 import { assertLegalCustomerHasNationalId } from '../domain/order/nationalIdOrderGate.js';
 import { assertCompanyAllowedForOrder } from '../domain/order/supplierOrderGate.js';
 import { assertOrderTaxPolicy } from '../domain/order/taxPolicy.js';
-import { recomputeCustomerLifecycle } from '../../crm/public/customerLifecycle.js';
 import { ORDER_STATUS } from '../domain/order/orderRules.js';
+import { collectOrderLineProductRefs } from '../domain/order/orderLineProductRefs.js';
+import { EVENT, PRODUCER, notifyDomainEvent } from '../../shared/events/index.js';
 
 /**
  * Fat Order document (entity-cards/order.yaml). Known keys are typed;
@@ -115,18 +116,23 @@ export async function createOrder(body, actorUserId) {
     }, client);
   });
 
-  if (data.companyId) {
-    try {
-      await recomputeCustomerLifecycle(data.companyId, {
-        actorUserId,
-        trigger: 'order_create',
-      });
-    } catch {
-      /* lifecycle must not fail order create after persist */
-    }
-  }
-
-  return getOrder(id);
+  const created = await getOrder(id);
+  await notifyDomainEvent({
+    name: EVENT.SALES_ORDER_COMMITTED,
+    producer: PRODUCER.SALES,
+    payload: {
+      orderId: created.id,
+      orderCode: created.code,
+      companyId: created.companyId || null,
+      status: created.status || null,
+      previousStatus: null,
+      becameSuccess: false,
+      items: collectOrderLineProductRefs(created.payload),
+      actorUserId,
+      trigger: 'order_create',
+    },
+  });
+  return created;
 }
 
 export async function updateOrder(id, body, actorUserId) {
@@ -222,19 +228,21 @@ export async function updateOrder(id, body, actorUserId) {
   });
 
   const updated = await getOrder(row.id);
-  const companyId = updated?.companyId || row.company_id;
-  // Successful Purchase Event = becoming SUCCESS (DDL-18B; CLOSED does not re-count)
-  if (companyId && becameSuccess) {
-    try {
-      await recomputeCustomerLifecycle(companyId, {
-        actorUserId,
-        trigger: 'order_successful_purchase',
-      });
-    } catch {
-      /* lifecycle must not fail order update after persist */
-    }
-  }
-
+  await notifyDomainEvent({
+    name: EVENT.SALES_ORDER_COMMITTED,
+    producer: PRODUCER.SALES,
+    payload: {
+      orderId: updated.id,
+      orderCode: updated.code,
+      companyId: updated.companyId || row.company_id || null,
+      status: updated.status || null,
+      previousStatus,
+      becameSuccess,
+      items: collectOrderLineProductRefs(updated.payload),
+      actorUserId,
+      trigger: 'order_update',
+    },
+  });
   return updated;
 }
 
@@ -262,6 +270,18 @@ export async function archiveOrder(id, actorUserId) {
         version: row.version,
       },
     }, client);
+  });
+
+  await notifyDomainEvent({
+    name: EVENT.SALES_ORDER_ARCHIVED,
+    producer: PRODUCER.SALES,
+    payload: {
+      orderId: row.id,
+      orderCode: row.code,
+      companyId: row.company_id || null,
+      items: collectOrderLineProductRefs(row.payload),
+      actorUserId,
+    },
   });
 
   return { id: row.id, archived: true };

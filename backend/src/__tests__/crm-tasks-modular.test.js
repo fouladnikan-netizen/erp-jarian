@@ -88,11 +88,11 @@ describe('Phase 2.1 CRM + tasks modular move', () => {
     assert.doesNotMatch(src, /activityRepository\.js|orderRepository\.js/);
   });
 
-  it('forbids sales order writes from importing CRM repositories', () => {
+  it('forbids sales order writes from importing CRM repositories or lifecycle application', () => {
     const src = readSrc('modules/sales/application/orderService.js');
     assert.match(src, /crm\/public\/subjectReferences\.js/);
-    assert.match(src, /crm\/public\/customerLifecycle\.js/);
-    assert.doesNotMatch(src, /companyRepository\.js|customerLifecycleService\.js/);
+    assert.match(src, /shared\/events\/index\.js/);
+    assert.doesNotMatch(src, /companyRepository\.js|customerLifecycleService\.js|customerLifecycle\.js/);
   });
 
   it('keeps old paths as shim-only re-exports', () => {

@@ -6,6 +6,7 @@ import { errorHandler, notFound } from './middleware/errors.js';
 import { requestContext } from './middleware/requestContext.js';
 import { createCorsOptions } from './modules/shared/http/corsOptions.js';
 import { mountLegacyAiGateway } from './modules/shared/ai/legacyAiGateway.js';
+import { ensureDomainEventHandlers } from './modules/shared/events/index.js';
 import authRoutes from './routes/auth.js';
 import { default as companyRoutes } from './modules/crm/presentation/companies.js';
 import { default as orderRoutes } from './modules/sales/presentation/orders.js';
@@ -33,6 +34,13 @@ import { default as settingsReasonsRoutes } from './modules/settings/presentatio
 
 export function createApp() {
   const app = express();
+  ensureDomainEventHandlers().catch((err) => {
+    console.error(JSON.stringify({
+      level: 'error',
+      msg: 'domain_event_handlers_register_failed',
+      message: err?.message || String(err),
+    }));
+  });
 
   app.use(cors(createCorsOptions({
     nodeEnv: config.nodeEnv,

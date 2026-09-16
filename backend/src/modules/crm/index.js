@@ -5,7 +5,8 @@
  * Public HTTP paths unchanged: /api/v1/companies, contacts, leads,
  * lead-pipelines, identity.
  */
-export { assertOrderPartyIsCompany, ENTITY_REF_TYPE } from './domain/rawLeadGate.js';
+export { assertOrderPartyIsCompany, ENTITY_REF_TYPE } from './public/orderParty.js';
+export { gregorianToJalali } from './public/calendar.js';
 export { findCompanyById, findLeadById, companyExistsActive } from './public/subjectReferences.js';
 export { recomputeCustomerLifecycle } from './public/customerLifecycle.js';
 export { default as companyRoutes } from './presentation/companies.js';

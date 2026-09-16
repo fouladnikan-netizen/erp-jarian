@@ -36,7 +36,7 @@ import * as groupRepo from '../infrastructure/productGroupRepository.js';
 import * as brandRepo from '../infrastructure/brandRepository.js';
 import * as uomRepo from '../infrastructure/uomRepository.js';
 import * as attrRepo from '../infrastructure/attributeDefinitionRepository.js';
-import { findOrdersReferencingProduct } from '../../sales/public/orderProductReferences.js';
+import { findProductOrderUsage } from './productOrderUsageQuery.js';
 import * as attributeDefinitionService from './attributeDefinitionService.js';
 import {
   attributeValueRecord,
@@ -731,7 +731,7 @@ export async function setLifecycle(id, status, actorUserId) {
 
 export async function deleteProduct(id, actorUserId) {
   const product = await getProduct(id);
-  const orders = await findOrdersReferencingProduct({ productId: id, sku: product.sku });
+  const orders = await findProductOrderUsage({ productId: id, sku: product.sku });
   assertUnused({
     code: 'PRODUCT_IN_USE',
     entityLabel: 'کالا',
