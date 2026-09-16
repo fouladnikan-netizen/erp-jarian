@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  GATEWAY_CANCEL_REASONS,
   GATEWAY_DECISION_OUTCOMES,
   getCancelReasonLabel,
   getEmptyPaymentTerms,
+  useGatewayCancelReasons,
   validatePaymentTerms,
 } from '../../../gatewayDecisionConfig';
 import {
@@ -58,11 +58,12 @@ export default function GatewayDecisionPanel({
   onSubmitFailed,
 }) {
   const { alert } = useJarianNotice();
+  const cancelReasons = useGatewayCancelReasons();
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const [paymentTerms, setPaymentTerms] = useState(() => getEmptyPaymentTerms());
   const [financeNotes, setFinanceNotes] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState(() => resolveDeliveryInfoPrefill(order));
-  const [cancelReason, setCancelReason] = useState(GATEWAY_CANCEL_REASONS[0].value);
+  const [cancelReason, setCancelReason] = useState(() => cancelReasons[0]?.value || 'other');
   const [cancelNotes, setCancelNotes] = useState('');
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
   const [celebrationOpen, setCelebrationOpen] = useState(false);
@@ -126,10 +127,10 @@ export default function GatewayDecisionPanel({
     setCancelNotes('');
     setPaymentTerms(getEmptyPaymentTerms());
     setDeliveryInfo(resolveDeliveryInfoPrefill(order));
-    setCancelReason(GATEWAY_CANCEL_REASONS[0].value);
+    setCancelReason(cancelReasons[0]?.value || 'other');
   };
 
-  const cancelReasonOptions = GATEWAY_CANCEL_REASONS.map((reason) => ({
+  const cancelReasonOptions = cancelReasons.map((reason) => ({
     value: reason.value,
     label: reason.label,
   }));

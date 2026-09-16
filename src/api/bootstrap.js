@@ -1,22 +1,35 @@
 import { useMockApi } from './useMockApi';
 import { useContactsStore } from '../stores/useContactsStore';
-import { useNabzStore } from '../modules/nabz/store/useNabzStore';
+import { useSalesStore } from '../modules/sales/store/useSalesStore';
 import { useLeadsStore } from '../stores/useLeadsStore';
 import { loadOrganizationIdentity } from '../domain/organizationIdentity';
+import { loadDocumentChrome } from '../modules/sales/settings/documentChromeFacade.js';
+import { loadGatewayCancelReasons } from '../modules/sales/settings/reasonRegistryFacade.js';
 
-/** Load Company + Order + Lead aggregates from API after login */
+async function hydrateSettingsSsots() {
+  await Promise.all([
+    loadDocumentChrome({ force: true }),
+    loadGatewayCancelReasons({ force: true }),
+  ]);
+}
+
+/** Load Company + Order + Lead aggregates + settings chrome/reasons from API after login */
 export async function hydrateErpData() {
   if (useMockApi()) {
-    await useNabzStore.getState().fetchOrders();
-    await loadOrganizationIdentity({ force: true });
+    await Promise.all([
+      useSalesStore.getState().fetchOrders(),
+      loadOrganizationIdentity({ force: true }),
+      hydrateSettingsSsots(),
+    ]);
     return;
   }
 
   await Promise.all([
     useContactsStore.getState().fetchContacts(),
-    useNabzStore.getState().fetchOrders(),
+    useSalesStore.getState().fetchOrders(),
     useLeadsStore.getState().fetchLeads(),
     loadOrganizationIdentity({ force: true }),
+    hydrateSettingsSsots(),
   ]);
 }
 

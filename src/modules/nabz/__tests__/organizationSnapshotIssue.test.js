@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, afterEach } from 'vitest';
 import { setCachedOrganizationIdentity } from '../../../domain/organizationIdentity';
+import { DOCUMENT_CHROME_TAGLINE } from '../../../domain/settings/documentChrome.js';
+import { setCachedDocumentChrome } from '../../sales/settings/documentChromeFacade.js';
 import { issueShippingVoucher, buildShippingDocumentViewModel } from '../shippingService.js';
 import {
   registerItemScaleWeight,
@@ -32,6 +34,10 @@ function purchasedOrder(extra = {}) {
     ...extra,
   };
 }
+
+afterEach(() => {
+  setCachedDocumentChrome({ tagline: DOCUMENT_CHROME_TAGLINE });
+});
 
 describe('issueShippingVoucher organization snapshot', () => {
   it('freezes identity at issue and ignores later live changes', () => {

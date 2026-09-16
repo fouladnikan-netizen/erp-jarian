@@ -12,21 +12,31 @@ const SRC = join(ROOT, 'src');
 const STORE_PATTERNS = [
   { re: /useContactsStore/, label: 'useContactsStore' },
   { re: /useLeadsStore/, label: 'useLeadsStore' },
+  { re: /useSalesStore/, label: 'useSalesStore' },
   { re: /useNabzStore/, label: 'useNabzStore' },
   { re: /useNabzOrders/, label: 'useNabzOrders' },
+  { re: /useSalesOrders/, label: 'useSalesOrders' },
   { re: /useActivitiesStore/, label: 'useActivitiesStore' },
   { re: /useTasksStore/, label: 'useTasksStore' },
 ];
 
-const MODULES = ['kanoon', 'ofogh', 'nabz', 'pooyesh', 'mowj', 'gahshomar'];
+const MODULES = ['kanoon', 'ofogh', 'nabz', 'sales', 'pooyesh', 'mowj', 'gahshomar'];
+
+/** nabz (product) and sales (canonical FE) are the same Order bounded context. */
+const SAME_CONTEXT = {
+  nabz: 'sales',
+  sales: 'nabz',
+};
 
 /** Owner module may import its own store (via public facade or internal). */
 function ownerForStore(label) {
   const map = {
     useContactsStore: 'kanoon',
     useLeadsStore: 'ofogh',
+    useSalesStore: 'sales',
     useNabzStore: 'nabz',
     useNabzOrders: 'nabz',
+    useSalesOrders: 'sales',
     useActivitiesStore: 'pooyesh',
     useTasksStore: 'pooyesh',
   };
@@ -38,6 +48,7 @@ const ALLOWLIST = [
   /\/public\//,
   /\/store\/useContactsStore/,
   /\/store\/useLeadsStore/,
+  /\/store\/useSalesStore/,
   /\/store\/useNabzStore/,
   /\/store\/useActivitiesStore/,
   /\/store\/useTasksStore/,
@@ -50,6 +61,7 @@ const ALLOWLIST = [
   /\/interactionFacade/,
   /\/taskFacade/,
   /\/NabzOrdersContext/,
+  /\/SalesOrdersContext/,
   /\/legalInfoService/,
   /\/kanoon\/store\//,
   /\/__tests__\//,
@@ -101,7 +113,7 @@ for (const file of walk(SRC)) {
   for (const { label } of STORE_PATTERNS) {
     if (!hasStoreImport(content, label)) continue;
     const owner = ownerForStore(label);
-    if (owner === fromModule) continue;
+    if (owner === fromModule || SAME_CONTEXT[fromModule] === owner) continue;
     violations.push({
       file: relative(ROOT, file),
       from: fromModule,

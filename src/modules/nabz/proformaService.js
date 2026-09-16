@@ -5,6 +5,7 @@ import { getTodayJalali, getNowTimeFa, toPersianDigits } from './dateUtils';
 import { formatAmountRialWords } from './numberToPersianWords';
 import { DEFAULT_PROFORMA_TERMS } from './proformaConfig';
 import { getCachedOrganizationIdentity, toDocumentOrganization } from '../../domain/organizationIdentity';
+import { getDocumentChromeTagline } from '../sales/settings/documentChromeFacade.js';
 import { getCurrentUser } from './constants';
 import { ORDER_TABS, STAGE_KAVOSH_ID, getStageLabel } from './config';
 import { getEffectiveStageId } from './orderStageService';
@@ -169,7 +170,10 @@ export function buildProformaViewModel(order, options = {}) {
     vatAmount: isOfficial ? preview.vatAmount : 0,
     grandTotal: preview.orderTotal,
     grandTotalWords: formatAmountRialWords(preview.orderTotal),
-    organization: toDocumentOrganization(getCachedOrganizationIdentity()),
+    organization: {
+      ...toDocumentOrganization(getCachedOrganizationIdentity()),
+      tagline: getDocumentChromeTagline(),
+    },
   };
 }
 

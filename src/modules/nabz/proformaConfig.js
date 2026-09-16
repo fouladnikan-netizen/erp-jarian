@@ -1,24 +1,5 @@
-import {
-  DOCUMENT_CHROME_TAGLINE,
-  LEGACY_DOCUMENT_ORGANIZATION,
-} from '../../domain/settings/documentChrome.js';
-
-/**
- * @deprecated Compatibility view — not SSOT.
- * Legal fields: Organization Identity API (`organizationIdentityFacade`).
- * Tagline: settings `documentChrome`.
- * TODO(SSOT): remove remaining COMPANY_BRAND reads; use facade + DOCUMENT_CHROME_TAGLINE.
- */
-export const COMPANY_BRAND = {
-  name: LEGACY_DOCUMENT_ORGANIZATION.tradeName,
-  tagline: DOCUMENT_CHROME_TAGLINE,
-  nationalId: LEGACY_DOCUMENT_ORGANIZATION.nationalId,
-  registrationNumber: LEGACY_DOCUMENT_ORGANIZATION.registrationNumber,
-  website: LEGACY_DOCUMENT_ORGANIZATION.website,
-  phone: LEGACY_DOCUMENT_ORGANIZATION.phone,
-  postalCode: LEGACY_DOCUMENT_ORGANIZATION.postalCode,
-  address: LEGACY_DOCUMENT_ORGANIZATION.officialAddress,
-};
+/** @deprecated Historical reprint only — live chrome uses sales documentChromeFacade + Organization Identity. */
+export { COMPANY_BRAND } from '../sales/settings/legacyCompanyBrand.js';
 
 /** Official operating-company bank accounts shown on Proforma (multi-account; not Identity SSOT). */
 export const PROFORMA_BANK_ACCOUNTS = [

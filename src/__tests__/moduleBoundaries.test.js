@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { getCompany, listCompanies } from '../modules/kanoon/public/index.js';
 import { getOrder, listOrdersForCompany } from '../modules/nabz/public/index.js';
+import { getOrder as salesGetOrder } from '../modules/sales/public/index.js';
 import { getLead, resolveLeadReference } from '../modules/ofogh/public/index.js';
 import { resolveSubjectEntity } from '../modules/pooyesh/ports/subjectEntity.port.js';
 import { getCompanyTimeline } from '../modules/pooyesh/timeline/companyTimelineFacade.js';
@@ -22,6 +23,7 @@ describe('module public facades', () => {
     expect(typeof getOrder).toBe('function');
     expect(typeof listOrdersForCompany).toBe('function');
     expect(Array.isArray(listOrdersForCompany('none'))).toBe(true);
+    expect(salesGetOrder).toBe(getOrder);
   });
 
   it('Ofogh lead facade exports', () => {

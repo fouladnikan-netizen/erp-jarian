@@ -74,8 +74,10 @@ export function validatePaymentTerms(terms) {
   return null;
 }
 
-/** UI view of settings SSOT — do not add a second cancel-reason list. */
+/** Domain fallback list — live dropdown uses sales reasonRegistryFacade (settings API). */
+export { GATEWAY_CANCEL_REASONS } from '../../domain/settings/reasonRegistry.js';
 export {
-  GATEWAY_CANCEL_REASONS,
   getCancelReasonLabel,
-} from '../../domain/settings/reasonRegistry.js';
+  listGatewayCancelReasons,
+  useGatewayCancelReasons,
+} from '../sales/settings/reasonRegistryFacade.js';
