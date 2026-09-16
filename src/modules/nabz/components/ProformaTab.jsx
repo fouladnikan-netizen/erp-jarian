@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   JarianMoney,
   JarianMoneyFooter,
@@ -6,6 +6,13 @@ import {
 } from '../../../components/jarian/JarianPresentation';
 import { buildProformaViewModel } from '../proformaService';
 import { DEFAULT_PROFORMA_TERMS } from '../proformaConfig';
+import {
+  MOCK_DOCUMENT_TRACKING,
+  createWhatsAppMessage,
+} from '../documentTracking';
+import DocumentTrackingPanel from './DocumentTrackingPanel';
+import { useOrganizationIdentity } from '../../../domain/organizationIdentity';
+import { useJarianNotice } from '../../../context/JarianNoticeContext';
 
 /**
  * محتوای خلاصه پیش‌فاکتور در نمایش سریع.
@@ -17,7 +24,25 @@ export default function ProformaTab({
   onTermsChange,
   onToggleTermsEdit,
 }) {
+  const { identity } = useOrganizationIdentity();
+  const { copyText } = useJarianNotice();
   const viewModel = useMemo(() => buildProformaViewModel(order), [order]);
+
+  const tracking = useMemo(() => ({
+    ...MOCK_DOCUMENT_TRACKING,
+    documentId: viewModel.documentNumber || order?.code || MOCK_DOCUMENT_TRACKING.documentId,
+  }), [viewModel.documentNumber, order?.code]);
+
+  const handleCopyLink = useCallback(async () => {
+    await copyText(tracking.secureLink, 'لینک پیگیری');
+  }, [copyText, tracking.secureLink]);
+
+  const handleSendWhatsApp = useCallback(() => {
+    const text = createWhatsAppMessage(tracking.secureLink, identity.tradeName);
+    const phone = String(order?.phone || order?.mobile || '').replace(/\D/g, '');
+    const base = phone ? `https://wa.me/${phone}?text=` : 'https://wa.me/?text=';
+    window.open(`${base}${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  }, [tracking.secureLink, order?.phone, order?.mobile, identity.tradeName]);
 
   return (
     <div className="nabz-proforma-tab">
@@ -95,6 +120,17 @@ export default function ProformaTab({
           <span>نیاز به ویرایش شروط است</span>
         </label>
       </section>
+
+      <DocumentTrackingPanel
+        documentId={tracking.documentId}
+        secureLink={tracking.secureLink}
+        status={tracking.status}
+        openedCount={tracking.openedCount}
+        lastOpenedAt={tracking.lastOpenedAt}
+        stepTimes={tracking.stepTimes}
+        onCopyLink={handleCopyLink}
+        onSendWhatsApp={handleSendWhatsApp}
+      />
     </div>
   );
 }

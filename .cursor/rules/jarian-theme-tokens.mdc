@@ -1,0 +1,66 @@
+---
+description: RFC-001 Global Theme Token Architecture — never hardcode colors
+alwaysApply: true
+---
+
+# Jarian Theme Token Architecture (RFC-001)
+
+**Single Source of Truth:** `src/styles/theme-tokens.css`
+
+Dark mode is applied ONLY by overriding CSS variables under `html[data-theme='dark']`.
+Components must never branch on light/dark and must never invent colors.
+
+## Absolute rule
+
+❌ Never generate hardcoded colors in components, CSS modules, or inline styles:
+
+- `#hex`
+- `rgb()` / `rgba()` / `hsl()` / `hsla()`
+- named colors `white` / `black` (as color values)
+- static `background: #fff` / `color: #000` / gray borders
+
+✅ Always consume Theme Tokens:
+
+```css
+background: var(--surface);
+color: var(--text-primary);
+border: 1px solid var(--border);
+background: var(--glass-bg);
+backdrop-filter: blur(var(--glass-blur));
+box-shadow: var(--glass-shadow);
+```
+
+## If a token is missing
+
+1. **First** add the token to `src/styles/theme-tokens.css` (both light `:root` and dark `html[data-theme='dark']` when needed).
+2. **Then** consume `var(--new-token)` in the component/CSS.
+3. Never bypass the Theme System with a one-off hex.
+
+## Glassmorphism
+
+Glass surfaces MUST use:
+
+- `var(--glass-bg)` / `var(--glass-bg-strong)`
+- `var(--glass-border)`
+- `var(--glass-shadow)`
+- `var(--glass-blur)` (or `--glass-blur-strong` / `--glass-blur-modal`)
+
+## Tables / forms / dialogs / buttons
+
+Use semantic tokens only (`--table-*`, `--input-*`, `--modal-*`, `--btn-*`, `--success`, `--warning`, `--danger`, `--info`).
+
+## JS / React
+
+Prefer CSS classes + tokens. If a value must be passed as a style string, pass a CSS variable:
+
+```js
+accent: 'var(--warning)'
+color: 'var(--text-muted)'
+```
+
+Never: `color: '#757575'`.
+
+## Enforcement
+
+- Stylelint fails the build on hardcoded colors outside `theme-tokens.css`.
+- `npm run lint:theme` / `npm run audit:theme` must stay green.

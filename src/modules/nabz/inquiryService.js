@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getStageLabel, STAGE_MOZENE_ID, STAGE_PISHKESH_ID } from './config';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import {
@@ -16,6 +16,7 @@ import {
   canCompleteOrderInquiries,
   canCompleteQuoting,
 } from './quotingService';
+import { markRevisionResolved } from './services/revisionService';
 
 export {
   allLinesHaveSavedMargin,
@@ -95,7 +96,7 @@ export function validateInquiryDraft(draft) {
 
 export function buildInquiryFromDraft(
   draft,
-  registeredBy = CURRENT_USER,
+  registeredBy = getCurrentUser(),
   status = INQUIRY_STATUS.DRAFT,
 ) {
   const base = {
@@ -234,7 +235,7 @@ export function appendInquiryToOrder(
   order,
   itemIndex,
   draft,
-  registeredBy = CURRENT_USER,
+  registeredBy = getCurrentUser(),
   status = INQUIRY_STATUS.DRAFT,
 ) {
   if (!canEditInquiryPrices()) return order;
@@ -261,7 +262,7 @@ export function finalizeItemInquiries(order, itemIndex) {
     id: eventIdCounter++,
     type: 'inquiry_item_finalized',
     at: `${getTodayJalali()} · ${getNowTimeFa()}`,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     itemIndex,
     itemName: item?.name || '—',
     summary: `تکمیل استعلام — ${item?.name || '—'} — آماده برای مرحله بعدی`,
@@ -295,7 +296,7 @@ export function finalizeSingleInquiry(order, itemIndex, inquiryId) {
     id: eventIdCounter++,
     type: 'inquiry_finalized',
     at: `${getTodayJalali()} · ${getNowTimeFa()}`,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     itemIndex,
     itemName: item?.name || '—',
     inquiryId,
@@ -346,7 +347,7 @@ export function completeOrderInquiries(order) {
     id: eventIdCounter++,
     type: 'inquiry_order_completed',
     at,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     fromStageId,
     toStageId: nextStageId,
     fromStageLabel: fromLabel,
@@ -355,7 +356,7 @@ export function completeOrderInquiries(order) {
     summary: `تکمیل کاوش سفارش ${pricedOrder.code} — انتقال به «${toLabel}»`,
   };
 
-  return {
+  return markRevisionResolved({
     ...pricedOrder,
     items,
     stageId: nextStageId,
@@ -364,7 +365,7 @@ export function completeOrderInquiries(order) {
     amountRial: preview.orderTotal > 0 ? Math.round(preview.orderTotal) : pricedOrder.amountRial,
     isPriced: preview.orderTotal > 0,
     events: [...(pricedOrder.events || []), event],
-  };
+  }, 'PENDING');
 }
 
 export function completeOrderQuoting(order) {
@@ -384,7 +385,7 @@ export function completeOrderQuoting(order) {
     id: eventIdCounter++,
     type: 'quoting_completed',
     at,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     fromStageId,
     toStageId: nextStageId,
     fromStageLabel: fromLabel,
@@ -393,12 +394,12 @@ export function completeOrderQuoting(order) {
     summary: `تکمیل مظنه سفارش ${pricedOrder.code} — انتقال به «${toLabel}»`,
   };
 
-  return {
+  return markRevisionResolved({
     ...pricedOrder,
     stageId: nextStageId,
     quotingCompletedAt: at,
     amountRial: preview.orderTotal > 0 ? Math.round(preview.orderTotal) : pricedOrder.amountRial,
     isPriced: preview.orderTotal > 0,
     events: [...(pricedOrder.events || []), event],
-  };
+  }, 'PENDING');
 }

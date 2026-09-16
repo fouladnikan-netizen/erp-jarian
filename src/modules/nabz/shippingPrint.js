@@ -10,6 +10,7 @@ function writePreviewPayload(previewId, payload) {
 }
 
 export function storeShippingPreviewPayload(order, carrierId, selectedRowKeys = null) {
+  const shipping = getOrderShippingRecord(order);
   const viewModel = buildShippingDocumentViewModel(order, carrierId, selectedRowKeys);
   const previewId = `${Date.now()}`;
   writePreviewPayload(previewId, {
@@ -17,6 +18,8 @@ export function storeShippingPreviewPayload(order, carrierId, selectedRowKeys = 
     orderCode: order.code,
     carrierId,
     selectedRowKeys: selectedRowKeys || null,
+    issued: Boolean(shipping?.issuedAt),
+    organizationSnapshot: shipping?.organizationSnapshot || null,
   });
   return { previewId, viewModel };
 }
@@ -44,6 +47,8 @@ export function printShippingVoucher(order, carrierId, selectedRowKeys = null) {
     orderCode: order.code,
     carrierId,
     selectedRowKeys: keys,
+    issued: Boolean(shipping?.issuedAt),
+    organizationSnapshot: shipping?.organizationSnapshot || null,
   });
   openShippingWindow(`${PREVIEW_PATH}?print=1&id=${encodeURIComponent(previewId)}`);
 }

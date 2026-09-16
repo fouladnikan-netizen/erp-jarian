@@ -1,0 +1,39 @@
+id: attribute-definition
+name: Attribute Definition + Product Type Schema Binding
+tier: B
+status: active
+ownerModule: shirazeh
+aggregateRoot: AttributeDefinition
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Centralized, reusable attribute definitions (STRING/DECIMAL/BOOLEAN/ENUM/DATE/REFERENCE). DECIMAL is the single numeric type (accepts integers and fractions; INTEGER is an API alias coerced to DECIMAL — DDL-24o). Bound to one or more Product Types via product_type_attributes (the effective Attribute Schema a Type inherits). Operators may PATCH nameFa, code, dataType, and ENUM allowedValues. code/dataType changes are blocked with 409 once product_attribute_values exist (canonical identity uses code). Operator unbind is a hard DELETE of the binding row (`DELETE /attribute-definitions/bindings/:id`); leftover inactive binding rows are purged when deleting the definition. Unbound unused definitions may be hard-deleted (DDL-24n). Active bindings or product_attribute_values block delete with a 409 listing dependents. Deactivating a definition does not retroactively invalidate historical Product attribute values."
+archivePolicy: hard-delete
+auditPolicy: append-only
+rbacPolicy:
+  - products:read
+  - products:manage-taxonomy
+databaseTable: attribute_definitions, product_type_attributes
+apiBasePath: /api/v1/attribute-definitions
+backendRepository: backend/src/modules/catalog/infrastructure/attributeDefinitionRepository.js
+frontendRepository: src/api/repositories/AttributeDefinitionRepository.js
+dependencies:
+  - product-taxonomy
+  - uom-registry
+integrationPorts:
+  - vitrin-schema-driven-product-form
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-24
+  - DDL-45
+  - DDL-46
+  - DDL-49
+  - DDL-50
+  - DDL-53
+  - DDL-55
+  - DDL-56
+  - DDL-57
+  - DDL-60
+  - DDL-61
+  - DDL-66
+migrationSafety: "016_product_master_attributes.sql + 042 sku_code + 043 INTEGER→DECIMAL (DDL-24o) + 044 required-binding policy (DDL-24p) + 046 value_scope + override_allowed_values (DDL-46). Expand-only; does not rewrite issued SKUs. Bindings rewrite is_identity_relevant on save (DDL-50): PRODUCT numeric + required PRODUCT ENUM. Required STRING is rejected. TRANSACTION can be required at order time but never identity. PATCH uomId may set or clear the measurement unit (repository CASE, not COALESCE)."
+notes: "DDL-24(c), DDL-24(h), DDL-24(n), DDL-24(o), DDL-24(p) required=identity superseded by DDL-46, identity types refined by DDL-50. DECIMAL definitions may bind one uomId from the UOM registry (measurement unit for display-name includeUnit — DDL-53); clearing uomId is allowed. Operator bind flags: is_required, value_scope (کالا/تراکنش), override_default_value (پیش‌فرض نمایش/سفارش — DDL-55), override_allowed_values (ENUM), override_min/max (numeric). TRANSACTION override_default_value is never stored on Product and never identity. Mill-sheet `sheet_length` (طول ورق, UOM میل) is TRANSACTION; its empty-slot default may come from the width×thickness domain catalog (DDL-56) instead of a single scalar. On تسمه فولادی, `strip_width` is required PRODUCT identity (DDL-57), superseding DDL-51's TRANSACTION backfill for that Type only. DDL-66: Types share Attribute Definitions (`class`, `length_mm`, `kind`, `supply_form`, `size_pipe`+`size_branch`); differences are binding + overrideAllowedValues. Fastener millimetre length is `length_mm`, never `sheet_length`. Wave duplicate codes deactivate after migrate; do not delete Products. See Docs/architecture/product-master-nabz-future-contract.md and Docs/review-package/ATTRIBUTE_DEDUP_MAP.md."

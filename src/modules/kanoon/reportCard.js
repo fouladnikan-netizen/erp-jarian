@@ -25,24 +25,28 @@ export function getReportCard(contact) {
 
   if (contact.entityType === ENTITY_TYPES.CUSTOMER) {
     const orders = contact.relatedOrders || [];
+    if (orders.length === 0) {
+      return { ...DEFAULT_CUSTOMER_REPORT };
+    }
+    const successful = orders.filter((o) => o.stage === 'تحقق').length;
+    const active = orders.filter((o) => !['تحقق'].includes(o.stage)).length;
     return {
-      totalOrders: orders.length || 12,
-      successfulOrders: orders.filter((o) => o.stage === 'تحقق').length || 8,
-      failedOrders: 1,
-      activeOrders: orders.filter((o) => !['تحقق'].includes(o.stage)).length || 3,
-      totalSales: '۴۲٬۸۰۰٬۰۰۰٬۰۰۰ ریال',
-      totalProfit: '۵٬۱۲۰٬۰۰۰٬۰۰۰ ریال',
-      avgSaleAmount: '۳٬۵۶۶٬۶۶۶ ریال',
-      avgSaleProfit: '۱۲٪',
+      ...DEFAULT_CUSTOMER_REPORT,
+      totalOrders: orders.length,
+      successfulOrders: successful,
+      failedOrders: Math.max(0, orders.length - successful - active),
+      activeOrders: active,
     };
   }
 
+  const inquiries = contact.relatedInquiries || [];
+  if (inquiries.length === 0) {
+    return { ...DEFAULT_SUPPLIER_REPORT };
+  }
+
   return {
-    totalPurchases: 24,
-    totalInquiries: 18,
-    totalPurchaseAmount: '۱۸٬۴۰۰٬۰۰۰٬۰۰۰ ریال',
-    totalPurchaseProfit: '۲٬۲۰۰٬۰۰۰٬۰۰۰ ریال',
-    avgPurchaseAmount: '۷۶۶٬۶۶۶ ریال',
-    avgPurchaseProfit: '۱۱٪',
+    ...DEFAULT_SUPPLIER_REPORT,
+    totalPurchases: inquiries.length,
+    totalInquiries: inquiries.length,
   };
 }

@@ -1,0 +1,30 @@
+id: company
+name: Company
+tier: A
+status: active
+ownerModule: kanoon
+aggregateRoot: Company
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Create/edit party; optional Ofogh lifecycle_stage; archive hides from default lists."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - companies:read
+  - companies:write
+databaseTable: companies
+apiBasePath: /api/v1/companies
+backendRepository: backend/src/repositories/companyRepository.js
+frontendRepository: src/api/repositories/CompanyRepository.js
+dependencies:
+  - contact-person-embedded
+  - auth-user
+integrationPorts:
+  - company-identity-resolver-on-convert
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-01
+  - DDL-02
+  - DDL-07
+migrationSafety: "Expand-only preferred; restore from pg_dump or forward-fix migration. Backup required before prod migrate."
+notes: "Service orchestrates Zod + TX + audit; SQL in companyRepository. useContactsStore is SERVER_FIRST cache (API → response → Zustand). On Lead convert and Kanoon POST /companies/from-identity, Linka identity maps to columns name/national_id/province/activity_domain and payload.linkaIdentity for remaining verified fields."

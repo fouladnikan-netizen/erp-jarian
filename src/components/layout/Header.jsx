@@ -1,4 +1,33 @@
+import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTheme, THEMES } from '../../theme/ThemeContext';
+import UnifiedJarianCalendar from '../calendar/UnifiedJarianCalendar';
+
+const NABZ_VIEW_HEADERS = {
+  opportunities: { name: 'فرصت', subtitle: 'فروش و پیش‌فاکتور' },
+  supply: { name: 'توشه', subtitle: 'خرید و تأمین کالا' },
+  operations: { name: 'رهسپار', subtitle: 'ارسال و تحویل' },
+  outcome: { name: 'سرانجام', subtitle: 'نهایی‌سازی سفارش' },
+};
+
+function vitrinHeader(pathname) {
+  if (pathname.startsWith('/vitrin/structure')) {
+    return { name: 'ساختار کالا', subtitle: 'انواع کالا و قواعد محصول' };
+  }
+  if (pathname === '/vitrin' || pathname.startsWith('/vitrin/')) {
+    return { name: 'محصولات', subtitle: 'فهرست، جستجو و ثبت کالا' };
+  }
+  return null;
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
 
 function BellIcon() {
   return (
@@ -28,14 +57,23 @@ function MoonIcon() {
 
 export default function Header({ module }) {
   const { theme, toggleTheme } = useTheme();
+  const { pathname, search } = useLocation();
   const isDark = theme === THEMES.DARK;
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const nabzView = module.id === 'nabz'
+    ? new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('view')
+    : null;
+  const nabzHeader = pathname.startsWith('/nabz') ? NABZ_VIEW_HEADERS[nabzView] : null;
+  const vitrinViewHeader = vitrinHeader(pathname);
+  const title = nabzHeader?.name || vitrinViewHeader?.name || module.name;
+  const subtitle = nabzHeader?.subtitle || vitrinViewHeader?.subtitle || module.subtitle || module.description;
 
   return (
     <header className="header" role="banner">
       <div className="header__inner">
         <div className="header__page">
-          <h1 className="header__title">{module.name}</h1>
-          <p className="header__desc">{module.description}</p>
+          <h1 className="header__title">{title}</h1>
+          <p className="header__desc">{subtitle}</p>
         </div>
 
         <div className="header__actions">
@@ -49,11 +87,25 @@ export default function Header({ module }) {
           >
             {isDark ? <SunIcon /> : <MoonIcon />}
           </button>
+          <button
+            type="button"
+            className="btn btn--ghost btn--icon"
+            aria-label="تقویم یکپارچه جریان"
+            aria-pressed={isCalendarOpen}
+            title="تقویم یکپارچه جریان"
+            onClick={() => setIsCalendarOpen(true)}
+          >
+            <CalendarIcon />
+          </button>
           <button type="button" className="btn btn--ghost btn--icon" aria-label="اعلان‌ها">
             <BellIcon />
           </button>
         </div>
       </div>
+
+      {isCalendarOpen ? (
+        <UnifiedJarianCalendar open onClose={() => setIsCalendarOpen(false)} />
+      ) : null}
     </header>
   );
 }

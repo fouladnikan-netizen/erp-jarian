@@ -1,4 +1,6 @@
+import { useMemo } from 'react';
 import { ORDER_TABS } from '../config';
+import { useNabzOrders } from '../NabzOrdersContext';
 import { getGatewayCurrentStage, gatewayStageToPhase } from '../gatewayLifecycleService';
 import {
   markGatewayDecisionFailed,
@@ -39,7 +41,8 @@ export default function OrderProfileDrawer({
   const handleAdvancePhase = (nextOrder) => {
     updateOrder(() => nextOrder);
     pipeline.setViewPhase(gatewayStageToPhase(nextOrder.stageId));
-    if (nextOrder.status === ORDER_TABS.SUCCESS) {
+    if (nextOrder.phase2EnteredAt || nextOrder.gatewayDecision?.outcome === 'success'
+      || nextOrder.status === ORDER_TABS.SUCCESS) {
       pipeline.setViewMode('operations');
     }
   };

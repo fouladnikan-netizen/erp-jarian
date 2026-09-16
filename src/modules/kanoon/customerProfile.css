@@ -1,0 +1,1907 @@
+/* ═══════════════════════════════════════════════════════════════════
+   پروفایل مخاطب کانون — داشبورد دو ستونه گلس (۲۵٪ سایدبار / ۷۵٪ اصلی)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.kanoon-profile-page {
+  gap: 1.1rem;
+}
+
+/* نوار هدر: بازگشت (راست) + افزودن فرد مرتبط (چپ) */
+.kprofile-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 1680px;
+  margin-inline: auto;
+}
+
+.kprofile-topbar__add-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0;
+  border-radius: 12px;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-inverse);
+  background: var(--action-primary);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.kprofile-topbar__add-person:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.kprofile-topbar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.kprofile-topbar__back:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--color-silver-glossy) 50%, transparent);
+  transform: translateY(-1px);
+}
+
+/* ── شبکه اصلی ۲۵/۷۵ (در RTL ستون اول = راست) ─────────────────────── */
+.kprofile {
+  display: grid;
+  grid-template-columns: minmax(280px, 25%) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  width: 100%;
+  max-width: 1680px;
+  margin-inline: auto;
+}
+
+@media (max-width: 980px) {
+  .kprofile { grid-template-columns: 1fr; }
+  .kprofile__side { position: static; }
+}
+
+/* کارت گلس پایه */
+.kprofile-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  border-radius: 18px;
+  box-shadow:
+    var(--glass-inset-highlight),
+    0 1px 3px color-mix(in srgb, var(--color-silver-glossy) 16%, transparent);
+}
+
+/* ── ستون راست: کابین هویت و مالی ─────────────────────────────────── */
+.kprofile__side {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.kprofile-identity {
+  padding: 1.4rem 1.2rem 1.2rem;
+  text-align: center;
+}
+
+.kprofile-identity__name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-identity__meta {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-identity__tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.kprofile-identity__capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.kprofile-capability-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-accent-dark);
+  background: color-mix(in srgb, var(--color-accent-muted) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent-dark) 22%, transparent);
+}
+
+.kprofile-capability-tag.is-custom {
+  color: var(--text-primary);
+  background: var(--glass-bg-strong);
+  border-color: color-mix(in srgb, var(--color-silver-glossy) 45%, transparent);
+}
+
+.kprofile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--glass-bg-strong);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
+}
+
+.kprofile-identity__assignee {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed color-mix(in srgb, var(--color-silver-glossy) 40%, transparent);
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-identity__assignee strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* منشأ مشتری — Lead origin (Ofogh relationship, read-only) */
+.kprofile-origin {
+  padding: 0.95rem 1.05rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.kprofile-origin__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-origin__title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-origin__list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.kprofile-origin__row {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 38%) 1fr;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+
+.kprofile-origin__row dt {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.kprofile-origin__row dd {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.kprofile-origin__muted {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.kprofile-origin__hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.kprofile-origin__link {
+  align-self: flex-start;
+  margin-top: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text-primary);
+  background: var(--surface-raised, var(--glass-bg-strong));
+  border: 1px solid var(--glass-border);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.kprofile-origin__link:hover {
+  transform: translateY(-1px);
+  background: var(--glass-bg-strong);
+}
+
+/* عنوان بخش‌های ستون کناری */
+.kprofile-side-card {
+  padding: 1rem 1.1rem 1.1rem;
+}
+
+.kprofile-side-card__title {
+  margin: 0 0 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.kprofile-side-card__title svg {
+  color: var(--color-brand-red);
+  flex-shrink: 0;
+}
+
+/* ویجت مالی */
+.kprofile-fin__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.42rem 0;
+}
+
+.kprofile-fin__row + .kprofile-fin__row {
+  border-top: 1px solid color-mix(in srgb, var(--color-silver-glossy) 20%, transparent);
+}
+
+.kprofile-fin__label {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-fin__value {
+  font-family: var(--font-secondary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.kprofile-fin__value--credit { color: var(--success); }
+.kprofile-fin__value--debit { color: var(--danger); }
+
+.kprofile-fin__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.kprofile-fin__status--credit { color: var(--success); background: var(--success-muted); }
+.kprofile-fin__status--debit { color: var(--danger); background: var(--danger-muted); }
+
+/* نوار مصرف اعتبار */
+.kprofile-fin__bar {
+  margin-top: 0.7rem;
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-silver-glossy) 25%, transparent);
+  overflow: hidden;
+}
+
+.kprofile-fin__bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--success) 0%, var(--warning) 60%, var(--danger) 100%);
+  background-size: 240px 100%;
+  transition: width 0.5s ease;
+}
+
+.kprofile-fin__bar-hint {
+  margin-top: 0.35rem;
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+  text-align: left;
+  font-family: var(--font-secondary);
+}
+
+/* تماس‌ها و آدرس‌ها */
+.kprofile-contact__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.42rem 0;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.kprofile-contact__row + .kprofile-contact__row {
+  border-top: 1px solid color-mix(in srgb, var(--color-silver-glossy) 18%, transparent);
+}
+
+.kprofile-contact__row svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-contact__row a {
+  color: inherit;
+  text-decoration: none;
+  direction: ltr;
+  font-family: var(--font-secondary);
+}
+
+.kprofile-contact__row a:hover { color: var(--color-brand-red); }
+
+.kprofile-contact__label {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 0.1rem;
+}
+
+.kprofile-contact__person {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.kprofile-contact__person-role {
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+}
+
+/* ── پاپ‌آپ اطلاعات حقوقی تکمیلی ──────────────────────────────────── */
+.kprofile-identity__name-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+/* آیکون مینیمال کنار نام شرکت — بدون کادر، فقط در هاور رنگ می‌گیرد */
+.kprofile-identity__legal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  transition: color 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+}
+
+.kprofile-identity__legal-btn:hover {
+  color: var(--color-brand-red);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* بک‌دراپ شیشه‌ای واحد — هم‌استاندارد بقیه مودال‌های سیستم */
+.kprofile-legal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: var(--overlay-scrim);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: kprofile-legal-fade 0.2s ease;
+}
+
+@keyframes kprofile-legal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.kprofile-legal-modal {
+  width: 100%;
+  max-width: 400px;
+  padding: 1.1rem 1.25rem 1.25rem;
+  border-radius: 20px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
+  box-shadow:
+    var(--glass-inset-highlight-strong),
+    0 18px 48px var(--muted-border);
+  animation: kprofile-legal-pop 0.24s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes kprofile-legal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.kprofile-legal-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.kprofile-legal-modal__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-legal-modal__title svg { color: var(--color-brand-red); }
+
+.kprofile-legal-modal__close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  background: var(--glass-bg-strong);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.kprofile-legal-modal__close:hover {
+  color: var(--color-brand-red);
+  border-color: var(--border-strong);
+  transform: rotate(90deg);
+}
+
+.kprofile-legal-modal__list { margin: 0; }
+
+.kprofile-legal-modal__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.1rem;
+}
+
+.kprofile-legal-modal__row + .kprofile-legal-modal__row {
+  border-top: 1px solid color-mix(in srgb, var(--color-silver-glossy) 22%, transparent);
+}
+
+.kprofile-legal-modal__row dt {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__row dd {
+  margin: 0;
+  font-family: var(--font-secondary);
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  direction: ltr;
+}
+
+.kprofile-legal-modal__row dd.is-rtl {
+  direction: rtl;
+}
+
+/* Visual diff — fields changed vs the subsequent (newer) version */
+.kprofile-legal-modal__row.diff-changed dd,
+.kprofile-legal-modal__text.diff-changed,
+.kprofile-legal-modal__member.diff-changed,
+.kprofile-legal-modal__empty.diff-changed {
+  color: var(--danger);
+  background-color: color-mix(in srgb, var(--danger) 10%, transparent);
+  text-decoration: line-through;
+}
+
+.kprofile-legal-modal__row.diff-changed dd {
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+}
+
+.kprofile-legal-modal__text.diff-changed,
+.kprofile-legal-modal__empty.diff-changed {
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+
+.kprofile-legal-modal__member.diff-changed {
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+}
+
+.kprofile-legal-modal__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* —— ماشین زمان: ناوبری بین استعلام‌های تاریخی —— */
+.kprofile-legal-modal__timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 12px;
+  background: var(--glass-bg-subtle);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  box-shadow: var(--glass-inset-highlight);
+}
+
+.kprofile-legal-modal__timeline-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  background: var(--glass-bg-strong);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
+  transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.kprofile-legal-modal__timeline-btn:hover:not(:disabled) {
+  color: var(--color-brand-red);
+  transform: scale(1.08);
+}
+
+.kprofile-legal-modal__timeline-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.kprofile-legal-modal__timeline-label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+}
+
+.kprofile-legal-modal__timeline-label.is-expired {
+  color: var(--warning);
+}
+
+/* حالت نسخه منقضی — تیتر و هاله بوردر نارنجی هشدار */
+.kprofile-legal-modal.is-expired {
+  border-color: var(--warning-border);
+  box-shadow:
+    var(--glass-inset-highlight-strong),
+    var(--warning-border),
+    color-mix(in srgb, var(--warning) 22%, transparent);
+}
+
+.kprofile-legal-modal.is-expired .kprofile-legal-modal__title {
+  color: var(--warning);
+}
+
+.kprofile-legal-modal.is-expired .kprofile-legal-modal__title svg {
+  color: var(--warning);
+}
+
+/* کراس‌فید نرم هنگام پرش بین نسخه‌ها */
+.kprofile-legal-modal__fade {
+  animation: kprofile-legal-crossfade 0.3s ease;
+}
+
+@keyframes kprofile-legal-crossfade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* —— فوتر TTL + استعلام لینکا —— */
+.kprofile-legal-modal__ttl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-silver-glossy) 28%, transparent);
+}
+
+.kprofile-legal-modal__ttl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__ttl-badge.is-fresh {
+  color: var(--success);
+}
+
+.kprofile-legal-modal__ttl-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  color: var(--color-white);
+  background: linear-gradient(140deg, var(--success) 0%, var(--success) 70%);
+  box-shadow: color-mix(in srgb, var(--success) 35%, transparent), var(--glass-inset-highlight-strong);
+}
+
+.kprofile-legal-modal__linka-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 11px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--color-white);
+  background: linear-gradient(140deg, var(--color-brand-red-glossy) 0%, var(--color-brand-red) 60%, var(--color-brand-red-hover) 100%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    color-mix(in srgb, var(--danger) 35%, transparent),
+    var(--glass-inset-highlight);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.kprofile-legal-modal__linka-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    color-mix(in srgb, var(--danger) 45%, transparent),
+    var(--glass-inset-highlight-strong);
+}
+
+.kprofile-legal-modal__linka-btn:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.kprofile-legal-modal__linka-btn.is-syncing svg {
+  animation: kprofile-ai-spin 0.9s linear infinite;
+}
+
+.kprofile-legal-modal__row--edit {
+  cursor: text;
+}
+
+.kprofile-legal-modal__row--edit span {
+  flex: 0 0 auto;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 12rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 40%, transparent);
+  border-radius: 9px;
+  background: var(--glass-bg);
+  font-family: var(--font-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kprofile-legal-modal__input:focus {
+  outline: none;
+  border-color: var(--danger-border);
+  box-shadow: var(--focus-ring);
+}
+
+.kprofile-legal-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+/* —— نسخه کامل (شناسنامه رسمی شرکت) —— */
+.kprofile-legal-modal--wide {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  max-height: min(82vh, 46rem);
+}
+
+.kprofile-legal-modal__body {
+  overflow-y: auto;
+  min-height: 0;
+  /* فضای ثابت برای اسکرول‌بار تا روی متن‌ها نیفتد (در RTL سمت چپ ظاهر می‌شود) */
+  scrollbar-gutter: stable;
+  padding-inline-end: 0.85rem;
+}
+
+/* اسکرول‌بار باریک و شیشه‌ای — استایل‌دادن webkit آن را از حالت overlay خارج می‌کند */
+.kprofile-legal-modal__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kprofile-legal-modal__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kprofile-legal-modal__body::-webkit-scrollbar-thumb {
+  background: var(--muted-border);
+  border-radius: 999px;
+}
+
+.kprofile-legal-modal__body::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-neutral-400) 70%, transparent);
+}
+
+.kprofile-legal-modal__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.1rem 0 0.2rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--color-brand-red);
+}
+
+.kprofile-legal-modal__section-title:first-child {
+  margin-top: 0.2rem;
+}
+
+/* خط ظریف ادامه‌دار بعد از عنوان هر بخش */
+.kprofile-legal-modal__section-title::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+}
+
+.kprofile-legal-modal__members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.kprofile-legal-modal__member {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr auto;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.5rem 0.1rem;
+}
+
+.kprofile-legal-modal__member + .kprofile-legal-modal__member {
+  border-top: 1px solid color-mix(in srgb, var(--color-silver-glossy) 22%, transparent);
+}
+
+.kprofile-legal-modal__member-role {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__member-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.kprofile-legal-modal__member-code {
+  font-family: var(--font-secondary);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__text {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: var(--text-primary);
+  text-align: justify;
+}
+
+.kprofile-legal-modal__empty {
+  margin: 0.35rem 0 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-legal-modal__textarea {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 40%, transparent);
+  border-radius: 10px;
+  background: var(--glass-bg);
+  font-family: inherit;
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kprofile-legal-modal__textarea:focus {
+  outline: none;
+  border-color: var(--danger-border);
+  box-shadow: var(--focus-ring);
+}
+
+.kprofile-legal-modal__member-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) minmax(0, 7.5rem) auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.3rem 0;
+}
+
+.kprofile-legal-modal__member-edit .kprofile-legal-modal__input {
+  max-width: none;
+}
+
+.kprofile-legal-modal__member-remove {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+}
+
+.kprofile-legal-modal__member-remove:hover {
+  color: var(--color-brand-red);
+}
+
+.kprofile-legal-modal__member-add {
+  margin-top: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 9px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--color-brand-red);
+  transition: background 0.15s ease;
+}
+
+.kprofile-legal-modal__member-add:hover {
+  background: var(--danger-surface);
+}
+
+/* ── ستون چپ: تایم‌لاین ضربان ─────────────────────────────────────── */
+.kprofile__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.kprofile-quick-activity {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 6;
+}
+
+.kprofile-quick-activity .kprofile-magic {
+  position: relative;
+  top: auto;
+  z-index: auto;
+}
+
+/* تب‌ها */
+/* ── Unified Customer Profile Hub ─────────────────────────────────── */
+.kprofile-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1680px;
+  margin-inline: auto;
+}
+
+.kprofile-hub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.15rem;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.kprofile-hub-header__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.kprofile-hub-header__avatar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+}
+
+.kprofile-hub-header__name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.kprofile-hub-header__meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-hub-header__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.kprofile-hub-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.kprofile-hub-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 7.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.kprofile-hub-kpi__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.kprofile-hub-kpi__value {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-hub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  overflow-x: auto;
+}
+
+.kprofile-hub-tabs__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.kprofile-hub-tabs__btn .profile-tabs__icon {
+  display: inline-flex;
+  opacity: 0.85;
+}
+
+.kprofile-hub-tabs__btn.is-active {
+  color: var(--color-brand-red);
+  background: var(--glass-bg-strong);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-brand-red) 22%, transparent),
+    0 0 18px color-mix(in srgb, var(--color-brand-red) 18%, transparent);
+}
+
+.kprofile-hub-tabs__btn:hover:not(.is-active) {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-hover) 80%, transparent);
+  transform: translateY(-1px);
+}
+
+.kprofile-hub-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 18rem;
+}
+
+.kprofile-hub-base {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.kprofile-hub-base__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .kprofile-hub-base__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .kprofile-hub-base__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kprofile-orders-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kprofile-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kprofile-orders-hub__new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text-inverse);
+  background: var(--action-primary);
+  transition: background 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.kprofile-orders-hub__new:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.kprofile-coming {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 16rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.kprofile-coming__icon {
+  display: inline-flex;
+  color: color-mix(in srgb, var(--text-muted) 70%, transparent);
+  opacity: 0.55;
+}
+
+.kprofile-coming__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-coming__body {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ── تب‌های پروفایل (pill + آیکن) — هم‌عرض نوار ثبت پویش ─────────── */
+.kprofile-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-self: stretch;
+  width: 100%;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  box-sizing: border-box;
+}
+
+.kprofile-tabs__btn {
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.55rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.kprofile-tabs__btn .profile-tabs__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.kprofile-tabs__btn .profile-tabs__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kprofile-tabs__btn.is-active {
+  color: var(--color-brand-red);
+  background: var(--glass-bg-strong);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--color-silver-glossy) 40%, transparent);
+}
+
+.kprofile-tabs__btn:hover:not(.is-active) { color: var(--text-primary); }
+
+@media (max-width: 1100px) {
+  .kprofile-tabs {
+    flex-wrap: wrap;
+    border-radius: 18px;
+  }
+
+  .kprofile-tabs__btn {
+    flex: 1 1 calc(33.333% - 2px);
+  }
+}
+
+/* ── هدر یکسان تب‌های پروفایل ─────────────────────────────────────── */
+.kprofile-tab-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--glass-shadow);
+}
+
+.kprofile-tab-head__text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.kprofile-tab-head__action {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.kprofile-tab-head__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 12px;
+  color: var(--color-brand-red);
+  background: color-mix(in srgb, var(--color-brand-red) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand-red) 22%, transparent);
+}
+
+.kprofile-tab-head__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-tab-head__subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ── تایم‌لاین وقایع ─────────────────────────────────────────────── */
+.kprofile-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kprofile-events__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.kprofile-events__meta {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.kprofile-events__card {
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.kprofile-events__card:hover {
+  border-color: color-mix(in srgb, var(--color-silver-glossy) 55%, transparent);
+  box-shadow:
+    var(--glass-inset-highlight),
+    0 4px 16px color-mix(in srgb, var(--color-silver-glossy) 28%, transparent);
+}
+
+/* ── ورودی جادویی (Spotlight-style) ──────────────────────────────── */
+.kprofile-magic {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 5;
+}
+
+.kprofile-magic__pill {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.75rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: right;
+  cursor: text;
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
+  box-shadow:
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.kprofile-magic__pill:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--glass-inset-highlight-strong),
+    0 8px 26px var(--muted-border);
+}
+
+.kprofile-magic__pill svg { color: var(--color-brand-red); flex-shrink: 0; }
+
+/* پنل بازشده — انیمیشن نرم ارتفاع/شفافیت */
+.kprofile-magic__panel {
+  padding: 1rem 1.1rem 1.1rem;
+  border-radius: 20px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 40%, transparent);
+  box-shadow:
+    var(--glass-inset-highlight-strong),
+    var(--shadow-lg);
+  animation: kprofile-magic-open 0.24s cubic-bezier(0.2, 0.8, 0.3, 1);
+  transform-origin: top center;
+}
+
+@keyframes kprofile-magic-open {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.kprofile-magic__types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.kprofile-magic__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--glass-bg-strong);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.kprofile-magic__type.is-active {
+  color: var(--color-brand-red);
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
+}
+
+.kprofile-magic__textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 0.84rem;
+  color: var(--text-primary);
+  background: var(--glass-bg-strong);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 35%, transparent);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kprofile-magic__textarea:focus {
+  outline: none;
+  border-color: var(--danger-border);
+  box-shadow: var(--focus-ring);
+}
+
+.kprofile-magic__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.kprofile-magic__date {
+  flex: 0 1 220px;
+  min-width: 180px;
+}
+
+.kprofile-magic__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* —— بازنویسی هوش مصنوعی (✨) — هم‌خانواده ofoq-ai-btn —— */
+.kprofile-ai-wrap {
+  position: relative;
+}
+
+/* دکمه ✨ گوشه پایین-چپ تکست‌اریا؛ resize حذف تا تداخلی پیش نیاید */
+.kprofile-ai-wrap .kprofile-magic__textarea {
+  resize: none;
+  padding-bottom: 2.4rem;
+}
+
+/* آیکون مینیمال — بدون کادر و پس‌زمینه؛ فقط جرقه بنفش ظریف */
+.kprofile-ai-btn {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--info) 65%, transparent);
+  background: transparent;
+  transition: color 0.18s ease, transform 0.18s ease, filter 0.18s ease;
+}
+
+.kprofile-ai-btn:hover:not(:disabled) {
+  color: var(--info);
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--info) 55%, transparent));
+}
+
+.kprofile-ai-btn:active:not(:disabled) {
+  transform: scale(1);
+}
+
+.kprofile-ai-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.kprofile-ai-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--info);
+  animation: kprofile-legal-fade 0.2s ease;
+}
+
+.kprofile-ai-spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid var(--info-border);
+  border-top-color: var(--info);
+  animation: kprofile-ai-spin 0.75s linear infinite;
+}
+
+@keyframes kprofile-ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.kprofile-magic__cancel {
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+}
+
+.kprofile-magic__cancel:hover { color: var(--text-primary); }
+
+.kprofile-magic__hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.68rem;
+  color: var(--warning);
+}
+
+/* ── تایم‌لاین: نخ درخشان نقره‌ای + کارت‌های شناور ────────────────── */
+.kprofile-timeline {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem 0 0.5rem;
+  position: relative;
+}
+
+/* نخ نقره‌ای گرادیانی با هاله درخشان — در RTL سمت راست */
+.kprofile-timeline::before {
+  content: '';
+  position: absolute;
+  inset-block: 0.4rem;
+  inset-inline-start: 9px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-silver-glossy) 75%, transparent) 6%,
+    color-mix(in srgb, var(--color-silver-glossy) 75%, transparent) 94%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-silver-glossy) 55%, transparent);
+}
+
+.kprofile-timeline__item {
+  position: relative;
+  padding-inline-start: 2.1rem;
+  padding-block: 0.45rem;
+}
+
+/* گره رنگی درخشان بر اساس نوع رویداد */
+.kprofile-timeline__node {
+  position: absolute;
+  inset-inline-start: 3px;
+  top: 1.15rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--node-color, var(--color-neutral-400));
+  border: 2.5px solid var(--color-white);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--node-color, var(--color-neutral-400)) 18%, transparent),
+    0 0 12px color-mix(in srgb, var(--node-color, var(--color-neutral-400)) 55%, transparent);
+}
+
+/* کارت شناور گلس */
+.kprofile-timeline__card {
+  padding: 0.8rem 0.95rem;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.kprofile-timeline__card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow:
+    var(--glass-inset-highlight-strong),
+    var(--shadow-md);
+}
+
+.kprofile-timeline__head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.kprofile-timeline__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.16rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--node-color, var(--text-secondary)) 75%, var(--color-neutral-900));
+  background: color-mix(in srgb, var(--node-color, var(--color-neutral-400)) 13%, var(--color-white));
+}
+
+.kprofile-timeline__date {
+  font-family: var(--font-secondary);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-timeline__operator {
+  margin-inline-start: auto;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-timeline__note {
+  margin: 0.45rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  white-space: pre-line;
+}
+
+.kprofile-timeline__followup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--color-accent-dark);
+  background: var(--color-accent-muted);
+}
+
+.kprofile-empty {
+  padding: 2.2rem 1rem;
+  border: 1.5px dashed var(--muted-border);
+  border-radius: 16px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+}
+
+/* ── تب سفارش‌ها ──────────────────────────────────────────────────── */
+.kprofile-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.kprofile-order {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  text-decoration: none;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-silver-glossy) 30%, transparent);
+  box-shadow: var(--glass-inset-highlight), var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.kprofile-order:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--glass-inset-highlight-strong), var(--shadow-md);
+}
+
+.kprofile-order__code {
+  font-family: var(--font-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-accent-dark);
+  direction: ltr;
+}
+
+.kprofile-order__title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.kprofile-order__date {
+  font-family: var(--font-secondary);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.kprofile-order__amount {
+  margin-inline-start: auto;
+  font-family: var(--font-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* ── تب مشخصات ────────────────────────────────────────────────────── */
+.kprofile-specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.kprofile-specs__card { padding: 1rem 1.1rem 1.1rem; }
+
+.kprofile-specs__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  font-size: 0.78rem;
+}
+
+.kprofile-specs__row + .kprofile-specs__row {
+  border-top: 1px solid color-mix(in srgb, var(--color-silver-glossy) 18%, transparent);
+}
+
+.kprofile-specs__label { color: var(--text-secondary); flex-shrink: 0; }
+.kprofile-specs__value { color: var(--text-primary); font-weight: 600; text-align: left; }
+
+/* ── تب‌های تامین‌کننده: سفارش خرید / استعلام ─────────────────────── */
+.kprofile-supply-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kprofile-supply-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+}
+
+.kprofile-supply-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.kprofile-supply-filters__field--wide {
+  grid-column: 1 / -1;
+}
+
+.kprofile-supply-filters__input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.45rem 0.65rem;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.kprofile-supply-filters__input:focus {
+  outline: 2px solid color-mix(in srgb, var(--color-brand-red) 35%, transparent);
+  outline-offset: 1px;
+}
+
+.kprofile-supply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.kprofile-supply-list__head,
+.kprofile-supply-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(5.5rem, 0.9fr) minmax(5.5rem, 0.9fr) minmax(6rem, 1fr) minmax(4.5rem, 0.7fr);
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.kprofile-supply-list__head {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.kprofile-supply-list__head span:first-child {
+  text-align: right;
+}
+
+.kprofile-supply-row {
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-inset-highlight);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kprofile-supply-row:hover {
+  border-color: color-mix(in srgb, var(--color-silver-glossy) 55%, transparent);
+  transform: translateY(-1px);
+  box-shadow:
+    var(--glass-inset-highlight),
+    0 4px 14px color-mix(in srgb, var(--color-silver-glossy) 24%, transparent);
+}
+
+.kprofile-supply-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: right;
+}
+
+.kprofile-supply-row__product {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.kprofile-supply-row__desc {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.kprofile-supply-row__order,
+.kprofile-supply-row__date,
+.kprofile-supply-row__price,
+.kprofile-supply-row__type {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .kprofile-supply-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .kprofile-supply-list__head {
+    display: none;
+  }
+
+  .kprofile-supply-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── حالت شب ──────────────────────────────────────────────────────── */
+

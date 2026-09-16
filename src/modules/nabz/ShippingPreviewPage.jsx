@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ShippingDocument from './components/ShippingDocument';
 import { readShippingPreviewPayload } from './shippingPrint';
+import { useOrganizationIdentity, toDocumentOrganization } from '../../domain/organizationIdentity';
+import { resolveShippingOrganization } from './documentOrganization';
 import './proforma.css';
 import './shipping.css';
 
@@ -10,6 +12,8 @@ export default function ShippingPreviewPage() {
   const [searchParams] = useSearchParams();
   const shouldPrint = searchParams.get('print') === '1';
   const previewId = searchParams.get('id');
+  const { identity } = useOrganizationIdentity();
+  const liveOrg = useMemo(() => toDocumentOrganization(identity), [identity]);
 
   useEffect(() => {
     document.fonts.load('400 1rem Meem');
@@ -58,7 +62,11 @@ export default function ShippingPreviewPage() {
           </button>
         </div>
       )}
-      <ShippingDocument viewModel={payload.viewModel} />
+      <ShippingDocument
+        viewModel={payload.viewModel
+          ? { ...payload.viewModel, organization: resolveShippingOrganization(payload, liveOrg) }
+          : payload.viewModel}
+      />
     </div>
   );
 }

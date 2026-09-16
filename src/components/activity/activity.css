@@ -1,0 +1,191 @@
+/* ═══════════ Activity Timeline Engine — Layer 4 ═══════════ */
+/* Shell motion/backdrop: global overlays.css + JarianDrawer */
+
+.activity-drawer--shell.jarian-drawer {
+  width: min(420px, 96vw);
+}
+
+.activity-drawer__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+  border: 1px solid var(--border-light);
+}
+
+/* ——— Timeline ——— */
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.activity-timeline--empty {
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 12rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.activity-timeline--empty p {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.activity-timeline__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.activity-timeline__title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.activity-timeline__sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.activity-timeline__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ——— Item ——— */
+.activity-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.7rem;
+}
+
+.activity-item__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.activity-item__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+  border: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.activity-item__line {
+  flex: 1;
+  width: 1px;
+  min-height: 18px;
+  margin: 0.25rem 0 0;
+  background: var(--muted-border);
+}
+
+.activity-item:last-child .activity-item__line {
+  opacity: 0;
+}
+
+.activity-item__card {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0.75rem;
+  padding: 0.8rem 0.85rem;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.activity-item__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.activity-item__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.activity-item__time {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.activity-item__desc {
+  margin: 0 0 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.activity-item__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.activity-item__actor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.activity-item__actor-type {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.activity-item--customer .activity-item__dot {
+  color: var(--color-accent-dark);
+  background: var(--color-accent-muted);
+  border-color: color-mix(in srgb, var(--color-accent-dark) 25%, transparent);
+}
+
+.activity-item--workflow .activity-item__dot {
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+  border-color: var(--muted-border);
+}
+
+@media (max-width: 480px) {
+  .activity-drawer--shell.jarian-drawer {
+    width: 100vw;
+  }
+}

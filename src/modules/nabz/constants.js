@@ -1,4 +1,8 @@
-/** نقش‌های نبض */
+import { getSessionDisplayName, useMockAuth, getAuthPermissions } from '../auth/authSession.js';
+import { can } from '../../auth/permissions.js';
+import { PERMISSIONS } from '../../auth/permissions.catalog.js';
+
+/** نقش‌های نبض — presentation / fine-grained UX (NOT Backend RBAC). */
 export const USER_ROLES = {
   KNIGHT: 'knight',
   EXPLORER: 'explorer',
@@ -9,8 +13,25 @@ export const USER_ROLES = {
   MANAGER: 'manager',
 };
 
-/** کاربر فعال سامانه — راهبر برای تست کامل همه ویرایش‌ها */
+/**
+ * Session display name for UI stamps.
+ * Audit authority remains Backend JWT actor — never trust this for security.
+ */
+export function getCurrentUser() {
+  const name = getSessionDisplayName();
+  if (name) return name;
+  if (useMockAuth()) return 'علی رضایی';
+  // Unit tests / pre-hydrate: stable display fallback (not a security actor)
+  return 'علی رضایی';
+}
+
+/** @deprecated Use getCurrentUser() */
 export const CURRENT_USER = 'علی رضایی';
+
+/**
+ * Nabz nickname role — presentation convenience only.
+ * Security gate for order mutations = Backend `orders:write` (see orderEditPermissions).
+ */
 export const CURRENT_USER_ROLE = USER_ROLES.LEADER;
 
 const SUPPLIER_VISIBLE_ROLES = new Set([
@@ -21,8 +42,10 @@ const SUPPLIER_VISIBLE_ROLES = new Set([
   USER_ROLES.MANAGER,
 ]);
 
-/** شوالیه نام تامین‌کننده را نمی‌بیند؛ سایر نقش‌ها می‌بینند. */
+/** شوالیه نام تامین‌کننده را نمی‌بیند؛ سایر نقش‌ها می‌بینند. Requires orders:read. */
 export function canViewSupplierIdentity(role = CURRENT_USER_ROLE) {
+  const perms = getAuthPermissions();
+  if (perms.length && !can(PERMISSIONS.ORDERS_READ)) return false;
   return SUPPLIER_VISIBLE_ROLES.has(role);
 }
 

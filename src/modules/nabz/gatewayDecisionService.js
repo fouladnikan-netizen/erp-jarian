@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { ORDER_TABS, STAGE_PISHKESH_ID } from './config';
 import { GATEWAY_PHASES } from './gatewayConfig';
 import { applyDeliveryInfoToOrder } from './deliveryInfoService';
@@ -7,6 +7,7 @@ import {
   GATEWAY_DECISION_OUTCOMES,
   getCancelReasonLabel,
 } from './gatewayDecisionConfig';
+import { markRevisionResolved } from './services/revisionService';
 
 function formatDecisionTimestamp(date = new Date()) {
   const datePart = date.toLocaleDateString('fa-IR', {
@@ -74,7 +75,7 @@ export function markGatewayDecisionSuccess(order, {
         : null,
       deliveryInfo: withDelivery.deliveryInfo || null,
       decidedAt,
-      decidedBy: CURRENT_USER,
+      decidedBy: getCurrentUser(),
     },
     events: [
       ...(withDelivery.events || []),
@@ -82,13 +83,16 @@ export function markGatewayDecisionSuccess(order, {
         id: Date.now(),
         type: 'order_decision_success',
         at: decidedAt,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `تایید و فروش موفق — ورود به فاز عملیات (${paymentType})`,
       },
     ],
   };
 
-  return enterPhase2FromDecision(withDecision, decidedAt);
+  return enterPhase2FromDecision(
+    markRevisionResolved(withDecision, 'APPROVED'),
+    decidedAt,
+  );
 }
 
 export function markGatewayDecisionFailed(order, { cancelReason, cancelNotes }) {
@@ -107,7 +111,7 @@ export function markGatewayDecisionFailed(order, { cancelReason, cancelNotes }) 
       cancelReason,
       cancelNotes: cancelNotes?.trim() || '',
       decidedAt,
-      decidedBy: CURRENT_USER,
+      decidedBy: getCurrentUser(),
     },
     events: [
       ...(order.events || []),
@@ -115,7 +119,7 @@ export function markGatewayDecisionFailed(order, { cancelReason, cancelNotes }) 
         id: Date.now(),
         type: 'order_decision_failed',
         at: decidedAt,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `عدم موفقیت / لغو — ${failReason}`,
       },
     ],

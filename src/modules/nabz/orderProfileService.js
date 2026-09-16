@@ -1,5 +1,5 @@
 import { ORDER_TABS, getStageLabel, STAGE_PISHKESH_ID, STAGE_KAVOSH_ID, STAGE_MOZENE_ID } from './config';
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { buildStatusHistory, getEffectiveStageId } from './orderStageService';
 import {
@@ -7,6 +7,7 @@ import {
   getProformaVersions,
   buildProformaFingerprint,
 } from './proformaService';
+import { createEntityId, ENTITY_ID_PREFIX } from '../../domain/identity';
 
 let commentIdCounter = 1000;
 let attachmentIdCounter = 2000;
@@ -139,7 +140,7 @@ export function appendSignedProformaRecord(order, meta = {}) {
     events: [
       ...(withAttachment.events || []),
       {
-        id: `pf-signed-${Date.now()}`,
+        id: createEntityId(ENTITY_ID_PREFIX.PROFORMA_FILE, 'signed'),
         type: 'proforma_signed',
         at,
         summary: `پیش‌فاکتور ${meta.documentNumber || ''} مهر و امضا و در مستندات بایگانی شد`.trim(),
@@ -185,7 +186,7 @@ export function archivePreviousSignedProforma(order) {
     events: [
       ...(withAttachment.events || []),
       {
-        id: `pf-archive-${Date.now()}`,
+        id: createEntityId(ENTITY_ID_PREFIX.PROFORMA_FILE, 'archive'),
         type: 'proforma_archived',
         at,
         summary: `نسخه قبلی پیش‌فاکتور ${label} در مستندات بایگانی شد`.trim(),
@@ -211,12 +212,26 @@ export function buildOrderActivityTimeline(order) {
   });
 
   (order.events || []).forEach((event) => {
+    if (event.type === 'revision_required') return; // shown via order.revisions
     entries.push({
       id: `event-${event.id}`,
       at: event.at,
       text: event.summary || event.type,
       kind: 'event',
       by: event.by,
+    });
+  });
+
+  (order.revisions || []).forEach((revision) => {
+    const atFa = revision.returnedAt
+      ? new Date(revision.returnedAt).toLocaleString('fa-IR')
+      : '—';
+    entries.push({
+      id: `revision-${revision.id}`,
+      at: atFa,
+      text: revision.changesSummary || 'عودت برای بازنگری',
+      kind: 'revision',
+      by: revision.returnedBy,
     });
   });
 
@@ -372,7 +387,7 @@ export function markOrderCancelled(order, failReason) {
         id: Date.now(),
         type: 'order_cancelled',
         at,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `لغو سفارش ${order.code} — ${reason}`,
         failReason: reason,
       },

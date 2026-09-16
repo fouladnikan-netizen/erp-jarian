@@ -1,0 +1,26 @@
+id: rbac-role
+name: RBAC Role
+tier: A
+status: active
+ownerModule: shirazeh
+aggregateRoot: Role
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Platform role (code immutable). Create/update label/description/is_active. Soft-deactivate only — no hard delete. Grants stay in role_permissions. Assigned users keep the role after deactivate; login/requirePermission still honor user_roles."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - users:admin
+databaseTable: roles
+apiBasePath: /api/v1/rbac/roles
+backendRepository: backend/src/repositories/rbacRepository.js
+frontendRepository: src/api/repositories/RbacRepository.js
+dependencies:
+  - auth-user
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-35
+  - DDL-38
+migrationSafety: "030 additive columns on existing roles (description, is_active, created_at, updated_at). 033 adds generated label_fa_normalized + unique index (inactive included). No drops. role_permissions and user_roles untouched. code remains PK."
+notes: "Shirazeh Definitions → Users & Access → Roles & Permissions. Permission catalog is structured (DDL-36) and served by GET /api/v1/rbac/permissions. This card is Role only. GET/PUT /api/v1/rbac/roles/:code/permissions stays the grant editor (canonical colon codes). GET /api/v1/rbac/roles/:code/users is a read of users←user_roles for the Role details panel (active + inactive). Display-name uniqueness is DDL-38 (normalized label, including inactive). users:admin is the only mutation gate. Inactive roles are excluded from nothing in JWT loading on purpose (DDL-35)."

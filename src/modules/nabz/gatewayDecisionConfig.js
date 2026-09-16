@@ -74,13 +74,10 @@ export function validatePaymentTerms(terms) {
   return null;
 }
 
-export const GATEWAY_CANCEL_REASONS = [
-  { value: 'high_price', label: 'قیمت بالا نسبت به بازار' },
-  { value: 'late_supply', label: 'عدم تامین به‌موقع کالا' },
-  { value: 'customer_withdraw', label: 'انصراف/تغییر تصمیم مشتری' },
-  { value: 'other', label: 'سایر موارد' },
-];
-
-export function getCancelReasonLabel(value) {
-  return GATEWAY_CANCEL_REASONS.find((item) => item.value === value)?.label || value;
-}
+/** Domain fallback list — live dropdown uses sales reasonRegistryFacade (settings API). */
+export { GATEWAY_CANCEL_REASONS } from '../../domain/settings/reasonRegistry.js';
+export {
+  getCancelReasonLabel,
+  listGatewayCancelReasons,
+  useGatewayCancelReasons,
+} from '../sales/settings/reasonRegistryFacade.js';

@@ -1,11 +1,25 @@
 import { ENTITY_TYPES, PERSON_TYPES } from './config';
 import { formatRelativeTime } from './relativeTime';
+import { listCompanyInteractions } from '../pooyesh/interactionFacade';
+import { getSupplierCapabilityTags } from './supplierCapabilities';
+import {
+  resolveContactLifecycleStage,
+  getRelationshipLifecycleLabel,
+} from '../../domain/party/relationshipLifecycle.js';
 
 export const VIEW_KEYS = {
   CUSTOMER_LEGAL: 'customer-legal',
   CUSTOMER_NATURAL: 'customer-natural',
   SUPPLIER_LEGAL: 'supplier-legal',
   SUPPLIER_NATURAL: 'supplier-natural',
+};
+
+const RELATIONSHIP_LIFECYCLE_COLUMN = {
+  key: 'relationshipLifecycle',
+  label: 'وضعیت ارتباط',
+  sortable: true,
+  filterable: true,
+  width: 64,
 };
 
 const CUSTOMER_TIME_COLUMNS = [
@@ -33,6 +47,7 @@ export function getViewKey(entityType, personType) {
 export const TABLE_COLUMNS = {
   [VIEW_KEYS.CUSTOMER_LEGAL]: [
     { key: 'row', label: 'ردیف', sortable: false, filterable: false },
+    RELATIONSHIP_LIFECYCLE_COLUMN,
     { key: 'companyName', label: 'نام شرکت', sortable: true, filterable: true },
     { key: 'activityDomain', label: 'حوزه فعالیت', sortable: true, filterable: true },
     { key: 'assignee', label: 'شوالیه مرتبط', sortable: true, filterable: true },
@@ -42,6 +57,7 @@ export const TABLE_COLUMNS = {
   ],
   [VIEW_KEYS.CUSTOMER_NATURAL]: [
     { key: 'row', label: 'ردیف', sortable: false, filterable: false },
+    RELATIONSHIP_LIFECYCLE_COLUMN,
     { key: 'personName', label: 'نام شخص', sortable: true, filterable: true },
     { key: 'mobile', label: 'شماره موبایل', sortable: true, filterable: true },
     { key: 'activityDomain', label: 'حوزه فعالیت', sortable: true, filterable: true },
@@ -99,9 +115,13 @@ export function getCellValue(contact, columnKey) {
     case 'mobile':
       return contact.mobile || '';
     case 'productGroup':
-      return (contact.productGroups || []).map((p) => p.group).join('، ') || '';
+      return getSupplierCapabilityTags(contact)
+        .map((tag) => tag.legacyGroup || tag.label)
+        .join('، ') || '';
     case 'productSubgroup':
-      return (contact.productGroups || []).map((p) => p.subgroup).join('، ') || '';
+      return getSupplierCapabilityTags(contact)
+        .map((tag) => tag.label)
+        .join('، ') || '';
     case 'supplierType':
       return contact.supplierType || '';
     case 'assignee':
@@ -123,6 +143,8 @@ export function getCellValue(contact, columnKey) {
       return formatRelativeTime(contact.lastActivityAt);
     case 'behavioralStatus':
       return contact.behavioralStatus || '';
+    case 'relationshipLifecycle':
+      return getRelationshipLifecycleLabel(resolveContactLifecycleStage(contact));
     default:
       return '';
   }
@@ -152,9 +174,9 @@ export function getOpenOrderItems(contact) {
 }
 
 export function getLatestInteraction(contact) {
-  const list = contact.interactions || [];
+  const list = listCompanyInteractions(contact?.id);
   if (!list.length) return null;
-  return [...list].sort((a, b) => b.date.localeCompare(a.date, 'fa'))[0];
+  return [...list].sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''), 'fa'))[0];
 }
 
 export function getActivityLink(contact) {

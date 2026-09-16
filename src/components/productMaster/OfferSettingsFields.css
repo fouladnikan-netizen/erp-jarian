@@ -1,0 +1,142 @@
+.offer-settings {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg);
+  min-width: 0;
+}
+
+.offer-settings__legend {
+  padding: 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.offer-settings__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.offer-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.offer-settings__field--check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  align-self: end;
+}
+
+.offer-settings__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.offer-settings__field select,
+.offer-settings__field input[type='number'] {
+  padding: 0.5rem 0.7rem;
+  border-radius: 9px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.offer-settings__hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.offer-settings__control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.offer-settings__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.65rem;
+}
+
+.offer-settings--rows {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  min-inline-size: 0;
+}
+
+.offer-settings--rows .offer-settings__legend {
+  float: none;
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.offer-settings--rows .offer-settings__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.offer-settings--rows .offer-settings__field {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 9.5rem) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 1rem;
+  padding-block: 0.7rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.offer-settings--rows .offer-settings__field:first-of-type {
+  border-top: 1px solid var(--border-light);
+}
+
+.offer-settings--rows .offer-settings__field--check {
+  flex-direction: unset;
+  align-self: stretch;
+}
+
+.offer-settings--rows .offer-settings__label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.offer-settings--rows .offer-settings__field select,
+.offer-settings--rows .offer-settings__field input[type='number'] {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-size: 0.82rem;
+}
+
+.offer-settings--rows .offer-settings__field input[type='checkbox'] {
+  justify-self: start;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.offer-settings--rows .offer-settings__hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}

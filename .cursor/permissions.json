@@ -1,0 +1,65 @@
+{
+  // Jarian ERP — workspace-level Auto-run guardrails.
+  // Purpose: let ordinary dev/test/read commands run without repeated approval,
+  // while destructive or out-of-workspace operations always require approval.
+  // Docs: Cursor Settings > Agents > Approvals & Execution (mode must be
+  // "Auto-review" or "Allowlist" for this file to take effect).
+  "terminalAllowlist": [
+    // Read-only / navigation
+    "cd",
+    "pwd",
+    "ls",
+    "cat",
+    "find",
+    "grep",
+    "rg",
+    "head",
+    "tail",
+    "wc",
+    "diff",
+    "echo",
+    "which",
+    "env",
+    "file",
+
+    // Read-only git inspection (never destructive git subcommands here)
+    "git status",
+    "git diff",
+    "git log",
+    "git show",
+    "git branch",
+    "git rev-parse",
+    "git remote",
+    "git fetch",
+    "git stash list",
+
+    // Project dev/test/build tooling used constantly in this repo
+    "npm",
+    "npx",
+    "node",
+    "python3",
+
+    // Local health checks against this project's own dev servers
+    "curl -s http://127.0.0.1",
+    "curl -s http://localhost",
+    "lsof -iTCP"
+  ],
+  "autoRun": {
+    "allow_instructions": [
+      "Running project scripts via npm/npx/node/python3 inside this workspace (tests, builds, dev servers, Playwright, typecheck, lint, migrate, seed) is fine without approval.",
+      "Reading, searching, or listing files inside this workspace (cat, grep, rg, find, ls, head, tail, wc, diff) is fine without approval.",
+      "Read-only git inspection commands (status, diff, log, show, branch, rev-parse, remote, fetch) are fine without approval.",
+      "Checking local dev server health via curl/lsof against 127.0.0.1 or localhost is fine without approval."
+    ],
+    "block_instructions": [
+      "Any command that deletes files or directories (rm, rm -rf, rmdir, unlink, trash) must go through approval first.",
+      "Any command using sudo, or any privilege escalation, must go through approval first.",
+      "git reset (especially --hard) must go through approval first.",
+      "git clean must go through approval first.",
+      "git push --force, -f, or any force push must go through approval first.",
+      "Any destructive database operation (DROP, TRUNCATE, DELETE without WHERE, docker compose down -v, docker system prune --volumes, rolling back a migration against a shared or production database) must go through approval first.",
+      "Any command that reads, writes, or deletes files outside this workspace root must go through approval first.",
+      "Any command touching production credentials, SSH keys, .env secrets, or that could be a security bypass or otherwise malicious must go through approval first."
+    ]
+  }
+}

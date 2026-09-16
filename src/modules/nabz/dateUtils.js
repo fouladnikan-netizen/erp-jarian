@@ -51,6 +51,7 @@ export function parseJalaliParts(dateStr) {
   const ascii = toAsciiDigits(dateStr || '');
   const [year, month, day] = ascii.split('/').map((n) => Number(n) || 0);
   return {
+    year,
     yy: year % 100,
     mm: month,
     dd: day,
@@ -115,9 +116,9 @@ export function gregorianToJalali(gy, gm, gd) {
   let gy2 = gy - (gy <= 1600 ? 621 : 1600);
   const leap = gm > 2 ? gy2 + 1 : gy2;
   let days = (365 * gy2)
-    + Math.floor(leap / 4)
-    - Math.floor(leap / 100)
-    + Math.floor(leap / 400)
+    + Math.floor((leap + 3) / 4)
+    - Math.floor((leap + 99) / 100)
+    + Math.floor((leap + 399) / 400)
     - 80
     + gd
     + gDaysInMonth[gm - 1];
@@ -172,3 +173,51 @@ export function getTodayJalaliParts() {
   const now = new Date();
   return gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
+
+/**
+ * Convert Linka / mixed Gregorian dates to Jalali YYYY/MM/DD (Persian digits).
+ * Law: jarian-numeral-display — display dates use ۰–۹; IDs/codes stay Latin.
+ * Leaves valid Jalali strings as-is (Persian digits applied).
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function toJalaliDisplayDate(value) {
+  if (value == null || value === '') return '';
+  const ascii = toAsciiDigits(String(value).trim());
+  const datePart = ascii.split(/[T\s]/)[0] || ascii;
+
+  if (isValidJalaliDate(datePart)) {
+    const { year, month, day } = parseJalaliDate(datePart);
+    return formatJalaliDate(year, month, day);
+  }
+
+  // YYYY-MM-DD / YYYY/MM/DD Gregorian
+  let m = datePart.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if (m) {
+    const year = Number(m[1]);
+    const month = Number(m[2]);
+    const day = Number(m[3]);
+    if (year >= 1700 && year <= 2100) {
+      const j = gregorianToJalali(year, month, day);
+      return formatJalaliDate(j.year, j.month, j.day);
+    }
+    if (year >= 1200 && year <= 1499) {
+      return formatJalaliDate(year, month, day);
+    }
+  }
+
+  // MM/DD/YYYY (Linka)
+  m = datePart.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if (m) {
+    const month = Number(m[1]);
+    const day = Number(m[2]);
+    const year = Number(m[3]);
+    if (year >= 1700 && year <= 2100 && month >= 1 && month <= 12) {
+      const j = gregorianToJalali(year, month, day);
+      return formatJalaliDate(j.year, j.month, j.day);
+    }
+  }
+
+  return String(value).trim();
+}
+

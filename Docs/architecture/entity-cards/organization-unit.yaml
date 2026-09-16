@@ -1,0 +1,25 @@
+id: organization-unit
+name: Organization Unit
+tier: A
+status: active
+ownerModule: shirazeh
+aggregateRoot: OrganizationUnit
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Platform org-tree node. Create/update name/code/parent/sort. Soft-deactivate (is_active=false). Root unit ou_root cannot be deleted. Not Kanoon Company."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - users:admin
+databaseTable: organization_units
+apiBasePath: /api/v1/organization/units
+backendRepository: backend/src/repositories/organizationRepository.js
+frontendRepository: src/api/repositories/OrganizationRepository.js
+dependencies:
+  - auth-user
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-37
+migrationSafety: "032 new table organization_units with self-FK parent_id, seed row ou_root. No drops. No backfill of mock people."
+notes: "Shirazeh Definitions → Organization Structure. Person nodes are not stored here; they live in user_organization_assignments → users.id. Position is a sibling table. Scope is out."

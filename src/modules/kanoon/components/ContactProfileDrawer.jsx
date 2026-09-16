@@ -8,23 +8,38 @@ import {
 } from '../config';
 import { getDisplayName } from '../columns';
 import { getReportCard } from '../reportCard';
+import { getSupplierCapabilityTags } from '../supplierCapabilities';
 import { formatProductGroups } from './ProductGroupMultiSelect';
 import StatusTag from '../../../components/module/StatusTag';
+import ContactPersonsSection from '../../../components/contactPerson/ContactPersonsSection';
+import { listCompanyInteractions } from '../../pooyesh/interactionFacade';
+import { toJalaliDisplayDate } from '../../nabz/dateUtils';
+import { formatJarianMoney } from '../../../config/JarianUI.config';
 
 const OFFICIAL_SPEC_FIELDS = [
-  { key: 'establishmentDate', label: 'تاریخ تاسیس' },
+  { key: 'establishmentDate', label: 'تاریخ تاسیس', kind: 'date' },
   { key: 'economicCode', label: 'کد اقتصادی' },
   { key: 'companyType', label: 'نوع شرکت' },
   { key: 'registrationRegion', label: 'منطقه ثبتی' },
-  { key: 'latestGazette', label: 'آخرین آگهی رسمی' },
-  { key: 'latestCapital', label: 'آخرین سرمایه ثبتی' },
+  { key: 'latestGazette', label: 'آخرین آگهی رسمی', kind: 'dateSummary' },
+  { key: 'latestCapital', label: 'آخرین سرمایه ثبتی', kind: 'money' },
   { key: 'phone', label: 'تلفن' },
   { key: 'website', label: 'وبسایت' },
   { key: 'address', label: 'آدرس' },
   { key: 'postalCode', label: 'کدپستی' },
 ];
 
-const EMPTY_RELATED = { name: '', mobile: '', role: 'کارشناس', notes: '' };
+function formatOfficialSpecValue(value, kind) {
+  if (value == null || value === '') return value;
+  if (kind === 'date') return toJalaliDisplayDate(value) || value;
+  if (kind === 'money') return formatJarianMoney(value, { empty: '' }) || value;
+  if (kind === 'dateSummary') {
+    const parts = String(value).split(' — ');
+    if (parts[0]) parts[0] = toJalaliDisplayDate(parts[0]) || parts[0];
+    return parts.join(' — ');
+  }
+  return value;
+}
 
 const ORDER_STAGE_TAG = {
   مظنه: 'active',
@@ -57,8 +72,8 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
   const legalPersons = contact.legalPersons || {};
   const report = getReportCard(contact);
 
-  const sortedInteractions = [...(contact.interactions || [])].sort(
-    (a, b) => b.date.localeCompare(a.date, 'fa'),
+  const sortedInteractions = [...listCompanyInteractions(contact.id)].sort(
+    (a, b) => String(b.date || '').localeCompare(String(a.date || ''), 'fa'),
   );
 
   const sortedOrders = [...(contact.relatedOrders || [])].sort(
@@ -70,21 +85,6 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
   }, [contact.id, contact._initialTab]);
 
   const update = (patch) => onUpdateContact(contact.id, patch);
-
-  const addRelatedPerson = () => {
-    update({
-      relatedPersons: [...(contact.relatedPersons || []), { ...EMPTY_RELATED }],
-    });
-  };
-
-  const updateRelatedPerson = (index, patch) => {
-    const next = (contact.relatedPersons || []).map((p, i) => (i === index ? { ...p, ...patch } : p));
-    update({ relatedPersons: next });
-  };
-
-  const removeRelatedPerson = (index) => {
-    update({ relatedPersons: (contact.relatedPersons || []).filter((_, i) => i !== index) });
-  };
 
   return (
     <div className="kanoon-drawer-overlay" onClick={onClose} role="presentation">
@@ -142,8 +142,12 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
                     <h3>اطلاعات ثبتی</h3>
                     <ProfileRow label="شماره ثبت" value={specs.registrationNumber} />
                     <ProfileRow label="شناسه ملی" value={contact.nationalId} />
-                    {OFFICIAL_SPEC_FIELDS.map(({ key, label }) => (
-                      <ProfileRow key={key} label={label} value={specs[key]} />
+                    {OFFICIAL_SPEC_FIELDS.map(({ key, label, kind }) => (
+                      <ProfileRow
+                        key={key}
+                        label={label}
+                        value={formatOfficialSpecValue(specs[key], kind)}
+                      />
                     ))}
                     <ProfileRow label="آدرس کامل" value={contact.fullAddress} />
                   </div>
@@ -190,9 +194,10 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
 
                   {contact.entityType === ENTITY_TYPES.SUPPLIER && (
                     <div className="kanoon-profile-panel__section">
-                      <h3>گروه‌های کالایی</h3>
+                      <h3>توانمندی‌های تامین</h3>
                       <p className="kanoon-profile-panel__value kanoon-profile-panel__value--block">
-                        {formatProductGroups(contact.productGroups)}
+                        {getSupplierCapabilityTags(contact).map((tag) => tag.label).join(' · ')
+                          || formatProductGroups(contact.productGroups)}
                       </p>
                     </div>
                   )}
@@ -224,81 +229,7 @@ export default function ContactProfileDrawer({ contact, onClose, onUpdateContact
 
           {activeTab === 'related' && contact.personType === PERSON_TYPES.LEGAL && (
             <div className="kanoon-profile-panel">
-              <button type="button" className="btn btn--outline kanoon-related-add" onClick={addRelatedPerson}>
-                + افزودن شخص مرتبط جدید
-              </button>
-              {(contact.relatedPersons || []).length ? (
-                <div className="kanoon-related-table-wrap">
-                  <table className="data-table kanoon-related-table">
-                    <thead>
-                      <tr>
-                        <th>ردیف</th>
-                        <th>نام شخص</th>
-                        <th>سمت</th>
-                        <th>شماره موبایل</th>
-                        <th>توضیحات</th>
-                        <th aria-label="عملیات" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(contact.relatedPersons || []).map((person, i) => (
-                        <tr key={i}>
-                          <td>{(i + 1).toLocaleString('fa-IR')}</td>
-                          <td>
-                            <input
-                              type="text"
-                              className="kanoon-related-table__input"
-                              value={person.name || ''}
-                              placeholder="نام"
-                              onChange={(e) => updateRelatedPerson(i, { name: e.target.value })}
-                            />
-                          </td>
-                          <td>
-                            <select
-                              className="kanoon-related-table__input"
-                              value={person.role}
-                              onChange={(e) => updateRelatedPerson(i, { role: e.target.value })}
-                            >
-                              <option value="کارشناس">کارشناس</option>
-                              <option value="مدیر">مدیر</option>
-                            </select>
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              className="kanoon-related-table__input"
-                              value={person.mobile || ''}
-                              placeholder="۰۹۱۲..."
-                              onChange={(e) => updateRelatedPerson(i, { mobile: e.target.value })}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              className="kanoon-related-table__input"
-                              value={person.notes || ''}
-                              placeholder="توضیحات"
-                              onChange={(e) => updateRelatedPerson(i, { notes: e.target.value })}
-                            />
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="btn btn--ghost kanoon-related-table__remove"
-                              onClick={() => removeRelatedPerson(i)}
-                              aria-label="حذف"
-                            >
-                              ×
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="kanoon-profile-panel__empty">شخص مرتبطی ثبت نشده است.</p>
-              )}
+              <ContactPersonsSection companyId={contact.id} />
             </div>
           )}
 

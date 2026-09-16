@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { expertKey, findExpertByKey, listCustomerExperts } from '../customers';
+import { getContactPersonDisplayName } from '../../../domain/contactPerson';
 import SearchCombobox from './SearchCombobox';
 
 export default function ExpertCombobox({ customerId, value, onChange }) {
@@ -14,8 +15,8 @@ export default function ExpertCombobox({ customerId, value, onChange }) {
       onChange={onChange}
       options={experts}
       getOptionKey={expertKey}
-      getOptionLabel={(person) => person.name}
-      getOptionMeta={(person) => [person.role, person.mobile].filter(Boolean).join(' · ')}
+      getOptionLabel={(person) => getContactPersonDisplayName(person)}
+      getOptionMeta={(person) => [person.jobPosition, person.mobile].filter(Boolean).join(' · ')}
       placeholder={customerId ? 'جستجو در کارشناسان مرتبط...' : 'ابتدا نام شرکت را انتخاب کنید'}
       ariaLabel="کارشناس مرتبط"
       disabled={!customerId}

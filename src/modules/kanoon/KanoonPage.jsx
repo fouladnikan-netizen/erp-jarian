@@ -1,63 +1,99 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { initialContacts } from './contactsData';
-import { ENTITY_TYPES, PERSON_TYPES } from './config';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useContactsStore } from '../../stores/useContactsStore';
+import { PERSON_TYPES } from './config';
 import { computeKanoonKpis } from './kpi';
 import KanoonKpis from './components/KanoonKpis';
-import KanoonToolbar from './components/KanoonToolbar';
+import KanoonToolbar, { entityTypeFromAudience } from './components/KanoonToolbar';
 import KanoonTable from './components/KanoonTable';
 import ContactModal from './components/ContactModal';
-import ContactProfileDrawer from './components/ContactProfileDrawer';
 import KanoonActionPlaceholder from './components/KanoonActionPlaceholder';
 import { KANOON_ACTION } from './kanoonActionTypes';
+import { useCompanyCompletionGate } from '../../components/customerCompletion';
+import ListPageLayout from '../../components/module/ListPageLayout';
+import ListToolbar from '../../components/module/ListToolbar';
+import { useCan } from '../../stores/useSessionStore';
+import { PERMISSIONS } from '../../auth/permissions.catalog.js';
+import { getCompanyIdentityErrorFromApi } from '../../api/companyIdentityErrors.js';
+import { showSystemToast } from '../../utils/systemToast.js';
 import './kanoon.css';
 
 export default function KanoonPage() {
-  const [contacts, setContacts] = useState(initialContacts);
-  const [entityTab, setEntityTab] = useState(ENTITY_TYPES.CUSTOMER);
+  const contacts = useContactsStore((state) => state.contacts);
+  const addContact = useContactsStore((state) => state.addContact);
+  const createFromIdentityAsync = useContactsStore((state) => state.createFromIdentityAsync);
+  const updateContact = useContactsStore((state) => state.updateContact);
+  const canWriteCompanies = useCan(PERMISSIONS.COMPANIES_WRITE);
+  const [audienceFilter, setAudienceFilter] = useState('customers');
   const [personType, setPersonType] = useState(PERSON_TYPES.LEGAL);
   const [search, setSearch] = useState('');
-  const [columnFilters, setColumnFilters] = useState({});
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [profileContact, setProfileContact] = useState(null);
   const [modalState, setModalState] = useState(null);
   const [actionForm, setActionForm] = useState(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { ensureOperational, gateDialog } = useCompanyCompletionGate();
 
+  const entityTab = entityTypeFromAudience(audienceFilter);
   const kpis = useMemo(() => computeKanoonKpis(contacts), [contacts]);
+
+  const openProfile = (contact, tab) => {
+    navigate(`/kanoon/contact/${contact.id}${tab ? `?tab=${tab}` : ''}`);
+  };
 
   useEffect(() => {
     const contactId = Number(searchParams.get('contact'));
     if (!contactId) return;
     const match = contacts.find((c) => c.id === contactId);
-    if (match) setProfileContact(match);
+    if (match) navigate(`/kanoon/contact/${match.id}`, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, contacts]);
 
   useEffect(() => {
-    setColumnFilters({});
     setSelectedIds(new Set());
-  }, [entityTab, personType]);
+  }, [audienceFilter, personType]);
 
   const handleAddContact = (contact) => {
-    setContacts((prev) => [...prev, { ...contact, id: Date.now() }]);
+    void addContact(contact);
     setModalState(null);
   };
 
+  const handleCreateFromIdentity = async ({ nationalId, entityType, activityDomain }) => {
+    try {
+      const result = await createFromIdentityAsync({ nationalId, entityType, activityDomain });
+      setModalState(null);
+      if (result?.company?.id) {
+        navigate(`/kanoon/contact/${result.company.id}`);
+      }
+      if (result && !result.created && result.mode === 'existing') {
+        showSystemToast('شرکت با این شناسه ملی از قبل در کانون ثبت شده است.');
+      }
+    } catch (error) {
+      const message = getCompanyIdentityErrorFromApi(error);
+      const err = new Error(message);
+      err.cause = error;
+      throw err;
+    }
+  };
+
   const handleUpdateContact = (id, updates) => {
-    setContacts((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
-    setProfileContact((prev) => (prev?.id === id ? { ...prev, ...updates } : prev));
+    updateContact(id, updates);
   };
 
   const handleQuickActivity = (contact) => {
-    setActionForm({ type: KANOON_ACTION.NEW_ACTIVITY, contact });
+    ensureOperational(contact, () => {
+      setActionForm({ type: KANOON_ACTION.NEW_ACTIVITY, contact });
+    });
   };
 
   const handleQuickOrder = (contact) => {
-    setActionForm({ type: KANOON_ACTION.NEW_ORDER, contact });
+    ensureOperational(contact, () => {
+      setActionForm({ type: KANOON_ACTION.NEW_ORDER, contact });
+    });
   };
 
   const handleOrderFallback = (contact) => {
-    setProfileContact({ ...contact, _initialTab: 'orders' });
+    openProfile(contact, 'orders');
   };
 
   const handleToggleActive = (contact) => {
@@ -69,30 +105,39 @@ export default function KanoonPage() {
   };
 
   return (
-    <div className="module-page kanoon-page" data-module="kanoon">
-      <KanoonKpis kpis={kpis} />
-
-      <KanoonToolbar
-        entityTab={entityTab}
-        personType={personType}
-        search={search}
-        columnFilters={columnFilters}
-        onEntityTabChange={setEntityTab}
-        onPersonTypeChange={setPersonType}
-        onSearchChange={setSearch}
-        onColumnFiltersChange={setColumnFilters}
-        onCreateClick={() => openCreateModal('minimal')}
-      />
-
+    <ListPageLayout
+      moduleId="kanoon"
+      className="kanoon-page"
+      kpis={<KanoonKpis kpis={kpis} />}
+      toolbar={(
+        <ListToolbar
+          searchPlaceholder="جستجو در مخاطبین..."
+          searchValue={search}
+          onSearchChange={setSearch}
+          primaryLabel="ثبت مخاطب جدید"
+          onPrimaryClick={() => openCreateModal('minimal')}
+          primaryDisabled={!canWriteCompanies}
+          primaryTitle={canWriteCompanies ? undefined : 'شما مجوز ایجاد مخاطب را ندارید.'}
+          filters={(
+            <KanoonToolbar
+              audienceFilter={audienceFilter}
+              personType={personType}
+              onAudienceFilterChange={setAudienceFilter}
+              onPersonTypeChange={setPersonType}
+            />
+          )}
+        />
+      )}
+    >
       <KanoonTable
         contacts={contacts}
         entityType={entityTab}
         personType={personType}
+        audienceFilter={audienceFilter}
         search={search}
-        columnFilters={columnFilters}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
-        onNameClick={setProfileContact}
+        onNameClick={openProfile}
         onQuickActivity={handleQuickActivity}
         onQuickOrder={handleQuickOrder}
         onToggleActive={handleToggleActive}
@@ -106,6 +151,7 @@ export default function KanoonPage() {
           personType={modalState.personType}
           onClose={() => setModalState(null)}
           onSubmit={handleAddContact}
+          onCreateFromIdentity={handleCreateFromIdentity}
           onOpenFullForm={() => setModalState((s) => ({ ...s, mode: 'full' }))}
         />
       )}
@@ -118,13 +164,7 @@ export default function KanoonPage() {
         />
       )}
 
-      {profileContact && (
-        <ContactProfileDrawer
-          contact={profileContact}
-          onClose={() => setProfileContact(null)}
-          onUpdateContact={handleUpdateContact}
-        />
-      )}
-    </div>
+      {gateDialog}
+    </ListPageLayout>
   );
 }

@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { CURRENT_USER, CURRENT_USER_ROLE } from '../../../constants';
+import { useEffect, useMemo, useState } from 'react';
+import { getCurrentUser, CURRENT_USER_ROLE } from '../../../constants';
 import {
-  CRM_ACTIVITY_ORDER,
   CRM_ACTIVITY_META,
   CRM_ACTIVITY_TYPES,
   CRM_FOLLOW_UP_ACTIONS,
@@ -11,6 +10,30 @@ import { parseMoneyInput } from '../../../orderCode';
 import JalaliDatePicker from '../../JalaliDatePicker';
 import MoneyInput from '../../MoneyInput';
 import MentionTextarea from './MentionTextarea';
+import {
+  fetchActivityTypes,
+  listActiveActivityTypes,
+  useActivityTypesVersion,
+} from '../../../../../domain/activityTypes/activityTypesFacade.js';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
+
+/**
+ * `payment` is a Nabz order-CRM-only concept — it never persists as a
+ * canonical Pooyesh Activity (see orderActivityBridge.js) and is
+ * intentionally NOT part of the shared Activity Type registry (Gap 1).
+ * Every other tab is generated dynamically from the SAME Shirazeh-owned
+ * active Activity Type registry every other Activity-creation surface
+ * uses (Pooyesh/Kanoon, Ofogh) — no hardcoded local list. Known legacy
+ * keys keep their existing icon glyph; any other registry key (including
+ * new ones created in Shirazeh) falls back to a generic icon.
+ */
+const KNOWN_TYPE_ICONS = {
+  [CRM_ACTIVITY_TYPES.CALL]: CRM_ACTIVITY_META[CRM_ACTIVITY_TYPES.CALL]?.icon,
+  [CRM_ACTIVITY_TYPES.NOTE]: CRM_ACTIVITY_META[CRM_ACTIVITY_TYPES.NOTE]?.icon,
+  [CRM_ACTIVITY_TYPES.MESSAGE]: CRM_ACTIVITY_META[CRM_ACTIVITY_TYPES.MESSAGE]?.icon,
+  [CRM_ACTIVITY_TYPES.MEETING]: CRM_ACTIVITY_META[CRM_ACTIVITY_TYPES.MEETING]?.icon,
+};
+const DEFAULT_TYPE_ICON = '🗂️';
 
 const INITIAL_FOLLOW_UP = {
   date: '',
@@ -37,11 +60,27 @@ function readFileAsDataUrl(file) {
 }
 
 export default function ActivityComposer({ onSubmit }) {
+  const { alert } = useJarianNotice();
   const [activityType, setActivityType] = useState(CRM_ACTIVITY_TYPES.CALL);
   const [body, setBody] = useState('');
   const [needsFollowUp, setNeedsFollowUp] = useState(false);
   const [followUp, setFollowUp] = useState(INITIAL_FOLLOW_UP);
   const [payment, setPayment] = useState(INITIAL_PAYMENT);
+
+  const activityTypesVersion = useActivityTypesVersion();
+  useEffect(() => { fetchActivityTypes(); }, []);
+  const tabs = useMemo(() => {
+    const registryTabs = listActiveActivityTypes().map((t) => ({
+      type: t.key,
+      icon: KNOWN_TYPE_ICONS[t.key] || DEFAULT_TYPE_ICON,
+      label: t.labelFa || CRM_ACTIVITY_META[t.key]?.label || t.key,
+    }));
+    return [...registryTabs, {
+      type: CRM_ACTIVITY_TYPES.PAYMENT,
+      icon: CRM_ACTIVITY_META[CRM_ACTIVITY_TYPES.PAYMENT]?.icon,
+      label: CRM_ACTIVITY_META[CRM_ACTIVITY_TYPES.PAYMENT]?.label,
+    }];
+  }, [activityTypesVersion]);
 
   const isPayment = activityType === CRM_ACTIVITY_TYPES.PAYMENT;
 
@@ -65,7 +104,7 @@ export default function ActivityComposer({ onSubmit }) {
         receiptMimeType: file.type || '',
       }));
     } catch {
-      window.alert('خواندن فایل فیش واریزی ناموفق بود.');
+      void alert({ title: 'توجه', message: 'خواندن فایل فیش واریزی ناموفق بود.' });
     }
   };
 
@@ -76,13 +115,13 @@ export default function ActivityComposer({ onSubmit }) {
     if (isPayment) {
       const amount = parseMoneyInput(payment.amountRial);
       if (!amount || amount <= 0 || !payment.date) {
-        window.alert('برای دریافت وجه، مبلغ و تاریخ را تکمیل کنید.');
+        void alert({ title: 'توجه', message: 'برای دریافت وجه، مبلغ و تاریخ را تکمیل کنید.' });
         return;
       }
       onSubmit({
         type: activityType,
         body: trimmedBody || 'دریافت وجه',
-        author: CURRENT_USER,
+        author: getCurrentUser(),
         roleLabel: getRoleLabel(CURRENT_USER_ROLE),
         followUp: null,
         payment: {
@@ -100,14 +139,14 @@ export default function ActivityComposer({ onSubmit }) {
     if (!trimmedBody) return;
 
     if (needsFollowUp && (!followUp.date || !followUp.time || !followUp.actionType)) {
-      window.alert('لطفاً تاریخ، ساعت و نوع اقدام بعدی را تکمیل کنید.');
+      void alert({ title: 'توجه', message: 'لطفاً تاریخ، ساعت و نوع اقدام بعدی را تکمیل کنید.' });
       return;
     }
 
     onSubmit({
       type: activityType,
       body: trimmedBody,
-      author: CURRENT_USER,
+      author: getCurrentUser(),
       roleLabel: getRoleLabel(CURRENT_USER_ROLE),
       followUp: needsFollowUp
         ? {
@@ -133,22 +172,19 @@ export default function ActivityComposer({ onSubmit }) {
         <div className="order-crm-composer__section">
           <span className="order-crm-composer__label">نوع تعامل</span>
           <div className="order-crm-type-tabs" role="tablist" aria-label="نوع تعامل">
-            {CRM_ACTIVITY_ORDER.map((type) => {
-              const meta = CRM_ACTIVITY_META[type];
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  role="tab"
-                  aria-selected={activityType === type}
-                  className={`order-crm-type-tabs__btn${activityType === type ? ' is-active' : ''}`}
-                  onClick={() => setActivityType(type)}
-                >
-                  <span aria-hidden="true">{meta.icon}</span>
-                  {meta.label}
-                </button>
-              );
-            })}
+            {tabs.map(({ type, icon, label }) => (
+              <button
+                key={type}
+                type="button"
+                role="tab"
+                aria-selected={activityType === type}
+                className={`order-crm-type-tabs__btn${activityType === type ? ' is-active' : ''}`}
+                onClick={() => setActivityType(type)}
+              >
+                <span aria-hidden="true">{icon}</span>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 

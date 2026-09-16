@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getCustomerById } from './customers';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { getDeliveryRecipientForShipping } from './deliveryInfoService';
@@ -10,6 +10,9 @@ import { getCarrierById } from './carriers';
 import { getWarehouseById } from './warehouses';
 import { resolveAssigneeMobile } from './proformaService';
 import { SHIPPING_FORM_NUMBER } from './shippingConfig';
+import { getCachedOrganizationIdentity, toDocumentOrganization, toShippingOrganizationSnapshot, isDocumentOrganizationPopulated } from '../../domain/organizationIdentity';
+import { legacyDocumentOrganizationFromBrand } from './documentOrganization';
+import { getDocumentChromeTagline } from '../sales/settings/documentChromeFacade.js';
 
 function buildRowFromPurchaseLine(order, line, index, preview) {
   const po = line.purchaseOrder || {};
@@ -91,10 +94,11 @@ export function getShippingRecipient(order) {
     };
   }
 
-  const primaryPerson = customer.relatedPersons?.[0];
+  const primaryPerson = (customer.relatedPersons || []).find((p) => p.isPrimary)
+    || customer.relatedPersons?.[0];
   return {
     companyName,
-    name: primaryPerson?.name || companyName,
+    name: primaryPerson?.fullName || primaryPerson?.name || companyName,
     nationalId: customer.nationalId || '—',
     phone: primaryPerson?.mobile || customer.mobile || customer.officialSpecs?.phone || '—',
     postalCode: customer.officialSpecs?.postalCode || '—',
@@ -125,6 +129,16 @@ export function buildShippingDocumentViewModel(order, carrierId, selectedRowKeys
 
   const carrier = getCarrierById(carrierId) || { name: '—', phone: '—', address: '—' };
   const shipping = getOrderShippingRecord(order);
+  const isIssued = Boolean(shipping?.issuedAt);
+  let organization = {
+    ...toDocumentOrganization(getCachedOrganizationIdentity()),
+    tagline: getDocumentChromeTagline(),
+  };
+  if (isIssued) {
+    organization = isDocumentOrganizationPopulated(shipping?.organizationSnapshot)
+      ? shipping.organizationSnapshot
+      : legacyDocumentOrganizationFromBrand();
+  }
 
   return {
     orderCode: order.code,
@@ -145,6 +159,7 @@ export function buildShippingDocumentViewModel(order, carrierId, selectedRowKeys
     voucherNumber: shipping?.voucherNumber
       || `BB-${order.code.slice(-6)}-${Date.now().toString().slice(-4)}`,
     selectedRowKeys: items.map((row) => row.shippingRowKey),
+    organization,
   };
 }
 
@@ -171,18 +186,23 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
   }
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
+  const organizationSnapshot = {
+    ...toShippingOrganizationSnapshot(getCachedOrganizationIdentity()),
+    tagline: getDocumentChromeTagline(),
+  };
   const shippingVoucher = {
     carrierId,
     voucherNumber: viewModel.voucherNumber,
     issuedAt: at,
-    issuedBy: CURRENT_USER,
+    issuedBy: getCurrentUser(),
     selectedRowKeys: keys,
     itemCount: viewModel.items.length,
+    organizationSnapshot,
   };
 
   return {
     accepted: true,
-    viewModel,
+    viewModel: { ...viewModel, organization: organizationSnapshot },
     order: {
       ...order,
       shippingVoucher,
@@ -194,7 +214,7 @@ export function issueShippingVoucher(order, carrierId, selectedRowKeys = null) {
           id: Date.now(),
           type: 'shipping_voucher_issued',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `صدور سفارش ارسال ${viewModel.voucherNumber} — ${carrier.name} (${viewModel.items.length} قلم)`,
         },
       ],

@@ -6,18 +6,13 @@ import {
   ENTITY_TYPES,
   IRAN_PROVINCES,
   PERSON_TYPES,
-  SUPPLIER_PRODUCT_GROUPS,
   SUPPLIER_TYPES,
 } from '../config';
-import ProductGroupMultiSelect from './ProductGroupMultiSelect';
+import { validateSupplierLegalFields } from '../supplierCapabilities';
+import SupplierCapabilityTagInput from './SupplierCapabilityTagInput';
 
 const NATIONAL_ID_MESSAGE =
-  'به منظور پیشگیری از ثبت شرکت تکراری، شناسه ملی اجباری است. اگر تمایل دارید به وب سایت لینکا جهت استخراج شناسه ملی هدایت شوید';
-
-function openLinkaSearch(companyName) {
-  const query = encodeURIComponent(`${companyName} لینکا`);
-  window.open(`https://www.google.com/search?q=${query}`, '_blank', 'noopener,noreferrer');
-}
+  'شناسه ملی باید دقیقاً ۱۱ رقم باشد.';
 
 function Field({ label, required, children }) {
   return (
@@ -31,20 +26,31 @@ function Field({ label, required, children }) {
   );
 }
 
-const firstGroup = Object.keys(SUPPLIER_PRODUCT_GROUPS)[0];
-
+/**
+ * @param {{
+ *   mode: string,
+ *   entityType: string,
+ *   personType: string,
+ *   onClose: () => void,
+ *   onSubmit: (contact: object) => void,
+ *   onCreateFromIdentity?: (input: { nationalId: string, entityType: string, activityDomain?: string }) => Promise<void>|void,
+ *   onOpenFullForm: () => void,
+ * }} props
+ */
 export default function ContactModal({
   mode,
   entityType,
   personType,
   onClose,
   onSubmit,
+  onCreateFromIdentity,
   onOpenFullForm,
 }) {
   const isLegal = personType === PERSON_TYPES.LEGAL;
   const isCustomer = entityType === ENTITY_TYPES.CUSTOMER;
   const isFull = mode === 'full';
   const showFullFormButton = !isLegal && !isFull;
+  const useIdentityFlow = isLegal && typeof onCreateFromIdentity === 'function';
 
   const [form, setForm] = useState({
     companyName: '',
@@ -57,12 +63,11 @@ export default function ContactModal({
     ownerName: '',
     landline: '',
     supplierType: SUPPLIER_TYPES[0],
-    productGroups: !isCustomer
-      ? [{ group: firstGroup, subgroup: SUPPLIER_PRODUCT_GROUPS[firstGroup][0] }]
-      : [],
+    capabilityTags: [],
   });
   const [nationalIdError, setNationalIdError] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -112,10 +117,11 @@ export default function ContactModal({
         ...base,
         companyName: form.companyName.trim(),
         nationalId: form.nationalId.trim(),
-        productGroups: [...form.productGroups],
+        ownerName: form.ownerName.trim(),
+        landline: form.landline.trim(),
+        capabilityTags: [...form.capabilityTags],
+        productGroups: [],
         supplierType: isFull ? form.supplierType : SUPPLIER_TYPES[0],
-        ownerName: isFull ? form.ownerName.trim() : undefined,
-        landline: isFull ? form.landline.trim() : undefined,
         mobile: isFull ? form.mobile.trim() : undefined,
         fullAddress: isFull ? form.fullAddress.trim() : undefined,
       };
@@ -125,15 +131,47 @@ export default function ContactModal({
       ...base,
       personName: form.personName.trim(),
       mobile: form.mobile.trim(),
-      productGroups: [...form.productGroups],
+      landline: form.landline.trim() || undefined,
+      capabilityTags: [...form.capabilityTags],
+      productGroups: [],
       supplierType: isFull ? form.supplierType : SUPPLIER_TYPES[0],
-      landline: isFull ? form.landline.trim() : undefined,
     };
+  };
+
+  const validateIdentity = () => {
+    setValidationError('');
+    setNationalIdError(false);
+    const cleaned = String(form.nationalId || '').replace(/\D/g, '');
+    if (!cleaned) {
+      setNationalIdError(true);
+      setValidationError('شناسه ملی را وارد کنید.');
+      return null;
+    }
+    if (cleaned.length !== 11) {
+      setNationalIdError(true);
+      setValidationError(NATIONAL_ID_MESSAGE);
+      return null;
+    }
+    if (isCustomer && !form.activityDomain) {
+      setValidationError('حوزه فعالیت را از لیست انتخاب کنید.');
+      return null;
+    }
+    return cleaned;
   };
 
   const validate = () => {
     setValidationError('');
     setNationalIdError(false);
+
+    if (!isCustomer && isLegal) {
+      const result = validateSupplierLegalFields(form);
+      if (!result.ok) {
+        if (result.nationalIdMissing) setNationalIdError(true);
+        setValidationError(result.message || 'اطلاعات تامین‌کننده ناقص است.');
+        return false;
+      }
+      return true;
+    }
 
     if (isLegal) {
       if (!form.companyName.trim()) {
@@ -148,10 +186,6 @@ export default function ContactModal({
         setValidationError('حوزه فعالیت اجباری است.');
         return false;
       }
-      if (!isCustomer && form.productGroups.length === 0) {
-        setValidationError('حداقل یک گروه کالا انتخاب کنید.');
-        return false;
-      }
       return true;
     }
 
@@ -163,11 +197,29 @@ export default function ContactModal({
       setValidationError('حوزه فعالیت اجباری است.');
       return false;
     }
-    if (!isCustomer && form.productGroups.length === 0) {
-      setValidationError('حداقل یک گروه کالا انتخاب کنید.');
-      return false;
-    }
     return true;
+  };
+
+  const handleIdentitySubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    const cleaned = validateIdentity();
+    if (!cleaned) return;
+
+    setSubmitting(true);
+    setValidationError('');
+    try {
+      await onCreateFromIdentity({
+        nationalId: cleaned,
+        entityType: isCustomer ? ENTITY_TYPES.CUSTOMER : ENTITY_TYPES.SUPPLIER,
+        activityDomain: form.activityDomain || undefined,
+      });
+    } catch (error) {
+      setValidationError(error?.message || 'استعلام/ثبت شرکت ناموفق بود.');
+      setNationalIdError(false);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -176,7 +228,9 @@ export default function ContactModal({
     onSubmit(buildContact());
   };
 
-  const title = isFull ? 'تکمیل کامل اطلاعات' : 'ثبت مخاطب جدید';
+  const title = useIdentityFlow
+    ? 'شناسه ملی → استعلام و ثبت شرکت'
+    : (isFull ? 'تکمیل کامل اطلاعات' : 'ثبت مخاطب جدید');
 
   return (
     <div className="kanoon-modal-overlay" onClick={onClose} role="presentation">
@@ -189,16 +243,65 @@ export default function ContactModal({
       >
         <header className="kanoon-modal__header">
           <h2 id="contact-modal-title" className="kanoon-modal__title">{title}</h2>
-          <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label="بستن">
+          <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label="بستن" disabled={submitting}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
           </button>
         </header>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={useIdentityFlow ? handleIdentitySubmit : handleSubmit}>
           <div className="kanoon-modal__body">
-            {isLegal ? (
+            {useIdentityFlow ? (
+              <>
+                <p className="kanoon-form__hint font-meem">
+                  شناسه ملی ۱۱ رقمی را وارد کنید. اطلاعات رسمی از سرویس استعلام خوانده و شرکت در کانون ثبت می‌شود.
+                </p>
+                <Field label="شناسه ملی" required>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    className="font-yekan"
+                    value={form.nationalId}
+                    disabled={submitting}
+                    onChange={(e) => {
+                      update('nationalId', e.target.value);
+                      setNationalIdError(false);
+                      setValidationError('');
+                    }}
+                    autoFocus
+                  />
+                </Field>
+                {isCustomer && (
+                  <Field label="حوزه فعالیت" required>
+                    <select
+                      value={form.activityDomain}
+                      disabled={submitting}
+                      onChange={(e) => {
+                        update('activityDomain', e.target.value);
+                        setValidationError('');
+                      }}
+                      required
+                    >
+                      <option value="">انتخاب کنید</option>
+                      {CUSTOMER_ACTIVITY_DOMAINS.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+                {validationError ? (
+                  <div className="kanoon-modal__alert">
+                    <p>{validationError}</p>
+                  </div>
+                ) : null}
+                {nationalIdError && !validationError ? (
+                  <div className="kanoon-modal__alert">
+                    <p>{NATIONAL_ID_MESSAGE}</p>
+                  </div>
+                ) : null}
+              </>
+            ) : isLegal ? (
               <>
                 <Field label="نام شرکت" required>
                   <input type="text" value={form.companyName} onChange={(e) => update('companyName', e.target.value)} required />
@@ -207,6 +310,7 @@ export default function ContactModal({
                   <input
                     type="text"
                     inputMode="numeric"
+                    className="font-yekan"
                     value={form.nationalId}
                     onChange={(e) => {
                       update('nationalId', e.target.value);
@@ -217,9 +321,6 @@ export default function ContactModal({
                 {nationalIdError && (
                   <div className="kanoon-modal__alert">
                     <p>{NATIONAL_ID_MESSAGE}</p>
-                    <button type="button" className="btn btn--accent" onClick={() => openLinkaSearch(form.companyName)}>
-                      ادامه
-                    </button>
                   </div>
                 )}
                 {isCustomer && (
@@ -233,11 +334,29 @@ export default function ContactModal({
                   </Field>
                 )}
                 {!isCustomer && (
-                  <ProductGroupMultiSelect
-                    value={form.productGroups}
-                    onChange={(groups) => update('productGroups', groups)}
-                    required
-                  />
+                  <>
+                    <Field label="نام مدیر/مالک" required>
+                      <input
+                        type="text"
+                        value={form.ownerName}
+                        onChange={(e) => update('ownerName', e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <Field label="تلفن ثابت شرکت" required>
+                      <input
+                        type="tel"
+                        className="font-yekan"
+                        value={form.landline}
+                        onChange={(e) => update('landline', e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <SupplierCapabilityTagInput
+                      value={form.capabilityTags}
+                      onChange={(tags) => update('capabilityTags', tags)}
+                    />
+                  </>
                 )}
               </>
             ) : (
@@ -246,7 +365,14 @@ export default function ContactModal({
                   <input type="text" value={form.personName} onChange={(e) => update('personName', e.target.value)} required />
                 </Field>
                 <Field label="شماره موبایل" required>
-                  <input type="tel" inputMode="tel" value={form.mobile} onChange={(e) => update('mobile', e.target.value)} required />
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    className="font-yekan"
+                    value={form.mobile}
+                    onChange={(e) => update('mobile', e.target.value)}
+                    required
+                  />
                 </Field>
                 {isCustomer && (
                   <Field label="حوزه فعالیت" required>
@@ -259,18 +385,29 @@ export default function ContactModal({
                   </Field>
                 )}
                 {!isCustomer && (
-                  <ProductGroupMultiSelect
-                    value={form.productGroups}
-                    onChange={(groups) => update('productGroups', groups)}
-                    required
-                  />
+                  <>
+                    <Field label="تلفن ثابت">
+                      <input
+                        type="tel"
+                        className="font-yekan"
+                        value={form.landline}
+                        onChange={(e) => update('landline', e.target.value)}
+                      />
+                    </Field>
+                    <SupplierCapabilityTagInput
+                      value={form.capabilityTags}
+                      onChange={(tags) => update('capabilityTags', tags)}
+                    />
+                  </>
                 )}
               </>
             )}
 
-            {validationError && <p className="kanoon-form__error">{validationError}</p>}
+            {validationError && (
+              <p className="kanoon-form__error">{validationError}</p>
+            )}
 
-            {isFull && (
+            {isFull && !useIdentityFlow && (
               <div className="kanoon-modal__full-fields">
                 {isLegal && (
                   <Field label="آدرس کامل">
@@ -295,16 +432,13 @@ export default function ContactModal({
                 {!isCustomer && (
                   <>
                     {isLegal && (
-                      <Field label="نام مدیر/مالک">
-                        <input type="text" value={form.ownerName} onChange={(e) => update('ownerName', e.target.value)} />
-                      </Field>
-                    )}
-                    <Field label="شماره تماس ثابت">
-                      <input type="tel" value={form.landline} onChange={(e) => update('landline', e.target.value)} />
-                    </Field>
-                    {isLegal && (
                       <Field label="شماره موبایل">
-                        <input type="tel" value={form.mobile} onChange={(e) => update('mobile', e.target.value)} />
+                        <input
+                          type="tel"
+                          className="font-yekan"
+                          value={form.mobile}
+                          onChange={(e) => update('mobile', e.target.value)}
+                        />
                       </Field>
                     )}
                     <Field label="نوع تامین‌کننده">
@@ -322,12 +456,16 @@ export default function ContactModal({
 
           <footer className="kanoon-modal__footer">
             {showFullFormButton && (
-              <button type="button" className="btn btn--outline" onClick={onOpenFullForm}>
+              <button type="button" className="btn btn--outline" onClick={onOpenFullForm} disabled={submitting}>
                 تکمیل کامل اطلاعات
               </button>
             )}
-            <button type="button" className="btn btn--ghost" onClick={onClose}>انصراف</button>
-            <button type="submit" className="btn btn--primary">ثبت</button>
+            <button type="button" className="btn btn--ghost" onClick={onClose} disabled={submitting}>انصراف</button>
+            <button type="submit" className="btn btn--primary" disabled={submitting}>
+              {submitting
+                ? 'در حال استعلام…'
+                : (useIdentityFlow ? 'استعلام و ثبت شرکت' : 'ثبت')}
+            </button>
           </footer>
         </form>
       </div>

@@ -50,16 +50,6 @@ export default function InquiryDraftForm({
           placeholder="مبلغ واحد"
         />
       </label>
-      <label className="nabz-inquiry-form__field nabz-inquiry-form__field--wide">
-        <span>توضیحات</span>
-        <input
-          type="text"
-          className="nabz-inquiry-form__input"
-          value={draft.notes}
-          onChange={(e) => onChange({ ...draft, notes: e.target.value })}
-          placeholder="یادداشت استعلام"
-        />
-      </label>
 
       {showDiscrepancy && (
         <>
@@ -94,6 +84,18 @@ export default function InquiryDraftForm({
           </label>
         </>
       )}
+
+      <label className="nabz-inquiry-form__field nabz-inquiry-form__field--full nabz-inquiry-form__field--notes">
+        <span>توضیحات استعلام</span>
+        <textarea
+          className="nabz-inquiry-form__textarea nabz-inquiry-form__textarea--notes"
+          rows={3}
+          value={draft.notes || ''}
+          onChange={(e) => onChange({ ...draft, notes: e.target.value })}
+          placeholder="یادداشت آزاد هنگام ثبت استعلام…"
+          aria-label="توضیحات استعلام"
+        />
+      </label>
 
       <div className="nabz-inquiry-form__actions">
         <button type="button" className="btn btn--primary btn--sm" onClick={onSubmit}>

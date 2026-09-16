@@ -1,0 +1,55 @@
+---
+description: Jarian numeral display law — Persian digits for money/dates; Latin digits for IDs/codes
+alwaysApply: true
+---
+
+# Jarian Numeral Display Law
+
+**Effective:** 2026-08-27  
+**Status:** Project law for UI display
+
+## Rule
+
+| Category | Digits | Examples |
+|----------|--------|----------|
+| **Display money / amounts** | Persian (`۰–۹`) + thousand separators | `۱۲٬۰۰۰٬۰۰۰` via `formatJarianMoney` / `formatAmountRial` |
+| **Display dates (Jalali)** | Persian (`۰–۹`) | `۱۴۰۵/۰۴/۲۴` via `toJalaliDisplayDate` / `formatJalaliDate` |
+| **Technical identifiers & codes** | Latin (`0–9`) | nationalId, registrationNumber, economicCode, mobile, order code `JR…`, gazette number, postalCode |
+
+## Absolute
+
+1. **Do not** show display money or Jalali calendar dates with Latin digits in user-facing UI.
+2. **Do not** convert national ID / registry / phone / order codes to Persian digits (copy/paste, Linka match, `dir="ltr"`).
+3. `font-yekan` / Meem / Vazirmatn change **typeface only** — they do **not** convert digit shapes. Always run formatters.
+4. Backend/API may store ASCII digits; **FE display layer** applies this law when rendering.
+
+## Helpers (use these)
+
+| Need | API |
+|------|-----|
+| Money (table cell) | `formatJarianMoney(n)` |
+| Money (footer with ریال) | `formatJarianMoneyFooter(n)` |
+| Jalali date display | `toJalaliDisplayDate(value)` or `formatJalaliDate(y,m,d)` |
+| Force Persian digits | `toPersianDigits(value)` — only for money/date/count UI, not for IDs |
+| Parse user input | `toAsciiDigits` / `parseMoneyInput` before persist |
+
+## Allowed Latin digits
+
+- `nationalId` / کد ملی / شناسه ملی
+- `registrationNumber` / شماره ثبت
+- `economicCode` / کد اقتصادی
+- `postalCode` / کد پستی (when shown as identifier)
+- `mobile` / تلفن ثابت as dialable identifiers
+- Order / document codes (`JR…`, letter numbers)
+- Provider gazette **number** (شناسه آگهی), not the calendar date next to it
+- Raw `dir="ltr"` technical fields in forms while editing (display-after-save still follows the table above)
+
+## Counts & row numbers
+
+List row indices and KPI counts shown to users: **Persian digits** (`toLocaleString('fa-IR')` or `toPersianDigits`), unless the surface is an explicit technical/debug panel.
+
+## Do not
+
+- Mix digit scripts inside one money or date string
+- Invent a second money/date formatter that skips Persian digits
+- Persian-digit a nationalId “for beauty”

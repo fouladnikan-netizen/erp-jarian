@@ -1,7 +1,13 @@
 import { Link } from 'react-router-dom';
 import { getOpenOrderItems } from '../columns';
 
-const BAR_COLORS = ['#0ad1ba', '#0D9488', '#14b8a6', '#0f766e', '#2dd4bf'];
+const BAR_COLORS = [
+  'var(--chart-teal-1)',
+  'var(--chart-teal-2)',
+  'var(--chart-teal-3)',
+  'var(--chart-teal-4)',
+  'var(--chart-teal-5)',
+];
 const MAX_BARS = 12;
 
 export default function OrderPulseTally({ contact, onFallbackClick }) {

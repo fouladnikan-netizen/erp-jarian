@@ -1,101 +1,9 @@
-:root {
-  color-scheme: light;
+/**
+ * Global base styles.
+ * Color tokens live ONLY in theme-tokens.css (RFC-001).
+ */
 
-  --color-brand-red: #D32F2F;
-  --color-brand-red-hover: #B71C1C;
-  --color-brand-red-active: #9A1515;
-  --color-brand-red-glossy: #E53935;
-  --color-white-glossy: #FFFFFF;
-  --color-silver-glossy: #B8BFCA;
-  --color-accent: #0ad1ba;
-  --color-accent-dark: #0D9488;
-  --color-accent-muted: rgba(10, 209, 186, 0.12);
-
-  --color-white: #FFFFFF;
-  --color-neutral-50: #F5F6F8;
-  --color-neutral-100: #EDEFF2;
-  --color-neutral-200: #E2E5EA;
-  --color-neutral-300: #CBD2DA;
-  --color-neutral-400: #9CA3AF;
-  --color-neutral-500: #6B7280;
-  --color-neutral-600: #4B5563;
-  --color-neutral-700: #374151;
-  --color-neutral-800: #1F2937;
-  --color-neutral-900: #0B0B0D;
-
-  --bg-body: var(--color-neutral-100);
-  --bg-surface: var(--color-white);
-  --bg-sidebar: var(--color-white);
-  --bg-muted: var(--color-neutral-50);
-  --bg-elevated: var(--color-white);
-  --bg-paper: #FFFFFF;
-  --text-primary: var(--color-neutral-800);
-  --text-secondary: var(--color-neutral-500);
-  --border-default: var(--color-neutral-200);
-  --action-primary: var(--color-brand-red);
-
-  --table-head-bg: #E8FAF7;
-  --table-row-odd-bg: #FFFFFF;
-  --table-row-even-bg: rgba(243, 244, 246, 0.85);
-
-  --status-radar: #64748B;
-  --status-hesitant: #B45309;
-  --status-trial: #1F6FB2;
-  --status-ambassador: #2E8B57;
-  --status-success: #2E8B57;
-  --status-silent: #475569;
-
-  --font-primary: 'Vazirmatn', Tahoma, sans-serif;
-  --font-numeric: 'Vazirmatn', Tahoma, sans-serif;
-  --font-secondary: 'Vazirmatn', Tahoma, sans-serif;
-  --font-body: var(--font-primary), Tahoma, sans-serif;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --header-height: 60px;
-  --sidebar-width-collapsed: 68px;
-  --sidebar-width-expanded: 252px;
-
-  --transition-fast: 150ms ease;
-  --transition-base: 250ms ease;
-}
-
-html[data-theme='dark'] {
-  color-scheme: dark;
-
-  --color-neutral-50: #1C1F26;
-  --color-neutral-100: #12141A;
-  --color-neutral-200: #2A2F38;
-  --color-neutral-300: #3A4150;
-  --color-neutral-400: #8B93A1;
-  --color-neutral-500: #A8AFBA;
-  --color-neutral-600: #C5CAD3;
-  --color-neutral-700: #DEE2E8;
-  --color-neutral-800: #F3F4F6;
-  --color-neutral-900: #FAFAFA;
-
-  --color-accent-muted: rgba(10, 209, 186, 0.16);
-
-  --bg-body: #0B0B0D;
-  --bg-surface: #16181D;
-  --bg-sidebar: #12141A;
-  --bg-muted: #1C1F26;
-  --bg-elevated: #1C1F26;
-  --bg-paper: #FFFFFF;
-  --text-primary: #F3F4F6;
-  --text-secondary: #A8AFBA;
-  --border-default: #2A2F38;
-
-  --table-head-bg: #14322E;
-  --table-row-odd-bg: var(--bg-surface);
-  --table-row-even-bg: var(--bg-muted);
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
-}
+@import './theme-tokens.css';
 
 *,
 *::before,
@@ -133,7 +41,8 @@ button {
 }
 
 input,
-select {
+select,
+textarea {
   font-family: var(--font-body);
 }
 

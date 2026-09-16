@@ -1,9 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { getFulfilledPurchaseRows } from '../../../shippingService';
 import { isOrderQcComplete } from '../../../qcInspectionConfig';
 import { getOrderOperationalPhase } from '../../../phase2Service';
 import {
   assignDriverToItems,
+  buildSooratBarPayloadForAssignment,
   confirmItemsReady,
   finalizeRahseparOrder,
   getAllLoadItems,
@@ -12,6 +14,8 @@ import {
   registerItemScaleWeight,
   updateItemScaleWeight,
 } from '../../../rahseparLoadingService';
+import PrintableSooratBar from './PrintableSooratBar';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 import './RahseparStagePanel.css';
 
 export function computeIsQcComplete(order) {
@@ -43,20 +47,20 @@ const PRODUCT_ROW_STYLE = [
 const PRODUCT_NAME_STYLE = [
   'font-size: 14px !important',
   'font-weight: bold !important',
-  'color: #000000 !important',
+  'color: var(--text-primary) !important',
   'white-space: nowrap !important',
   'flex-shrink: 0 !important',
 ].join('; ');
 
 const PRODUCT_SEP_STYLE = [
-  'color: #B8BFCA !important',
+  'color: var(--color-silver-glossy) !important',
   'font-size: 14px !important',
   'flex-shrink: 0 !important',
 ].join('; ');
 
 const PRODUCT_DESC_STYLE = [
   'font-size: 12px !important',
-  'color: #666666 !important',
+  'color: var(--text-muted) !important',
   'white-space: nowrap !important',
   'overflow: hidden !important',
   'text-overflow: ellipsis !important',
@@ -132,6 +136,28 @@ function PencilIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function PrintPackingIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 9V3h12v6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <rect x="6" y="14" width="12" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
     </svg>
   );
 }
@@ -337,6 +363,7 @@ export default function RahseparStagePanel({
   compact = false,
   readOnly = false,
 }) {
+  const { alert } = useJarianNotice();
   const loadItems = useMemo(() => getAllLoadItems(order), [order]);
   const readyItems = useMemo(
     () => loadItems.filter((item) => item.status === LOAD_ITEM_STATUS.READY),
@@ -379,8 +406,11 @@ export default function RahseparStagePanel({
   const [editingScaleIds, setEditingScaleIds] = useState(() => new Set());
   const [assignOpen, setAssignOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const [printJob, setPrintJob] = useState(null);
   const toastTimerRef = useRef(null);
   const notifiedDeliveryKeyRef = useRef('');
+  const printJobIdRef = useRef(0);
+  const printCleanupTimerRef = useRef(null);
 
   const selectedCount = selectedIds.length;
   const canAssign = selectedCount > 0;
@@ -623,11 +653,72 @@ export default function RahseparStagePanel({
     if (readOnly) return;
     const result = finalizeRahseparOrder(order);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان نهایی‌سازی وجود ندارد.');
+      void alert({ title: 'توجه', message: result.reason || 'امکان نهایی‌سازی وجود ندارد.' });
       return;
     }
     onUpdateOrder?.(() => result.order);
     onOperationalPhaseChange?.(getOrderOperationalPhase(result.order));
+  };
+
+  /**
+   * صدور صورت‌بار فقط برای اقلام همان تخصیص راننده.
+   * چاپ از کلیک (نه useEffect) — و پاک‌سازی فقط بعد از afterprint،
+   * چون در بعضی مرورگرها window.print() بلافاصله برمی‌گردد و اگر محتوا
+   * در finally پاک شود، دیالوگ چاپ خالی می‌ماند.
+   */
+  const handlePrintPackingList = (assignmentId) => {
+    const payload = buildSooratBarPayloadForAssignment(order, assignmentId);
+    if (!payload.accepted) {
+      showToast(payload.reason || 'امکان صدور صورت‌بار وجود ندارد.');
+      return;
+    }
+
+    if (printCleanupTimerRef.current != null) {
+      window.clearTimeout(printCleanupTimerRef.current);
+      printCleanupTimerRef.current = null;
+    }
+
+    printJobIdRef.current += 1;
+    const jobId = printJobIdRef.current;
+
+    flushSync(() => {
+      setPrintJob({
+        id: jobId,
+        lines: payload.lines,
+        logistics: payload.logistics,
+        meta: payload.meta,
+      });
+    });
+
+    document.body.classList.add('rahsepar-printing');
+
+    const cleanup = () => {
+      window.removeEventListener('afterprint', cleanup);
+      if (printCleanupTimerRef.current != null) {
+        window.clearTimeout(printCleanupTimerRef.current);
+        printCleanupTimerRef.current = null;
+      }
+      document.body.classList.remove('rahsepar-printing');
+      setPrintJob((current) => (current?.id === jobId ? null : current));
+    };
+
+    window.addEventListener('afterprint', cleanup);
+
+    // دو فریم + تأخیر کوتاه تا layout/paint سند چاپ کامل شود
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          try {
+            window.print();
+          } catch {
+            cleanup();
+            return;
+          }
+          // اگر afterprint شلیک نشد (بعضی WebViewها)
+          printCleanupTimerRef.current = window.setTimeout(cleanup, 1500);
+        }, 80);
+      });
+    });
   };
 
   return (
@@ -1033,6 +1124,20 @@ export default function RahseparStagePanel({
                                 {formatFaNumber(assignment?.freightFare)}
                               </strong>
                             </div>
+                            {(assignment?.assignmentId || dispatch?.sessionId) ? (
+                              <div className="rahsepar-stage__history-detail--action">
+                                <button
+                                  type="button"
+                                  className="rahsepar-stage__sooratbar-btn"
+                                  onClick={() => handlePrintPackingList(
+                                    assignment?.assignmentId || dispatch?.sessionId,
+                                  )}
+                                >
+                                  <PrintPackingIcon />
+                                  صدور صورت‌بار
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -1052,6 +1157,15 @@ export default function RahseparStagePanel({
         onConfirm={handleAssignConfirm}
         onSendSms={handleAssignSms}
       />
+
+      {printJob ? (
+        <PrintableSooratBar
+          order={order}
+          lines={printJob.lines}
+          logistics={printJob.logistics}
+          meta={printJob.meta}
+        />
+      ) : null}
 
       {toast ? (
         <div className="rahsepar-stage__toast" role="status">

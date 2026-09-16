@@ -1,0 +1,59 @@
+/* Unified list status pill — all module list status columns */
+
+.list-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  line-height: 1.4;
+}
+
+.list-status-pill__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.list-status-pill--pending {
+  color: var(--status-silent);
+  background: var(--muted-surface);
+}
+
+.list-status-pill--success {
+  color: var(--status-success);
+  background: var(--success-muted);
+}
+
+.list-status-pill--danger {
+  color: var(--color-brand-red-hover);
+  background: var(--danger-muted);
+}
+
+.list-status-pill--warning {
+  color: var(--warning);
+  background: var(--warning-muted);
+}
+
+.list-status-pill--info {
+  color: var(--info);
+  background: var(--info-muted);
+}
+
+.list-status-pill--stage,
+.list-status-pill--active {
+  color: var(--color-accent-dark);
+  background: var(--color-accent-muted);
+}
+
+.list-status-pill--inactive {
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+}

@@ -1,52 +1,141 @@
+import { useEffect, useMemo, useRef } from 'react';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
+import {
+  ListColumnHeader,
+  ListChrome,
+  ListSelectionBar,
+  InfiniteSentinelRow,
+} from '../../../components/common/list';
 import StatusTag from '../../../components/module/StatusTag';
-import { useResizableColumns } from '../../../hooks/useResizableColumns';
+import { useColumnExcelFilters } from '../../../hooks/useColumnExcelFilters';
+import { useListShell } from '../../../hooks/list';
 import VitrinRowActions from './VitrinRowActions';
-
-const VITRIN_COLUMNS = [
-  { key: 'check', defaultWidth: 48, resizable: false },
-  { key: 'row', defaultWidth: 56, resizable: false },
-  { key: 'code', defaultWidth: 110 },
-  { key: 'title', defaultWidth: 200 },
-  { key: 'group', defaultWidth: 120 },
-  { key: 'subgroup', defaultWidth: 120 },
-  { key: 'unit', defaultWidth: 90 },
-  { key: 'status', defaultWidth: 90 },
-  { key: 'actions', defaultWidth: 100, resizable: false },
-];
+import { formatProductSizeDisplay, getProductSizeNumber } from '../productSize';
 
 const COLUMN_LABELS = {
-  check: '',
+  check: 'انتخاب',
   row: 'ردیف',
-  code: 'کد کالا',
-  title: 'شرح محصول',
+  name: 'شرح کالا',
+  size: 'سایز',
   group: 'گروه کالا',
-  subgroup: 'زیرگروه کالا',
-  unit: 'واحد سنجش',
+  category: 'دسته کالا',
+  productType: 'نوع کالا',
+  brand: 'برند',
   status: 'وضعیت',
   actions: 'عملیات',
 };
 
-function getGroupName(groups, groupId) {
-  return groups.find((g) => g.id === groupId)?.name || '—';
-}
+const VITRIN_COLUMN_DEFS = [
+  { key: 'check', title: COLUMN_LABELS.check, defaultWidth: 52, resizable: false, locked: true, sortable: false, filterable: false },
+  { key: 'row', title: COLUMN_LABELS.row, defaultWidth: 56, resizable: false, locked: true, sortable: false, filterable: false },
+  { key: 'name', title: COLUMN_LABELS.name, defaultWidth: 280, locked: true, filterable: true },
+  { key: 'size', title: COLUMN_LABELS.size, defaultWidth: 88, filterable: true, numeric: true },
+  { key: 'group', title: COLUMN_LABELS.group, defaultWidth: 110, filterable: true },
+  { key: 'category', title: COLUMN_LABELS.category, defaultWidth: 110, filterable: true },
+  { key: 'productType', title: COLUMN_LABELS.productType, defaultWidth: 120, filterable: true },
+  { key: 'brand', title: COLUMN_LABELS.brand, defaultWidth: 120, filterable: true },
+  { key: 'status', title: COLUMN_LABELS.status, defaultWidth: 100, filterable: true },
+  { key: 'actions', title: COLUMN_LABELS.actions, defaultWidth: 110, resizable: false, locked: true, sortable: false, filterable: false },
+];
 
-function getSubgroupName(groups, groupId, subgroupId) {
-  return groups.find((g) => g.id === groupId)?.subgroups.find((s) => s.id === subgroupId)?.name || '—';
+const FILTERABLE_KEYS = VITRIN_COLUMN_DEFS.filter((c) => c.filterable !== false).map((c) => c.key);
+
+function getRawValue(product, key) {
+  switch (key) {
+    case 'name':
+      return product.displayNameOverride || product.generatedName || '';
+    case 'size':
+      return formatProductSizeDisplay(product);
+    case 'group':
+      return product.groupName || '—';
+    case 'category':
+      return product.categoryName || '—';
+    case 'productType':
+      return product.productTypeName || '—';
+    case 'brand':
+      return product.brandName || '—';
+    case 'status':
+      return product.lifecycleStatus === 'INACTIVE' ? 'غیرفعال' : 'فعال';
+    default:
+      return '';
+  }
 }
 
 export default function VitrinTable({
   products,
-  groups,
   listTitle,
+  emptyHint,
   selectedIds,
   onSelectionChange,
   onTitleClick,
-  onEdit,
   onToggleActive,
+  onDelete,
 }) {
-  const { widths, startResize } = useResizableColumns('vitrin-products', VITRIN_COLUMNS);
+  const {
+    columnFilters,
+    openFilterKey,
+    setOpenFilterKey,
+    applyFilter,
+    clearFilters,
+    filterRows,
+    buildOptions,
+  } = useColumnExcelFilters();
+
+  const getValue = (row, key) => getRawValue(row, key);
+
+  const filterOptions = useMemo(
+    () => buildOptions(products, FILTERABLE_KEYS, getValue),
+    [products, buildOptions],
+  );
+
+  const filteredProducts = useMemo(
+    () => filterRows(products, getValue),
+    [products, filterRows],
+  );
+
+  const sortAccessors = useMemo(() => {
+    const map = {};
+    FILTERABLE_KEYS.forEach((key) => { map[key] = (row) => getRawValue(row, key); });
+    map.size = (row) => getProductSizeNumber(row);
+    return map;
+  }, []);
+
+  const sortTypes = useMemo(() => ({ size: 'number' }), []);
+  const defaultSorts = useMemo(() => [{ key: 'size', dir: 'asc' }], []);
+
+  const scrollRef = useRef(null);
+  const sentinelRef = useRef(null);
+
+  const shell = useListShell({
+    listKey: 'vitrin.products.table',
+    columnDefinitions: VITRIN_COLUMN_DEFS,
+    rows: filteredProducts,
+    sortAccessors,
+    sortTypes,
+    defaultSorts,
+    scrollRef,
+    sentinelRef,
+  });
+
+  const filtersHydrated = useRef(false);
+  useEffect(() => {
+    if (!shell.ready || filtersHydrated.current) return;
+    filtersHydrated.current = true;
+    Object.entries(shell.savedFilters || {}).forEach(([key, value]) => applyFilter(key, value));
+  }, [shell.ready, shell.savedFilters, applyFilter]);
+
+  const handleApplyFilter = (key, value) => {
+    applyFilter(key, value);
+    const next = { ...columnFilters };
+    if (!value) delete next[key];
+    else next[key] = value;
+    shell.setFilters(next);
+  };
+
+  const visibleColumns = shell.visibleColumns;
+  const pageRows = shell.visibleRows;
+  const colSpan = visibleColumns.length;
 
   const toggleSelect = (id) => {
     const next = new Set(selectedIds);
@@ -56,33 +145,53 @@ export default function VitrinTable({
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === products.length) {
-      onSelectionChange(new Set());
+    if (pageRows.length > 0 && pageRows.every((p) => selectedIds.has(p.id))) {
+      const next = new Set(selectedIds);
+      pageRows.forEach((p) => next.delete(p.id));
+      onSelectionChange(next);
     } else {
-      onSelectionChange(new Set(products.map((p) => p.id)));
+      const next = new Set(selectedIds);
+      pageRows.forEach((p) => next.add(p.id));
+      onSelectionChange(next);
     }
   };
 
+  const pageAllSelected = pageRows.length > 0 && pageRows.every((p) => selectedIds.has(p.id));
+
   return (
-    <section className="section-data vitrin-table-section" aria-label="فهرست محصولات">
+    <section className="section-data vitrin-table-section" aria-label="فهرست کالاهای مرجع">
       <div className="data-table-header">
         <span className="data-table-header__title">{listTitle}</span>
-        <span className="data-table-header__count">
-          {products.length.toLocaleString('fa-IR')} رکورد
-        </span>
+        <div className="data-table-header__tools">
+          <ListChrome
+            columns={shell.columns}
+            setColumnVisible={shell.setColumnVisible}
+            reorderColumns={shell.reorderColumns}
+            resetColumns={shell.resetColumns}
+            onResetPreferences={async () => {
+              await shell.resetPreferences();
+              clearFilters();
+            }}
+          />
+        </div>
       </div>
-      <div className="data-table-wrap vitrin-table-wrap">
-        <table className="data-table vitrin-table data-table--resizable">
-          <ResizableColGroup columns={VITRIN_COLUMNS} widths={widths} />
+      <ListSelectionBar
+        selectedCount={selectedIds.size}
+        totalCount={shell.sortedRows.length}
+        onClear={() => onSelectionChange(new Set())}
+      />
+      <div className="data-table-wrap vitrin-table-wrap jarian-list-scroll" ref={scrollRef}>
+        <table className="data-table vitrin-table jarian-table data-table--resizable">
+          <ResizableColGroup columns={visibleColumns} widths={shell.widths} />
           <thead className="vitrin-table__head">
             <tr>
-              {VITRIN_COLUMNS.map((col) => (
+              {visibleColumns.map((col) => (
                 <ResizableTh
                   key={col.key}
                   columnKey={col.key}
                   resizable={col.resizable !== false}
-                  onResizeStart={startResize}
-                  className={`vitrin-table__sticky-th${
+                  onResizeStart={shell.startResize}
+                  className={`vitrin-table__sticky-th font-meem${
                     col.key === 'check' ? ' vitrin-table__check-col' : ''
                   }${col.key === 'actions' ? ' vitrin-table__actions-col' : ''}`}
                 >
@@ -90,65 +199,103 @@ export default function VitrinTable({
                     <input
                       type="checkbox"
                       aria-label="انتخاب همه"
-                      checked={products.length > 0 && selectedIds.size === products.length}
+                      checked={pageAllSelected}
                       onChange={toggleSelectAll}
                     />
+                  ) : col.key === 'row' || col.key === 'actions' ? (
+                    col.title
                   ) : (
-                    COLUMN_LABELS[col.key]
+                    <ListColumnHeader
+                      label={col.title}
+                      columnKey={col.key}
+                      sorts={shell.sorts}
+                      onToggleSort={shell.toggleSort}
+                      sortable={col.sortable !== false}
+                      filterable={col.filterable !== false}
+                      filterOptions={filterOptions[col.key] || []}
+                      filterSelected={columnFilters[col.key] || null}
+                      openFilterKey={openFilterKey}
+                      setOpenFilterKey={setOpenFilterKey}
+                      numeric={Boolean(col.numeric)}
+                      onApplyFilter={(value) => handleApplyFilter(col.key, value)}
+                    />
                   )}
                 </ResizableTh>
               ))}
             </tr>
           </thead>
           <tbody>
-            {products.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={VITRIN_COLUMNS.length}>
+                <td colSpan={colSpan}>
                   <div className="empty-state">
-                    <div className="empty-state__icon">📦</div>
-                    <p>محصولی در این نما یافت نشد.</p>
+                    <p className="font-meem">{emptyHint || 'کالایی در این نما یافت نشد.'}</p>
                   </div>
                 </td>
               </tr>
             ) : (
-              products.map((product, index) => (
+              pageRows.map((product, index) => (
                 <tr
                   key={product.id}
-                  className={`vitrin-table__row${product.isActive === false ? ' is-inactive' : ''}`}
+                  className={`vitrin-table__row${product.lifecycleStatus === 'INACTIVE' ? ' is-inactive' : ''}`}
                 >
-                  <td className="vitrin-table__check-col">
-                    <input
-                      type="checkbox"
-                      aria-label={`انتخاب ${product.title}`}
-                      checked={selectedIds.has(product.id)}
-                      onChange={() => toggleSelect(product.id)}
-                    />
-                  </td>
-                  <td>{(index + 1).toLocaleString('fa-IR')}</td>
-                  <td className="vitrin-table__code">{product.code}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="vitrin-table__title-link"
-                      onClick={() => onTitleClick(product)}
-                    >
-                      {product.title}
-                    </button>
-                  </td>
-                  <td>{getGroupName(groups, product.groupId)}</td>
-                  <td>{getSubgroupName(groups, product.groupId, product.subgroupId)}</td>
-                  <td>{product.unit}</td>
-                  <td>
-                    <StatusTag
-                      value={product.isActive !== false ? 'tag:active:فعال' : 'tag:danger:غیرفعال'}
-                    />
-                  </td>
-                  <td className="vitrin-table__actions-col">
-                    <VitrinRowActions product={product} onEdit={onEdit} onToggleActive={onToggleActive} />
-                  </td>
+                  {visibleColumns.map((col) => {
+                    if (col.key === 'check') {
+                      return (
+                        <td key={col.key} className="vitrin-table__check-col">
+                          <input
+                            type="checkbox"
+                            aria-label={`انتخاب ${product.generatedName}`}
+                            checked={selectedIds.has(product.id)}
+                            onChange={() => toggleSelect(product.id)}
+                          />
+                        </td>
+                      );
+                    }
+                    if (col.key === 'row') {
+                      return <td key={col.key} className="font-yekan">{(index + 1).toLocaleString('fa-IR')}</td>;
+                    }
+                    if (col.key === 'name') {
+                      return (
+                        <td key={col.key}>
+                          <button type="button" className="vitrin-table__title-link font-meem" onClick={() => onTitleClick(product)}>
+                            {product.displayNameOverride || product.generatedName}
+                          </button>
+                        </td>
+                      );
+                    }
+                    if (col.key === 'size') {
+                      return <td key={col.key} className="font-vazir">{formatProductSizeDisplay(product)}</td>;
+                    }
+                    if (col.key === 'group') return <td key={col.key} className="font-meem">{product.groupName || '—'}</td>;
+                    if (col.key === 'category') return <td key={col.key} className="font-meem">{product.categoryName || '—'}</td>;
+                    if (col.key === 'productType') return <td key={col.key} className="font-meem">{product.productTypeName || '—'}</td>;
+                    if (col.key === 'brand') return <td key={col.key} className="font-meem">{product.brandName || '—'}</td>;
+                    if (col.key === 'status') {
+                      return (
+                        <td key={col.key}>
+                          <StatusTag value={product.lifecycleStatus !== 'INACTIVE' ? 'tag:active:فعال' : 'tag:danger:غیرفعال'} />
+                        </td>
+                      );
+                    }
+                    if (col.key === 'actions') {
+                      return (
+                        <td key={col.key} className="vitrin-table__actions-col">
+                          <VitrinRowActions product={product} onToggleActive={onToggleActive} onDelete={onDelete} />
+                        </td>
+                      );
+                    }
+                    return <td key={col.key}>—</td>;
+                  })}
                 </tr>
               ))
             )}
+            <InfiniteSentinelRow
+              show={shell.showInfiniteSentinel}
+              sentinelRef={sentinelRef}
+              colSpan={colSpan}
+              hasMore={shell.infinite?.hasMore}
+            />
           </tbody>
         </table>
       </div>

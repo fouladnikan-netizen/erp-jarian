@@ -1,9 +1,15 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getTodayJalali, getNowTimeFa, isJalaliDateReached, isValidJalaliDate } from './dateUtils';
 import { getFulfilledPurchaseRows } from './shippingService';
 import { getQcInspectionForRow } from './qcInspectionConfig';
 import { advanceOperationalPhase } from './phase2Service';
 import { OPERATIONAL_PHASES } from './phase2Config';
+import { createEntityId, ENTITY_ID_PREFIX } from '../../domain/identity';
+import {
+  getCachedOrganizationIdentity,
+  toSooratBarOrganizationSnapshot,
+} from '../../domain/organizationIdentity';
+import { getDocumentChromeTagline } from '../sales/settings/documentChromeFacade.js';
 
 /** Two-phase dispatch states inside one table */
 export const LOAD_ITEM_STATUS = {
@@ -193,6 +199,7 @@ export function getAllLoadItems(order) {
         dispatchedAt: state.dispatchedAt || null,
         readyConfirmedAt: state.readyConfirmedAt || null,
         readyConfirmedBy: state.readyConfirmedBy || null,
+        organizationSnapshot: state.organizationSnapshot || null,
       } : null,
       // legacy alias used by older expand UI
       dispatch: status === LOAD_ITEM_STATUS.DISPATCHED ? {
@@ -246,6 +253,84 @@ export function getLoadingSessions(order) {
 }
 
 /**
+ * اقلام ارسال‌شدهٔ متعلق به یک تخصیص راننده (برای صورت‌بار همان محموله).
+ * فقط اقلام همان assignmentId برگردانده می‌شوند — نه کل سفارش.
+ */
+export function getDispatchedItemsForAssignment(order, assignmentId) {
+  const key = String(assignmentId || '').trim();
+  if (!key) return [];
+  return getAllLoadItems(order).filter(
+    (item) => (
+      item.status === LOAD_ITEM_STATUS.DISPATCHED
+      && String(item.assignment?.assignmentId || item.dispatch?.sessionId || '') === key
+    ),
+  );
+}
+
+/**
+ * شمارهٔ نوبت (tripIndex) برای سریال صورت‌بار — بر اساس ترتیب زمانی تخصیص‌ها.
+ */
+export function getAssignmentTripIndex(order, assignmentId) {
+  const key = String(assignmentId || '').trim();
+  if (!key) return 1;
+  const seen = [];
+  getAllLoadItems(order).forEach((item) => {
+    const id = String(item.assignment?.assignmentId || item.dispatch?.sessionId || '').trim();
+    if (!id || item.status !== LOAD_ITEM_STATUS.DISPATCHED) return;
+    if (!seen.includes(id)) seen.push(id);
+  });
+  const index = seen.indexOf(key);
+  return index >= 0 ? index + 1 : seen.length + 1;
+}
+
+/**
+ * Payload آماده‌ی چاپ صورت‌بار برای یک تخصیص راننده.
+ * lines فقط شامل اقلام همان راننده/کامیون است.
+ */
+export function buildSooratBarPayloadForAssignment(order, assignmentId) {
+  const items = getDispatchedItemsForAssignment(order, assignmentId);
+  if (!items.length) {
+    return { accepted: false, reason: 'برای این تخصیص قلم ارسال‌شده‌ای یافت نشد.' };
+  }
+
+  const sample = items[0]?.assignment || {};
+  const tripIndex = getAssignmentTripIndex(order, assignmentId);
+  const session = getLoadingSessions(order).find(
+    (entry) => String(entry.id) === String(assignmentId),
+  );
+  const organizationSnapshot = sample.organizationSnapshot
+    || session?.organizationSnapshot
+    || null;
+
+  return {
+    accepted: true,
+    lines: items.map((item) => ({
+      id: item.id,
+      name: item.name || '—',
+      notes: item.description || '',
+      unit: item.unit || 'کیلوگرم',
+      scaleWeight: item.scaleWeight,
+      qty: item.qty,
+    })),
+    logistics: {
+      driverName: sample.driverName || items[0]?.dispatch?.driverName || '—',
+      licensePlate: sample.licensePlate || items[0]?.dispatch?.licensePlate || '—',
+      phone: sample.phone || items[0]?.dispatch?.phone || '—',
+      carrierName: '—',
+      nationalId: sample.nationalId || '',
+      freightFare: sample.freightFare ?? null,
+    },
+    meta: {
+      tripIndex,
+      assignmentId: String(assignmentId),
+      date: sample.dispatchedAt?.split?.(' · ')?.[0] || undefined,
+      time: sample.dispatchedAt?.split?.(' · ')?.[1] || undefined,
+      organizationSnapshot,
+    },
+  };
+}
+
+/**
  * کاشف — تأیید آمادگی پس از رسیدن زمان تحویل بار (preparing → ready)
  */
 export function confirmItemsReady(order, selectedItemIds = []) {
@@ -270,7 +355,7 @@ export function confirmItemsReady(order, selectedItemIds = []) {
       ...(lineStates[id] || {}),
       status: LOAD_ITEM_STATUS.READY,
       readyConfirmedAt: at,
-      readyConfirmedBy: CURRENT_USER,
+      readyConfirmedBy: getCurrentUser(),
     };
   });
 
@@ -293,7 +378,7 @@ export function confirmItemsReady(order, selectedItemIds = []) {
           id: Date.now(),
           type: 'rahsepar_ready_confirmed',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `تأیید آمادگی کاشف — ${labels.length ? labels.join('، ') : `${ids.length} قلم`}`,
         },
       ],
@@ -337,7 +422,7 @@ export function assignDriverToItems(order, {
   }
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
-  const assignmentId = `LA-${Date.now()}`;
+  const assignmentId = createEntityId(ENTITY_ID_PREFIX.LOADING_ASSIGNMENT);
   const lineStates = getResolvedLineStates(order);
   const itemSnapshots = getAllLoadItems(order)
     .filter((item) => ids.includes(item.id))
@@ -399,7 +484,7 @@ export function assignDriverToItems(order, {
           id: Date.now(),
           type: 'rahsepar_driver_assigned',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `تخصیص راننده ${driver} — ${ids.length} قلم`,
         },
       ],
@@ -494,6 +579,10 @@ function applyScaleWeightUpdate(order, {
   }
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
+  const snapshot = current.organizationSnapshot
+    || (markDispatched
+      ? toSooratBarOrganizationSnapshot(getCachedOrganizationIdentity(), getDocumentChromeTagline())
+      : null);
   const lineStates = getResolvedLineStates(order);
   lineStates[id] = {
     ...current,
@@ -502,6 +591,7 @@ function applyScaleWeightUpdate(order, {
     loadingFee: feeNum,
     dispatchedAt: current.dispatchedAt || at,
     updatedAt: at,
+    ...(snapshot ? { organizationSnapshot: snapshot } : {}),
   };
 
   const sessions = getLoadingSessions(order).map((session) => {
@@ -519,6 +609,7 @@ function applyScaleWeightUpdate(order, {
         ? items.reduce((sum, item) => sum + (parsePositiveNumber(item.scaleWeight) || 0), 0)
         : session.actualWeight ?? null,
       phase: allDone ? 'completed' : 'assigned',
+      organizationSnapshot: session.organizationSnapshot || snapshot || null,
     };
   });
 
@@ -547,7 +638,7 @@ function applyScaleWeightUpdate(order, {
           id: Date.now(),
           type: eventType,
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: `${summaryPrefix} «${itemLabel}» — ${weightNum.toLocaleString('fa-IR')} کیلوگرم`,
         },
       ],
@@ -590,7 +681,7 @@ export function finalizeRahseparOrder(order) {
         ...(result.order.rahsepar || {}),
         finalized: true,
         finalizedAt: at,
-        finalizedBy: CURRENT_USER,
+        finalizedBy: getCurrentUser(),
       },
       events: [
         ...(result.order.events || []),
@@ -598,7 +689,7 @@ export function finalizeRahseparOrder(order) {
           id: Date.now() + 1,
           type: 'rahsepar_finalized',
           at,
-          by: CURRENT_USER,
+          by: getCurrentUser(),
           summary: 'نهایی‌سازی سفارش در رهسپار و انتقال به سرانجام',
         },
       ],

@@ -15,6 +15,7 @@ import {
   getOrderFreightRecords,
   getOrderSupplyDocs,
 } from '../../operationalRecordsService';
+import { useJarianNotice } from '../../../../context/JarianNoticeContext';
 import {
   advanceToNextOperationalPhase,
   getOrderOperationalPhase,
@@ -58,6 +59,7 @@ export default function OrderProfileOperationsTab({
   onOperationalPhaseChange,
   onReturnToGateway,
 }) {
+  const { alert } = useJarianNotice();
   const [docTitle, setDocTitle] = useState('');
   const [docFile, setDocFile] = useState('');
   const [carrier, setCarrier] = useState('');
@@ -75,10 +77,10 @@ export default function OrderProfileOperationsTab({
   const freightRecords = getOrderFreightRecords(order);
   const financeRecords = getOrderFinanceRecords(order);
 
-  const handleAdvanceStage = () => {
+  const handleAdvanceStage = async () => {
     const result = advanceToNextOperationalPhase(order);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان تغییر مرحله وجود ندارد.');
+      await alert({ title: 'توجه', message: result.reason || 'امکان تغییر مرحله وجود ندارد.' });
       return;
     }
     onUpdateOrder?.(() => result.order);

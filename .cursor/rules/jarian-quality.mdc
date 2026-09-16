@@ -1,0 +1,32 @@
+---
+description: Jarian quality gates — tests and scripts for new domain/service logic
+globs: src/domain/**/*.{js,ts},src/modules/**/services/**/*.{js,ts},src/modules/**/__tests__/**/*
+alwaysApply: false
+---
+
+# Jarian Quality Guardrails
+
+**Applies when changing domain rules or module services.** Does not require UI/E2E tests yet.
+
+Read: `Docs/architecture/QUALITY_ENGINEERING.md`
+
+---
+
+## Rules
+
+1. New or changed **pure business logic** in `src/domain/**` or `*Service.js` should include/update a Vitest unit test under the matching `__tests__/` folder.
+2. Prefer `src/domain/__tests__/`, `src/modules/<mod>/services/__tests__/`, or `src/modules/__tests__/`.
+3. Before opening a PR that touches those areas, run at least: `npm test` and preferably `npm run quality`.
+4. Do not disable CI quality.yml gates without an architecture decision.
+5. Do not add React Testing Library / E2E in drive-by PRs — follow the deferred plan in QUALITY_ENGINEERING.md.
+
+---
+
+## Local commands
+
+- `npm test` — unit tests
+- `npm run lint` — ESLint
+- `npm run typecheck` — TypeScript `--noEmit`
+- `npm run lint:theme` — theme tokens
+- `npm run format:check` — Prettier check (advisory until repo-wide format)
+- `npm run quality` — theme + lint + typecheck + test

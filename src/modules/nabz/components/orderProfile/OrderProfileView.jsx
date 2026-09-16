@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useJarianNotice } from '../../../../context/JarianNoticeContext';
 import { ORDER_TABS } from '../../config';
 import { ORDER_PROFILE_TABS } from '../../orderProfileConfig';
 import { getOrderGatewayPhase } from '../../gatewayService';
@@ -8,7 +9,7 @@ import {
   getGatewayCurrentStage,
   sendProformaToCustomer,
 } from '../../gatewayLifecycleService';
-import { getOrderOperationalPhase } from '../../phase2Service';
+import { getOrderOperationalPhase, shouldShowOperationalPhases } from '../../phase2Service';
 import { markOrderCancelled, appendProfileAttachment, appendSignedProformaRecord, archivePreviousSignedProforma } from '../../orderProfileService';
 import { issueProforma, updateProforma, getLatestProformaVersion } from '../../proformaService';
 import {
@@ -17,9 +18,9 @@ import {
   PROFORMA_SIGNED_MESSAGE_TYPE,
 } from '../../proformaPrint';
 import {
-  appendCrmActivity,
-  updateCrmActivity,
-} from '../../orderCrmService';
+  createOrderActivity,
+  updateOrderActivity,
+} from '../../orderActivityBridge';
 import { canEditWholeOrder } from '../../orderEditPermissions';
 import {
   markGatewayDecisionFailed,
@@ -39,9 +40,13 @@ import OrderProfileGatewayTab from './OrderProfileGatewayTab';
 import OrderProfileCrmTab from './OrderProfileCrmTab';
 import OrderProfileTimelineTab from './OrderProfileTimelineTab';
 import OrderProfileAttachmentsTab from './OrderProfileAttachmentsTab';
+import OrderProfileCorrespondenceTab from './OrderProfileCorrespondenceTab';
 import OrderActionDrawer from './OrderActionDrawer';
 import DeliveryOrderSelectionModal from './operations/DeliveryOrderSelectionModal';
+import ActivityDrawer from '../../../../components/activity/ActivityDrawer';
+import ActivityTimeline from '../../../../components/activity/ActivityTimeline';
 import { GATEWAY_PHASES } from '../../gatewayConfig';
+import { toDisplayOrderCode } from '../../orderCode';
 
 export default function OrderProfileView({
   order,
@@ -50,6 +55,7 @@ export default function OrderProfileView({
   onUpdateInquiry,
   onSetTargetInquiry,
 }) {
+  const { alert } = useJarianNotice();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(ORDER_PROFILE_TABS.GATEWAY);
   const orderPhase = getOrderGatewayPhase(order);
@@ -58,9 +64,12 @@ export default function OrderProfileView({
   const [viewPhase, setViewPhase] = useState(orderPhase);
   const [operationalViewPhase, setOperationalViewPhase] = useState(operationalPhase);
   const [viewMode, setViewMode] = useState(
-    order.status === ORDER_TABS.SUCCESS ? 'operations' : 'gateway',
+    shouldShowOperationalPhases(order) || order.status === ORDER_TABS.SUCCESS
+      ? 'operations'
+      : 'gateway',
   );
   const [activityModal, setActivityModal] = useState({ open: false, editActivity: null });
+  const [activityTimelineOpen, setActivityTimelineOpen] = useState(false);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [deliveryOrderModalOpen, setDeliveryOrderModalOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
@@ -75,21 +84,21 @@ export default function OrderProfileView({
   }, [order.id, operationalPhase]);
 
   useEffect(() => {
-    if (order.status === ORDER_TABS.SUCCESS) {
+    if (shouldShowOperationalPhases(order) || order.status === ORDER_TABS.SUCCESS) {
       setViewMode('operations');
       setOperationalViewPhase(getOrderOperationalPhase(order));
     } else {
       setViewMode('gateway');
     }
-  }, [order.id, order.status, order.stageId]);
+  }, [order.id, order.status, order.stageId, order.phase2EnteredAt, order.gatewayDecision?.outcome]);
 
   const updateOrder = (orderUpdater) => {
     onUpdateOrder((prev) => prev.map((item) => {
       if (item.id !== order.id) return item;
       const next = orderUpdater(item);
-      if (next.stageId !== item.stageId || next.status !== item.status) {
+      if (next.stageId !== item.stageId || next.status !== item.status || next.phase2EnteredAt !== item.phase2EnteredAt) {
         setOperationalViewPhase(getOrderOperationalPhase(next));
-        if (next.status === ORDER_TABS.SUCCESS && item.status !== ORDER_TABS.SUCCESS) {
+        if (shouldShowOperationalPhases(next) || next.status === ORDER_TABS.SUCCESS) {
           setViewMode('operations');
         }
       }
@@ -100,7 +109,7 @@ export default function OrderProfileView({
   const handleGatewayAdvance = (nextOrder) => {
     updateOrder(() => nextOrder);
     setViewPhase(getOrderGatewayPhase(nextOrder));
-    if (nextOrder.status === ORDER_TABS.SUCCESS) {
+    if (shouldShowOperationalPhases(nextOrder) || nextOrder.status === ORDER_TABS.SUCCESS) {
       setOperationalViewPhase(getOrderOperationalPhase(nextOrder));
       setViewMode('operations');
     }
@@ -119,7 +128,7 @@ export default function OrderProfileView({
   const handleNextAction = (actionId) => {
     const result = executeGatewayHeaderAction(order, actionId);
     if (!result.accepted) {
-      window.alert(result.error || 'امکان انجام این اقدام وجود ندارد.');
+      void alert({ title: 'توجه', message: result.error || 'امکان انجام این اقدام وجود ندارد.' });
       return;
     }
     handleGatewayAdvance(result.order);
@@ -135,14 +144,18 @@ export default function OrderProfileView({
 
   const handleActivityModalSubmit = (input) => {
     if (input.id) {
-      updateOrder((current) => updateCrmActivity(current, input.id, {
+      const { updater, async } = updateOrderActivity(order, input.id, {
         type: input.type,
         body: input.body,
         followUp: input.followUp,
         payment: input.payment,
-      }));
+      });
+      if (updater) updateOrder(updater);
+      if (async) void async;
     } else {
-      updateOrder((current) => appendCrmActivity(current, input));
+      const { updater, async } = createOrderActivity(order, input);
+      if (updater) updateOrder(updater);
+      if (async) void async;
     }
     closeActivityModal();
   };
@@ -150,7 +163,7 @@ export default function OrderProfileView({
   const handleSendProforma = (version) => {
     updateOrder((current) => sendProformaToCustomer(current));
     const label = version?.documentNumber || order.code;
-    window.alert(`پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.`);
+    void alert({ title: 'ارسال شد', message: `پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.` });
   };
 
   const handleIssueProforma = () => {
@@ -185,6 +198,7 @@ export default function OrderProfileView({
   const handleDecisionSuccess = (payload) => {
     updateOrder((current) => markGatewayDecisionSuccess(current, payload));
     setDecisionDrawerOpen(false);
+    navigate('/nabz?view=opportunities&tab=current');
   };
 
   const handleDecisionFailed = (payload) => {
@@ -242,13 +256,14 @@ export default function OrderProfileView({
           }}
           onEditOrder={() => {
             if (!canEditWholeOrder()) {
-              window.alert('ویرایش کلی سفارش فقط برای نقش شوالیه فعال است.');
+              void alert({ title: 'توجه', message: 'ویرایش کلی سفارش فقط برای نقش شوالیه فعال است.' });
               return;
             }
             setEditDrawerOpen(true);
           }}
           onNextAction={handleNextAction}
           onOpenActivityModal={() => openActivityModal()}
+          onOpenActivityTimeline={() => setActivityTimelineOpen(true)}
           onOpenDeliveryOrderModal={() => setDeliveryOrderModalOpen(true)}
           onOpenDeliveryModal={() => setDeliveryModalOpen(true)}
           onIssueProforma={handleIssueProforma}
@@ -290,6 +305,18 @@ export default function OrderProfileView({
         onSubmit={handleActivityModalSubmit}
       />
 
+      <ActivityDrawer
+        open={activityTimelineOpen}
+        onClose={() => setActivityTimelineOpen(false)}
+        title="سوابق فعالیت‌ها"
+        subtitle={`سفارش ${toDisplayOrderCode(order.code)}`}
+      >
+        <ActivityTimeline
+          entityType="ORDER"
+          entityId={order.code || order.id}
+        />
+      </ActivityDrawer>
+
       <DeliveryLocationModal
         open={deliveryModalOpen && canShowDeliveryLocationAction(order)}
         order={order}
@@ -306,7 +333,7 @@ export default function OrderProfileView({
         onConfirm={(carrierId, selectedKeys) => {
           const result = issueShippingVoucher(order, carrierId, selectedKeys);
           if (!result.accepted) {
-            window.alert(result.reason || 'امکان صدور سفارش ارسال وجود ندارد.');
+            void alert({ title: 'توجه', message: result.reason || 'امکان صدور سفارش ارسال وجود ندارد.' });
             return;
           }
           updateOrder(() => result.order);
@@ -377,6 +404,16 @@ export default function OrderProfileView({
               order={order}
               onUpload={(file) => updateOrder((current) => appendProfileAttachment(current, file))}
             />
+          </div>
+        )}
+        {activeTab === ORDER_PROFILE_TABS.CORRESPONDENCE && (
+          <div
+            className="order-profile-panel"
+            role="tabpanel"
+            id="order-profile-panel-correspondence"
+            aria-labelledby="order-profile-tab-correspondence"
+          >
+            <OrderProfileCorrespondenceTab order={order} />
           </div>
         )}
       </div>

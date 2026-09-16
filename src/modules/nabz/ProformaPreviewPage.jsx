@@ -1,11 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProformaDocument from './components/ProformaDocument';
+import DocumentTrackingPanel from './components/DocumentTrackingPanel';
 import {
   readProformaPreviewPayload,
   PROFORMA_SEND_MESSAGE_TYPE,
   PROFORMA_SIGNED_MESSAGE_TYPE,
 } from './proformaPrint';
+import {
+  MOCK_DOCUMENT_TRACKING,
+  createWhatsAppMessage,
+} from './documentTracking';
+import { useOrganizationIdentity, toDocumentOrganization } from '../../domain/organizationIdentity';
+import { useJarianNotice } from '../../context/JarianNoticeContext';
+import { resolveProformaOrganization } from './documentOrganization';
 import './proforma.css';
 
 const SEAL_IDLE = 'idle';
@@ -22,6 +30,7 @@ const SEND_CHANNELS = [
 ];
 
 export default function ProformaPreviewPage() {
+  const { alert, copyText } = useJarianNotice();
   const [payload, setPayload] = useState(null);
   const [sealState, setSealState] = useState(SEAL_IDLE);
   const [sendMenuOpen, setSendMenuOpen] = useState(false);
@@ -30,6 +39,8 @@ export default function ProformaPreviewPage() {
   const previewId = searchParams.get('id');
   const timersRef = useRef([]);
   const sendMenuRef = useRef(null);
+  const { identity } = useOrganizationIdentity();
+  const liveOrg = useMemo(() => toDocumentOrganization(identity), [identity]);
 
   useEffect(() => {
     document.fonts.load('400 1rem Meem');
@@ -105,7 +116,10 @@ export default function ProformaPreviewPage() {
     });
     setSendMenuOpen(false);
     if (!sent) {
-      window.alert('برای ارسال پیش‌فاکتور، این پنجره را از صفحه سفارش باز کنید یا از تب سوابق اقدام کنید.');
+      void alert({
+        title: 'توجه',
+        message: 'برای ارسال پیش‌فاکتور، این پنجره را از صفحه سفارش باز کنید یا از تب سوابق اقدام کنید.',
+      });
     }
   };
 
@@ -126,11 +140,26 @@ export default function ProformaPreviewPage() {
     });
   };
 
+  const handlePrint = () => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.print();
+      });
+    });
+  };
+
   const handleSignAndStamp = () => {
     if (sealState !== SEAL_IDLE) return;
-    setSealState(SEAL_SIGNING);
     setSendMenuOpen(false);
 
+    const official = payload?.viewModel?.isOfficial !== false;
+    if (!official) {
+      setSealState(SEAL_APPROVED);
+      archiveSignedSnapshot();
+      return;
+    }
+
+    setSealState(SEAL_SIGNING);
     const approveTimer = window.setTimeout(() => {
       setSealState(SEAL_APPROVED);
       archiveSignedSnapshot();
@@ -149,9 +178,16 @@ export default function ProformaPreviewPage() {
 
   const isSigning = sealState === SEAL_SIGNING;
   const isApproved = sealState === SEAL_APPROVED;
+  const isOfficial = payload.viewModel?.isOfficial !== false;
+  const finalizeLabel = isOfficial ? 'تأیید، مهر و امضای رسمی' : 'تأیید';
+  const finalizeBusyLabel = isOfficial ? 'در حال مهر و امضا…' : 'در حال تأیید…';
+  const organization = resolveProformaOrganization(payload, liveOrg);
+  const viewModel = payload.viewModel
+    ? { ...payload.viewModel, organization }
+    : payload.viewModel;
 
   return (
-    <div className={`proforma-preview-page${isApproved ? ' proforma-preview-page--approved' : ''}`}>
+    <div className={`proforma-preview-page${isApproved ? ' proforma-preview-page--approved' : ''}${isOfficial ? '' : ' proforma-preview-page--unofficial'}`}>
       {!shouldPrint && (
         <div className="proforma-preview-page__toolbar proforma-preview-page__toolbar--top no-print">
           <button type="button" className="btn btn--ghost" onClick={() => window.close()}>
@@ -161,7 +197,7 @@ export default function ProformaPreviewPage() {
       )}
 
       <ProformaDocument
-        viewModel={payload.viewModel}
+        viewModel={viewModel}
         terms={payload.terms}
         termsCustom={payload.termsCustom}
         sealState={sealState}
@@ -181,10 +217,10 @@ export default function ProformaPreviewPage() {
               {isSigning ? (
                 <>
                   <span className="proforma-preview-page__spinner" aria-hidden="true" />
-                  در حال مهر و امضا…
+                  {finalizeBusyLabel}
                 </>
               ) : (
-                'مهر و امضای رسمی'
+                finalizeLabel
               )}
             </button>
           )}
@@ -192,7 +228,7 @@ export default function ProformaPreviewPage() {
           {isApproved && (
             <div className="proforma-preview-page__approved-bar" role="group" aria-label="اقدامات پس از تایید">
               <span className="proforma-preview-page__status-pill">تایید شده</span>
-              <button type="button" className="btn btn--outline" onClick={() => window.print()}>
+              <button type="button" className="btn btn--outline" onClick={handlePrint}>
                 چاپ
               </button>
               <div className="proforma-preview-page__send-wrap" ref={sendMenuRef}>
@@ -225,6 +261,33 @@ export default function ProformaPreviewPage() {
           )}
         </div>
       )}
+
+      {!shouldPrint && isApproved ? (
+        <div className="proforma-preview-page__tracking no-print">
+          <DocumentTrackingPanel
+            documentId={
+              payload.viewModel?.documentNumber
+              || payload.viewModel?.orderCode
+              || MOCK_DOCUMENT_TRACKING.documentId
+            }
+            secureLink={MOCK_DOCUMENT_TRACKING.secureLink}
+            status={MOCK_DOCUMENT_TRACKING.status}
+            openedCount={MOCK_DOCUMENT_TRACKING.openedCount}
+            lastOpenedAt={MOCK_DOCUMENT_TRACKING.lastOpenedAt}
+            stepTimes={MOCK_DOCUMENT_TRACKING.stepTimes}
+            onCopyLink={() => { void copyText(MOCK_DOCUMENT_TRACKING.secureLink, 'لینک پیگیری'); }}
+            onSendWhatsApp={() => {
+              const text = createWhatsAppMessage(
+                MOCK_DOCUMENT_TRACKING.secureLink,
+                organization.tradeName,
+              );
+              const phone = String(payload.viewModel?.customerPhone || '').replace(/\D/g, '');
+              const base = phone ? `https://wa.me/${phone}?text=` : 'https://wa.me/?text=';
+              window.open(`${base}${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,0 +1,67 @@
+.lifecycle-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  vertical-align: middle;
+  position: relative;
+}
+
+.lifecycle-indicator__moon {
+  display: block;
+  color: var(--text-secondary);
+  stroke-width: 1.15;
+}
+
+.lifecycle-indicator--sayeh {
+  color: var(--text-secondary);
+}
+
+.lifecycle-indicator__circle {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.lifecycle-indicator__circle--dashed {
+  border: 1.5px dashed var(--text-muted);
+  background: transparent;
+}
+
+.lifecycle-indicator__circle--empty {
+  border: 1.5px solid var(--text-secondary);
+  background: transparent;
+}
+
+.lifecycle-indicator__circle--full {
+  border: 1.5px solid var(--text-secondary);
+  background: var(--text-secondary);
+}
+
+.lifecycle-indicator__circle--partial {
+  border: 1.5px solid var(--text-secondary);
+  background: conic-gradient(
+    var(--text-secondary) 0deg calc(var(--lifecycle-fill-pct, 0) * 3.6deg),
+    transparent calc(var(--lifecycle-fill-pct, 0) * 3.6deg) 360deg
+  );
+}
+
+.lifecycle-indicator__composite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lifecycle-indicator__composite .lifecycle-indicator__circle {
+  position: absolute;
+  inset: 0;
+}
+
+.lifecycle-indicator__mark {
+  position: relative;
+  z-index: 1;
+  color: var(--text-secondary);
+}

@@ -6,15 +6,19 @@ import { getOrderProfilePrimaryActions } from '../../orderProfileService';
 import { getProformaTerms } from '../../proformaService';
 import { openProformaPreview, printProforma } from '../../proformaPrint';
 import OrderProfileMoreMenu from './OrderProfileMoreMenu';
+import { useJarianNotice } from '../../../../context/JarianNoticeContext';
 
-function handlePrimaryAction(actionId, order) {
+function handlePrimaryAction(actionId, order, alert) {
   const terms = getProformaTerms(order);
   if (actionId === 'print-proforma') {
     printProforma(order, terms);
     return;
   }
   if (actionId === 'confirm-final') {
-    window.alert('تایید نهایی سفارش — در نسخه بعدی به گردش کار متصل می‌شود.');
+    void alert({
+      title: 'توجه',
+      message: 'تأیید نهایی سفارش — در نسخه بعدی به گردش کار متصل می‌شود.',
+    });
   }
 }
 
@@ -24,6 +28,7 @@ export default function OrderProfileHeader({
   onCancelOrder,
   onEditOrder,
 }) {
+  const { alert } = useJarianNotice();
   const statusKind = getOrderDisplayStatusKind(order);
   const primaryActions = getOrderProfilePrimaryActions(order);
 
@@ -72,7 +77,7 @@ export default function OrderProfileHeader({
               key={action.id}
               type="button"
               className={action.variant === 'primary' ? 'btn btn--primary' : 'btn btn--outline'}
-              onClick={() => handlePrimaryAction(action.id, order)}
+              onClick={() => handlePrimaryAction(action.id, order, alert)}
             >
               {action.label}
             </button>

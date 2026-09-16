@@ -1,17 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import logo from '../../../../../assets/images/nikan2.jpg';
-import { COMPANY_BRAND, PROFORMA_BANK_ACCOUNTS } from '../../../proformaConfig';
+import { PROFORMA_BANK_ACCOUNTS } from '../../../proformaConfig';
 import { formatAmountRial, toDisplayOrderCode } from '../../../orderCode';
 import { formatJarianMoney } from '../../../../../config/JarianUI.config';
 import { getCustomerById } from '../../../customers';
 import { getTodayJalali } from '../../../dateUtils';
 import { listCrmPaymentsAsCustomerPayments } from '../../../orderCrmService';
-import { buildSaranjamSettlementModel } from '../../../saranjamSettlementService';
+import { buildSaranjamSettlementModel, getSaranjamDiscrepancy } from '../../../saranjamSettlementService';
+import { createEntityId, ENTITY_ID_PREFIX } from '../../../../../domain/identity';
+import {
+  getCachedOrganizationIdentity,
+  isDocumentOrganizationPopulated,
+  toDocumentOrganization,
+  useOrganizationIdentity,
+} from '../../../../../domain/organizationIdentity';
+import { legacyDocumentOrganizationFromBrand } from '../../../documentOrganization';
 import { printTaxInvoice } from './printTaxInvoice';
 import SaranjamSettlementLayout from './SaranjamSettlementLayout';
+import { OFFICIAL_VAT_RATE } from '../../../services/quotingService';
+import { ORDER_TABS, STAGE_SARANJAM_ID } from '../../../config';
 import './SaranjamTab.css';
 
-const VAT_RATE = 0.09;
+const VAT_RATE = OFFICIAL_VAT_RATE;
 
 const MOCK_ITEMS = [
   {
@@ -89,8 +99,8 @@ function UploadIcon() {
 function CheckIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="#16A34A" />
-      <path d="M7.5 12.5l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="10" fill="var(--success)" />
+      <path d="M7.5 12.5l3 3 6-6" stroke="var(--color-white)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -197,7 +207,7 @@ function PurchaseInvoiceModal({ open, onClose, item }) {
     const win = window.open('', '_blank', 'width=900,height=700');
     if (!win) return;
     win.document.write(`<!DOCTYPE html><html dir="rtl"><head><title>${fileName}</title>
-      <style>html,body{margin:0;background:#fff}img{max-width:100%;display:block;margin:0 auto}</style>
+      <style>html,body{margin:0;background:var(--bg-paper)}img{max-width:100%;display:block;margin:0 auto}</style>
       </head><body><img src="${dataUrl}" alt="" /></body></html>`);
     win.document.close();
     win.onload = () => {
@@ -426,6 +436,7 @@ function TaxInvoiceModal({
   invoiceNumber,
   issueDate,
   mode = 'issue',
+  organization,
 }) {
   const isViewMode = mode === 'view';
   const canEdit = Boolean(isAdmin) && !isViewMode;
@@ -446,6 +457,7 @@ function TaxInvoiceModal({
   }, [draftItems]);
 
   const primaryBank = PROFORMA_BANK_ACCOUNTS[0];
+  const seller = organization && typeof organization === 'object' ? organization : {};
 
   const taxdocRef = useRef(null);
 
@@ -501,7 +513,7 @@ function TaxInvoiceModal({
           <header className="saranjam-taxdoc__top">
             <div className="saranjam-taxdoc__top-brand">
               <img src={logo} alt="" className="saranjam-taxdoc__logo" />
-              <span className="font-meem saranjam-taxdoc__top-company">{COMPANY_BRAND.name}</span>
+              <span className="font-meem saranjam-taxdoc__top-company">{seller.tradeName}</span>
             </div>
             <h1 className="saranjam-taxdoc__title font-meem">صورتحساب فروش کالا و خدمات</h1>
             <div className="saranjam-taxdoc__top-meta">
@@ -525,15 +537,15 @@ function TaxInvoiceModal({
 
           <PartyInfoBox
             sideLabel="فروشنده"
-            name={COMPANY_BRAND.name}
-            address={COMPANY_BRAND.address}
-            city="تهران"
-            province="تهران"
-            nationalId={COMPANY_BRAND.nationalId}
-            economicId={COMPANY_BRAND.nationalId}
-            postalCode={COMPANY_BRAND.postalCode}
-            registrationNumber={COMPANY_BRAND.registrationNumber}
-            phone={COMPANY_BRAND.phone}
+            name={seller.tradeName}
+            address={seller.officialAddress}
+            city={seller.city}
+            province={seller.province}
+            nationalId={seller.nationalId}
+            economicId={seller.economicNumber || seller.nationalId}
+            postalCode={seller.postalCode}
+            registrationNumber={seller.registrationNumber}
+            phone={seller.phone}
           />
 
           <PartyInfoBox
@@ -669,6 +681,129 @@ function TaxInvoiceModal({
   );
 }
 
+function SummaryRow({ label, value, strong = false, negative = false }) {
+  return (
+    <div className={`saranjam-confirm__row${strong ? ' is-strong' : ''}`}>
+      <span className="saranjam-confirm__row-label">{label}</span>
+      <strong className={`saranjam-confirm__row-value font-vazir${negative ? ' saranjam-cell--negative' : ''}`}>
+        {value}
+      </strong>
+    </div>
+  );
+}
+
+/**
+ * ArchiveConfirmModal — Hard gate before the irreversible archive action.
+ * اگر مغایرتی وجود داشته باشد، تکمیل «دلیل تأیید مغایرت» اجباری است و تا پیش از
+ * آن دکمهٔ تأیید غیرفعال می‌ماند.
+ */
+function ArchiveConfirmModal({
+  open,
+  onClose,
+  onConfirm,
+  settlement,
+  discrepancy,
+  reason,
+  onReasonChange,
+}) {
+  if (!open) return null;
+
+  const { kpis, customerLedger } = settlement;
+  const balanceNegative = Number(customerLedger.orderBalanceRial) < 0;
+  const requiresReason = Boolean(discrepancy?.hasAny);
+  const reasonMissing = requiresReason && !reason.trim();
+
+  return (
+    <div className="saranjam-modal" role="presentation">
+      <button
+        type="button"
+        className="saranjam-modal__backdrop"
+        aria-label="بستن"
+        onClick={onClose}
+      />
+      <div
+        className="saranjam-modal__panel saranjam-confirm font-meem"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="saranjam-confirm-title"
+        dir="rtl"
+      >
+        <header className="saranjam-modal__toolbar">
+          <h2 id="saranjam-confirm-title" className="saranjam-modal__toolbar-title">
+            تأیید نهایی و بایگانی سفارش
+          </h2>
+          <button type="button" className="saranjam-modal__close" onClick={onClose} aria-label="بستن">×</button>
+        </header>
+
+        <p className="saranjam-confirm__warn" role="status">
+          این اقدام <strong>برگشت‌ناپذیر</strong> است؛ با تأیید، سفارش قفل و بایگانی می‌شود و
+          تمام بخش‌های عملیاتی فقط‌خواندنی خواهند شد.
+        </p>
+
+        <div className="saranjam-confirm__summary">
+          <SummaryRow
+            label="مبلغ فروش نهایی"
+            value={formatJarianMoney(kpis.finalSalesAmountRial, { withCurrency: true })}
+          />
+          <SummaryRow
+            label="جمع مبلغ خرید"
+            value={formatJarianMoney(kpis.totalPurchaseAmountRial, { withCurrency: true })}
+          />
+          <SummaryRow
+            label="هزینه لجستیک"
+            value={formatJarianMoney(kpis.logisticsCostRial, { withCurrency: true })}
+          />
+          <SummaryRow
+            label="سود خالص"
+            value={formatJarianMoney(kpis.netProfitRial, { withCurrency: true })}
+            negative={Number(kpis.netProfitRial) < 0}
+            strong
+          />
+          <SummaryRow
+            label="تراز این سفارش"
+            value={`${balanceNegative ? '⚠️ ' : ''}${formatJarianMoney(customerLedger.orderBalanceRial, { withCurrency: true })}`}
+            negative={balanceNegative}
+            strong
+          />
+        </div>
+
+        {requiresReason ? (
+          <div className="saranjam-confirm__audit">
+            <div className="saranjam-confirm__audit-alert" role="alert">
+              ⚠️ در این سفارش مغایرت شناسایی شده است. برای بایگانی، ثبت دلیل تأیید الزامی است.
+            </div>
+            <label className="saranjam-confirm__audit-label" htmlFor="saranjam-discrepancy-reason">
+              دلیل تأیید مغایرت
+            </label>
+            <textarea
+              id="saranjam-discrepancy-reason"
+              className="saranjam-confirm__audit-input"
+              rows={3}
+              value={reason}
+              onChange={(e) => onReasonChange(e.target.value)}
+              placeholder="مثال: اختلاف وزن باسکول با تأیید مدیر فروش پذیرفته شد."
+            />
+          </div>
+        ) : null}
+
+        <footer className="saranjam-modal__footer">
+          <button type="button" className="saranjam-btn saranjam-btn--flat" onClick={onClose}>
+            انصراف
+          </button>
+          <button
+            type="button"
+            className="saranjam-btn saranjam-btn--solid"
+            onClick={() => onConfirm(reason)}
+            disabled={reasonMissing}
+          >
+            تأیید نهایی و بایگانی
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
 /**
  * SaranjamTab — Settlement & Archive (final operations tab)
  */
@@ -680,6 +815,8 @@ export default function SaranjamTab({
   const purchaseFileRefs = useRef({});
   const customerFileRef = useRef(null);
   const supplierFileRefs = useRef({});
+  const { identity } = useOrganizationIdentity();
+  const liveOrg = useMemo(() => toDocumentOrganization(identity), [identity]);
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [items, setItems] = useState(() => (
@@ -736,6 +873,9 @@ export default function SaranjamTab({
     Boolean(order?.saranjam?.archivedAt || order?.saranjam?.locked),
   );
   const [toast, setToast] = useState('');
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [discrepancyReason, setDiscrepancyReason] = useState('');
+  const [manualAttachments, setManualAttachments] = useState({});
 
   useEffect(() => {
     setArchived(Boolean(order?.saranjam?.archivedAt || order?.saranjam?.locked));
@@ -745,12 +885,13 @@ export default function SaranjamTab({
 
   const buyer = useMemo(() => {
     const customer = getCustomerById(order?.customerId);
-    const primaryPerson = customer?.relatedPersons?.[0];
+    const primaryPerson = (customer?.relatedPersons || []).find((p) => p.isPrimary)
+      || customer?.relatedPersons?.[0];
     return {
       name: order?.customer || customer?.companyName || customer?.personName || 'خریدار نمونه',
       nationalId: customer?.nationalId || '—',
       economicId: customer?.economicId || customer?.nationalId || '—',
-      phone: customer?.mobile || customer?.officialSpecs?.phone || '—',
+      phone: primaryPerson?.mobile || customer?.mobile || customer?.officialSpecs?.phone || '—',
       address: customer?.fullAddress || customer?.officialSpecs?.address || '—',
       postalCode: customer?.officialSpecs?.postalCode || '—',
       registrationNumber: customer?.registrationNumber || '—',
@@ -869,7 +1010,7 @@ export default function SaranjamTab({
       return;
     }
     const payment = {
-      id: `cp-${Date.now()}`,
+      id: createEntityId(ENTITY_ID_PREFIX.CUSTOMER_PAYMENT),
       date: getTodayJalali(),
       amountRial: remaining,
       note: 'فیش واریزی مشتری',
@@ -884,7 +1025,7 @@ export default function SaranjamTab({
   const handleSupplierReceipt = (ledger, file) => {
     if (!file || !ledger || ledger.balanceRial === 0) return;
     const payment = {
-      id: `sp-${Date.now()}`,
+      id: createEntityId(ENTITY_ID_PREFIX.SUPPLIER_PAYMENT),
       supplierId: ledger.supplierId,
       supplier: ledger.supplier,
       date: '۱۴۰۴/۰۱/۱۵',
@@ -927,6 +1068,7 @@ export default function SaranjamTab({
       salesInvoiceDate: issueDate,
       salesInvoiceSnapshot: snapshot,
       salesInvoiceTotalRial: total,
+      organizationSnapshot: toDocumentOrganization(getCachedOrganizationIdentity()),
     });
     showToast(
       saleModalMode === 'reissue'
@@ -935,16 +1077,16 @@ export default function SaranjamTab({
     );
   };
 
-  const handleArchive = () => {
+  const performArchive = (reason = '') => {
     if (archived) return;
-    const confirmed = window.confirm(
-      'با تأیید مالی، سفارش بایگانی و تمام بخش‌های عملیاتی قفل می‌شوند. ادامه می‌دهید؟',
-    );
-    if (!confirmed) return;
     const archivedAt = new Date().toISOString();
     setArchived(true);
+    setArchiveModalOpen(false);
     onUpdateOrder?.((current) => ({
       ...current,
+      status: ORDER_TABS.SUCCESS,
+      closure: 'closed',
+      stageId: STAGE_SARANJAM_ID,
       archivedAt,
       saranjam: {
         ...(current.saranjam || {}),
@@ -956,9 +1098,11 @@ export default function SaranjamTab({
         archivedAt,
         locked: true,
         statusLabel: 'بایگانی‌شده',
+        discrepancyReason: reason.trim() || null,
+        discrepancyAckAt: reason.trim() ? archivedAt : null,
       },
     }));
-    showToast('تأیید مالی انجام و سفارش بایگانی شد.');
+    showToast('تأیید نهایی انجام و سفارش بایگانی شد.');
   };
 
   const settlement = useMemo(() => buildSaranjamSettlementModel({
@@ -983,6 +1127,67 @@ export default function SaranjamTab({
     archived,
   ]);
 
+  const discrepancy = useMemo(() => getSaranjamDiscrepancy(settlement), [settlement]);
+
+  const attachments = useMemo(() => {
+    const paymentUploaded = Boolean(manualAttachments.paymentReceipt)
+      || (settlement.customerLedger.payments || []).some((p) => p.receiptFileName);
+    const invoiceUploaded = Boolean(manualAttachments.invoice)
+      || settlement.gates.salesInvoiceIssued;
+    const weighbridgeUploaded = Boolean(manualAttachments.weighbridge)
+      || (settlement.customerLedger.lines || []).some((line) => line.scaleWeightKg != null);
+    return [
+      { key: 'paymentReceipt', label: 'فیش واریزی', uploaded: paymentUploaded },
+      { key: 'invoice', label: 'فاکتور', uploaded: invoiceUploaded },
+      { key: 'weighbridge', label: 'رسید باسکول', uploaded: weighbridgeUploaded },
+    ];
+  }, [settlement, manualAttachments]);
+
+  const handleUploadAttachment = (key, file) => {
+    if (!file || !key) return;
+    setManualAttachments((prev) => ({ ...prev, [key]: file.name || true }));
+    showToast(`مدرک «${file.name}» پیوست شد.`);
+  };
+
+  const handleExportPdf = () => {
+    window.print();
+  };
+
+  const handleExportExcel = () => {
+    const rows = [];
+    rows.push(['شاخص', 'مبلغ (ریال)']);
+    rows.push(['مبلغ فروش نهایی', settlement.kpis.finalSalesAmountRial]);
+    rows.push(['جمع مبلغ خرید', settlement.kpis.totalPurchaseAmountRial]);
+    rows.push(['هزینه لجستیک', settlement.kpis.logisticsCostRial]);
+    rows.push(['سود خالص', settlement.kpis.netProfitRial]);
+    rows.push(['تراز این سفارش', settlement.customerLedger.orderBalanceRial]);
+    rows.push([]);
+    rows.push(['تأمین‌کننده', 'وزن فاکتور (kg)', 'وزن باسکول (kg)', 'مبلغ خرید', 'مانده']);
+    settlement.suppliers.forEach((s) => {
+      rows.push([s.supplierName, s.invoicedWeightKg, s.deliveredWeightKg, s.totalCostRial, s.balanceRial]);
+    });
+
+    const csv = rows
+      .map((cols) => cols
+        .map((cell) => {
+          const text = String(cell ?? '');
+          return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+        })
+        .join(','))
+      .join('\n');
+
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `saranjam-${orderCode}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('خروجی Excel (CSV) دانلود شد.');
+  };
+
   return (
     <section
       className={`saranjam-tab font-meem${compact ? ' saranjam-tab--compact' : ''}${archived ? ' is-archived' : ''}`}
@@ -990,15 +1195,33 @@ export default function SaranjamTab({
     >
       <SaranjamSettlementLayout
         settlement={settlement}
+        discrepancy={discrepancy}
+        attachments={attachments}
         archived={archived}
         locked={archived}
         compact={compact}
         customerFileRef={customerFileRef}
-        onArchive={handleArchive}
+        onArchive={() => {
+          setDiscrepancyReason('');
+          setArchiveModalOpen(true);
+        }}
         onOpenSalesInvoice={() => openSalesModal(
           salesInvoiceIssued || archived ? 'view' : 'issue',
         )}
         onUploadCustomerReceipt={handleCustomerReceipt}
+        onUploadAttachment={handleUploadAttachment}
+        onExportPdf={handleExportPdf}
+        onExportExcel={handleExportExcel}
+      />
+
+      <ArchiveConfirmModal
+        open={archiveModalOpen}
+        onClose={() => setArchiveModalOpen(false)}
+        onConfirm={performArchive}
+        settlement={settlement}
+        discrepancy={discrepancy}
+        reason={discrepancyReason}
+        onReasonChange={setDiscrepancyReason}
       />
 
       {!archived && (
@@ -1082,6 +1305,13 @@ export default function SaranjamTab({
         buyer={buyer}
         invoiceNumber={invoiceNumber}
         issueDate={issueDate}
+        organization={
+          salesInvoiceIssued && saleModalMode === 'view'
+            ? (isDocumentOrganizationPopulated(order?.saranjam?.organizationSnapshot)
+              ? order.saranjam.organizationSnapshot
+              : legacyDocumentOrganizationFromBrand())
+            : liveOrg
+        }
       />
 
       <PurchaseInvoiceModal

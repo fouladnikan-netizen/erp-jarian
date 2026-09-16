@@ -1,0 +1,56 @@
+---
+description: Client state vs PostgreSQL — Zustand is cache only when API exists
+globs: src/stores/**/*.{js,ts},src/api/**/*.{js,ts},src/modules/**/store/**/*
+alwaysApply: true
+---
+
+# Jarian Client State & SSOT (Law — effective 2026-08-26)
+
+**PostgreSQL (backend API) is the system of record** for any entity that has a persisted API.
+
+Read: `Docs/architecture/CLIENT_STATE_SSOT.md`, `Docs/architecture/BACKEND_FOUNDATION.md`
+
+---
+
+## Absolute rule
+
+From this point forward, **no new entity with a Backend/API may use Zustand (or localStorage) as an independent Source of Truth.**
+
+| Layer | Role |
+|-------|------|
+| **PostgreSQL + API** | Authoritative reads/writes, audit, RBAC |
+| **Repository** (`src/api/repositories/*`) | Only FE path to mutate persisted entities |
+| **Zustand / React state** | UI cache, selection, drafts, optimistic display — **never a second database** |
+
+---
+
+## Required pattern for new persisted entities
+
+1. Define API + migration first (`backend/src/db/migrations/`).
+2. Add `*Repository` in `src/api/repositories/` (mock switch via `useMockApi()` only for offline dev).
+3. Store holds **working copy** loaded via `fetch*`; mutations call repository then update cache.
+4. On login / bootstrap → hydrate from API (`ErpDataBootstrap` or module fetch).
+5. Do **not** seed mock data into Zustand when `VITE_USE_MOCK_API=false`.
+
+---
+
+## Allowed in Zustand (without API)
+
+- UI: modal open, tab, filters, selection sets
+- Ephemeral drafts until explicit save
+- Entities **explicitly deferred** (documented in DOMAIN_DECISION_LOG) e.g. Raw Lead (`useLeadsStore`) until Lead API exists — **DDL-13** locks ownership; store is temporary client-only SoR until then
+
+---
+
+## Forbidden
+
+- Parallel registries (second contacts/orders array in a module)
+- `localStorage` as SoR for Company, Order, User, Payment, etc.
+- Creating ids with `Date.now()` / `createNumericId()` for entities that persist via API
+- Skipping repository on write because "store is faster"
+
+---
+
+## Legacy note
+
+`useContactsStore` / `useNabzStore` still hold cache + write-through to API. **Do not extend this as a template for new entities** — prefer explicit repository + thin cache store.

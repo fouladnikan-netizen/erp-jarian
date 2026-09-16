@@ -1,11 +1,15 @@
 import { PERSON_TYPES } from '../kanoon/config';
 import { getCustomerById } from './customers';
-import { calculateQuotingPreview } from './quotingService';
+import { calculateQuotingPreview, resolveOrderIsOfficial } from './quotingService';
 import { getTodayJalali, getNowTimeFa, toPersianDigits } from './dateUtils';
 import { formatAmountRialWords } from './numberToPersianWords';
 import { DEFAULT_PROFORMA_TERMS } from './proformaConfig';
-import { CURRENT_USER } from './constants';
+import { getCachedOrganizationIdentity, toDocumentOrganization } from '../../domain/organizationIdentity';
+import { getDocumentChromeTagline } from '../sales/settings/documentChromeFacade.js';
+import { getCurrentUser } from './constants';
 import { ORDER_TABS, STAGE_KAVOSH_ID, getStageLabel } from './config';
+import { getEffectiveStageId } from './orderStageService';
+import { applyRevisionReturn } from './services/revisionService';
 
 let proformaVersionIdCounter = 1;
 let proformaEventIdCounter = 9000;
@@ -28,10 +32,12 @@ export function resolveCustomerRequester(order, customer) {
     };
   }
 
-  const related = (customer?.relatedPersons || []).find((person) => person.name);
+  const related = (customer?.relatedPersons || []).find(
+    (person) => person.isPrimary || person.fullName || person.name,
+  );
   if (related) {
     return {
-      name: related.name,
+      name: related.fullName || related.name,
       mobile: related.mobile || '—',
     };
   }
@@ -79,7 +85,8 @@ export function getLatestProformaVersion(order) {
 /** اثرانگشت محتوا برای تشخیص تغییر نسبت به آخرین نسخه بایگانی‌شده */
 export function buildProformaFingerprint(order) {
   // پیش‌فاکتور همیشه قیمت قبل از مالیات رسمی را مبنا می‌گیرد (مستقل از سوئیچ نمایش مظنه/پیش‌کش)
-  const preview = calculateQuotingPreview(order, { forceVatExclusive: true });
+  const isOfficial = resolveOrderIsOfficial(order);
+  const preview = calculateQuotingPreview(order, { forceVatExclusive: isOfficial });
   const terms = getProformaTerms(order);
   const quoting = order.quoting ? { ...order.quoting } : null;
   if (quoting) delete quoting.vatInclusive;
@@ -87,10 +94,11 @@ export function buildProformaFingerprint(order) {
     customerId: order.customerId,
     customer: order.customer,
     saleType: preview.saleType || order.saleType || 'رسمی',
+    isOfficial,
     terms,
     quoting,
     subtotal: preview.subtotal,
-    vatAmount: preview.vatAmount,
+    vatAmount: isOfficial ? preview.vatAmount : 0,
     orderTotal: preview.orderTotal,
     items: (order.items || []).map((item) => ({
       name: item.name,
@@ -109,12 +117,14 @@ export function buildProformaFingerprint(order) {
 }
 
 export function buildProformaViewModel(order, options = {}) {
-  // پیش‌نمایش/سند پیش‌فاکتور برای فروش رسمی همیشه قیمت قبل از مالیات است
-  // (مستقل از سوئیچ نمایش در مظنه و پیش‌کش)
-  const preview = calculateQuotingPreview(order, { forceVatExclusive: true });
+  // رسمی: قیمت قبل از مالیات + ردیف VAT جدا
+  // غیررسمی: مالیات ۱۰٪ داخل فی (*1.10) — بدون ردیف VAT و بدون سوئیچ دستی
+  const isOfficial = resolveOrderIsOfficial(order);
+  const preview = calculateQuotingPreview(order, {
+    forceVatExclusive: isOfficial,
+  });
   const customer = getCustomerById(order.customerId);
   const saleType = preview.saleType || order.saleType || 'رسمی';
-  const isOfficial = saleType === 'رسمی';
   const revision = options.revision ?? order.proforma?.revision ?? 1;
   const documentNumber = options.documentNumber
     || formatProformaDocumentNumber(order.code, revision);
@@ -157,9 +167,13 @@ export function buildProformaViewModel(order, options = {}) {
     salePriceLabel: isOfficial ? 'قیمت قبل از مالیات' : 'قیمت فروش',
     lines,
     subtotal: preview.subtotal,
-    vatAmount: preview.vatAmount,
+    vatAmount: isOfficial ? preview.vatAmount : 0,
     grandTotal: preview.orderTotal,
     grandTotalWords: formatAmountRialWords(preview.orderTotal),
+    organization: {
+      ...toDocumentOrganization(getCachedOrganizationIdentity()),
+      tagline: getDocumentChromeTagline(),
+    },
   };
 }
 
@@ -213,7 +227,7 @@ export function issueProforma(order, options = {}) {
     documentNumber,
     contentHash: fingerprint,
     issuedAt,
-    issuedBy: CURRENT_USER,
+    issuedBy: getCurrentUser(),
     viewModel,
     terms,
     termsCustom,
@@ -254,7 +268,7 @@ export function issueProforma(order, options = {}) {
         id: proformaEventIdCounter++,
         type: forceRevision ? 'proforma_updated' : 'proforma_issued',
         at: issuedAt,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: revision <= 1
           ? `صدور پیش‌فاکتور ${documentNumber}`
           : `به‌روزرسانی پیش‌فاکتور — نسخه ${documentNumber}`,
@@ -292,37 +306,48 @@ export function updateProforma(order) {
 
   const at = `${getTodayJalali()} · ${getNowTimeFa()}`;
   const now = Date.now();
+  const fromStageId = getEffectiveStageId(order);
+
+  const resetOrder = {
+    ...result.order,
+    stageId: STAGE_KAVOSH_ID,
+    status: ORDER_TABS.CURRENT,
+    updatedAt: now,
+    updated_at: now,
+    inquiryCompletedAt: null,
+    quotingCompletedAt: null,
+    // حاشیه سود قبلی حفظ می‌شود
+    quoting: order.quoting ? { ...order.quoting } : result.order.quoting,
+    proformaStatus: null,
+    proformaUpdate: {
+      at: now,
+      revision: result.order.proforma?.revision || 1,
+      baselineInquiryIds,
+    },
+    events: [
+      ...(result.order.events || []),
+      {
+        id: proformaEventIdCounter++,
+        type: 'proforma_update_reset_to_kavosh',
+        at,
+        by: getCurrentUser(),
+        summary: `به‌روزرسانی پیش‌فاکتور — بازگشت به «${getStageLabel(STAGE_KAVOSH_ID)}» برای استعلام مجدد`,
+        revision: result.order.proforma?.revision,
+      },
+    ],
+  };
+
+  const withRevision = applyRevisionReturn(resetOrder, {
+    fromStageId,
+    toStageId: STAGE_KAVOSH_ID,
+    reasonCode: 'PRICE_EXCEEDED',
+    reasonText: `بازنگری پیش‌فاکتور نسخه ${result.order.proforma?.revision || 1}`,
+    changesSummary: `به‌روزرسانی پیش‌فاکتور — بازگشت به «${getStageLabel(STAGE_KAVOSH_ID)}» برای استعلام مجدد`,
+  });
 
   return {
     ...result,
-    order: {
-      ...result.order,
-      stageId: STAGE_KAVOSH_ID,
-      status: ORDER_TABS.CURRENT,
-      updatedAt: now,
-      updated_at: now,
-      inquiryCompletedAt: null,
-      quotingCompletedAt: null,
-      // حاشیه سود قبلی حفظ می‌شود
-      quoting: order.quoting ? { ...order.quoting } : result.order.quoting,
-      proformaStatus: null,
-      proformaUpdate: {
-        at: now,
-        revision: result.order.proforma?.revision || 1,
-        baselineInquiryIds,
-      },
-      events: [
-        ...(result.order.events || []),
-        {
-          id: proformaEventIdCounter++,
-          type: 'proforma_update_reset_to_kavosh',
-          at,
-          by: CURRENT_USER,
-          summary: `به‌روزرسانی پیش‌فاکتور — بازگشت به «${getStageLabel(STAGE_KAVOSH_ID)}» برای استعلام مجدد`,
-          revision: result.order.proforma?.revision,
-        },
-      ],
-    },
+    order: withRevision,
   };
 }
 

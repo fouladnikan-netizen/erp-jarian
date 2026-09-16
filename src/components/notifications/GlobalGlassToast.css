@@ -1,0 +1,115 @@
+/* ═══════════ Global Glass Toast — Notification Engine ═══════════ */
+
+.glass-toast-stack {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1400;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 0.65rem;
+  width: min(380px, calc(100vw - 48px));
+  pointer-events: none;
+}
+
+.glass-toast {
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.glass-toast.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.glass-toast.is-exiting {
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  pointer-events: none;
+}
+
+.glass-toast__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 0.95rem;
+  border-radius: 16px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-lg),
+    var(--glass-inset-highlight);
+}
+
+.glass-toast__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+  border: 1px solid var(--border-light);
+}
+
+.glass-toast__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.glass-toast__title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.glass-toast__message {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.glass-toast__action {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.glass-toast__action:hover {
+  color: var(--text-primary);
+  border-color: var(--muted-border);
+  background: var(--glass-bg-strong);
+}
+
+@media (max-width: 480px) {
+  .glass-toast-stack {
+    right: 12px;
+    left: 12px;
+    bottom: 16px;
+    width: auto;
+  }
+}

@@ -1,0 +1,28 @@
+id: user-organization-assignment
+name: User Organization Assignment
+tier: A
+status: active
+ownerModule: shirazeh
+aggregateRoot: UserOrganizationAssignment
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Primary placement of a User on a Unit with optional Position. PUT upserts by user_id. DELETE removes the row only — never deletes users. is_manager is org-only (max one per unit)."
+archivePolicy: hard-delete
+auditPolicy: append-only
+rbacPolicy:
+  - users:admin
+databaseTable: user_organization_assignments
+apiBasePath: /api/v1/organization/assignments
+backendRepository: backend/src/repositories/organizationRepository.js
+frontendRepository: src/api/repositories/OrganizationRepository.js
+dependencies:
+  - auth-user
+  - organization-unit
+  - organization-position
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-37
+  - DDL-39
+migrationSafety: "032 new table PK user_id FK users.id. No mock-person backfill. No user_roles writes. Removing assignment does not touch users. 034 does not alter this table."
+notes: "Canvas person node id is users.id. Display name/mobile are read from users — never copied as SoR. is_primary is always true in v1 (one placement). Create/edit User upserts this row in the same transaction as the account."

@@ -7,6 +7,9 @@ export {
   SUPPLIER_PRODUCT_GROUPS,
 } from '../../config/registry';
 
+/** Party types — canonical source: domain/party (re-exported for existing imports). */
+export { ENTITY_TYPES, PERSON_TYPES } from '../../domain/party/party.constants.js';
+
 export const BEHAVIORAL_STATUS = {
   ambassador: { label: 'سفیر', tag: 'ambassador' },
   active: { label: 'فعال', tag: 'active' },
@@ -15,16 +18,6 @@ export const BEHAVIORAL_STATUS = {
   trial: { label: 'تجربه‌گر', tag: 'trial' },
   silent: { label: 'خاموش', tag: 'silent' },
   stagnant: { label: 'راکد', tag: 'silent' },
-};
-
-export const ENTITY_TYPES = {
-  CUSTOMER: 'customer',
-  SUPPLIER: 'supplier',
-};
-
-export const PERSON_TYPES = {
-  LEGAL: 'legal',
-  NATURAL: 'natural',
 };
 
 export const IRAN_PROVINCES = [

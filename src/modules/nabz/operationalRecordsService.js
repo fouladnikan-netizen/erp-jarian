@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { parseMoneyInput } from './orderCode';
 
@@ -94,7 +94,7 @@ export function appendSupplyDoc(order, { title, fileName }) {
     title: title.trim(),
     fileName: fileName.trim() || 'سند-جدید.pdf',
     uploadedAt: stamp(),
-    uploadedBy: CURRENT_USER,
+    uploadedBy: getCurrentUser(),
     status: 'در انتظار بررسی',
   };
   return {
@@ -109,7 +109,7 @@ export function appendSupplyDoc(order, { title, fileName }) {
         id: Date.now(),
         type: 'supply_doc_added',
         at: entry.uploadedAt,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `ثبت سند تأمین: ${entry.title}`,
       },
     ],
@@ -138,7 +138,7 @@ export function appendFreightRecord(order, { carrier, plate, destination }) {
         id: Date.now(),
         type: 'freight_record_added',
         at: entry.departedAt,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `ثبت باربری: ${entry.carrier}`,
       },
     ],
@@ -167,7 +167,7 @@ export function appendFinanceRecord(order, { type, amountRial, method, reference
         id: Date.now(),
         type: 'finance_record_added',
         at: entry.at,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         summary: `ثبت سابقه مالی: ${entry.type}`,
       },
     ],

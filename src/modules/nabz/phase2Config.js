@@ -43,4 +43,4 @@ export const OPERATIONAL_PHASE_META = {
   },
 };
 
-export const ORDER_SUCCESS_COLOR = '#2E8B57';
+export const ORDER_SUCCESS_COLOR = 'var(--status-success)';

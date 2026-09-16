@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  GATEWAY_CANCEL_REASONS,
   GATEWAY_DECISION_OUTCOMES,
   getCancelReasonLabel,
   getEmptyPaymentTerms,
+  useGatewayCancelReasons,
   validatePaymentTerms,
 } from '../../../gatewayDecisionConfig';
 import {
@@ -22,6 +22,7 @@ import OrderProfileConfirmDialog from '../OrderProfileConfirmDialog';
 import DealCelebrationModal from './DealCelebrationModal';
 import GatewaySelect from './GatewaySelect';
 import PaymentTermsForm from './PaymentTermsForm';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 
 function formatPaymentTermsSummary(decision) {
   const terms = decision.paymentTerms || {};
@@ -56,11 +57,13 @@ export default function GatewayDecisionPanel({
   onSubmitSuccess,
   onSubmitFailed,
 }) {
+  const { alert } = useJarianNotice();
+  const cancelReasons = useGatewayCancelReasons();
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const [paymentTerms, setPaymentTerms] = useState(() => getEmptyPaymentTerms());
   const [financeNotes, setFinanceNotes] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState(() => resolveDeliveryInfoPrefill(order));
-  const [cancelReason, setCancelReason] = useState(GATEWAY_CANCEL_REASONS[0].value);
+  const [cancelReason, setCancelReason] = useState(() => cancelReasons[0]?.value || 'other');
   const [cancelNotes, setCancelNotes] = useState('');
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
   const [celebrationOpen, setCelebrationOpen] = useState(false);
@@ -79,12 +82,12 @@ export default function GatewayDecisionPanel({
   const handleSuccessSubmit = () => {
     const paymentError = validatePaymentTerms(paymentTerms);
     if (paymentError) {
-      window.alert(paymentError);
+      void alert({ title: 'توجه', message: paymentError });
       return;
     }
     const deliveryError = validateDeliveryInfo(deliveryInfo);
     if (deliveryError) {
-      window.alert(deliveryError);
+      void alert({ title: 'توجه', message: deliveryError });
       return;
     }
     setPendingSuccessPayload({
@@ -110,7 +113,7 @@ export default function GatewayDecisionPanel({
 
   const handleFailedSubmit = () => {
     if (cancelReason === 'other' && !cancelNotes.trim()) {
-      window.alert('لطفاً توضیحات علت لغو را وارد کنید.');
+      void alert({ title: 'توجه', message: 'لطفاً توضیحات علت لغو را وارد کنید.' });
       return;
     }
     onSubmitFailed?.({ cancelReason, cancelNotes });
@@ -124,10 +127,10 @@ export default function GatewayDecisionPanel({
     setCancelNotes('');
     setPaymentTerms(getEmptyPaymentTerms());
     setDeliveryInfo(resolveDeliveryInfoPrefill(order));
-    setCancelReason(GATEWAY_CANCEL_REASONS[0].value);
+    setCancelReason(cancelReasons[0]?.value || 'other');
   };
 
-  const cancelReasonOptions = GATEWAY_CANCEL_REASONS.map((reason) => ({
+  const cancelReasonOptions = cancelReasons.map((reason) => ({
     value: reason.value,
     label: reason.label,
   }));

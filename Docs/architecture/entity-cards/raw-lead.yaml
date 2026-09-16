@@ -1,0 +1,33 @@
+id: raw-lead
+name: Raw Lead
+tier: A
+status: active
+ownerModule: ofogh
+aggregateRoot: RawLead
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "System status NEW|QUALIFYING|CONVERTED|REJECTED (CONVERTED only via convert). Soft-delete archive requires reason. Personal pipelineStageId is orthogonal UX placement (user-owned stages) — NOT a management/business status."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - leads:read
+  - leads:write
+  - leads:convert
+databaseTable: raw_leads
+apiBasePath: /api/v1/leads
+backendRepository: backend/src/repositories/leadRepository.js
+frontendRepository: src/api/repositories/LeadRepository.js
+dependencies:
+  - company
+  - auth-user
+  - lead-pipeline
+integrationPorts:
+  - company-identity-resolver
+  - pooyesh-task-or-activity-future
+  - kanoon-company-on-convert
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-13
+  - DDL-14
+migrationSafety: "003_raw_leads.sql + 007_lead_personal_pipeline.sql expand-only; soft-delete + audit; convertLeadToCompany is transactional."
+notes: "DDL-13 independent Ofogh aggregate. Personal Lead Pipeline (lead_pipelines / lead_pipeline_stages) is USER-CONTROLLED and must not be used for management reporting. Customer Lifecycle remains SYSTEM-CONTROLLED and fixed. Convert uses CompanyIdentityResolverPort."

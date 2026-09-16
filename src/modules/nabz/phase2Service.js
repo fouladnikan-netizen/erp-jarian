@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { ORDER_TABS } from './config';
 import {
   STAGE_PARVANE_ID,
@@ -16,6 +16,7 @@ import {
   OPERATIONAL_PHASE_ORDER,
   OPERATIONAL_PHASES,
 } from './phase2Config';
+import { isPhase2Committed, isOrderClosed, ORDER_CLOSURE } from '../../domain/order/orderLifecycle.js';
 
 let phase2EventIdCounter = 1;
 
@@ -45,12 +46,16 @@ export function operationalStageToPhase(stageId) {
 }
 
 export function isOrderInPhase2(order) {
-  return order.status === ORDER_TABS.SUCCESS && isPhase2Stage(order.stageId);
+  // DDL-18(B): Phase-2 while SUCCESS (purchase) — closed is read-only history
+  return isPhase2Committed(order)
+    && order.status !== ORDER_TABS.FAILED
+    && isPhase2Stage(order.stageId);
 }
 
-/** فاز ۲ فقط پس از «موفق / تایید و فروش» در مرحله تصمیم نمایش داده می‌شود. */
+/** فاز ۲ پس از خرید موفق (SUCCESS)؛ بسته‌شده فقط نمایش. */
 export function shouldShowOperationalPhases(order) {
-  return order.status === ORDER_TABS.SUCCESS;
+  return isPhase2Committed(order)
+    && order.status !== ORDER_TABS.FAILED;
 }
 
 export function getOperationalStepState(orderPhase, viewPhase, phase) {
@@ -85,7 +90,7 @@ function buildPhase2Event(order, fromStageId, toStageId, summary) {
     id: phase2EventIdCounter++,
     type: 'phase2_stage_advanced',
     at,
-    by: CURRENT_USER,
+    by: getCurrentUser(),
     fromStageId,
     toStageId,
     fromStageLabel: getStageLabel(fromStageId),
@@ -98,7 +103,9 @@ export function enterPhase2FromDecision(order, decidedAt) {
   const nextStageId = STAGE_PARVANE_ID;
   return {
     ...order,
+    // DDL-18(B): gateway accept ⇒ Successful Purchase (SUCCESS + OPEN)
     status: ORDER_TABS.SUCCESS,
+    closure: ORDER_CLOSURE.OPEN,
     stageId: nextStageId,
     phase2EnteredAt: decidedAt,
     events: [
@@ -107,7 +114,7 @@ export function enterPhase2FromDecision(order, decidedAt) {
         id: phase2EventIdCounter++,
         type: 'phase2_entered',
         at: decidedAt,
-        by: CURRENT_USER,
+        by: getCurrentUser(),
         toStageId: nextStageId,
         toStageLabel: getStageLabel(nextStageId),
         summary: `ورود سفارش ${order.code} به فاز عملیات و تحقق — ${getStageLabel(nextStageId)}`,
@@ -117,11 +124,18 @@ export function enterPhase2FromDecision(order, decidedAt) {
 }
 
 export function tryChangePhase2Stage(order, targetStageId) {
-  if (order.status !== ORDER_TABS.SUCCESS) {
+  if (isOrderClosed(order) || order.status === ORDER_TABS.FAILED) {
     return {
       order,
       accepted: false,
-      reason: 'تغییر مرحله عملیاتی فقط برای سفارشات موفق مجاز است.',
+      reason: 'سفارش بسته‌شده قابل تغییر مرحله نیست.',
+    };
+  }
+  if (!shouldShowOperationalPhases(order)) {
+    return {
+      order,
+      accepted: false,
+      reason: 'تغییر مرحله عملیاتی فقط پس از تایید دروازه (فاز عملیات) مجاز است.',
     };
   }
 
@@ -164,7 +178,7 @@ export function tryChangePhase2Stage(order, targetStageId) {
 }
 
 export function canDropOnPhase2KanbanStage(order, targetStageId) {
-  if (order.status !== ORDER_TABS.SUCCESS) return false;
+  if (!shouldShowOperationalPhases(order)) return false;
   if (!isActivePhase2Stage(targetStageId)) return false;
   const currentId = order.stageId === LEGACY_STAGE_TAJHIZ_ID
     ? STAGE_RAHESPAR_ID

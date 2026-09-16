@@ -1,0 +1,27 @@
+id: lead-pipeline
+name: Personal Lead Pipeline
+tier: B
+status: active
+ownerModule: ofogh
+aggregateRoot: LeadPipeline
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "One active personal pipeline per user; stages CRUD with rename/reorder/delete-with-transfer; last-stage protected."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - leads:read
+  - leads:write
+databaseTable: lead_pipelines
+apiBasePath: /api/v1/lead-pipelines
+backendRepository: backend/src/repositories/leadPipelineRepository.js
+frontendRepository: src/api/repositories/LeadPipelineRepository.js
+dependencies:
+  - auth-user
+  - raw-lead
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-13
+migrationSafety: "007_lead_personal_pipeline.sql expand-only; unique active pipeline per user; unique stage names per pipeline."
+notes: "Personal Pipeline Stage is NOT Customer Lifecycle and NOT a management reporting dimension. Future: org template copy-on-provision without shared mutation."

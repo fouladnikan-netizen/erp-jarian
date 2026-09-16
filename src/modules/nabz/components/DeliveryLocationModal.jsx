@@ -6,6 +6,7 @@ import {
   validateDeliveryInfo,
 } from '../deliveryInfoService';
 import DeliveryInfoForm from './DeliveryInfoForm';
+import { useJarianNotice } from '../../../context/JarianNoticeContext';
 
 /**
  * مودال «محل ارسال» در هدر پروفایل سفارش
@@ -16,6 +17,7 @@ export default function DeliveryLocationModal({
   onClose,
   onSave,
 }) {
+  const { alert } = useJarianNotice();
   const [draft, setDraft] = useState(() => getEmptyDeliveryInfo());
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function DeliveryLocationModal({
     const draftToSave = { ...draft, needsShipping: true };
     const error = validateDeliveryInfo(draftToSave);
     if (error) {
-      window.alert(error);
+      void alert({ title: 'توجه', message: error });
       return;
     }
     const nextOrder = applyDeliveryInfoToOrder(order, draftToSave);

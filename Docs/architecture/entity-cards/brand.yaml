@@ -1,0 +1,27 @@
+id: brand
+name: Brand Registry
+tier: B
+status: active
+ownerModule: shirazeh
+aggregateRoot: Brand
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Centrally defined Brand (brandName, legalName, nameLatin, skuCode, normalizedName, active/inactive). Not part of Product SKU identity. Create/deactivate/reactivate. Unused brands may be hard-deleted (DDL-24n); Products (brand_id) or Product Types (allowed_brand_ids) that reference the brand block delete with a 409 listing dependents. Do not cascade-delete products."
+archivePolicy: hard-delete
+auditPolicy: append-only
+rbacPolicy:
+  - products:read
+  - products:manage-brands
+databaseTable: brands
+apiBasePath: /api/v1/brands
+backendRepository: backend/src/modules/catalog/infrastructure/brandRepository.js
+frontendRepository: src/api/repositories/BrandRepository.js
+dependencies: []
+integrationPorts:
+  - vitrin-product-brand-reference
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-24
+  - DDL-60
+migrationSafety: "015_product_master_taxonomy.sql + 042 sku_code/name_latin, expand-only. brands.normalized_name has a DB-level UNIQUE constraint (exact-duplicate block, same posture as products.canonical_identity_key, DDL-24d). sku_code is unique case-insensitively (DDL-24m) and is not concatenated into Product SKU. Probable-duplicate detection (token-overlap similarity, e.g. مبارکه / فولاد مبارکه / فولاد مبارکه اصفهان) warns via 200-with-warning response, never silently blocks; explicit overrideDuplicateWarning flag required to proceed past a probable-duplicate warning, and the override is audited."
+notes: "DDL-24(d), DDL-24(n). Brand duplicate detection reuses the exact same normalize -> exact-block -> probable-warn -> audited-override flow as Product duplicate detection. Brand is NOT part of Product SKU identity — a Product is never duplicated solely due to Brand. Unused brands may be hard-deleted; in-use brands (Product.brand_id or Product Type allowed_brand_ids) return 409 BRAND_IN_USE. Deactivate remains available for in-use brands. Shaped to support a future Nabz Quick-Create-Brand flow (not implemented in this phase)."

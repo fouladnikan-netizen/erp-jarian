@@ -1,3 +1,8 @@
+/**
+ * Frozen catalogData shim only (DDL-24a). This is NOT Product identity / SKU.
+ * Live SKU rules live in backend/src/domain/productMaster/productIdentityPolicy.js
+ * (DDL-24m). Do not extend this file into a second generator.
+ */
 function pad(value, length) {
   return String(value).padStart(length, '0');
 }

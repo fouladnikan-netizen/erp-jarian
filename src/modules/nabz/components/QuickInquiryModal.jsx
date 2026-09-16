@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ORDER_TABS } from '../config';
 import { useOrderPipelineView } from '../hooks/useOrderPipelineView';
 import { OPERATIONAL_PHASES } from '../phase2Config';
-import { getOrderOperationalPhase } from '../phase2Service';
+import { getOrderOperationalPhase, shouldShowOperationalPhases } from '../phase2Service';
 import GatewayHorizontalStepper from './orderProfile/gateway/GatewayHorizontalStepper';
 import GatewayDecisionPanel from './orderProfile/gateway/GatewayDecisionPanel';
 import ParvaneStagePanel from './orderProfile/operations/ParvaneStagePanel';
@@ -27,6 +27,7 @@ import {
   inquiryToQuickDraft,
   validateQuickInquiryDraft,
 } from '../inquiryService';
+import { useJarianNotice } from '../../../context/JarianNoticeContext';
 import { MARGIN_MODES } from '../quotingConfig';
 import { listSuppliers } from '../suppliers';
 import {
@@ -139,12 +140,11 @@ function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
   const suppliers = listSuppliers();
 
   return (
-    <div className="nabz-inline-inquiry nabz-inline-inquiry--labeled">
+    <div className="nabz-inline-inquiry nabz-inline-inquiry--labeled nabz-inline-inquiry--with-notes">
       <div className="nabz-inline-inquiry__labels" aria-hidden="true">
         <span>نوع تامین</span>
         <span>{showSupplier ? 'نام تامین‌کننده' : 'مرجع تامین'}</span>
         <span>قیمت</span>
-        <span>توضیحات</span>
         <span />
       </div>
       <div className="nabz-inline-inquiry__fields">
@@ -178,14 +178,6 @@ function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
           placeholder="قیمت"
           aria-label="قیمت"
         />
-        <input
-          type="text"
-          className="nabz-inline-inquiry__input nabz-inline-inquiry__input--notes"
-          value={draft.notes || ''}
-          onChange={(e) => onChange({ ...draft, notes: e.target.value })}
-          placeholder="اختیاری"
-          aria-label="توضیحات استعلام"
-        />
         <div className="nabz-inline-inquiry__actions">
           <button type="button" className="nabz-inline-inquiry__save" onClick={onSave} aria-label="ذخیره استعلام">
             <TickIcon />
@@ -195,6 +187,17 @@ function InlineQuickForm({ draft, onChange, onSave, onCancel, showSupplier }) {
           </button>
         </div>
       </div>
+      <label className="nabz-inline-inquiry__notes-field">
+        <span>توضیحات استعلام</span>
+        <textarea
+          className="nabz-inline-inquiry__textarea"
+          rows={3}
+          value={draft.notes || ''}
+          onChange={(e) => onChange({ ...draft, notes: e.target.value })}
+          placeholder="یادداشت آزاد هنگام ثبت استعلام…"
+          aria-label="توضیحات استعلام"
+        />
+      </label>
     </div>
   );
 }
@@ -260,6 +263,7 @@ function SupplyStrip({
                 showSupplier={showSupplier}
                 readOnly
                 flat
+                showNotes
               />
             ) : (
               canManage && !draftOpen && <span className="nabz-quick-table__muted">—</span>
@@ -394,6 +398,7 @@ export default function QuickInquiryModal({
   onDecisionFailed,
   onUpdateOrder,
 }) {
+  const { alert } = useJarianNotice();
   const navigate = useNavigate();
   const pipeline = useOrderPipelineView(order);
   const updateModalOrder = (orderUpdater) => {
@@ -432,16 +437,16 @@ export default function QuickInquiryModal({
   const [decisionOpen, setDecisionOpen] = useState(false);
   const [marginDrafts, setMarginDrafts] = useState({});
   const activeOperationalPhase = pipeline.operationalViewPhase || getOrderOperationalPhase(order);
-  const showParvanePanel = order.status === ORDER_TABS.SUCCESS
+  const showParvanePanel = shouldShowOperationalPhases(order)
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.PARVANE;
-  const showTadarokPanel = order.status === ORDER_TABS.SUCCESS
+  const showTadarokPanel = shouldShowOperationalPhases(order)
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.TADAROK;
-  const showRahseparPanel = order.status === ORDER_TABS.SUCCESS
+  const showRahseparPanel = shouldShowOperationalPhases(order)
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.RAHESPAR;
-  const showSaranjamPanel = order.status === ORDER_TABS.SUCCESS
+  const showSaranjamPanel = (shouldShowOperationalPhases(order) || order.status === ORDER_TABS.SUCCESS)
     && pipeline.viewMode === 'operations'
     && activeOperationalPhase === OPERATIONAL_PHASES.SARANJAM;
   const archivedReadOnly = isOrderArchived(order);
@@ -499,7 +504,7 @@ export default function QuickInquiryModal({
   const handleSendProforma = (version) => {
     updateModalOrder((current) => sendProformaToCustomer(current));
     const label = version?.documentNumber || order.code;
-    window.alert(`پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.`);
+    void alert({ title: 'ارسال شد', message: `پیش‌فاکتور ${label} برای ${order.customer} ارسال شد.` });
   };
 
   const handleIssueProforma = () => {

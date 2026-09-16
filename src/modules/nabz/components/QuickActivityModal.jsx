@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CURRENT_USER, CURRENT_USER_ROLE } from '../constants';
+import { getCurrentUser, CURRENT_USER_ROLE } from '../constants';
 import {
   CRM_ACTIVITY_ORDER,
   CRM_ACTIVITY_META,
@@ -11,6 +11,7 @@ import { getRoleLabel } from '../orderCrmService';
 import { parseMoneyInput } from '../orderCode';
 import JalaliDatePicker from './JalaliDatePicker';
 import MoneyInput from './MoneyInput';
+import { useJarianNotice } from '../../../context/JarianNoticeContext';
 
 const EMPTY_FORM = {
   type: CRM_ACTIVITY_TYPES.CALL,
@@ -49,6 +50,7 @@ export default function QuickActivityModal({
   onClose,
   onSubmit,
 }) {
+  const { alert } = useJarianNotice();
   const [form, setForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
@@ -92,7 +94,7 @@ export default function QuickActivityModal({
         receiptMimeType: file.type || '',
       }));
     } catch {
-      window.alert('خواندن فایل فیش واریزی ناموفق بود.');
+      void alert({ title: 'توجه', message: 'خواندن فایل فیش واریزی ناموفق بود.' });
     }
   };
 
@@ -103,14 +105,14 @@ export default function QuickActivityModal({
     if (isPayment) {
       const amount = parseMoneyInput(form.paymentAmountRial);
       if (!amount || amount <= 0 || !form.paymentDate) {
-        window.alert('برای دریافت وجه، مبلغ و تاریخ را تکمیل کنید.');
+        void alert({ title: 'توجه', message: 'برای دریافت وجه، مبلغ و تاریخ را تکمیل کنید.' });
         return;
       }
       onSubmit?.({
         id: editActivity?.id,
         type: form.type,
         body: trimmedBody || 'دریافت وجه',
-        author: editActivity?.author || CURRENT_USER,
+        author: editActivity?.author || getCurrentUser(),
         roleLabel: editActivity?.roleLabel || getRoleLabel(CURRENT_USER_ROLE),
         followUp: form.date && form.time
           ? {
@@ -134,7 +136,7 @@ export default function QuickActivityModal({
     }
 
     if (!trimmedBody || !form.date || !form.time) {
-      window.alert('لطفاً شرح فعالیت، تاریخ و ساعت را تکمیل کنید.');
+      void alert({ title: 'توجه', message: 'لطفاً شرح فعالیت، تاریخ و ساعت را تکمیل کنید.' });
       return;
     }
 
@@ -142,7 +144,7 @@ export default function QuickActivityModal({
       id: editActivity?.id,
       type: form.type,
       body: trimmedBody,
-      author: editActivity?.author || CURRENT_USER,
+      author: editActivity?.author || getCurrentUser(),
       roleLabel: editActivity?.roleLabel || getRoleLabel(CURRENT_USER_ROLE),
       followUp: {
         date: form.date,

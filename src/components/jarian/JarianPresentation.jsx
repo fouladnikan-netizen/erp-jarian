@@ -77,7 +77,7 @@ export function JarianProductName({ text, empty = '—' }) {
   );
 }
 
-/** توضیحات کالا — ۱۲px #757575 */
+/** توضیحات کالا — ۱۲px var(--text-muted) */
 export function JarianProductDescription({ text, empty = '' }) {
   const value = text?.trim();
   if (!value) {

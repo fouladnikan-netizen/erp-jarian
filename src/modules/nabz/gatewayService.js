@@ -1,4 +1,4 @@
-import { CURRENT_USER } from './constants';
+import { getCurrentUser } from './constants';
 import { getTodayJalali, getNowTimeFa } from './dateUtils';
 import { getEffectiveStageId, isMozeneStage } from './orderStageService';
 import {
@@ -133,7 +133,7 @@ export function updateGatewayOrderItemWithSensitivity(
     wipeConfirmed = false,
     forceWipe = false,
     changedFields: changedFieldsOverride = null,
-    by = CURRENT_USER,
+    by = getCurrentUser(),
   } = {},
 ) {
   const item = order.items?.[itemIndex];

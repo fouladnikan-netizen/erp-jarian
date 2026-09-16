@@ -1,0 +1,33 @@
+---
+description: Jarian rendering performance — Zustand selectors, lists, calcs, large components
+globs: src/**/*.{js,jsx,ts,tsx}
+alwaysApply: false
+---
+
+# Jarian Rendering Performance
+
+**Applies to future UI/state work.** Does not authorize mass memoization, virtualization libraries, or god-component splits.
+
+Read: `Docs/architecture/PERFORMANCE_GUIDELINES.md`, `Docs/architecture/DATA_RENDERING_STRATEGY.md`, `Docs/architecture/PERFORMANCE_BUDGETS.md`, `Docs/architecture/PERFORMANCE_HOTSPOTS.md`
+
+---
+
+## Rules
+
+1. **Avoid unnecessary global subscriptions.** Do not subscribe to whole Zustand stores or entire `contacts` / `orders` arrays when the component only needs one field or one entity. Prefer narrow selectors.
+
+2. **Prefer selector-based Zustand usage.** Pattern: `useXStore((s) => s.field)` or a small derived pick. Do not introduce bare `useXStore()` without a selector in new code. Avoid new React contexts that mirror store data.
+
+3. **Large lists require pagination/virtualization consideration.** If a new table/board can grow beyond limits in `PERFORMANCE_BUDGETS.md`, document the plan (paginate now vs later; virtualize later). Do not ship unbounded full-array UIs for production-scale data without that note. Do **not** add virtualization deps in drive-by PRs.
+
+4. **Expensive calculations should not live directly in JSX.** Put financial/preview/aggregations in services or memoized hooks (`useMemo` / pure helpers). Do not recompute heavy pure work inline on every parent render when siblings already memoize.
+
+5. **Large components require performance review.** New or heavily grown files approaching ≥400–500 LOC (soft) or ≥800 LOC (hard) need a short note: render cost, list sizes, store subscriptions. Align with `FRONTEND_COMPONENT_HOTSPOTS.md` — review ≠ forced split this phase.
+
+---
+
+## Do not
+
+- Add `React.lazy`, change Vite config, or refactor Nabz panels “for performance” without an explicit rollout  
+- Replace Zustand or normalize all arrays in opportunistic PRs  
+- Sprinkle `React.memo` everywhere without measuring a concrete hot path  

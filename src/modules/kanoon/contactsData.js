@@ -1,22 +1,93 @@
 import { ENTITY_TYPES, PERSON_TYPES } from './config';
 
 const officialSample = {
-  registrationNumber: '۴۵۶۷۸۹',
-  establishmentDate: '۱۳۷۵/۰۳/۱۵',
-  economicCode: '۴۱۱۱۲۲۳۳۴۴',
+  registrationNumber: '642490',
+  establishmentDate: '1403/09/09',
+  economicCode: '14013998055',
   companyType: 'سهامی خاص',
   registrationRegion: 'تهران',
-  latestGazette: '۱۴۰۳/۱۰/۲۰',
-  latestCapital: '۵۰۰٬۰۰۰٬۰۰۰٬۰۰۰ ریال',
-  phone: '02188776655',
-  website: 'www.example.ir',
-  address: 'تهران، خیابان ولیعصر، پلاک ۱۲۳',
-  postalCode: '۱۴۳۵۶۷۸۹۰',
+  latestGazette: '1404/06/15',
+  latestCapital: '500,000,000 ریال',
+  phone: '02171683000',
+  website: 'www.fouladnikan.com',
+  address: 'استان تهران، شهرستان تهران، بخش مرکزی، شهر تهران، داوودیه، خیابان شمس تبریزی جنوبی، کوچه غفاری (ک تابان شرقی)، پلاک ۳، طبقه ۳، واحد ۷',
+  postalCode: '1549847120',
 };
 
 const legalPersonsSample = {
-  ceo: 'محمد احمدی',
-  signatory: 'زهرا کریمی',
+  ceo: 'نگین اخوان',
+  signatory: 'محمدرضا محمدی',
+};
+
+/**
+ * تاریخچه استعلام‌های رسمی (ماشین زمان پاپ‌آپ اطلاعات حقوقی) —
+ * هر رکورد یک عکس‌فوری (snapshot) کامل از وضعیت ثبتی شرکت در تاریخ استعلام است.
+ * بعداً هر استعلام موفق لینکا یک رکورد جدید به ابتدای این آرایه اضافه می‌کند.
+ */
+const legalHistorySample = [
+  {
+    verifiedAt: '1403/09/20',
+    nationalId: '14013998055',
+    officialSpecs: {
+      registrationNumber: '642490',
+      establishmentDate: '1403/09/09',
+      economicCode: '14013998055',
+      latestGazette: '1403/09/09',
+      latestCapital: '100,000,000 ریال',
+      phone: '02188776655',
+      website: '',
+      address: 'تهران، سعادت‌آباد، بلوار دریا، خیابان صرافها، پلاک ۵۸، واحد ۲',
+      postalCode: '1998764311',
+    },
+    governance: {
+      ceo: { name: 'نگین اخوان', nationalId: '3860129821', validUntil: '1405/09/08' },
+      boardMembers: [
+        { role: 'رئیس هیئت مدیره', name: 'محمدرضا محمدی', nationalId: '3875509285' },
+        { role: 'نایب رئیس هیئت مدیره', name: 'نگین اخوان', nationalId: '3860129821' },
+      ],
+      boardValidUntil: '1405/09/08',
+      signatureRight:
+        'حق امضا کلیه اوراق و اسناد بهادار و تعهدآور شرکت با امضا مدیرعامل همراه با مهر شرکت معتبر می‌باشد.',
+    },
+  },
+  {
+    verifiedAt: '1402/08/12',
+    nationalId: '14013998055',
+    officialSpecs: {
+      registrationNumber: '642490',
+      establishmentDate: '1403/09/09',
+      economicCode: '14013998055',
+      latestGazette: '1402/08/01',
+      latestCapital: '10,000,000 ریال',
+      phone: '02177445566',
+      website: '',
+      address: 'تهران، نارمک، خیابان فرجام شرقی، پلاک ۱۱۲، طبقه ۱',
+      postalCode: '1687613341',
+    },
+    governance: {
+      ceo: { name: 'محمدرضا محمدی', nationalId: '3875509285', validUntil: '1403/08/12' },
+      boardMembers: [
+        { role: 'رئیس هیئت مدیره', name: 'فاطمه سادات وفائی', nationalId: '3931630536' },
+        { role: 'عضو هیئت مدیره', name: 'محمدرضا محمدی', nationalId: '3875509285' },
+      ],
+      boardValidUntil: '1403/08/12',
+      signatureRight:
+        'حق امضا کلیه اوراق و اسناد تعهدآور شرکت با امضا مشترک رئیس هیئت مدیره و مدیرعامل همراه با مهر شرکت معتبر می‌باشد.',
+    },
+  },
+];
+
+/** ارکان رسمی شرکت (آخرین آگهی روزنامه رسمی) — مصرف پاپ‌آپ اطلاعات حقوقی پروفایل */
+const governanceSample = {
+  ceo: { name: 'نگین اخوان', nationalId: '3860129821', validUntil: '1405/09/08' },
+  boardMembers: [
+    { role: 'رئیس هیئت مدیره', name: 'محمدرضا محمدی', nationalId: '3875509285' },
+    { role: 'نایب رئیس هیئت مدیره', name: 'نگین اخوان', nationalId: '3860129821' },
+    { role: 'عضو هیئت مدیره', name: 'فاطمه سادات وفائی', nationalId: '3931630536' },
+  ],
+  boardValidUntil: '1405/09/08',
+  signatureRight:
+    'حق امضا تمامی اوراق و اسناد بهادار و تعهدآور شرکت از قبیل چک، سفته، بروات، قراردادهای عقود اسلامی و همچنین تمامی نامه‌های عادی و اداری با امضا رئیس هیئت مدیره همراه با مهر شرکت معتبر می‌باشد.',
 };
 
 function daysAgo(days) {
@@ -39,14 +110,19 @@ const rawContacts = [
     entityType: ENTITY_TYPES.CUSTOMER,
     personType: PERSON_TYPES.LEGAL,
     companyName: 'فولاد پارس',
-    nationalId: '10101234567',
+    nationalId: '14013998055',
     province: 'خوزستان',
     activityDomain: 'صنایع فولادی',
     behavioralStatus: 'ambassador',
+    /** کابین مالی پروفایل — سقف اعتبار و مانده حساب (ریال) */
+    financial: { creditLimitRial: 20_000_000_000, accountBalanceRial: 6_050_000_000 },
     assignee: { name: 'علی رضایی', role: 'شوالیه' },
     fullAddress: 'اهواز، کیانپارس، خیابان صنعت، پلاک ۱۲',
     officialSpecs: { ...officialSample },
     legalPersons: { ...legalPersonsSample },
+    governance: { ...governanceSample },
+    legalVerifiedAt: '1405/04/28',
+    legalHistory: legalHistorySample,
     /** Last-used delivery fields for Nabz smart pre-fill (Smart Dispatch). */
     lastUsedDeliveryInfo: {
       needsShipping: true,
@@ -58,8 +134,26 @@ const rawContacts = [
       updatedAt: daysAgo(5),
     },
     relatedPersons: [
-      { name: 'علی رضایی', mobile: '09121112233', role: 'مدیر', notes: 'مسئول خرید' },
-      { name: 'سارا موسوی', mobile: '09354445566', role: 'کارشناس', notes: 'پیگیری سفارش' },
+      {
+        id: 'rp-1-1',
+        companyId: 1,
+        fullName: 'علی رضایی',
+        mobile: '09121112233',
+        gender: 'male',
+        jobPosition: 'مدیر خرید',
+        email: 'ali.rezaei@fouladpars.local',
+        isPrimary: true,
+      },
+      {
+        id: 'rp-1-2',
+        companyId: 1,
+        fullName: 'سارا موسوی',
+        mobile: '09354445566',
+        gender: 'female',
+        jobPosition: 'مدیر مالی',
+        email: 'sara@fouladpars.local',
+        isPrimary: false,
+      },
     ],
     interactions: [
       { id: 'POY-1404-015', date: '۱۴۰۴/۰۱/۱۵', type: 'فروش', summary: 'تأیید سفارش میلگرد ۱۴' },
@@ -83,11 +177,21 @@ const rawContacts = [
     officialSpecs: {},
     legalPersons: {},
     relatedPersons: [
-      { name: 'محمد رضایی', mobile: '09133445566', role: 'کارشناس', notes: 'مسئول درخواست‌ها' },
+      {
+        id: 'rp-2-1',
+        companyId: 2,
+        fullName: 'محمد رضایی',
+        mobile: '09133445566',
+        gender: 'male',
+        jobPosition: 'کارشناس فروش',
+        email: '',
+        isPrimary: true,
+      },
     ],
     interactions: [{ id: 'POY-1404-012', date: '۱۴۰۴/۰۱/۱۲', type: 'پیگیری', summary: 'استعلام قیمت تیرآهن' }],
     relatedOrders: [],
     accountBalanceRial: 8_400_000_000,
+    financial: { creditLimitRial: 10_000_000_000, accountBalanceRial: 8_400_000_000 },
   },
   {
     id: 3,
@@ -98,6 +202,7 @@ const rawContacts = [
     province: 'تهران',
     activityDomain: 'بازرگانی آهن و فولاد',
     behavioralStatus: 'active',
+    financial: { creditLimitRial: 5_000_000_000, accountBalanceRial: 0 },
     assignee: { name: 'مریم احمدی', role: 'شوالیه' },
     relatedPersons: [],
     interactions: [{ id: 'POY-1404-014', date: '۱۴۰۴/۰۱/۱۴', type: 'پیگیری', summary: 'ارسال لیست قیمت' }],
@@ -130,6 +235,27 @@ const rawContacts = [
       { group: 'میلگرد', subgroup: 'میلگرد آجدار' },
       { group: 'ورق', subgroup: 'ورق سیاه' },
     ],
+    capabilityTags: [
+      {
+        id: 'subgroup-1-1',
+        label: 'میلگرد آجدار',
+        type: 'catalog',
+        source: 'catalog',
+        kind: 'subgroup',
+        groupId: 1,
+        subgroupId: 1,
+      },
+      {
+        id: 'subgroup-2-1',
+        label: 'ورق سیاه',
+        type: 'catalog',
+        source: 'catalog',
+        kind: 'subgroup',
+        groupId: 2,
+        subgroupId: 1,
+      },
+    ],
+    landline: '03112345678',
     supplierType: 'تولیدکننده',
     behavioralStatus: 'active',
     assignee: { name: 'فاطمه رحیمی', role: 'کاشف' },
@@ -137,7 +263,16 @@ const rawContacts = [
     officialSpecs: { ...officialSample, registrationRegion: 'اصفهان' },
     legalPersons: { ceo: 'حسین کریمی', signatory: 'فاطمه رحیمی' },
     relatedPersons: [
-      { name: 'رضا نوری', mobile: '09131234567', role: 'کارشناس', notes: 'هماهنگی تحویل' },
+      {
+        id: 'rp-5-1',
+        companyId: 5,
+        fullName: 'رضا نوری',
+        mobile: '09131234567',
+        gender: 'male',
+        jobPosition: 'انباردار',
+        email: '',
+        isPrimary: true,
+      },
     ],
     interactions: [{ id: 'POY-1404-013', date: '۱۴۰۴/۰۱/۱۳', type: 'پیگیری', summary: 'هماهنگی تحویل بار' }],
     relatedOrders: [],
@@ -153,6 +288,24 @@ const rawContacts = [
       { group: 'ورق', subgroup: 'ورق گالوانیزه' },
       { group: 'ورق', subgroup: 'ورق روغنی (سرد)' },
     ],
+    capabilityTags: [
+      {
+        id: 'subgroup-2-2',
+        label: 'ورق گالوانیزه',
+        type: 'catalog',
+        source: 'catalog',
+        kind: 'subgroup',
+        groupId: 2,
+        subgroupId: 2,
+      },
+      {
+        id: 'custom-st52-seed',
+        label: 'ST52',
+        type: 'custom',
+        source: 'supplier_input',
+      },
+    ],
+    landline: '03133445566',
     supplierType: 'تولیدکننده',
     behavioralStatus: 'ambassador',
     assignee: { name: 'امیر صادقی', role: 'کاشف' },
@@ -169,6 +322,18 @@ const rawContacts = [
     personName: 'سارا موسوی',
     mobile: '09151234567',
     productGroups: [{ group: 'لوله', subgroup: 'لوله مانیسمان' }],
+    capabilityTags: [
+      {
+        id: 'subgroup-3-1',
+        label: 'لوله مانیسمان',
+        type: 'catalog',
+        source: 'catalog',
+        kind: 'subgroup',
+        groupId: 3,
+        subgroupId: 1,
+      },
+    ],
+    landline: '02144556677',
     supplierType: 'واسطه‌گر',
     behavioralStatus: 'trial',
     assignee: { name: 'سارا موسوی', role: 'کاشف' },

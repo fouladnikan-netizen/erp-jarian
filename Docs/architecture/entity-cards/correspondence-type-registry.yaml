@@ -1,0 +1,26 @@
+id: correspondence-type-registry
+name: Correspondence Type Registry
+tier: B
+status: active
+ownerModule: shirazeh
+aggregateRoot: CorrespondenceTypeRegistry
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Central config list of allowed correspondence.type_key values for the Gahshomar Correspondence aggregate; create/rename/reorder/activate/deactivate, no hard delete."
+archivePolicy: soft-delete
+auditPolicy: none
+rbacPolicy:
+  - correspondence:read
+  - users:admin
+databaseTable: correspondence_type_registry
+apiBasePath: /api/v1/correspondence-types
+backendRepository: backend/src/repositories/correspondenceTypeRepository.js
+frontendRepository: src/api/repositories/CorrespondenceTypeRepository.js
+dependencies:
+  - auth-user
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-23
+migrationSafety: "013_correspondence.sql (same migration file as the Correspondence table), expand-only; correspondence.type_key stays free TEXT (no FK) so deactivated/renamed keys never break historical Correspondence rows; enforcement of active-key-only is service-layer on write, not a DB constraint (mirrors DDL-19's activity_type_registry exactly)."
+notes: "DDL-23(d). Read (list) requires only correspondence:read so every Correspondence-creation surface can fetch the registry; create/rename/reorder/activate/deactivate require users:admin. Shirazeh owns the CRUD UI at /shirazeh/correspondence-types. Consumers must use src/domain/correspondenceTypes/correspondenceTypesFacade.js — never hardcode a local type list."

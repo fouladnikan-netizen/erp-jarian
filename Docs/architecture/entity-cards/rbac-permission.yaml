@@ -1,0 +1,26 @@
+id: rbac-permission
+name: RBAC Permission Catalog
+tier: A
+status: active
+ownerModule: shirazeh
+aggregateRoot: Permission
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Seed/catalog row. Canonical code is immutable (colon form) while the capability exists. Metadata resource/action/category/is_sensitive/is_active is additive. Retired codes are removed only by a superseding DDL (DDL-59 dropped products:manage-relationships). New sensitive rows may exist as catalog-only (no requirePermission yet)."
+archivePolicy: n/a
+auditPolicy: none
+rbacPolicy:
+  - users:admin
+databaseTable: permissions
+apiBasePath: /api/v1/rbac/permissions
+backendRepository: backend/src/repositories/rbacRepository.js
+frontendRepository: src/api/repositories/RbacRepository.js
+dependencies:
+  - auth-user
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-36
+  - DDL-59
+migrationSafety: "031 additive columns on permissions (resource, action, category, is_sensitive, is_active) with backfill of existing codes. Inserts three catalog-only sensitive codes. role_permissions PK still permission_code. 053 deletes products:manage-relationships (DDL-59) after dropping product_relationships. Do not delete other permission codes without a new DDL."
+notes: "GET catalog is structured. PUT role grants still store canonical colon codes. Dotted aliases resolve in the service layer. is_sensitive is UI-only. JWT/login/requirePermission unchanged. Scope is out of scope. DDL-59 retired products:manage-relationships — FE catalog must match seed."

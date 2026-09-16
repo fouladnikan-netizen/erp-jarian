@@ -1,45 +1,109 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { PRODUCTION_STANDARDS } from '../config';
-import { relatedSuppliersByGroup } from '../catalogData';
+import OfferSettingsFields from '../../../components/productMaster/OfferSettingsFields';
+import { applyNpsInchSizeDisplay } from '../../../domain/productMaster/npsInchDisplay';
 
-const ORDER_STAGE_TAG = {
-  مظنه: 'active',
-  'پیش‌کش': 'pending',
-  تحقق: 'success',
-  کاوش: 'trial',
-  عملیات: 'active',
+const WEIGHT_PROFILE_LABELS = {
+  FIXED: 'ثابت (وزن استاندارد هر واحد)',
+  PER_LENGTH: 'بر واحد طول (کیلوگرم بر متر)',
+  DIMENSIONAL: 'محاسباتی از ابعاد (ضخامت × عرض × طول × چگالی)',
+  MANUAL_ACTUAL: 'بدون وزن نظری — فقط وزن واقعی تراکنش',
 };
 
+/** DDL-59: no Product-to-Product «روابط کالا» tab. */
 function buildTabs() {
   return [
-    { id: 'specs', label: 'مشخصات فنی' },
-    { id: 'usage', label: 'در کجا استفاده شده' },
-    { id: 'suppliers', label: 'تامین‌کنندگان مرتبط' },
+    { id: 'specs', label: 'مشخصات ساختاری' },
+    { id: 'traceability', label: 'ردیابی کالا' },
   ];
 }
 
-export default function ProductProfileDrawer({ product, groups, onClose, onUpdateProduct }) {
+function formatAttributeValue(product, value) {
+  if (value.dataType === 'BOOLEAN') return value.valueBoolean ? 'بله' : 'خیر';
+
+  if (value.valueNumber != null && Number.isFinite(Number(value.valueNumber))) {
+    const nps = applyNpsInchSizeDisplay({
+      typeName: product.productTypeName,
+      code: value.attributeCode,
+      displayValue: value.valueNumber,
+    });
+    if (nps.displayValue != null && nps.displayValue !== value.valueNumber) {
+      return nps.displayValue;
+    }
+    return Number(value.valueNumber).toLocaleString('fa-IR', { maximumFractionDigits: 4 });
+  }
+
+  return value.valueText || '—';
+}
+
+function weightProfileLabel(type) {
+  return WEIGHT_PROFILE_LABELS[type] || '—';
+}
+
+function taxonomyCrumb(product) {
+  return [product.groupName, product.categoryName, product.productTypeName]
+    .filter(Boolean)
+    .join(' / ');
+}
+
+/**
+ * Product profile — structured attribute values only, no free-text specs
+ * blob. The "traceability" tab is a labeled placeholder, not a copied
+ * order history — see Docs/architecture/product-master-nabz-future-contract.md.
+ */
+export default function ProductProfileDrawer({
+  product,
+  brands,
+  uoms,
+  onClose,
+  onToggleActive,
+  onDelete,
+  onUpdate,
+}) {
   const tabs = useMemo(() => buildTabs(), []);
   const [activeTab, setActiveTab] = useState('specs');
-  const group = groups.find((g) => g.id === product.groupId);
-  const subgroup = group?.subgroups.find((s) => s.id === product.subgroupId);
-  const specs = product.specs || {};
-  const suppliers = relatedSuppliersByGroup[group?.name] || [];
+  const [offerError, setOfferError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [offer, setOffer] = useState(() => ({
+    countUnitId: product.countUnitId || product.baseUomId || '',
+    salesUnitId: product.salesUnitId || product.salesUomId || '',
+    unitWeight: product.unitWeight == null ? '' : String(product.unitWeight),
+    customLengthAllowed: Boolean(product.customLengthAllowed),
+  }));
 
   useEffect(() => {
     setActiveTab('specs');
-  }, [product.id]);
+    setOffer({
+      countUnitId: product.countUnitId || product.baseUomId || '',
+      salesUnitId: product.salesUnitId || product.salesUomId || '',
+      unitWeight: product.unitWeight == null ? '' : String(product.unitWeight),
+      customLengthAllowed: Boolean(product.customLengthAllowed),
+    });
+    setOfferError('');
+  }, [product.id, product.baseUomId, product.salesUomId, product.unitWeight, product.customLengthAllowed]);
 
-  const update = (patch) => onUpdateProduct(product.id, patch);
-  const updateSpecs = (key, value) => update({ specs: { ...specs, [key]: value } });
+  const brand = brands.find((b) => b.id === product.brandId);
+  const canEditOffer = typeof onUpdate === 'function';
+  const isActive = product.lifecycleStatus !== 'INACTIVE';
+  const attributeValues = product.attributeValues || [];
+  const allowedGroups = product.allowedAttributeGroups || [];
 
-  const toggleStandard = (std) => {
-    const current = specs.standards || [];
-    const next = current.includes(std)
-      ? current.filter((s) => s !== std)
-      : [...current, std];
-    updateSpecs('standards', next);
+  const handleSaveOffer = async (e) => {
+    e.preventDefault();
+    if (!canEditOffer) return;
+    setOfferError('');
+    setBusy(true);
+    try {
+      await onUpdate(product.id, {
+        baseUomId: offer.countUnitId || null,
+        salesUomId: offer.salesUnitId || null,
+        unitWeight: offer.unitWeight === '' ? null : Number(offer.unitWeight),
+        customLengthAllowed: Boolean(offer.customLengthAllowed),
+      });
+    } catch (err) {
+      setOfferError(err?.response?.data?.message || err?.message || 'ذخیره واحد و عرضه ناموفق بود.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -48,20 +112,27 @@ export default function ProductProfileDrawer({ product, groups, onClose, onUpdat
         className="vitrin-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label={`پروفایل ${product.title}`}
+        aria-label={`پروفایل ${product.generatedName}`}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="vitrin-drawer__header">
-          <div>
-            <h2 className="vitrin-drawer__title">{product.title}</h2>
-            <p className="vitrin-drawer__subtitle">
-              کد {product.code}
-              {' · '}
-              {group?.name}
-              {subgroup ? ` / ${subgroup.name}` : ''}
-            </p>
+          <div className="vitrin-drawer__identity">
+            <h2 className="vitrin-drawer__title">{product.displayNameOverride || product.generatedName}</h2>
+            <p className="vitrin-drawer__subtitle">{taxonomyCrumb(product) || '—'}</p>
           </div>
-          <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label="بستن">
+          <div className="vitrin-drawer__header-actions">
+            {typeof onToggleActive === 'function' && (
+              <button type="button" className="btn btn--outline" onClick={() => onToggleActive(product)}>
+                {isActive ? 'غیرفعال کردن' : 'فعال کردن'}
+              </button>
+            )}
+            {typeof onDelete === 'function' && (
+              <button type="button" className="btn btn--outline-danger" onClick={() => onDelete(product)}>
+                حذف
+              </button>
+            )}
+          </div>
+          <button type="button" className="vitrin-drawer__close" onClick={onClose} aria-label="بستن">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
@@ -86,99 +157,101 @@ export default function ProductProfileDrawer({ product, groups, onClose, onUpdat
         <div className="vitrin-drawer__body">
           {activeTab === 'specs' && (
             <div className="vitrin-profile-panel">
-              <label className="vitrin-form__field">
-                <span className="vitrin-form__label">سایز / ابعاد</span>
-                <input
-                  type="text"
-                  className="vitrin-profile-panel__edit"
-                  value={specs.size || ''}
-                  onChange={(e) => updateSpecs('size', e.target.value)}
+              <section className="vitrin-profile-card" aria-labelledby={`product-${product.id}-attrs`}>
+                <h3 id={`product-${product.id}-attrs`} className="vitrin-profile-section__title">ویژگی‌های ساختاری</h3>
+                {attributeValues.length ? (
+                  <table className="jarian-table vitrin-profile-table">
+                    <thead>
+                      <tr>
+                        <th>ردیف</th>
+                        <th>ویژگی</th>
+                        <th>مقدار</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {attributeValues.map((value, index) => (
+                        <tr key={value.id}>
+                          <td className="vitrin-profile-table__num">{(index + 1).toLocaleString('fa-IR')}</td>
+                          <td className="vitrin-profile-table__name">{value.attributeNameFa}</td>
+                          <td className="vitrin-profile-table__value">{formatAttributeValue(product, value)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="vitrin-profile-panel__empty vitrin-profile-panel__empty--inline">
+                    ویژگی ساختاری ثبت‌شده‌ای ندارد.
+                  </p>
+                )}
+              </section>
+
+              {allowedGroups.length > 0 && (
+                <section className="vitrin-profile-card" aria-labelledby={`product-${product.id}-allowed`}>
+                  <h3 id={`product-${product.id}-allowed`} className="vitrin-profile-section__title">گزینه‌های مجاز برای سفارش</h3>
+                  <table className="jarian-table vitrin-profile-table">
+                    <thead>
+                      <tr>
+                        <th>ردیف</th>
+                        <th>ویژگی</th>
+                        <th>گزینه‌ها</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allowedGroups.map((group, index) => (
+                        <tr key={group.attributeDefinitionId}>
+                          <td className="vitrin-profile-table__num">{(index + 1).toLocaleString('fa-IR')}</td>
+                          <td className="vitrin-profile-table__name">{group.attributeNameFa}</td>
+                          <td className="vitrin-profile-table__value">{group.values.join('، ') || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              )}
+
+              <form className="vitrin-profile-card vitrin-profile-card--offer" onSubmit={handleSaveOffer}>
+                <OfferSettingsFields
+                  variant="product"
+                  idPrefix={`product-${product.id}`}
+                  uoms={uoms}
+                  values={offer}
+                  onChange={setOffer}
+                  disabled={!canEditOffer || busy}
                 />
-              </label>
-              <label className="vitrin-form__field">
-                <span className="vitrin-form__label">ضخامت</span>
-                <input
-                  type="text"
-                  className="vitrin-profile-panel__edit"
-                  value={specs.thickness || ''}
-                  onChange={(e) => updateSpecs('thickness', e.target.value)}
-                />
-              </label>
-              <label className="vitrin-form__field">
-                <span className="vitrin-form__label">وزن استاندارد هر واحد</span>
-                <input
-                  type="text"
-                  className="vitrin-profile-panel__edit"
-                  value={specs.unitWeight || ''}
-                  onChange={(e) => updateSpecs('unitWeight', e.target.value)}
-                />
-              </label>
-              <div className="vitrin-form__field">
-                <span className="vitrin-form__label">استانداردهای تولید</span>
-                <div className="vitrin-standards">
-                  {PRODUCTION_STANDARDS.map((std) => (
-                    <button
-                      key={std}
-                      type="button"
-                      className={`vitrin-chip vitrin-chip--std${(specs.standards || []).includes(std) ? ' is-active' : ''}`}
-                      onClick={() => toggleStandard(std)}
-                    >
-                      {std}
+                {offerError && <p className="vitrin-form__error">{offerError}</p>}
+                {canEditOffer && (
+                  <div className="offer-settings__actions">
+                    <button type="submit" className="btn btn--primary vitrin-drawer__save" disabled={busy}>
+                      ذخیره واحد و عرضه
                     </button>
-                  ))}
-                </div>
-              </div>
-              {product.description && (
-                <p className="vitrin-profile-panel__notes">{product.description}</p>
-              )}
+                  </div>
+                )}
+              </form>
+
+              <section className="vitrin-profile-card" aria-label="روش محاسبه و برند">
+                <dl className="vitrin-profile-meta">
+                  <div className="vitrin-profile-meta__row">
+                    <dt>روش محاسبه وزن</dt>
+                    <dd>{weightProfileLabel(product.weightProfileType)}</dd>
+                  </div>
+                  <div className="vitrin-profile-meta__row">
+                    <dt>برند</dt>
+                    <dd className={brand?.brandName ? undefined : 'vitrin-profile-meta__empty'}>
+                      {brand?.brandName || 'بدون برند'}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
             </div>
           )}
 
-          {activeTab === 'usage' && (
+          {activeTab === 'traceability' && (
             <div className="vitrin-profile-panel">
-              {(product.relatedOrders || []).length ? (
-                <div className="vitrin-usage-cards">
-                  {product.relatedOrders.map((order) => {
-                    const stageTag = ORDER_STAGE_TAG[order.stage] || 'pending';
-                    return (
-                      <Link
-                        key={order.id}
-                        to={`/nabz?order=${encodeURIComponent(order.id)}`}
-                        className="vitrin-usage-card"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <span className="vitrin-usage-card__id">{order.id}</span>
-                        <span className="vitrin-usage-card__customer">{order.customer}</span>
-                        <span className={`tag tag--${stageTag}`}>{order.stage}</span>
-                        <span className="vitrin-usage-card__date">{order.registeredAt}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="vitrin-profile-panel__empty">این محصول هنوز در سفارشی استفاده نشده است.</p>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'suppliers' && (
-            <div className="vitrin-profile-panel">
-              {suppliers.length ? (
-                <ul className="vitrin-supplier-list">
-                  {suppliers.map((s) => (
-                    <li key={s.name} className="vitrin-supplier-list__item">
-                      <span className="vitrin-supplier-list__name">{s.name}</span>
-                      <span className="vitrin-supplier-list__meta">{s.type}</span>
-                      <span className="vitrin-supplier-list__assignee">کاشف: {s.assignee}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="vitrin-profile-panel__empty">
-                  تامین‌کننده‌ای با این گروه کالا در کانون ثبت نشده است.
-                </p>
-              )}
+              <p className="vitrin-profile-panel__empty">
+                ردیابی سفارش‌ها/تراکنش‌های این کالا در نبض ثبت می‌شود و ویترین صاحب داده تراکنشی نیست.
+                این بخش رزرو شده برای قرارداد آینده نبض (Product → Order → Customer/Supplier → Brand)
+                است و در حال حاضر هیچ داده تراکنشی در ویترین کپی نمی‌شود.
+              </p>
             </div>
           )}
         </div>

@@ -1,0 +1,28 @@
+id: persona
+name: Persona
+tier: B
+status: active
+ownerModule: shirazeh
+aggregateRoot: Persona
+ssot: postgresql
+clientState: react-state
+lifecycle: "Working-domain identity catalog. Seed inserts six canonical codes if missing. Operator create allocates persona_N and binds one or more Roles (each Role unique). Update name/domain/isActive. Attach/detach Role links without mutating RBAC. Code immutable after create. Soft deactivate only — no hard delete. Not assigned to User. Does not grant permissions."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - users:admin
+databaseTable: personas
+apiBasePath: /api/v1/personas
+backendRepository: backend/src/repositories/personaRepository.js
+frontendRepository: src/api/repositories/PersonaRepository.js
+dependencies:
+  - rbac-role
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-40
+  - DDL-42
+  - DDL-43
+  - DDL-44
+migrationSafety: "036 new table with unique code. 037 generated persona_N. 038 persona_role_links (role_code PK) backfilled from personas.role_code then cleared. Seed never overwrites name/domain or role links. No FK to users or organization_positions. No drops of RBAC tables."
+notes: "Shirazeh Definitions UI at /shirazeh/definitions/personas. Create drawer: system code, user name, one Role. Edit attaches/detaches Roles via persona_role_links. users:admin is the only gate. Persona ≠ Role ≠ Position. The Role link is catalog-only and does not grant permissions. Do not add personaId on users without a later DDL."

@@ -1,0 +1,27 @@
+---
+description: Entity Delivery Pipeline — DDL gate, tiers, dual repos, SSOT, no UI-first Tier A/B
+alwaysApply: true
+---
+
+# Jarian Entity Delivery Pipeline (Law)
+
+**Read first:** `Docs/architecture/ENTITY_DELIVERY_PIPELINE.md`
+
+Before creating or changing a **Tier A/B** entity (API, migration, aggregate, persisted store):
+
+1. **DDL Gate** — read `DOMAIN_DECISION_LOG`; if ownership/SSOT/aggregate changes, add/supersede DDL **before** code.
+2. **Owner + SSOT** — name owner module; Postgres is SoR when API exists (`CLIENT_STATE_SSOT`).
+3. **Entity Card** — add/update `Docs/architecture/entity-cards/<id>.yaml`; run `npm run check:entity-cards`.
+4. **Pipeline order** — Domain → Rules → Migration → Migration Safety → Backend Repository → Use Case → API → RBAC → Audit → FE Repository → Cache → Update Policy → Tests → Backup/Deploy checks.
+5. **UI last** — do not invent schema from forms.
+6. **Repositories** — new Tier A SQL in `backend/src/repositories/` only; FE via `src/api/repositories/` only.
+7. **No Zustand SoR** for API-backed entities (cache/UI only).
+8. **No business rules** in JSX, routes, or stores.
+9. **No cross-module store imports** — use ports/facades (Mowj→Pooyesh pattern).
+10. **Tier A defaults** — soft-delete, append-only audit, `SERVER_FIRST` update policy, Zod + `{ error, message, details }`.
+11. **Raw Lead** — independent Ofogh aggregate (**DDL-13**). Do not fold into Company. `useLeadsStore` is temporary client-only until Lead API. Do not add `leads` table without Entity Card + pipeline.
+12. **Tests** — Tier A needs more than FE unit tests (domain/service/API/smoke).
+
+Tier C (filters/tabs/selection) does not need migrations or Entity Cards.
+
+Do **not** duplicate this law into a second delivery guide — extend the docs above.

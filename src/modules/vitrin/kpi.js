@@ -1,60 +1,26 @@
-export function computeVitrinKpis(products, groups) {
-  const activeGroups = groups.filter((g) => g.subgroups.length > 0);
-  const demand = new Map();
-
-  for (const product of products) {
-    const orders = product.relatedOrders?.length || 0;
-    if (!orders) continue;
-    const group = groups.find((g) => g.id === product.groupId);
-    if (!group) continue;
-    demand.set(group.name, (demand.get(group.name) || 0) + orders);
-  }
-
-  let topGroup = '—';
-  let topCount = 0;
-  for (const [name, count] of demand) {
-    if (count > topCount) {
-      topGroup = name;
-      topCount = count;
-    }
-  }
-
+/**
+ * Vitrin KPI + filter helpers over the real Product Master (DDL-24).
+ * No shadow order/demand projection here — traceability belongs to a future
+ * read-only hook (see Docs/architecture/product-master-nabz-future-contract.md),
+ * never a copied `relatedOrders` array.
+ */
+export function computeStructureKpis(groups, categories, types, products) {
   return [
-    { label: 'کل محصولات', value: products.length.toLocaleString('fa-IR'), variant: 'accent' },
-    { label: 'دسته‌بندی‌های فعال', value: activeGroups.length.toLocaleString('fa-IR') },
-    {
-      label: 'پرمتقاضی‌ترین گروه کالایی',
-      value: topGroup,
-      trend: topCount ? `${topCount.toLocaleString('fa-IR')} سفارش` : undefined,
-      trendDir: 'up',
-    },
+    { label: 'گروه‌ها', value: (groups?.length || 0).toLocaleString('fa-IR'), variant: 'accent' },
+    { label: 'دسته‌ها', value: (categories?.length || 0).toLocaleString('fa-IR') },
+    { label: 'انواع کالا', value: (types?.length || 0).toLocaleString('fa-IR') },
+    { label: 'محصولات', value: (products?.length || 0).toLocaleString('fa-IR') },
   ];
 }
 
-export function filterProducts(products, groups, { search, groupId, subgroupId, filterGroupId }) {
-  const effectiveGroupId = filterGroupId ?? groupId;
+export function computeVitrinKpis(products, taxonomyGroups) {
+  const activeProducts = products.filter((p) => p.lifecycleStatus !== 'INACTIVE');
+  const groupsInUse = new Set(products.map((p) => p.groupId).filter(Boolean));
 
-  return products.filter((product) => {
-    if (effectiveGroupId && product.groupId !== effectiveGroupId) return false;
-    if (subgroupId && product.subgroupId !== subgroupId) return false;
-
-    if (search) {
-      const group = groups.find((g) => g.id === product.groupId);
-      const subgroup = group?.subgroups.find((s) => s.id === product.subgroupId);
-      const haystack = [
-        product.code,
-        product.title,
-        product.description,
-        group?.name,
-        subgroup?.name,
-        product.unit,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      if (!haystack.includes(search.toLowerCase())) return false;
-    }
-
-    return true;
-  });
+  return [
+    { label: 'کل کالاهای مرجع', value: products.length.toLocaleString('fa-IR'), variant: 'accent' },
+    { label: 'کالاهای فعال', value: activeProducts.length.toLocaleString('fa-IR') },
+    { label: 'گروه‌های کالای دارای محصول', value: groupsInUse.size.toLocaleString('fa-IR') },
+    { label: 'گروه‌های کالای تعریف‌شده (شیرازه)', value: (taxonomyGroups?.length || 0).toLocaleString('fa-IR') },
+  ];
 }

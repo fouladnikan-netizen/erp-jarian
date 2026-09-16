@@ -1,0 +1,64 @@
+---
+description: Jarian frontend module boundaries — dependency direction for new code
+globs: src/**/*.{js,jsx,ts,tsx}
+alwaysApply: false
+---
+
+# Jarian Frontend Boundaries
+
+**Applies to future development only.** Do not use this rule to force mass import rewrites or Nabz splits.
+
+Read with:
+
+1. `Docs/architecture/FRONTEND_ARCHITECTURE_GUIDELINES.md`
+2. `Docs/architecture/FRONTEND_COMPONENT_HOTSPOTS.md`
+3. `Docs/architecture/12-FRONTEND_ARCHITECTURE_AUDIT.md`
+
+Legacy cross-module imports exist (nabz↔kanoon, shared→nabz). **Do not add new ones.**
+
+---
+
+## Rules
+
+### 1. Modules cannot import internal files from other modules
+
+- Do not add imports from `src/modules/<A>/...` into `src/modules/<B>/...` private trees (components, services, local css helpers).
+- Allowed bridges today (prefer not expanding): public facades like contacts/orders stores; documented App-level providers.
+- If cross-feature UI is required, extract to `src/components/` or `src/domain/` first.
+
+### 2. Shared components cannot depend on modules
+
+- New code under `src/components/**` must not import from `src/modules/**`.
+- If a shared primitive needs TruncatedText / money format / dates, put helpers in `src/shared`, `src/domain`, or `src/utils` — do not reach into nabz.
+- Bugfixing existing shared→nabz leaks is optional; **extending** them is forbidden.
+
+### 3. Domain logic cannot live inside UI components
+
+- New business rules, financial formulas, stage transition decisions belong in `src/domain/**` or module `*Service.js` — not in new JSX.
+- UI calls services/domain and renders results (aligns with `jarian-business-rules.mdc`).
+
+### 4. New large components require responsibility separation
+
+- If adding or growing a component toward ~500+ LOC, update `Docs/architecture/FRONTEND_COMPONENT_HOTSPOTS.md` with responsibilities and extraction candidates.
+- Prefer composing smaller presentational pieces over one mega-file for **new** UI.
+- Splitting existing gods is **out of scope** unless explicitly funded.
+
+### 5. Avoid circular dependencies
+
+- Do not create or worsen A→B→A import cycles between modules.
+- Prefer: both depend on shared/domain/store, not on each other.
+
+---
+
+## Allowed
+
+- Module → `components/`, `domain/`, `stores/`, `config/`, `hooks/`, `utils/`, `styles/`
+- Documentation updates
+- Using existing legacy imports without expanding them
+
+## Not allowed (without architecture decision)
+
+- New shared→module imports
+- New module→module deep imports
+- Rewriting Nabz or moving calendar “for boundaries” in an unrelated PR
+- Adding React.lazy / changing routes under the guise of boundaries

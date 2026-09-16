@@ -1,14 +1,7 @@
-export const COMPANY_BRAND = {
-  name: 'پترو فولاد نیکان',
-  tagline: 'تأمین‌کننده تخصصی مقاطع فولادی، استنلس استیل و چوب روسی',
-  nationalId: '۱۴۰۱۳۹۹۸۰۵۵',
-  registrationNumber: '۶۴۲۴۹۰',
-  website: 'www.fouladnikan.com',
-  phone: '۰۲۱-۷۱۶۸۳۰۰۰',
-  postalCode: '۱۵۴۹۸۴۷۱۲۰',
-  address: 'تهران، بلوار میرداماد، خیابان مصدق جنوبی، کوچه تابان شرقی، پلاک ۳، واحد ۷',
-};
+/** @deprecated Historical reprint only — live chrome uses sales documentChromeFacade + Organization Identity. */
+export { COMPANY_BRAND } from '../sales/settings/legacyCompanyBrand.js';
 
+/** Official operating-company bank accounts shown on Proforma (multi-account; not Identity SSOT). */
 export const PROFORMA_BANK_ACCOUNTS = [
   {
     bank: 'بانک اقتصاد نوین',
@@ -60,15 +53,15 @@ export const DEFAULT_PROFORMA_TERMS =
 
 export const PROFORMA_PREVIEW_STORAGE_KEY = 'nabz-proforma-preview';
 
-/** رنگ‌ها و فاصله‌ها — منطبق بر Assets/Invoice/DESIGN.md */
+/** رنگ‌ها و فاصله‌ها — فقط Theme Tokens (RFC-001)؛ منطبق بر Assets/Invoice/DESIGN.md */
 export const INVOICE_THEME = {
-  primary: '#272726',
-  primaryDim: '#c8c6c3',
-  tableHeader: '#d31120',
-  surface: '#fcf9f8',
-  surfaceLow: '#f6f3f2',
-  surfaceVariant: '#e5e2e1',
-  onSurface: '#1c1b1b',
-  onSurfaceVariant: '#454742',
+  primary: 'var(--color-neutral-800)',
+  primaryDim: 'var(--color-neutral-300)',
+  tableHeader: 'var(--color-brand-red)',
+  surface: 'var(--bg-surface)',
+  surfaceLow: 'var(--bg-muted)',
+  surfaceVariant: 'var(--color-neutral-200)',
+  onSurface: 'var(--text-primary)',
+  onSurfaceVariant: 'var(--text-secondary)',
   pageMargin: '48px',
 };

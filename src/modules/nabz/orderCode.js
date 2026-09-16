@@ -47,6 +47,37 @@ export function buildOrderCodeDashed(orders, { yy, mm, dd }) {
   return formatOrderCodeDashed({ yy, mm, dd, serial });
 }
 
+/**
+ * Canonical display/storage form (DDL-27): JR-{Y}{MM}{DD}{NN}.
+ * Must match backend/src/domain/order/jarianOrderCode.js — mock/optimistic only.
+ * API persist overwrites with server-allocated code.
+ */
+export function formatCanonicalOrderCode({ year, month, day, sequence }) {
+  const y = Number(year) % 10;
+  const mm = pad(month, 2);
+  const dd = pad(day, 2);
+  const nn = pad(sequence, 2);
+  return `JR-${y}${mm}${dd}${nn}`;
+}
+
+export function nextCanonicalDailySerial(orders, { year, month, day }) {
+  const prefix = `JR${Number(year) % 10}${pad(month, 2)}${pad(day, 2)}`;
+  const sameDay = (orders || []).filter((order) => {
+    const normalized = normalizeOrderCode(order.code);
+    return normalized.startsWith(prefix) && normalized.length === prefix.length + 2;
+  });
+  if (!sameDay.length) return 1;
+  const maxSerial = Math.max(
+    ...sameDay.map((order) => Number(normalizeOrderCode(order.code).slice(-2)) || 0),
+  );
+  return maxSerial + 1;
+}
+
+export function buildCanonicalOrderCode(orders, { year, mm, dd }) {
+  const sequence = nextCanonicalDailySerial(orders, { year, month: mm, day: dd });
+  return formatCanonicalOrderCode({ year, month: mm, day: dd, sequence });
+}
+
 export function parseMoneyInput(value) {
   if (value == null || value === '') return null;
   const ascii = toAsciiDigits(String(value))

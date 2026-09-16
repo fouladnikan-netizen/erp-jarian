@@ -1,0 +1,610 @@
+/* ═══════════ فرم‌ساز نظرسنجی — Notion × Typeform ═══════════ */
+
+.svb-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 3rem;
+}
+
+.svb-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  max-width: 800px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.svb-topbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.svb-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--success);
+  animation: svb-fade-in 0.25s ease;
+}
+
+.svb-canvas {
+  width: 100%;
+  max-width: 800px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.35rem 1.5rem 1.75rem;
+  border-radius: 22px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px) saturate(155%);
+  -webkit-backdrop-filter: blur(18px) saturate(155%);
+  border: 1px solid var(--border-light);
+  box-shadow:
+    var(--shadow-lg),
+    var(--glass-inset-highlight);
+  animation: svb-rise 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes svb-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes svb-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes svb-block-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes svb-pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ——— عنوان و خوش‌آمد ——— */
+.svb-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.svb-title-input,
+.svb-welcome-input,
+.svb-thanks-input,
+.svb-block__question-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.svb-title-input {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.45;
+  padding: 0.15rem 0;
+}
+
+.svb-title-input::placeholder,
+.svb-welcome-input::placeholder,
+.svb-thanks-input::placeholder,
+.svb-block__question-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.svb-welcome-input {
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  min-height: 2.8rem;
+}
+
+/* ——— بلوک‌ها ——— */
+.svb-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 2rem;
+}
+
+.svb-empty {
+  margin: 0;
+  padding: 1.25rem 0.5rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.svb-block {
+  position: relative;
+  border-radius: 16px;
+  padding: 0.85rem 0.95rem 0.9rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+  animation: svb-block-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.svb-block:hover {
+  border-color: var(--border-light);
+  background: var(--glass-bg-strong);
+}
+
+.svb-block.is-active {
+  border-color: var(--danger-border);
+  background: var(--glass-bg-strong);
+  box-shadow:
+    var(--shadow-md),
+    var(--focus-ring);
+  cursor: default;
+}
+
+.svb-block__chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+  color: var(--text-muted);
+}
+
+.svb-block__grip {
+  display: inline-flex;
+  opacity: 0.55;
+}
+
+.svb-block__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.svb-block__index {
+  margin-inline-start: auto;
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--muted-surface);
+  color: var(--text-secondary);
+}
+
+.svb-block__question {
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+.svb-block__req {
+  margin-inline-start: 0.2rem;
+  color: var(--danger);
+}
+
+.svb-block__question-input {
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.55;
+  margin-bottom: 0.7rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.svb-block__question-input:focus {
+  border-bottom-color: var(--danger-border);
+}
+
+.svb-block__preview {
+  pointer-events: none;
+}
+
+.svb-block.is-active .svb-block__preview {
+  pointer-events: auto;
+}
+
+.svb-preview-input,
+.svb-preview-textarea {
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px dashed var(--muted-border);
+  background: color-mix(in srgb, var(--color-neutral-400) 5%, transparent);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.svb-preview-textarea {
+  min-height: 4.2rem;
+}
+
+.svb-preview-choices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.svb-preview-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.svb-preview-choice__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted-border);
+  flex-shrink: 0;
+}
+
+.svb-preview-nps {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.svb-preview-nps__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+  border: 1px solid var(--border-light);
+}
+
+.svb-preview-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 5rem;
+  border-radius: 12px;
+  border: 1px dashed var(--muted-border);
+  background: color-mix(in srgb, var(--color-neutral-400) 5%, transparent);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ——— ویرایش گزینه‌ها ——— */
+.svb-options-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.svb-options-edit__row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.svb-options-edit__input {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg-strong);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.svb-options-edit__input:focus {
+  border-color: var(--danger-border);
+}
+
+.svb-add-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  align-self: flex-start;
+  margin-top: 0.2rem;
+  padding: 0.35rem 0.55rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.svb-add-option:hover {
+  color: var(--text-primary);
+  background: var(--muted-surface);
+}
+
+/* ——— تنظیمات شناور داخل بلوک ——— */
+.svb-block__settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border-light);
+  animation: svb-fade-in 0.2s ease;
+}
+
+.svb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.svb-toggle__track {
+  position: relative;
+  display: block;
+  width: 2.05rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: var(--color-neutral-300);
+  box-shadow: var(--border-light);
+  transition: background 0.18s ease;
+}
+
+.svb-toggle.is-on .svb-toggle__track {
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+}
+
+.svb-toggle__knob {
+  position: absolute;
+  top: 0.12rem;
+  inset-inline-start: 0.12rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  transition: inset-inline-start 0.18s ease;
+}
+
+.svb-toggle.is-on .svb-toggle__knob {
+  inset-inline-start: calc(100% - 1.02rem);
+}
+
+.svb-toggle__label {
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.svb-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.svb-icon-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--muted-border);
+}
+
+.svb-icon-btn--danger:hover {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-surface);
+}
+
+/* ——— افزودن سؤال + پاپ‌اور ——— */
+.svb-add-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem 0;
+}
+
+.svb-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px dashed var(--muted-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.svb-add-btn:hover,
+.svb-add-btn.is-open {
+  color: var(--text-primary);
+  border-style: solid;
+  border-color: var(--muted-border);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.svb-popover {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(300px, 92vw);
+  z-index: 40;
+  padding: 0.45rem;
+  border-radius: 16px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--border-light);
+  box-shadow:
+    var(--shadow-lg),
+    var(--glass-inset-highlight);
+  animation: svb-pop 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.svb-popover__hint {
+  margin: 0;
+  padding: 0.35rem 0.55rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.svb-popover__item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  text-align: start;
+  padding: 0.55rem 0.55rem;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.svb-popover__item:hover {
+  background: var(--muted-surface);
+}
+
+.svb-popover__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+}
+
+.svb-popover__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.svb-popover__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.svb-popover__sub {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* ——— پایان ——— */
+.svb-outro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.svb-outro__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.svb-thanks-input {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  min-height: 2.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-neutral-400) 6%, transparent);
+  border: 1px solid var(--border-light) !important;
+}
+
+.svb-thanks-input:focus {
+  border-color: var(--danger-border) !important;
+  background: var(--glass-bg);
+}
+
+@media (max-width: 640px) {
+  .svb-canvas {
+    padding: 1rem 0.9rem 1.25rem;
+    border-radius: 16px;
+  }
+
+  .svb-title-input {
+    font-size: 1.25rem;
+  }
+
+  .svb-preview-nps {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,30 @@
+id: organization-identity
+name: Organization Identity
+tier: A
+status: active
+ownerModule: shirazeh
+aggregateRoot: OrganizationIdentity
+ssot: postgresql
+clientState: react-state
+lifecycle: "Singleton operating-company identity for Jarian (one row). GET empty until first PUT upsert. No delete. Not Kanoon Company, not multi-tenant."
+archivePolicy: n/a
+auditPolicy: append-only
+rbacPolicy:
+  - users:admin
+databaseTable: organization_identity
+apiBasePath: /api/v1/organization-identity
+backendRepository: backend/src/repositories/organizationIdentityRepository.js
+frontendRepository: src/api/repositories/OrganizationIdentityRepository.js
+dependencies:
+  - auth-user
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-28
+  - DDL-29
+  - DDL-31
+  - DDL-32
+  - DDL-33
+  - DDL-34
+migrationSafety: "024 new table; 026 logo sibling + nullable logo_file_id; 027 additive JSONB phones/addresses/bank_accounts with backfill from legacy scalars (DDL-32); 028 idempotent reshape of those JSONB arrays into structured items with id/sortOrder (DDL-33); 029 idempotent isPrimary on first item when none exists (DDL-34). Phone type ignored, not dropped. legal_person_type unused in UI, column kept. No drops. Identifiers TEXT. Logo bytes stay off this row."
+notes: "Shirazeh Definitions UI at /shirazeh/definitions. Live document chrome reads this singleton via domain/organizationIdentity. phones/addresses/bankAccounts are objects with explicit isPrimary (fallback [0]). GET still exposes singular phone/officialAddress/province/city/postalCode/bank* from explicit primary. COMPANY_BRAND remains legacy fallback for issued docs without organizationSnapshot. GET is authenticated; PUT is users:admin. Canonical logo is logoFileId → organization_identity_logo. PROFORMA_BANK_ACCOUNTS stays document settings (not replaced; DATA DUPLICATION REMAINS). Document branding consumers stay on static assets until a later DDL."

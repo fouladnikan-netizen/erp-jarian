@@ -32,6 +32,7 @@ export default function ShippingDocument({ viewModel }) {
               issueDate,
               documentNumberLabel: documentNumberLabel || 'شماره فرم:',
               documentNumber: documentNumber || 'PFN-O-F01',
+              organization: viewModel.organization,
             }}
           />
         </div>
@@ -131,7 +132,7 @@ export default function ShippingDocument({ viewModel }) {
         </section>
       </div>
 
-      <InvoiceDocFooter />
+      <InvoiceDocFooter organization={viewModel.organization} />
     </article>
   );
 }

@@ -1,0 +1,31 @@
+---
+description: Jarian security, identity, and authorization guardrails
+globs: src/**/*.{js,jsx,ts,tsx}
+alwaysApply: true
+---
+
+# Jarian Security Guardrails
+
+Read: `Docs/architecture/IDENTITY_MODEL.md`, `Docs/architecture/AUTHORIZATION_MODEL.md`
+
+## Absolute rules
+
+1. **Frontend permission ≠ security boundary.** Backend `requirePermission` is mandatory for API mutations.
+2. **Backend RBAC codes are canonical** (`companies:*`, `orders:*`, `leads:*`, `activities:*`, `tasks:*`). FE catalog must match seed — do not invent codes.
+3. **No hardcoded `CURRENT_USER` / fixed role for production operations.** Use session (`getCurrentUser()` / `getSessionDisplayName()`). Mock fixture only when `VITE_USE_MOCK_API=true`.
+4. **Audit actor comes from JWT on the server.** Never trust a client-supplied `actorId` for authorization or audit authority.
+5. Prefer `can('orders:write')` over `role === 'admin'` for capability checks.
+6. **401** → invalid session / login. **403** → forbidden while still authenticated (do not auto-logout).
+7. **Persona ≠ Position ≠ Role.** Only Role → Permission authorizes. Do not infer Persona from Role, grant permissions from Position/Persona, persist persona on `users`, or rename Roles/Positions to Persona names (DDL-40).
+
+## Allowed
+
+- UI hide/disable via `can()` / `useCan()` / `capabilities.js`
+- Shirazeh matrix as admin design UI + `backendPermissionAdapter`
+- Nabz nickname helpers only **after** coarse Backend permission passes
+
+## Not allowed
+
+- Parallel permission stores as ops SoR
+- Treating JSX-only gates as security
+- Extending hardcoded identity constants into new modules

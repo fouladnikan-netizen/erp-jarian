@@ -1,0 +1,241 @@
+/* ═══════════ Omni-Command (Spotlight) — گلس مینیمال ═══════════ */
+
+.omni-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: min(18vh, 7.5rem) 1rem 2rem;
+  pointer-events: none;
+}
+
+.omni-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  background: var(--overlay-scrim);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  animation: omni-fade-in 0.18s ease;
+}
+
+.omni-panel {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  width: min(640px, 100%);
+  max-height: min(72vh, 560px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--border-light);
+  box-shadow:
+    var(--glass-inset-highlight),
+    var(--shadow-lg),
+    var(--shadow-md);
+  animation: omni-panel-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes omni-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes omni-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ——— نوار جستجو ——— */
+.omni-search {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.omni-search__icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.omni-search__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.omni-search__input::placeholder {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.omni-search__input::-webkit-search-decoration,
+.omni-search__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.omni-search__kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  padding: 0.22rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+  border: 1px solid var(--border-light);
+}
+
+/* ——— نتایج ——— */
+.omni-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.55rem 0.55rem 0.7rem;
+  scrollbar-gutter: stable;
+}
+
+.omni-results::-webkit-scrollbar { width: 6px; }
+.omni-results::-webkit-scrollbar-thumb {
+  background: var(--muted-border);
+  border-radius: 999px;
+}
+
+.omni-group + .omni-group {
+  margin-top: 0.55rem;
+}
+
+.omni-group__title {
+  margin: 0;
+  padding: 0.35rem 0.7rem 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.omni-group__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.omni-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.62rem 0.7rem;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.15s ease;
+}
+
+.omni-item:hover,
+.omni-item.is-active {
+  background: var(--muted-surface);
+}
+
+.omni-item__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  background: var(--muted-surface);
+  border: 1px solid var(--border-light);
+}
+
+.omni-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.omni-item__label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.omni-item__hint {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.omni-item__arrow {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.omni-item:hover .omni-item__arrow,
+.omni-item.is-active .omni-item__arrow {
+  opacity: 1;
+  color: var(--text-muted);
+}
+
+.omni-empty {
+  padding: 2.4rem 1rem;
+  text-align: center;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.omni-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: 0.55rem 1rem;
+  border-top: 1px solid var(--border-light);
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ═══════════ دارک‌مود ═══════════ */
+

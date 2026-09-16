@@ -12,6 +12,7 @@ import { canEditProfitMargin } from '../../../orderEditPermissions';
 import { getOrderOperationalPhase } from '../../../phase2Service';
 import { calculateQuotingPreview, updateOrderQuoting } from '../../../quotingService';
 import { TADAROK_LINE_STATUS } from '../../../tadarokStageConfig';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 import {
   completeTadarokProcurement,
   getDefaultSupplierIdForLine,
@@ -148,6 +149,7 @@ export default function TadarokStagePanel({
   compact = false,
   readOnly = false,
 }) {
+  const { alert } = useJarianNotice();
   const live = isTadarokStageLive(order, operationalViewPhase) && !readOnly;
   const rows = useMemo(() => getTadarokProcurementRows(order), [order]);
   const progress = useMemo(() => getTadarokProgress(order), [order]);
@@ -173,7 +175,7 @@ export default function TadarokStagePanel({
     if (readOnly) return;
     const result = splitTadarokLine(order, splitLine.id, quantities);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان تفکیک وجود ندارد.');
+      void alert({ title: 'توجه', message: result.reason || 'امکان تفکیک وجود ندارد.' });
       return;
     }
     onUpdateOrder?.(() => result.order);
@@ -195,7 +197,7 @@ export default function TadarokStagePanel({
   const openQcForRow = (row) => {
     const purchaseRow = resolvePurchaseRowForTadarokLine(order, row);
     if (!purchaseRow) {
-      window.alert('برای این سطر هنوز سفارش خرید صادر نشده است.');
+      void alert({ title: 'توجه', message: 'برای این سطر هنوز سفارش خرید صادر نشده است.' });
       return;
     }
     const record = getQcInspectionForRow(order, purchaseRow);
@@ -220,7 +222,7 @@ export default function TadarokStagePanel({
       ? updatePurchaseOrder(order, poModal.line.id, draft)
       : issuePurchaseOrder(order, poModal.line.id, draft);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان ذخیره سفارش خرید وجود ندارد.');
+      void alert({ title: 'توجه', message: result.reason || 'امکان ذخیره سفارش خرید وجود ندارد.' });
       return;
     }
     onUpdateOrder?.(() => result.order);
@@ -231,7 +233,7 @@ export default function TadarokStagePanel({
     if (readOnly) return;
     const result = completeTadarokProcurement(order);
     if (!result.accepted) {
-      window.alert(result.reason || 'امکان تکمیل تدارک وجود ندارد.');
+      void alert({ title: 'توجه', message: result.reason || 'امکان تکمیل تدارک وجود ندارد.' });
       return;
     }
     onUpdateOrder?.(() => result.order);

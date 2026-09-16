@@ -1,0 +1,63 @@
+---
+description: Law #004 — Unified List Infrastructure; Infinite Loading mandatory for large lists
+globs: src/**/{*Table*,*List*,list/**,table/**,hooks/list/**,listPreferences*}.{js,jsx,css}
+alwaysApply: false
+---
+
+# Jarian Architecture Law #004 — Unified List Infrastructure
+
+**Full doc:** `Docs/architecture/UNIFIED_LIST_INFRASTRUCTURE.md`
+
+All ERP lists MUST use the shared list infrastructure. Per-module sort, filter, resize, status, column manager, or infinite-loading implementations are forbidden.
+
+---
+
+## Mandatory shared capabilities
+
+| Capability | Use |
+|---|---|
+| Resizable columns | `ResizableTh` + widths via `useListShell` |
+| Excel-style filters | `ColumnFilterHeader`, `useColumnExcelFilters` |
+| Unified status | `ListStatusPill` |
+| Multi-column sort | `useMultiSort` / shell sorts |
+| **Infinite Loading** | `useInfiniteLoading`, `useListDataProvider`, `InfiniteSentinelRow` |
+| Column management | `useColumnManager`, `ColumnManager` — **only via** `ListChrome` More (`⋮`) menu |
+| User list preferences | `useListPreferences`, `listPreferencesService` |
+| Selection count | `ListSelectionBar` — only after row selection; never permanent header totals |
+| Composition | `ListColumnHeader`, `ListChrome` (More menu), `ListSelectionBar`, `useListShell` |
+
+Pipeline: **Filter → Sort → Infinite Loading → List Rendering**.
+
+Infinite Loading is the **only** large-list loading strategy. Do not expose pagination / virtual / mode toggles in UI or preferences.
+
+---
+
+## Module responsibility only
+
+- Columns
+- Rows / data source (client array or server-fed via `onLoadMore`)
+- Business actions
+
+Wired: Nabz, Kanoon, Vitrin, Gahshomar, Mowj.
+
+---
+
+## Rules
+
+1. Do **not** build a new list outside this infrastructure.
+2. Prefer `useListShell` + `ListChrome` for new module lists.
+3. Column management and list-preference reset must **not** be always-visible header buttons — only via the More (`⋮`) menu on the left of the list header.
+4. Do **not** show permanent record/result totals in the list header. Selection count belongs in `ListSelectionBar` and only when `selectedCount > 0`.
+5. Persist only columns / order / widths / sorts / filters — never rendering strategy.
+6. Do **not** add user-facing mode selection (`client` / `server` / `infinite` / `virtual` / pagination / virtual scroll).
+7. Virtual windowing may be added **internally** later without changing module APIs.
+8. Jarian CSS + theme tokens only — no Tailwind / Shadcn for list chrome.
+
+## Not allowed
+
+- Always-visible «ستون‌ها» / column-manager buttons in the list header
+- Permanent «N رکورد» / total / result counters in the list header
+- Module-local sort / infinite / filter / resize / status / column DnD
+- Classic pagination footers on large CRM/ops lists
+- User toggles for loading strategy
+- Opportunistic third-party table kits

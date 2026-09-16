@@ -1,0 +1,38 @@
+id: correspondence
+name: Correspondence
+tier: A
+status: active
+ownerModule: gahshomar
+aggregateRoot: Correspondence
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "DRAFT (editable, AI rewrite allowed, no official number) -> FINAL (official number assigned server-side at finalize, content locked). Soft-delete archive. DDL-23."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - correspondence:read
+  - correspondence:write
+  - correspondence:finalize
+databaseTable: correspondence
+apiBasePath: /api/v1/correspondence
+backendRepository: backend/src/repositories/correspondenceRepository.js
+frontendRepository: src/api/repositories/CorrespondenceRepository.js
+dependencies:
+  - company
+  - order
+  - auth-user
+integrationPorts:
+  - gahshomar-official-record-facade
+  - kanoon-documents-panel
+  - nabz-order-profile-correspondence-tab
+  - pooyesh-company-timeline-projection
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-23
+  - DDL-12
+  - DDL-09
+  - DDL-11
+  - DDL-14
+  - DDL-30
+migrationSafety: "013_correspondence.sql expand-only; 025 adds nullable organization_snapshot JSONB at finalize (DDL-30) — no backfill, existing FINAL rows stay NULL. Soft-delete + append-only audit. correspondence_attachments FK on delete cascade (child rows only, never the parent). correspondence_number_counters atomic INSERT..ON CONFLICT..RETURNING for concurrency-safe numbering. official_number has DB-level UNIQUE constraint. company_id/order_id are nullable optional references (no hard FK enforced at DB level to avoid coupling migration order with companies/orders churn; application-level existence check on write, same posture as activities.subject_id)."
+notes: "DDL-23. Independent Gahshomar aggregate. Legacy in-memory officialRecordRepository.js remains as mock-mode-only fallback (VITE_USE_MOCK_API=true). Legacy duplicate model (models/correspondence.js, useCorrespondenceStore.js) deleted; correspondenceService.js/correspondenceBinding.js kept as thin re-export shims. Official numbering assigned only at finalize via atomic counter table (DDL-23a). Attachments stored as base64 in correspondence_attachments (DDL-23b), IN direction requires >=1 attachment before FINAL (backend-enforced). AI rewrite critical-value-preservation validator (backend/src/domain/correspondence/criticalValuePreservation.js) is deterministic and enforced on both ai-rewrite response and finalize (DDL-23c). type_key validated against correspondence-type-registry active keys on write (DDL-23d, see correspondence-type-registry.yaml)."

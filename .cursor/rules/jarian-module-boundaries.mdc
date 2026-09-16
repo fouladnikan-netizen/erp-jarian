@@ -1,0 +1,35 @@
+---
+description: Cross-module store imports forbidden — use Port/Facade/Public contract
+globs: src/modules/**/*
+alwaysApply: true
+---
+
+# Jarian Module Boundaries
+
+Read: `Docs/architecture/ENTITY_OWNERSHIP.md`, `Docs/architecture/PERSISTENCE_BOUNDARY.md`
+
+## Rule
+
+Cross-module communication must use **Port / Facade / Public contract / Repository** — never another module's internal store.
+
+```text
+Forbidden: modules/ofogh/* → stores/useContactsStore
+Allowed:    modules/ofogh/* → modules/kanoon/public/*
+Allowed:    modules/pooyesh/* → subjectEntity.port → kanoon/ofogh public
+```
+
+## Owner stores (cache only inside owner module)
+
+| Entity | Owner module | Public surface |
+|--------|--------------|----------------|
+| Company | Kanoon | `modules/kanoon/public` |
+| Raw Lead | Ofogh | `modules/ofogh/public` |
+| Order | Sales (canonical) / Nabz (product shim) | `modules/sales/public` · `modules/nabz/public` re-export |
+| Activity | Pooyesh | `interactionFacade` / `pooyesh/public` |
+| Task | Pooyesh | `taskFacade` |
+
+## Enforcement
+
+Run `npm run check:module-boundaries` before merge.
+
+Do not add cross-module `use*Store` imports. Extend the owner public facade instead.

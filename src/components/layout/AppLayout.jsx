@@ -1,14 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { modules } from '../../modules/registry';
+import { buildDocumentTitle } from '../../config/brand';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import AppFooter from './AppFooter';
+import OmniCommand from '../omni/OmniCommand';
 
 const SIDEBAR_STORAGE_KEY = 'jaryan-sidebar-expanded';
 
 function getModuleByPath(pathname) {
   const normalized = pathname === '' || pathname === '/' ? '/' : pathname;
-  return modules.find((m) => m.path === normalized) || modules[0];
+  const exact = modules.find((m) => m.path === normalized);
+  if (exact) return exact;
+  /* زیرمسیرها: /kanoon/contact/۳ ← کانون (مسیر کانون خودِ / است)، /nabz/order/… ← نبض */
+  if (normalized.startsWith('/kanoon')) {
+    return modules.find((m) => m.id === 'kanoon') || modules[0];
+  }
+  return modules.find((m) => m.path !== '/' && normalized.startsWith(m.path)) || modules[0];
 }
 
 function readSidebarPreference() {
@@ -37,7 +46,7 @@ export default function AppLayout() {
   }, []);
 
   useEffect(() => {
-    document.title = `${currentModule.name} | جریان`;
+    document.title = buildDocumentTitle(currentModule.name);
   }, [currentModule]);
 
   return (
@@ -50,7 +59,9 @@ export default function AppLayout() {
         <main className="main" role="main">
           <Outlet />
         </main>
+        <AppFooter />
       </div>
+      <OmniCommand />
     </div>
   );
 }

@@ -1,0 +1,160 @@
+/* Shirazeh Activity Types — canonical registry CRUD (Gap 1) */
+
+.shirazeh-atypes {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.shirazeh-atypes__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shirazeh-atypes__title {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.shirazeh-atypes__subtitle {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.shirazeh-atypes__alert {
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-size: 0.82rem;
+}
+
+.shirazeh-atypes__create {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.85rem;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.shirazeh-atypes__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.shirazeh-atypes__input--key {
+  flex: 0 0 180px;
+}
+
+.shirazeh-atypes__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shirazeh-atypes__btn--primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.shirazeh-atypes__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.shirazeh-atypes__form-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+}
+
+.shirazeh-atypes__table {
+  width: 100%;
+}
+
+.shirazeh-atypes__row--inactive {
+  opacity: 0.55;
+}
+
+.shirazeh-atypes__key {
+  font-family: var(--font-numeric, monospace);
+  color: var(--text-secondary);
+}
+
+.shirazeh-atypes__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.shirazeh-atypes__badge--active {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+}
+
+.shirazeh-atypes__badge--inactive {
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-muted) 14%, transparent);
+}
+
+.shirazeh-atypes__order-controls,
+.shirazeh-atypes__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.shirazeh-atypes__edit-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.shirazeh-atypes__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.shirazeh-atypes__icon-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--table-row-odd-bg, var(--glass-bg-strong));
+}
+
+.shirazeh-atypes__icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

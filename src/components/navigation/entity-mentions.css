@@ -1,0 +1,33 @@
+.entity-mention-text {
+  display: inline;
+}
+
+.entity-mention-link {
+  color: var(--color-brand-red);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-brand-red) 28%, transparent);
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+  border-radius: 2px;
+  padding-inline: 0.05em;
+}
+
+.entity-mention-link:hover {
+  color: var(--primary-hover, var(--color-brand-red));
+  border-bottom-color: currentColor;
+  background: color-mix(in srgb, var(--color-brand-red) 8%, transparent);
+}
+
+.entity-mention-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand-red) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.kprofile-timeline__note .entity-mention-link,
+.kprofile-timeline__type .entity-mention-link,
+.kprofile-events__meta .entity-mention-link {
+  font-size: inherit;
+  font-weight: 700;
+}

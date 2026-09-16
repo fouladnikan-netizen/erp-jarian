@@ -8,25 +8,38 @@ function FilterIcon() {
   );
 }
 
+/**
+ * Structured Product Master filters (product contract "PRODUCT SEARCH") —
+ * Group / Category / Product Type / Brand / lifecycle, never free-text LIKE.
+ */
 export default function VitrinFiltersPopover({
   groups,
+  categories,
+  types,
+  brands,
   filterGroupId,
   onFilterGroupChange,
-  activeGroupId,
-  subgroupId,
-  onSubgroupChange,
+  filterCategoryId,
+  onFilterCategoryChange,
+  filterTypeId,
+  onFilterTypeChange,
+  filterBrandId,
+  onFilterBrandChange,
+  includeInactive,
+  onIncludeInactiveChange,
 }) {
   const [open, setOpen] = useState(false);
   const popoverRef = useRef(null);
-  const activeCount = (filterGroupId ? 1 : 0) + (subgroupId ? 1 : 0);
-  const activeGroup = groups.find((g) => g.id === activeGroupId);
+  const activeCount = [filterGroupId, filterCategoryId, filterTypeId, filterBrandId].filter(Boolean).length
+    + (includeInactive ? 1 : 0);
+
+  const categoryOptions = categories.filter((c) => !filterGroupId || c.groupId === filterGroupId);
+  const typeOptions = types.filter((t) => !filterCategoryId || t.categoryId === filterCategoryId);
 
   useEffect(() => {
     if (!open) return;
     const handleClick = (e) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -34,7 +47,10 @@ export default function VitrinFiltersPopover({
 
   const clearAll = () => {
     onFilterGroupChange(null);
-    onSubgroupChange(null);
+    onFilterCategoryChange(null);
+    onFilterTypeChange(null);
+    onFilterBrandChange(null);
+    onIncludeInactiveChange(false);
   };
 
   return (
@@ -48,15 +64,13 @@ export default function VitrinFiltersPopover({
       >
         <FilterIcon />
         فیلترها
-        {activeCount > 0 && (
-          <span className="vitrin-filters__badge">{activeCount.toLocaleString('fa-IR')}</span>
-        )}
+        {activeCount > 0 && <span className="vitrin-filters__badge">{activeCount.toLocaleString('fa-IR')}</span>}
       </button>
 
       {open && (
-        <div className="vitrin-filters__popover" role="dialog" aria-label="فیلتر محصولات">
+        <div className="vitrin-filters__popover" role="dialog" aria-label="فیلتر کالاها">
           <div className="vitrin-filters__popover-header">
-            <span>فیلتر محصولات</span>
+            <span>فیلتر کالاها</span>
             {activeCount > 0 && (
               <button type="button" className="vitrin-filters__clear" onClick={clearAll}>
                 پاک کردن
@@ -67,28 +81,44 @@ export default function VitrinFiltersPopover({
             <span>گروه کالا</span>
             <select
               value={filterGroupId || ''}
-              onChange={(e) => onFilterGroupChange(e.target.value ? Number(e.target.value) : null)}
+              onChange={(e) => { onFilterGroupChange(e.target.value || null); onFilterCategoryChange(null); onFilterTypeChange(null); }}
             >
               <option value="">همه گروه‌ها</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
+              {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
           </label>
-          {activeGroup && (
-            <label className="vitrin-filters__field">
-              <span>زیرگروه کالا</span>
-              <select
-                value={subgroupId || ''}
-                onChange={(e) => onSubgroupChange(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">همه زیرگروه‌ها</option>
-                {activeGroup.subgroups.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </label>
-          )}
+          <label className="vitrin-filters__field">
+            <span>دسته کالا</span>
+            <select
+              value={filterCategoryId || ''}
+              onChange={(e) => { onFilterCategoryChange(e.target.value || null); onFilterTypeChange(null); }}
+            >
+              <option value="">همه دسته‌ها</option>
+              {categoryOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+          <label className="vitrin-filters__field">
+            <span>نوع کالا</span>
+            <select value={filterTypeId || ''} onChange={(e) => onFilterTypeChange(e.target.value || null)}>
+              <option value="">همه انواع</option>
+              {typeOptions.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </label>
+          <label className="vitrin-filters__field">
+            <span>برند</span>
+            <select value={filterBrandId || ''} onChange={(e) => onFilterBrandChange(e.target.value || null)}>
+              <option value="">همه برندها</option>
+              {brands.map((b) => <option key={b.id} value={b.id}>{b.brandName}</option>)}
+            </select>
+          </label>
+          <label className="vitrin-filters__field vitrin-filters__field--checkbox">
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              onChange={(e) => onIncludeInactiveChange(e.target.checked)}
+            />
+            <span>نمایش کالاهای غیرفعال</span>
+          </label>
         </div>
       )}
     </div>

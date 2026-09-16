@@ -1,0 +1,26 @@
+id: contact
+name: Contact
+tier: A
+status: active
+ownerModule: kanoon
+aggregateRoot: Contact
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Canonical person master; shared across companies via CompanyContactRelationship."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - companies:read
+  - companies:write
+databaseTable: contacts
+apiBasePath: /api/v1/contacts
+backendRepository: backend/src/repositories/contactRepository.js
+frontendRepository: src/api/repositories/ContactRepository.js
+dependencies:
+  - auth-user
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-26
+migrationSafety: "Backfill from contact_persons via migrate-contact-persons.js; no name-only cross-company merges."
+notes: "Mobile normalized unique among active rows. One Contact may link to many Companies."

@@ -12,7 +12,7 @@ function formatInvoiceNumber(amount, { withCurrency = false } = {}) {
   return formatJarianMoney(amount, { withCurrency });
 }
 
-function ProformaTermsBlock({ terms, termsCustom }) {
+function ProformaTermsBlock({ terms, termsCustom, tradeName = '' }) {
   if (termsCustom && terms) {
     return (
       <div className="invoice-doc__terms-custom">
@@ -22,10 +22,14 @@ function ProformaTermsBlock({ terms, termsCustom }) {
     );
   }
 
+  const bankHeading = tradeName
+    ? `اطلاعات حساب‌های بانکی به‌نام «${tradeName}»`
+    : 'اطلاعات حساب‌های بانکی';
+
   return (
     <>
       <div className="invoice-doc__accounts">
-        <h4 className="invoice-doc__terms-heading">اطلاعات حساب‌های بانکی به‌نام «پترو فولاد نیکان»</h4>
+        <h4 className="invoice-doc__terms-heading">{bankHeading}</h4>
         <div className="invoice-doc__accounts-list">
           {PROFORMA_BANK_ACCOUNTS.map((account) => (
             <p key={account.sheba}>
@@ -58,11 +62,50 @@ function ProformaTermsBlock({ terms, termsCustom }) {
 }
 
 function ProductDescription({ name, note }) {
+  const detail = String(note || '').trim();
   return (
-    <div className="jarian-product-cell invoice-doc__product-desc">
-      <span className="jarian-product-name invoice-doc__product-name">{name}</span>
-      {note ? (
-        <span className="jarian-product-desc invoice-doc__product-note">{note}</span>
+    <div
+      className="jarian-product-cell invoice-doc__product-desc"
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: '0.35rem',
+        flexWrap: 'nowrap',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        width: '100%',
+        minWidth: 0,
+        textAlign: 'right',
+      }}
+    >
+      <span
+        className="jarian-product-name invoice-doc__product-name"
+        style={{
+          display: 'inline',
+          width: 'auto',
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {name}
+      </span>
+      {detail ? (
+        <span
+          className="jarian-product-desc invoice-doc__product-note"
+          style={{
+            display: 'inline',
+            width: 'auto',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            color: 'var(--text-muted)',
+            marginInlineStart: '0.25rem',
+          }}
+        >
+          - {detail}
+        </span>
       ) : null}
     </div>
   );
@@ -204,22 +247,22 @@ function TotalsBlock({ viewModel, measure = false }) {
   );
 }
 
-function TermsFootBlock({ terms, termsCustom, sealState, measure = false }) {
+function TermsFootBlock({ terms, termsCustom, sealState, isOfficial = true, measure = false, tradeName = '' }) {
   return (
     <div
       className="invoice-doc__terms-foot"
       data-measure={measure ? 'terms' : undefined}
     >
       <section className="invoice-doc__terms-section">
-        <ProformaTermsBlock terms={terms} termsCustom={termsCustom} />
+        <ProformaTermsBlock terms={terms} termsCustom={termsCustom} tradeName={tradeName} />
       </section>
-      <ProformaSeal sealState={sealState} />
+      {isOfficial ? <ProformaSeal sealState={sealState} /> : null}
     </div>
   );
 }
 
-function DocFooter({ measure = false }) {
-  return <InvoiceDocFooter measure={measure} />;
+function DocFooter({ measure = false, isOfficial = true, organization }) {
+  return <InvoiceDocFooter measure={measure} isOfficial={isOfficial} organization={organization} />;
 }
 
 /**
@@ -294,6 +337,18 @@ function packPages(rowHeights, headerH, colHeadH, totalsH, termsH, bodyMax) {
   return pages;
 }
 
+function pagePlansEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  return a.every((page, index) => {
+    const other = b[index];
+    return page.showTotals === other.showTotals
+      && page.showTerms === other.showTerms
+      && page.rowIndexes.length === other.rowIndexes.length
+      && page.rowIndexes.every((rowIndex, i) => rowIndex === other.rowIndexes[i]);
+  });
+}
+
 function InvoicePage({
   viewModel,
   terms,
@@ -310,11 +365,19 @@ function InvoicePage({
   editable,
   onColResizeStart,
 }) {
+  const isOfficial = viewModel.isOfficial !== false;
   return (
     <article
-      className={`invoice-doc invoice-doc--page${approved ? ' invoice-doc--approved' : ''}${pageIndex === pageCount - 1 ? ' is-last' : ''}`}
+      className={[
+        'invoice-doc',
+        'invoice-doc--page',
+        approved ? 'invoice-doc--approved' : '',
+        pageIndex === pageCount - 1 ? 'is-last' : '',
+        isOfficial ? '' : 'invoice-doc--unofficial',
+      ].filter(Boolean).join(' ')}
       data-page={pageIndex + 1}
       data-page-count={pageCount}
+      data-official={isOfficial ? '1' : '0'}
     >
       <div className="invoice-doc__page-body">
         {/* ۱+۲: هدر و مشخصات خریدار — همیشه */}
@@ -353,12 +416,14 @@ function InvoicePage({
             terms={terms}
             termsCustom={termsCustom}
             sealState={sealState}
+            isOfficial={isOfficial}
+            tradeName={viewModel.organization?.tradeName || ''}
           />
         )}
       </div>
 
       {/* فوتر — همیشه */}
-      <DocFooter />
+      <DocFooter isOfficial={isOfficial} organization={viewModel.organization} />
     </article>
   );
 }
@@ -372,6 +437,7 @@ export default function ProformaDocument({
 }) {
   const measureRef = useRef(null);
   const dragRef = useRef(null);
+  const printingRef = useRef(false);
   const lines = viewModel.lines || [];
   const [pagePlan, setPagePlan] = useState(null);
   const [colWidths, setColWidths] = useState(DEFAULT_COL_WIDTHS);
@@ -395,13 +461,18 @@ export default function ProformaDocument({
       terms,
       termsCustom,
       sealState,
+      isOfficial: viewModel.isOfficial !== false,
+      showVat: viewModel.showVatBreakdown ?? viewModel.isOfficial,
       subtotal: viewModel.subtotal,
       vat: viewModel.vatAmount,
       grand: viewModel.grandTotal,
+      orgPhone: viewModel.organization?.phone,
+      orgAddress: viewModel.organization?.officialAddress,
+      orgTrade: viewModel.organization?.tradeName,
       colWidths,
       rowHPx,
     }),
-    [lines, terms, termsCustom, sealState, viewModel.subtotal, viewModel.vatAmount, viewModel.grandTotal, colWidths, rowHPx],
+    [lines, terms, termsCustom, sealState, viewModel.isOfficial, viewModel.showVatBreakdown, viewModel.subtotal, viewModel.vatAmount, viewModel.grandTotal, viewModel.organization, colWidths, rowHPx],
   );
 
   useLayoutEffect(() => {
@@ -409,6 +480,8 @@ export default function ProformaDocument({
     if (!root) return undefined;
 
     const measure = () => {
+      if (printingRef.current || window.matchMedia?.('print')?.matches) return;
+
       const bodyEl = root.querySelector('.invoice-doc__page-body');
       const headerEl = root.querySelector('[data-measure="header"]');
       const colHeadEl = root.querySelector('[data-measure="colhead"]');
@@ -423,8 +496,19 @@ export default function ProformaDocument({
       const bodyMax = bodyEl?.clientHeight || Math.max(120, root.clientHeight - 80);
       const rowHeights = Array.from(rowEls).map((el) => el.offsetHeight || 0);
 
-      setPagePlan(packPages(rowHeights, headerH, colHeadH, totalsH, termsH, bodyMax));
+      const next = packPages(rowHeights, headerH, colHeadH, totalsH, termsH, bodyMax);
+      setPagePlan((prev) => (pagePlansEqual(prev, next) ? prev : next));
     };
+
+    const onBeforePrint = () => {
+      printingRef.current = true;
+    };
+    const onAfterPrint = () => {
+      printingRef.current = false;
+      measure();
+    };
+    window.addEventListener('beforeprint', onBeforePrint);
+    window.addEventListener('afterprint', onAfterPrint);
 
     measure();
 
@@ -441,6 +525,8 @@ export default function ProformaDocument({
     return () => {
       cancelled = true;
       ro?.disconnect();
+      window.removeEventListener('beforeprint', onBeforePrint);
+      window.removeEventListener('afterprint', onAfterPrint);
     };
   }, [measureKey]);
 
@@ -516,6 +602,7 @@ export default function ProformaDocument({
   };
 
   const approved = sealState === 'approved';
+  const isOfficial = viewModel.isOfficial !== false;
   const plan = pagePlan || [{
     rowIndexes: lines.map((_, i) => i),
     showTotals: true,
@@ -524,7 +611,7 @@ export default function ProformaDocument({
 
   return (
     <div
-      className={`invoice-doc-stack${layoutEditable ? ' invoice-doc-stack--editable' : ''}`}
+      className={`invoice-doc-stack${layoutEditable ? ' invoice-doc-stack--editable' : ''}${isOfficial ? '' : ' invoice-doc-stack--unofficial'}`}
       style={layoutStyle}
     >
       {layoutEditable && (
@@ -556,8 +643,11 @@ export default function ProformaDocument({
         </div>
       )}
 
-      <div className="invoice-doc-stack__measure" aria-hidden="true">
-        <article className="invoice-doc invoice-doc--page invoice-doc--measure" ref={measureRef}>
+      <div className="invoice-doc-stack__measure no-print" aria-hidden="true">
+        <article
+          className={`invoice-doc invoice-doc--page invoice-doc--measure${isOfficial ? '' : ' invoice-doc--unofficial'}`}
+          ref={measureRef}
+        >
           <div className="invoice-doc__page-body">
             <div className="invoice-doc__print-header" data-measure="header">
               <ProformaDocHeader viewModel={viewModel} />
@@ -578,10 +668,12 @@ export default function ProformaDocument({
               terms={terms}
               termsCustom={termsCustom}
               sealState={sealState}
+              isOfficial={isOfficial}
+              tradeName={viewModel.organization?.tradeName || ''}
               measure
             />
           </div>
-          <DocFooter measure />
+          <DocFooter measure isOfficial={isOfficial} organization={viewModel.organization} />
         </article>
       </div>
 

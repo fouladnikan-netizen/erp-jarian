@@ -1,10 +1,26 @@
+/**
+ * Progressive taxonomy chips (Group → Category → Type).
+ * Nested rows appear only after a parent is selected so the toolbar
+ * stays a single compact strip.
+ */
 export default function CategoryChips({
   groups,
+  categories,
+  types,
   selectedGroupId,
+  selectedCategoryId,
+  selectedTypeId,
   onSelectGroup,
-  onAddSubgroup,
+  onSelectCategory,
+  onSelectType,
 }) {
-  const selectedGroup = groups.find((g) => g.id === selectedGroupId);
+  const activeGroups = groups.filter((g) => g.isActive !== false);
+  const categoryOptions = selectedGroupId
+    ? categories.filter((c) => c.groupId === selectedGroupId && c.isActive !== false)
+    : [];
+  const typeOptions = selectedCategoryId
+    ? types.filter((t) => t.categoryId === selectedCategoryId && t.isActive !== false)
+    : [];
 
   return (
     <div className="vitrin-categories">
@@ -16,7 +32,7 @@ export default function CategoryChips({
         >
           همه
         </button>
-        {groups.map((group) => (
+        {activeGroups.map((group) => (
           <button
             key={group.id}
             type="button"
@@ -28,16 +44,43 @@ export default function CategoryChips({
             {group.name}
           </button>
         ))}
-        {selectedGroup && (
-          <button
-            type="button"
-            className="btn btn--outline vitrin-categories__add-sub"
-            onClick={() => onAddSubgroup(selectedGroup.id)}
-          >
-            + ثبت زیرگروه
-          </button>
-        )}
       </div>
+
+      {selectedGroupId && categoryOptions.length > 0 ? (
+        <div className="vitrin-categories__row vitrin-categories__row--nested" role="tablist" aria-label="دسته‌های کالا">
+          <span className="vitrin-categories__label">دسته</span>
+          {categoryOptions.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              role="tab"
+              aria-selected={selectedCategoryId === category.id}
+              className={`vitrin-chip vitrin-chip--sub${selectedCategoryId === category.id ? ' is-active' : ''}`}
+              onClick={() => onSelectCategory(selectedCategoryId === category.id ? null : category.id)}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {selectedCategoryId && typeOptions.length > 0 ? (
+        <div className="vitrin-categories__row vitrin-categories__row--nested" role="tablist" aria-label="انواع کالا">
+          <span className="vitrin-categories__label">نوع</span>
+          {typeOptions.map((type) => (
+            <button
+              key={type.id}
+              type="button"
+              role="tab"
+              aria-selected={selectedTypeId === type.id}
+              className={`vitrin-chip vitrin-chip--std${selectedTypeId === type.id ? ' is-active' : ''}`}
+              onClick={() => onSelectType(selectedTypeId === type.id ? null : type.id)}
+            >
+              {type.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

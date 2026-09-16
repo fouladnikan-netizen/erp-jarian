@@ -12,6 +12,8 @@ out/
 .env
 .env.*
 !.env.example
+!**/.env.example
+Assets/API/
 
 # System files
 .DS_Store
@@ -33,7 +35,11 @@ Assets/Font/
 
 # Design references & large binaries not needed in repo
 Assets/Invoice/
-Docs/
+# Docs: keep IA / review / binary packs local; version architecture
+Docs/*
+!Docs/architecture/
+!Docs/architecture/**
+!Docs/ARCHITECTURE.md
 screenshots/
 
 # Duplicate raw assets (canonical copies are in src/assets/)
@@ -43,3 +49,12 @@ Assets/nikan4.png
 # Logs
 *.log
 npm-debug.log*
+
+# Playwright E2E
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+
+# Operator DB backups (local only — never commit dumps)
+backend/.operator-backups/

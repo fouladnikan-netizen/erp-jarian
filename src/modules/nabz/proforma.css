@@ -1,23 +1,23 @@
 /* پیش‌فاکتور — منطبق بر Assets/Invoice/code.html */
 
 :root {
-  --invoice-primary: #020202;
-  --invoice-header-bg: #020202;
-  --invoice-logo-file-bg: #020202;
-  --invoice-primary-dim: #c8c6c3;
-  --invoice-table-header: #d31120;
-  --invoice-surface: #fcf9f8;
-  --invoice-surface-low: #f6f3f2;
-  --invoice-surface-variant: #e5e2e1;
-  --invoice-on-surface: #1c1b1b;
-  --invoice-on-surface-variant: #454742;
-  --invoice-note-muted: #6b7280;
+  --invoice-primary: var(--print-ink);
+  --invoice-header-bg: var(--print-chrome);
+  --invoice-logo-file-bg: var(--print-chrome);
+  --invoice-primary-dim: var(--print-chrome-fg);
+  --invoice-table-header: var(--color-brand-red);
+  --invoice-surface: var(--print-paper);
+  --invoice-surface-low: var(--print-surface);
+  --invoice-surface-variant: var(--print-border-soft);
+  --invoice-on-surface: var(--print-ink);
+  --invoice-on-surface-variant: var(--print-muted);
+  --invoice-note-muted: var(--print-muted);
   --invoice-page-margin-x: 1.8cm;
 }
 
 .proforma-preview-page {
   min-height: 100vh;
-  background: #eae7e7;
+  background: var(--bg-body);
   padding: 2rem 1rem;
   direction: rtl;
   font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
@@ -65,10 +65,10 @@
 .proforma-preview-page__toolbar--bottom {
   margin-top: 1.25rem;
   padding: 0.85rem 1rem;
-  background: #fff;
+  background: var(--color-white);
   border-radius: 12px;
-  border: 1px solid #e5e2e1;
-  box-shadow: 0 4px 16px rgba(28, 27, 27, 0.06);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-neutral-900) 6%, transparent);
 }
 
 .proforma-preview-page__sign-btn {
@@ -90,8 +90,8 @@
 .proforma-preview-page__spinner {
   width: 0.9rem;
   height: 0.9rem;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #fff;
+  border: 2px solid color-mix(in srgb, var(--color-white) 35%, transparent);
+  border-top-color: var(--color-white);
   border-radius: 50%;
   animation: proforma-spin 0.7s linear infinite;
 }
@@ -108,17 +108,23 @@
   animation: proforma-fade-in 0.45s ease both;
 }
 
+.proforma-preview-page__tracking {
+  width: min(42rem, 100%);
+  margin: 1rem auto 0;
+  padding: 0 0.5rem 1.25rem;
+}
+
 .proforma-preview-page__status-pill {
   display: inline-flex;
   align-items: center;
   height: 2rem;
   padding: 0 0.75rem;
   border-radius: 999px;
-  background: #e8f5e9;
-  color: #1b5e20;
+  background: var(--success-muted);
+  color: var(--status-success);
   font-size: 0.8125rem;
   font-weight: 700;
-  border: 1px solid #a5d6a7;
+  border: 1px solid var(--success-border);
 }
 
 .proforma-preview-page__send-wrap {
@@ -131,10 +137,10 @@
   left: 0;
   min-width: 9.5rem;
   padding: 0.35rem;
-  background: #fff;
-  border: 1px solid #e5e2e1;
+  background: var(--color-white);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
-  box-shadow: 0 10px 28px rgba(28, 27, 27, 0.14);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--color-neutral-900) 14%, transparent);
   z-index: 20;
   animation: proforma-fade-in 0.2s ease both;
 }
@@ -153,14 +159,14 @@
   padding: 0.55rem 0.7rem;
   border-radius: 8px;
   font: inherit;
-  color: #1c1b1b;
+  color: var(--text-primary);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .proforma-preview-page__send-item:hover,
 .proforma-preview-page__send-item:focus-visible {
-  background: #f6f3f2;
+  background: var(--bg-muted);
   outline: none;
 }
 
@@ -347,17 +353,18 @@
   padding-left: var(--invoice-page-margin-x);
   padding-right: var(--invoice-page-margin-x);
   padding-bottom: 0;
-  background: #fff;
-  color: var(--invoice-on-surface);
+  background: var(--print-paper);
+  color: var(--print-ink);
   font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif;
   font-size: 13px;
   line-height: 1.45;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-neutral-900) 10%, transparent), 0 2px 4px -1px color-mix(in srgb, var(--color-neutral-900) 6%, transparent);
   display: flex;
   flex-direction: column;
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -webkit-print-color-adjust: exact;
@@ -414,7 +421,7 @@
   font-weight: inherit;
   text-align: inherit;
   vertical-align: top;
-  background: #fff;
+  background: var(--color-white);
 }
 
 .invoice-doc__print-header {
@@ -423,7 +430,7 @@
 
 .invoice-doc__col-head {
   background: var(--invoice-table-header);
-  color: #fff;
+  color: var(--color-white);
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -435,9 +442,9 @@
   font-size: 12px;
   font-weight: 700;
   line-height: 1.3;
-  color: #fff;
-  border-top: 2px solid #fff;
-  border-bottom: 2px solid #fff;
+  color: var(--color-white);
+  border-top: 2px solid var(--color-white);
+  border-bottom: 2px solid var(--color-white);
   vertical-align: middle;
   text-align: center;
   white-space: nowrap;
@@ -464,11 +471,11 @@
   flex: 1 1 auto;
   min-width: 0;
   background: var(--invoice-header-bg);
-  color: #fff;
+  color: var(--color-white);
   padding: 0.75cm 1rem 0.65rem;
   border-top-left-radius: 0;
   border-bottom-left-radius: 56px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-neutral-900) 8%, transparent);
   position: relative;
   z-index: 0;
 }
@@ -482,11 +489,13 @@
 
 .invoice-doc__brand-mark-img {
   display: block;
+  /* Current nikan-proforma-header.jpg is 1940×672; lock that rendered box (not width:auto). */
+  width: calc(3.6rem * 1940 / 672);
   height: 3.6rem;
-  width: auto;
   max-width: min(100%, 22rem);
   object-fit: contain;
   object-position: right center;
+  flex-shrink: 0;
 }
 
 .invoice-doc__tagline {
@@ -507,7 +516,7 @@
   flex: 0 0 33.333%;
   width: 33.333%;
   max-width: 33.333%;
-  background: #fff;
+  background: var(--color-white);
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
@@ -739,7 +748,7 @@
 
 .invoice-doc-stack--editable .invoice-doc__col-resize:hover,
 .invoice-doc-stack--editable .invoice-doc__col-resize.is-active {
-  background: rgba(255, 255, 255, 0.45);
+  background: color-mix(in srgb, var(--color-white) 45%, transparent);
 }
 
 .invoice-doc-stack--editable .invoice-doc__col-head {
@@ -759,7 +768,7 @@
 .invoice-doc-stack__hint {
   margin: 0;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-align: center;
 }
 
@@ -769,22 +778,22 @@
   gap: 0.55rem;
   padding: 0.35rem 0.7rem;
   border-radius: 8px;
-  background: #fff;
-  border: 1px solid #e5e2e1;
+  background: var(--color-white);
+  border: 1px solid var(--border-default);
   font-size: 0.8rem;
-  color: #1c1b1b;
+  color: var(--text-primary);
 }
 
 .invoice-doc-stack__row-control input[type='range'] {
   width: 10rem;
-  accent-color: #d31120;
+  accent-color: var(--color-brand-red);
   cursor: pointer;
 }
 
 .invoice-doc-stack__row-value {
   min-width: 2.2rem;
   font-variant-numeric: tabular-nums;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 0.75rem;
 }
 
@@ -794,18 +803,18 @@
   justify-content: center;
   width: 1.75rem;
   height: 1.75rem;
-  border: 1px solid #e5e2e1;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: #f6f3f2;
+  background: var(--bg-muted);
   cursor: row-resize;
   touch-action: none;
   font-size: 0.85rem;
   line-height: 1;
-  color: #454742;
+  color: var(--text-secondary);
 }
 
 .invoice-doc-stack__row-drag:hover {
-  background: #ece9e8;
+  background: var(--bg-muted);
 }
 
 body.is-invoice-resizing {
@@ -841,7 +850,7 @@ body.is-invoice-resizing[data-resize='row'] {
 .invoice-doc__product-note {
   font-size: 12px;
   font-weight: 500;
-  color: #757575;
+  color: var(--text-muted);
   opacity: 1;
   text-align: right;
 }
@@ -886,17 +895,17 @@ body.is-invoice-resizing[data-resize='row'] {
   height: 40px;
   padding: 0 0.75rem 0 calc(0.75rem + 20px);
   background: var(--invoice-primary);
-  color: #fff;
+  color: var(--color-white);
   border-bottom: none;
   border-radius: 0.25rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-neutral-900) 8%, transparent);
   font-size: 14px;
   font-weight: 700;
   box-sizing: border-box;
 }
 
 .invoice-doc__totals-row--grand span {
-  color: #fff !important;
+  color: var(--color-white) !important;
   font-weight: 800;
 }
 
@@ -974,11 +983,11 @@ body.is-invoice-resizing[data-resize='row'] {
 /* فوتر — پایین هر صفحه A4 (جریان عادی، نه fixed) */
 .invoice-doc__footer {
   margin: auto 0 0;
-  background: var(--invoice-primary);
-  color: #fff;
+  background: var(--invoice-header-bg);
+  color: var(--color-white);
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 6px color-mix(in srgb, var(--color-neutral-900) 12%, transparent);
   font-size: 12px;
   flex-shrink: 0;
   -webkit-print-color-adjust: exact;
@@ -995,7 +1004,7 @@ body.is-invoice-resizing[data-resize='row'] {
 }
 
 .invoice-doc__footer-label {
-  color: #e1e3e3;
+  color: var(--text-muted);
   font-weight: 700;
 }
 
@@ -1012,9 +1021,50 @@ body.is-invoice-resizing[data-resize='row'] {
 }
 
 .invoice-doc__footer-website {
-  color: #e1e3e3;
+  color: var(--text-muted);
   font-weight: 700;
   letter-spacing: 0.05em;
+}
+
+/* —— غیررسمی: باکس‌های هدر/فوتر می‌مانند؛ فقط محتوا (لوگو، شناسه‌ها، آدرس) و مهر و امضا حذف می‌شود —— */
+.invoice-doc--unofficial .invoice-doc__tagline,
+.invoice-doc--unofficial .invoice-doc__company-ids,
+.invoice-doc--unofficial .invoice-doc__signatures {
+  display: none !important;
+}
+
+.invoice-doc__header-brand--unofficial .invoice-doc__brand-mark {
+  margin-bottom: 0;
+}
+
+.invoice-doc__brand-name {
+  display: inline-block;
+  font-family: var(--font-primary, 'Vazirmatn', sans-serif);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-white);
+  line-height: 3.6rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.invoice-doc__footer-inner--empty {
+  min-height: 2.4rem;
+  padding: 0.55rem 0 0.65rem;
+}
+
+@media print {
+  .invoice-doc--unofficial .invoice-doc__tagline,
+  .invoice-doc--unofficial .invoice-doc__company-ids,
+  .invoice-doc--unofficial .invoice-doc__signatures {
+    display: none !important;
+  }
+
+  .invoice-doc__footer--unofficial,
+  .invoice-doc__header-brand--unofficial {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 
 @media print {
@@ -1024,7 +1074,9 @@ body.is-invoice-resizing[data-resize='row'] {
   }
 
   body:has(.proforma-preview-page) {
-    background: #fff !important;
+    background: var(--print-paper) !important;
+    color: var(--print-ink) !important;
+    color-scheme: light;
     margin: 0;
     padding: 0 !important;
     width: 210mm;
@@ -1033,6 +1085,11 @@ body.is-invoice-resizing[data-resize='row'] {
 
   .no-print {
     display: none !important;
+  }
+
+  .proforma-preview-page,
+  .proforma-preview-page * {
+    visibility: visible !important;
   }
 
   .invoice-doc__col-resize,
@@ -1044,7 +1101,8 @@ body.is-invoice-resizing[data-resize='row'] {
 
   .proforma-preview-page {
     padding: 0 !important;
-    background: #fff !important;
+    background: var(--print-paper) !important;
+    color: var(--print-ink) !important;
     font-family: 'Meem', 'Vazirmatn', Tahoma, sans-serif !important;
   }
 
@@ -1071,6 +1129,11 @@ body.is-invoice-resizing[data-resize='row'] {
     overflow: hidden !important;
     break-after: page;
     page-break-after: always;
+    background: var(--print-paper) !important;
+    color: var(--print-ink) !important;
+    color-scheme: light;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .invoice-doc--page.is-last {
@@ -1118,6 +1181,7 @@ body.is-invoice-resizing[data-resize='row'] {
   }
 
   .invoice-doc__brand-mark-img {
+    width: calc(3.6rem * 1940 / 672);
     height: 3.6rem;
     max-width: min(100%, 22rem);
   }
@@ -1177,7 +1241,7 @@ body.is-invoice-resizing[data-resize='row'] {
 
   .invoice-doc__totals-row--grand,
   .invoice-doc__totals-row--grand span {
-    color: #fff !important;
+    color: var(--color-white) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

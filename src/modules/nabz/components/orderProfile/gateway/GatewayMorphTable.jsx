@@ -18,6 +18,7 @@ import {
   inquiryToQuickDraft,
   validateQuickInquiryDraft,
 } from '../../../inquiryService';
+import { useJarianNotice } from '../../../../../context/JarianNoticeContext';
 import { MARGIN_MODES } from '../../../quotingConfig';
 import { canViewSupplierIdentity, DEFAULT_SALE_TYPE } from '../../../constants';
 import {
@@ -114,13 +115,14 @@ function InquiryDraftRow({
   showSupplier,
   submitLabel = 'ثبت',
 }) {
+  const { alert } = useJarianNotice();
   const [draft, setDraft] = useState(() => initialDraft || getEmptyQuickInquiryDraft());
   const suppliers = listSuppliers();
 
   const handleSave = () => {
     const validation = validateQuickInquiryDraft(draft);
     if (!validation.valid) {
-      window.alert(validation.reason || 'اطلاعات استعلام کامل نیست.');
+      void alert({ title: 'توجه', message: validation.reason || 'اطلاعات استعلام کامل نیست.' });
       return;
     }
     onSave(draft);
@@ -224,7 +226,7 @@ function InquiryGridRow({
           <JarianMoney amount={inquiry.unitPrice} />
         </span>
         {notes ? (
-          <span className="gateway-inquiry-grid__notes">{notes}</span>
+          <span className="gateway-inquiry-grid__notes" title={notes}>{notes}</span>
         ) : null}
       </div>
       <div className="gateway-inquiry-grid__actions">

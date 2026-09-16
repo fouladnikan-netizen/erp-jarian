@@ -1,56 +1,9 @@
-import { CURRENT_USER, CURRENT_USER_ROLE } from './constants';
+import { getCurrentUser, CURRENT_USER_ROLE } from './constants';
 import { CRM_ACTIVITY_TYPES, CRM_ROLE_LABELS, CRM_ACTIVITY_META } from './orderCrmConfig';
 
 let activityIdCounter = 5000;
 
-const SAMPLE_ACTIVITIES = [
-  {
-    id: 1,
-    type: CRM_ACTIVITY_TYPES.CALL,
-    author: 'حسین کریمی',
-    roleLabel: 'شوالیه',
-    createdAt: '۱۴۰۵/۰۱/۱۰ · ۰۹:۳۰',
-    body: 'تماس با آقای محمدی از واحد خرید. تایید اولیه مقدار تیرآهن و نبشی انجام شد. @کاشف لطفاً استعلام قیمت را تا فردا تکمیل کنید.',
-    mentions: ['کاشف'],
-    followUp: {
-      date: '۱۴۰۵/۰۱/۱۱',
-      time: '۱۰:۰۰',
-      actionType: 'تماس مجدد',
-      title: 'پیگیری نتیجه استعلام',
-      assignee: 'کاشف',
-      completed: false,
-    },
-  },
-  {
-    id: 2,
-    type: CRM_ACTIVITY_TYPES.NOTE,
-    author: 'محمد رضایی',
-    roleLabel: 'کارشناس مشتری',
-    createdAt: '۱۴۰۵/۰۱/۱۰ · ۱۴:۱۵',
-    body: 'مشتری تحویل دو هفته‌ای را ترجیح می‌دهد. پیش‌فاکتور رسمی درخواست شده است.',
-    mentions: [],
-    followUp: null,
-  },
-  {
-    id: 3,
-    type: CRM_ACTIVITY_TYPES.MESSAGE,
-    author: 'علی رضایی',
-    roleLabel: 'شوالیه',
-    createdAt: '۱۴۰۵/۰۱/۱۱ · ۱۱:۴۵',
-    body: 'پیش‌فاکتور برای مشتری ارسال شد. @شوالیه لطفاً پیگیری تایید را انجام دهید.',
-    mentions: ['شوالیه'],
-    followUp: {
-      date: '۱۴۰۵/۰۱/۱۲',
-      time: '۱۶:۰۰',
-      actionType: 'پیگیری پرداخت',
-      title: 'پیگیری تایید پیش‌فاکتور',
-      assignee: 'شوالیه',
-      completed: false,
-    },
-  },
-];
-
-function formatActivityTimestamp(date = new Date()) {
+export function formatActivityTimestamp(date = new Date()) {
   const datePart = date.toLocaleDateString('fa-IR', {
     year: 'numeric',
     month: '2-digit',
@@ -68,9 +21,13 @@ function parseMentions(text) {
   return [...new Set(matches.map((token) => token.slice(1)))];
 }
 
+/**
+ * @deprecated PAYMENT-only local store from DDL-15 onward — call/note/message/meeting
+ * activities are canonical Pooyesh Activities via `orderActivityBridge`. No fake/sample
+ * fallback: empty means no local (payment) activity has been recorded for this order.
+ */
 export function getOrderCrmActivities(order) {
-  if (order.crmActivities?.length) return order.crmActivities;
-  return SAMPLE_ACTIVITIES;
+  return order.crmActivities || [];
 }
 
 export function getRoleLabel(role = CURRENT_USER_ROLE) {
@@ -80,7 +37,7 @@ export function getRoleLabel(role = CURRENT_USER_ROLE) {
 export function createCrmActivity({
   type,
   body,
-  author = CURRENT_USER,
+  author = getCurrentUser(),
   roleLabel = getRoleLabel(),
   followUp = null,
   payment = null,

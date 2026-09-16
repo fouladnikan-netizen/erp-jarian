@@ -1,0 +1,31 @@
+id: order
+name: Order
+tier: A
+status: active
+ownerModule: nabz
+aggregateRoot: Order
+ssot: postgresql
+clientState: zustand-cache
+lifecycle: "Nabz stages 1–8 + outcome current|success|failed + closure open|closed (DDL-18B). Successful Purchase = status success; final close = closure closed. Backend orderOutcomeClosure enforces; saranjam archive ⇒ CLOSED."
+archivePolicy: soft-delete
+auditPolicy: append-only
+rbacPolicy:
+  - orders:read
+  - orders:write
+databaseTable: orders
+apiBasePath: /api/v1/orders
+backendRepository: backend/src/modules/sales/infrastructure/orderRepository.js
+frontendRepository: src/api/repositories/OrderRepository.ts
+dependencies:
+  - company
+  - auth-user
+integrationPorts: []
+updatePolicy: SERVER_FIRST
+ddlRefs:
+  - DDL-03
+  - DDL-07
+  - DDL-18
+  - DDL-27
+  - DDL-30
+migrationSafety: "Expand-only preferred. 008 (A) demoted mid-flight success→current; 009 (B) restores SUCCESS+OPEN / SUCCESS+CLOSED. 023 adds order_code_daily_counters only — no rewrite of orders.code. Shipping/SooratBar organizationSnapshot lives in order payload JSON (DDL-30) — expand-only, no column, no backfill. Backup required before prod migrate."
+notes: "Service orchestrates Zod + lifecycle rules (orderOutcomeClosure.js / orderLifecycle re-export) + TX + audit. Successful Purchase = status success (not CLOSED). Phase-2 runs under SUCCESS+OPEN. Order code JR-{Y}{MM}{DD}{NN} allocated by nextOrderCode (DDL-27)."
