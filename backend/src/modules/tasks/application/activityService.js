@@ -11,6 +11,7 @@ import * as activityRepo from '../infrastructure/activityRepository.js';
 import { findCompanyById, findLeadById } from '../../crm/public/subjectReferences.js';
 import * as taskRepo from '../infrastructure/taskRepository.js';
 import * as activityTypeService from './activityTypeService.js';
+import { EVENT, PRODUCER, notifyDomainEvent } from '../../shared/events/index.js';
 
 /**
  * Normalize a legacy plain `actorUserId` string or a full `{ userId, roles }`
@@ -268,7 +269,21 @@ export async function createActivity(body, actorUserId) {
     }
   });
 
-  return getActivity(id);
+  const created = await getActivity(id);
+  await notifyDomainEvent({
+    name: EVENT.TASKS_ACTIVITY_RECORDED,
+    producer: PRODUCER.TASKS,
+    payload: {
+      activityId: created.id,
+      subjectType: created.subjectType,
+      subjectId: created.subjectId,
+      activityType: created.activityType,
+      status: created.status,
+      actorUserId: auth.userId,
+      trigger: 'activity_create',
+    },
+  });
+  return created;
 }
 
 export async function updateActivity(id, body, actorUserId) {
@@ -370,17 +385,19 @@ export async function completeActivity(id, actorUserId) {
     }, client);
   });
 
-  if (existing.subjectType === SUBJECT_TYPES.COMPANY) {
-    try {
-      const { recomputeCustomerLifecycle } = await import('./customerLifecycleService.js');
-      await recomputeCustomerLifecycle(existing.subjectId, {
-        actorUserId,
-        trigger: 'activity_complete',
-      });
-    } catch {
-      /* lifecycle recompute must not fail the activity completion */
-    }
-  }
+  await notifyDomainEvent({
+    name: EVENT.TASKS_ACTIVITY_COMPLETED,
+    producer: PRODUCER.TASKS,
+    payload: {
+      activityId: existing.id,
+      subjectType: existing.subjectType,
+      subjectId: existing.subjectId,
+      activityType: existing.activityType,
+      status: ACTIVITY_STATUSES.COMPLETED,
+      actorUserId,
+      trigger: 'activity_complete',
+    },
+  });
 
   return getActivity(id);
 }

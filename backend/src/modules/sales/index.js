@@ -5,3 +5,4 @@
 export { default as orderRoutes } from './presentation/orders.js';
 export { findOrdersReferencingProduct } from './public/orderProductReferences.js';
 export { findOrdersForCompany } from './public/companyOrderReferences.js';
+export { collectOrderLineProductRefs } from './domain/order/orderLineProductRefs.js';

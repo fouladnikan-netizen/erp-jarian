@@ -11,3 +11,12 @@ export {
 export { createCorsOptions, isLocalDevEnv } from './http/corsOptions.js';
 export { resolveJwtSecret, resolveJwtExpiresIn } from './http/jwtPolicy.js';
 export { mountLegacyAiGateway, isLegacyAiGatewayEnabled } from './ai/legacyAiGateway.js';
+export {
+  EVENT,
+  EVENT_CATALOG,
+  PRODUCER,
+  domainEvents,
+  publishDomainEvent,
+  notifyDomainEvent,
+  ensureDomainEventHandlers,
+} from './events/index.js';

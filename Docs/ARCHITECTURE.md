@@ -1,10 +1,10 @@
-# جریان — معماری قانون‌مند (Modular Monolith, Phase 3)
+# جریان — معماری قانون‌مند (Modular Monolith, Phase 4)
 
-> **وضعیت:** فاز ۳ — ۱۴۰۵/۰۶/۲۵ (2026-09-16). روی فاز ۲.۱ سوار است؛ قانون فاز ۱ را برنمی‌گرداند.  
-> **این سند بازنویسی Nest/TS نیست.** مرزهای frontend فروش را با backend `sales` هم‌نام می‌کند؛ URL عمومی عوض نمی‌شود.  
+> **وضعیت:** فاز ۴ — ۱۴۰۵/۰۶/۲۵ (2026-09-16). روی فاز ۳ سوار است؛ قانون فاز ۱ را برنمی‌گرداند.  
+> **این سند بازنویسی Nest/TS نیست.** رویداد داخلی in-process است؛ URL عمومی و فرمول SKU عوض نمی‌شود.  
 > **مرتبط:** [architecture/README.md](./architecture/README.md) · [architecture/DOMAIN_DECISION_LOG.md](./architecture/DOMAIN_DECISION_LOG.md) · [architecture/ENTITY_DELIVERY_PIPELINE.md](./architecture/ENTITY_DELIVERY_PIPELINE.md) · [architecture/ENTITY_OWNERSHIP.md](./architecture/ENTITY_OWNERSHIP.md) · [architecture/BACKEND_FOUNDATION.md](./architecture/BACKEND_FOUNDATION.md) · [architecture/SSOT.md](./architecture/SSOT.md)
 
-Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز ممنوع است.**
+Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز ممنوع است** (فقط بک‌لاگ Phase 5+ پس از تثبیت مرزها).
 
 ---
 
@@ -17,7 +17,7 @@ Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز م
 | 1 | **یک قابلیت برای هر ماژول** — یک ماژول یک مسئولیت دامنه دارد؛ رجیستری موازی نسازید. | [ENTITY_OWNERSHIP.md](./architecture/ENTITY_OWNERSHIP.md) · جدول نقشهٔ §۲ |
 | 2 | **منطق دامنه در کنترلر/روت نیست** — روت فقط HTTP + RBAC + فراخوانی سرویس است. | `backend/src/modules/*/presentation` و shimهای `routes/` نازک؛ قواعد در `modules/*/domain` و `application` |
 | 3 | **دسترسی مستقیم به جدول ماژول دیگر ممنوع** — SQL فقط از repository مالک. | `modules/*/infrastructure` · پورت‌های `sales/public/*` · `crm/public/*` · `tasks/public/*` · [PERSISTENCE_BOUNDARY.md](./architecture/PERSISTENCE_BOUNDARY.md) |
-| 4 | **ارتباط بین‌ماژولی فقط از رابط عمومی / پورت / رویداد** — نه store داخلی، نه JOIN پنهان. | FE: `src/modules/*/public` · BE: `backend/src/modules/*/public` · `npm run check:module-boundaries` |
+| 4 | **ارتباط بین‌ماژولی فقط از رابط عمومی / پورت / رویداد** — نه store داخلی، نه JOIN پنهان. | FE: `src/modules/*/public` · BE: `backend/src/modules/*/public` · `modules/shared/events` · `npm run check:module-boundaries` |
 | 5 | **هویت کالا / SKU دقیقاً یک پیاده‌سازی دارد** | `backend/src/modules/catalog/domain/productMaster/productIdentityPolicy.js` — §۳ (shim: `backend/src/domain/productMaster/`) |
 | 6 | **CASCADE مخرب روی دادهٔ پایه ممنوع** | §۴ · `modules/catalog/domain/productMaster/deleteGuard.js` |
 | 7 | **عملیات مخرب باید audit شود** | `writeAudit` در سرویس‌های Product Master / Company / Order / Lead |
@@ -47,8 +47,8 @@ Backend: Express + JavaScript. **Nest / TypeScript rewrite در این فاز م
 | **correspondence** | دبیرخانه | گاه‌شمار | `src/modules/gahshomar` | **دامنه منتقل شد** — `modules/correspondence` |
 | **settings** | هویت سازمان، دلایل لغو، chrome اسناد، RBAC/کاربر | شیرازه | `src/modules/shirazeh` | **دامنه هویت + registry** — `modules/settings` |
 | **shared** | CORS/JWT، jsonRecord، قرنطینه AI | — | — | `backend/src/modules/shared` |
-| **marketing** | کمپین | موج | `src/modules/mowj` | عمدتاً FE — Phase 4 |
-| **analytics** | داشبورد | آینه | `src/modules/ayeneh` | خواندن از قرارداد عمومی — Phase 4 |
+| **marketing** | کمپین | موج | `src/modules/mowj` | عمدتاً FE — Phase 5+ |
+| **analytics** | داشبورد | آینه | `src/modules/ayeneh` | خواندن از قرارداد عمومی — Phase 5+ |
 
 `src/modules/registry.js` شناسهٔ محصول را نگه می‌دارد. دامنهٔ انگلیسی **نام پوشهٔ backend** است، نه نام منوی کاربر.
 
@@ -60,10 +60,10 @@ backend/src/
     catalog/           Product Master (Phase 2)
     sales/             Order (Phase 2) + companyOrderReferences port
     crm/               Company / Contact / Lead + subjectReferences + lifecycle port
-    correspondence/    domain/correspondence (application still Phase 4)
-    tasks/             Activity + Task (Phase 2.1) + companyActivityReferences port
+    correspondence/    domain/correspondence (application still Phase 5+)
+    tasks/             Activity + Task (Phase 2.1) + companyActivityReferences port + activity events
     settings/          organizationIdentity + reasonRegistry + documentChrome
-    shared/            schemas, CORS/JWT, AI quarantine
+    shared/            schemas, CORS/JWT, AI quarantine, **in-process domain events**
   domain/              SHIMS → modules/*/domain
   services/            SHIMS for moved catalog/sales/crm/tasks; live settings/correspondence/auth
   repositories/        SHIMS for moved catalog/sales/crm/tasks; live remaining repos
@@ -108,12 +108,12 @@ Shim فقط `export *` / `export { default }` است. منطق جدید را د�
 
 Cross-module امروز:
 
-- catalog → sales فقط از `modules/sales/public/orderProductReferences.js` (ارجاع کالا روی خط سفارش).
-- sales → crm از `modules/crm/public/subjectReferences.js` (شرکت سفارش) و `modules/crm/public/customerLifecycle.js`؛ دامنهٔ `rawLeadGate` / `companyIdentity` (جلالی) هنوز مستقیم است.
-- crm → sales از `modules/sales/public/companyOrderReferences.js` (حقایق سفارش برای چرخه).
-- crm → tasks از `modules/tasks/public/companyActivityReferences.js` (فعالیت‌های شرکت برای چرخه).
+- catalog → sales lookup JSON **برداشته شد** از مسیر حذف کالا. Catalog مالک `product_order_usage` است و از رویداد `sales.order.committed` پر می‌شود. `orderProductReferences` فقط hydrate/legacy است.
+- sales → crm برای طرف سفارش از `modules/crm/public/subjectReferences.js` و `modules/crm/public/orderParty.js`؛ تقویم جلالی از `modules/crm/public/calendar.js` (نه دامنهٔ خام Linka).
+- sales **دیگر** `recomputeCustomerLifecycle` را صدا نمی‌زند — `sales.order.committed` را publish می‌کند.
+- tasks **دیگر** lifecycle CRM را import نمی‌کند — `tasks.activity.completed` را publish می‌کند.
+- crm → sales/tasks برای **خواندن حقایق** هنوز از پورت‌های `companyOrderReferences` / `companyActivityReferences` (تا CRM projection جدا ساخته شود).
 - tasks → crm از `modules/crm/public/subjectReferences.js` (صحت مرجع COMPANY / RAW_LEAD).
-- Phase 4 این پورت‌های lookup را با رویداد / read-model جایگزین می‌کند.
 
 ---
 
@@ -188,7 +188,7 @@ Cross-module امروز:
 
 ---
 
-## ۷. آنچه فاز ۳ انجام داد + بک‌لاگ Phase 4
+## ۷. آنچه فاز ۴ انجام داد + بک‌لاگ بعدی
 
 ### Phase 2.1 — انجام شد (مرجع)
 
@@ -205,26 +205,45 @@ Cross-module امروز:
 - علت لغو زنده: `GET /api/v1/settings/reasons?scope=GATEWAY_CANCEL` (`reasonRegistryFacade`). لیست دامنه فقط fallback / mock است.
 - hydrate بعد از لاگین chrome + reasons را هم بار می‌کند.
 
-### Phase 4 — بک‌لاگ باقی‌مانده
+### Phase 4 — انجام شد (رویداد داخلی + read-model نازک)
 
-- رویداد داخلی به‌جای `orderProductReferences` / `companyOrderReferences` و JOIN/اسکن `orders.payload.items`.
-- پورت CRM برای `gregorianToJalali` / national-id gates به‌جای import دامنهٔ خام.
-- API جدا برای موج (marketing).
-- Ayeneh فقط از قراردادهای public می‌خواند.
+- Bus in-process: `backend/src/modules/shared/events` (`createEventBus`, `EVENT`, `publishDomainEvent` / `notifyDomainEvent`). Kafka/outbox نیست.
+- نام رویدادها در `eventNames.js` (`EVENT_CATALOG`) — جدول §۷.۱.
+- جریان ۱: `orderService` بعد از persist، `sales.order.committed` / `sales.order.archived` را notify می‌کند؛ CRM با `lifecycleEventHandlers` همان triggerهای قبلی (`order_create` / `order_successful_purchase`) را recompute می‌کند — بدون import lifecycle از sales.
+- جریان ۲: `activityService.completeActivity` رویداد `tasks.activity.completed` را notify می‌کند (import شکستهٔ `./customerLifecycleService` از tasks حذف شد)؛ CRM برای subject=`COMPANY` recompute می‌کند.
+- Read-model کاتالوگ: جدول `product_order_usage` (migration `054_`) از رویداد خط سفارش پر می‌شود. `deleteProduct` از این جدول می‌خواند؛ اسکن JSON فروش فقط hydrate/legacy است.
+- پورت‌های CRM: `public/calendar.js` (`gregorianToJalali`) و `public/orderParty.js` (`assertOrderPartyIsCompany`). `jarianOrderCode` دیگر دامنهٔ خام Linka را import نمی‌کند.
+- URL عمومی و فرمول SKU بدون تغییر. Nest/TS انجام نشد.
+
+### ۷.۱ کاتالوگ رویداد
+
+| Event | Producer | Consumers | Payload (خلاصه) |
+|-------|----------|-----------|------------------|
+| `sales.order.committed` | `sales` `orderService` create/update | `crm.lifecycle`, `catalog.productUsage` | `orderId`, `orderCode`, `companyId`, `status`, `becameSuccess`, `items[]`, `actorUserId`, `trigger` |
+| `sales.order.archived` | `sales` `archiveOrder` | `catalog.productUsage` (no-op؛ ردیف usage می‌ماند — DDL-24n) | `orderId`, `orderCode`, `companyId`, `items[]`, `actorUserId` |
+| `tasks.activity.recorded` | `tasks` `createActivity` | — (رزرو projection بعدی) | `activityId`, `subjectType`, `subjectId`, `activityType`, `status`, `actorUserId` |
+| `tasks.activity.completed` | `tasks` `completeActivity` | `crm.lifecycle` | همان + `trigger=activity_complete` |
+
+قواعد bus: publish بعد از COMMIT؛ خطای یک handler بقیه و producer را خراب نمی‌کند؛ نام ناشناس `DOMAIN_EVENT_UNKNOWN`.
+
+### Phase 5+ — بک‌لاگ باقی‌مانده
+
+- Projection حقایق سفارش/فعالیت داخل CRM تا `companyOrderReferences` / `companyActivityReferences` هم حذف شوند.
+- API جدا برای موج (marketing). Ayeneh فقط از قراردادهای public.
 - انتقال `correspondence*` application/routes به `modules/correspondence`.
 - انتقال `user` / `rbac` / `persona` / `organization` (درخت) / `auth` به `modules/settings` یا `shared`.
 - الزام کد `LEAD_REJECT` روی archive سرنخ.
 - جابه‌جایی کامل صفحات UI `nabz/` به `sales/` (هنوز پرریسک؛ shim کافی است).
 - ادغام مدل وضعیت سفارش UI ↔ دامنه (هنوز dual-runtime است).
-- Nest/TS فقط *بعد از* تثبیت مرزها — نه به‌جای آن.
+- **Nest/TS فقط *بعد از* تثبیت مرزها — نه به‌جای آن. این فاز آن را انجام نمی‌دهد.**
 
 ---
 
 ## ۸. آنچه این فاز انجام نمی‌دهد
 
 - جابه‌جایی تمام صفحات/کامپوننت‌های `src/modules/nabz` یا شکستن Express به چند پکیج  
-- تبدیل کل backend به Nest/TypeScript  
+- تبدیل کل backend به Nest/TypeScript (عمداً Phase 5+)  
 - حذف `catalogData.js` / `productCode.js`  
-- تغییر فرمول SKUهای صادرشده  
-- موتور workflow یا ادغام کامل وضعیت سفارش  
+- تغییر فرمول SKUهای صادرشده یا URLهای `/api/v1/*`  
+- موتور workflow، Kafka، یا ادغام کامل وضعیت سفارش  
 - ادعای سبز بودن تست‌های integration بدون Postgres

@@ -9,7 +9,7 @@
  *
  * Example: 1405/07/02 seq 1 → JR-5070201
  */
-import { gregorianToJalali } from '../../../crm/domain/companyIdentity/linkaDisplayFormat.js';
+import { gregorianToJalali } from '../../../crm/public/calendar.js';
 
 const TEHRAN = 'Asia/Tehran';
 
