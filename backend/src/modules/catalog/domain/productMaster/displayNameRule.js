@@ -1,9 +1,12 @@
 /**
- * Product Type display-name rule (DDL-52 / DDL-53 / DDL-54). Independent of
+ * Product Type display-name rule (DDL-52 / DDL-53 / DDL-54 / DDL-67). Independent of
  * SKU / identity. Tokens reference taxonomy nodes, Attribute Definition ids,
  * or closed display literals — never persisted Persian labels. Empty optional
- * values and leftover glue literals are omitted.
+ * values and leftover glue literals are omitted. The joined commercial string
+ * is Persian-digit-only (DDL-67); stored attribute values stay ASCII.
  */
+
+import { formatProductDisplayText } from './normalize.js';
 
 export const DISPLAY_NAME_SOURCE_TYPES = Object.freeze(['group', 'category', 'type', 'attribute', 'literal']);
 
@@ -236,7 +239,7 @@ function joinResolved(resolved, separator) {
     }
     out += sep === ' ' ? ` ${cur.text}` : ` ${sep} ${cur.text}`;
   }
-  return out.replace(/[^\S\n]+/g, ' ').trim();
+  return formatProductDisplayText(out.replace(/[^\S\n]+/g, ' ').trim());
 }
 
 export function buildDisplayNameFromRule(rule, context = {}) {

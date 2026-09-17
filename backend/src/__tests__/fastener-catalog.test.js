@@ -153,7 +153,7 @@ describe('fastenerCatalog', () => {
         attr_fgrd: { nameFa: 'کلاس مقاومت', displayValue: '8.8' },
       },
     });
-    assert.equal(name, 'پیچ شش‌گوش آچاری 8.8');
+    assert.equal(name, 'پیچ شش‌گوش آچاری ۸.۸');
     assert.equal(rule.tokens.every((token) => token.includeLabel === false), true);
     assert.equal(rule.tokens.some((token) => token.attributeId && token.attributeId !== 'attr_fgrd'), false);
   });

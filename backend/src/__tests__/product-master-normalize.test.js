@@ -5,7 +5,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  toAsciiDigits, normalizeNumericValue, normalizeTextValue, normalizeAttributeValue,
+  toAsciiDigits, toPersianDigits, formatProductDisplayText, normalizeNumericValue, normalizeTextValue, normalizeAttributeValue,
   buildCanonicalIdentityKey, normalizeBrandName, tokenOverlapSimilarity,
   prepareAttributeDefinitionInput, prepareAttributeDefinitionPatch, slugAttributeCode, isNumericAttributeType,
 } from '../domain/productMaster/normalize.js';
@@ -13,6 +13,23 @@ import { pad2 } from '../domain/productMaster/taxonomyCode.js';
 import { buildGeneratedName, resolveEnumDisplayValue } from '../domain/productMaster/nameGenerator.js';
 import { validateWeightProfile } from '../domain/productMaster/weightProfile.js';
 import { applyAttributeBindingPolicy } from '../domain/productMaster/attributeBindingPolicy.js';
+
+describe('toPersianDigits / formatProductDisplayText (DDL-67)', () => {
+  it('converts Latin digits and leaves letters/units intact', () => {
+    assert.equal(toPersianDigits('304L'), '۳۰۴L');
+    assert.equal(toPersianDigits('2.5 میل'), '۲.۵ میل');
+    assert.equal(toPersianDigits('1500×3000'), '۱۵۰۰×۳۰۰۰');
+  });
+  it('converts Arabic-Indic digits and is idempotent for Persian', () => {
+    assert.equal(toPersianDigits('١٢٣'), '۱۲۳');
+    assert.equal(toPersianDigits('ضخامت ۲ میل'), 'ضخامت ۲ میل');
+  });
+  it('formatProductDisplayText folds mixed digit scripts to Persian only', () => {
+    assert.equal(formatProductDisplayText('ورق استیل 304L ضخامت ۲ میل 1500×3000'), 'ورق استیل ۳۰۴L ضخامت ۲ میل ۱۵۰۰×۳۰۰۰');
+    assert.equal(formatProductDisplayText(null), '');
+    assert.match(formatProductDisplayText('ضخامت 6 میل'), /^[^0-9]*$/);
+  });
+});
 
 describe('toAsciiDigits', () => {
   it('converts Persian digits', () => assert.equal(toAsciiDigits('۱۲۳'), '123'));
@@ -90,7 +107,7 @@ describe('buildGeneratedName', () => {
       { nameFa: 'عرض', sortOrder: 2, displayValue: 1250, unitLabel: 'mm' },
       { nameFa: 'ضخامت', sortOrder: 1, displayValue: 6, unitLabel: 'mm' },
     ]);
-    assert.equal(name, 'ورق سیاه | ضخامت: 6 mm | عرض: 1250 mm');
+    assert.equal(name, 'ورق سیاه | ضخامت: ۶ mm | عرض: ۱۲۵۰ mm');
   });
   it('falls back to bare Type name when no display attributes', () => {
     assert.equal(buildGeneratedName('ورق سیاه', []), 'ورق سیاه');
@@ -100,19 +117,19 @@ describe('buildGeneratedName', () => {
       { nameFa: 'سایز', sortOrder: 20, displayValue: 8, unitLabel: null },
       { nameFa: 'نوع', sortOrder: 10, displayValue: 'سبک', omitName: true },
     ]);
-    assert.equal(light, 'ناودانی | سبک | سایز: 8');
+    assert.equal(light, 'ناودانی | سبک | سایز: ۸');
     const plain = buildGeneratedName('ناودانی', [
       { nameFa: 'سایز', sortOrder: 20, displayValue: 8, unitLabel: null },
       { nameFa: 'نوع', sortOrder: 10, displayValue: '', omitName: true },
     ]);
-    assert.equal(plain, 'ناودانی | سایز: 8');
+    assert.equal(plain, 'ناودانی | سایز: ۸');
   });
   it('omits ral name prefix so the color label stands alone', () => {
     const name = buildGeneratedName('ورق گالوانیزه رنگی', [
       { nameFa: 'ضخامت', sortOrder: 10, displayValue: '0.5', unitLabel: null },
       { nameFa: 'رال', sortOrder: 30, displayValue: 'سفید رال ۹۰۱۶', omitName: true },
     ]);
-    assert.equal(name, 'ورق گالوانیزه رنگی | ضخامت: 0.5 | سفید رال ۹۰۱۶');
+    assert.equal(name, 'ورق گالوانیزه رنگی | ضخامت: ۰.۵ | سفید رال ۹۰۱۶');
   });
 });
 

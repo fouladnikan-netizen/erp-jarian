@@ -70,7 +70,7 @@ describe('displayNameRule preview', () => {
       attributeValues: { th: '2' },
       uoms: [{ id: 'u1', nameFa: 'میل' }],
     });
-    expect(name).toBe('نوع ورق استیل ۳۰۴L 2 میل');
+    expect(name).toBe('نوع ورق استیل ۳۰۴L ۲ میل');
     expect(name).not.toMatch(/\|/);
   });
 
@@ -83,7 +83,7 @@ describe('displayNameRule preview', () => {
       }],
       attributeValues: { th: '6' },
     });
-    expect(name).toBe('ورق سیاه | ضخامت: 6');
+    expect(name).toBe('ورق سیاه | ضخامت: ۶');
   });
 
   it('omits the unit in live preview when includeUnit is off', () => {
@@ -104,7 +104,7 @@ describe('displayNameRule preview', () => {
       attributeValues: { sz: '6' },
       uoms: [{ id: 'u-inch', nameFa: 'اینچ' }],
     });
-    expect(name).toBe('لوله 6');
+    expect(name).toBe('لوله ۶');
   });
 
   it('previews catalog literals and omits prefix glue when the live value is empty', () => {
@@ -138,7 +138,7 @@ describe('displayNameRule preview', () => {
       attributeValues: { len: '12' },
       uoms: [{ id: 'u-m', nameFa: 'متر' }],
     });
-    expect(created).toBe('میلگرد آجدار شاخه 12 متر');
+    expect(created).toBe('میلگرد آجدار شاخه ۱۲ متر');
   });
 
   it('keeps empty slots and prefix glue in the create-form preview', () => {
@@ -175,11 +175,11 @@ describe('displayNameRule preview', () => {
       type, schema, uoms,
       attributeValues: { th: '2', w: '40', lp: '80' },
       emptyAsPlaceholder: true,
-    })).toBe('پروفیل ضخامت 2 میل ابعاد 40×80 شاخه {طول} متری');
+    })).toBe('پروفیل ضخامت ۲ میل ابعاد ۴۰×۸۰ شاخه {طول} متری');
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { th: '2', w: '40', lp: '80' },
-    })).toBe('پروفیل ضخامت 2 میل ابعاد 40×80');
+    })).toBe('پروفیل ضخامت ۲ میل ابعاد ۴۰×۸۰');
     const withDefault = schema.map((entry) => (
       entry.definition.id === 'len'
         ? { ...entry, binding: { ...entry.binding, overrideDefaultValue: '6' } }
@@ -187,11 +187,11 @@ describe('displayNameRule preview', () => {
     ));
     expect(previewCreatedProductName({
       type, schema: withDefault, uoms, emptyAsPlaceholder: true,
-    })).toBe('پروفیل ضخامت {ضخامت} میل ابعاد {عرض پروفیل}×{طول پروفیل} شاخه 6 متری');
+    })).toBe('پروفیل ضخامت {ضخامت} میل ابعاد {عرض پروفیل}×{طول پروفیل} شاخه ۶ متری');
     expect(previewCreatedProductName({
       type, schema: withDefault, uoms,
       attributeValues: { th: '2', w: '40', lp: '80' },
-    })).toBe('پروفیل ضخامت 2 میل ابعاد 40×80 شاخه 6 متری');
+    })).toBe('پروفیل ضخامت ۲ میل ابعاد ۴۰×۸۰ شاخه ۶ متری');
   });
 
   it('fills mill-sheet طول ورق from width and thickness (DDL-56)', () => {
@@ -216,15 +216,15 @@ describe('displayNameRule preview', () => {
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { th: '0.5', w: '1000' },
-    })).toBe('ورق گالوانیزه ضخامت 0.5 میل 1000 2000 میل');
+    })).toBe('ورق گالوانیزه ضخامت ۰.۵ میل ۱۰۰۰ ۲۰۰۰ میل');
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { th: '12', w: '1250' },
-    })).toBe('ورق گالوانیزه ضخامت 12 میل 1250 6000 میل');
+    })).toBe('ورق گالوانیزه ضخامت ۱۲ میل ۱۲۵۰ ۶۰۰۰ میل');
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { th: '45', w: '2000' },
-    })).toBe('ورق گالوانیزه ضخامت 45 میل 2000 طول');
+    })).toBe('ورق گالوانیزه ضخامت ۴۵ میل ۲۰۰۰ طول');
   });
 
   it('omits طول ورق from the mill-sheet name when عرضه is رول', () => {
@@ -252,11 +252,11 @@ describe('displayNameRule preview', () => {
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { th: '0.5', w: '1000', sf: 'roll' },
-    })).toBe('ورق گالوانیزه ضخامت 0.5 میل 1000 رول');
+    })).toBe('ورق گالوانیزه ضخامت ۰.۵ میل ۱۰۰۰ رول');
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { th: '0.5', w: '1000', sf: 'mill' },
-    })).toBe('ورق گالوانیزه ضخامت 0.5 میل 1000×2000 میل شیت فابریک');
+    })).toBe('ورق گالوانیزه ضخامت ۰.۵ میل ۱۰۰۰×۲۰۰۰ میل شیت فابریک');
   });
 
   it('shows لوله تست گاز size_pipe as ۱/۲ اینچ, not 0.5 میل', () => {
@@ -282,11 +282,11 @@ describe('displayNameRule preview', () => {
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { sz: '0.5', th: '2.5' },
-    })).toBe('لوله تست گاز ۱/۲ اینچ ضخامت 2.5 میل');
+    })).toBe('لوله تست گاز ۱/۲ اینچ ضخامت ۲.۵ میل');
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { sz: '1.25', th: '3.6' },
-    })).toBe('لوله تست گاز ۱ ۱/۴ اینچ ضخامت 3.6 میل');
+    })).toBe('لوله تست گاز ۱ ۱/۴ اینچ ضخامت ۳.۶ میل');
   });
 
   it('shows لوله مانیسمان size_pipe as ۱/۲ اینچ and schedule without a unit', () => {
@@ -309,6 +309,33 @@ describe('displayNameRule preview', () => {
     expect(previewCreatedProductName({
       type, schema, uoms,
       attributeValues: { sp: '0.5', sch: '20' },
-    })).toBe('لوله مانیسمان ۱/۲ اینچ رده 20');
+    })).toBe('لوله مانیسمان ۱/۲ اینچ رده ۲۰');
+    expect(previewCreatedProductName({
+      type, schema, uoms,
+      attributeValues: { sp: '0.5', sch: '20' },
+    })).not.toMatch(/[0-9]/);
+  });
+
+  it('emits Persian digits only when attribute values are stored Latin', () => {
+    const name = previewCreatedProductName({
+      type: {
+        name: 'ورق استیل 304L',
+        displayNameRule: {
+          tokens: [
+            { sourceType: 'type' },
+            { sourceType: 'attribute', attributeId: 'th' },
+          ],
+        },
+      },
+      schema: [{
+        definition: { id: 'th', nameFa: 'ضخامت', dataType: 'DECIMAL', uomId: 'u1' },
+        binding: { sortOrder: 1 },
+      }],
+      attributeValues: { th: '2' },
+      uoms: [{ id: 'u1', nameFa: 'میل' }],
+    });
+    expect(name).toBe('ورق استیل ۳۰۴L ۲ میل');
+    expect(name).not.toMatch(/[0-9]/);
+    expect(name).not.toMatch(/[٠-٩]/);
   });
 });

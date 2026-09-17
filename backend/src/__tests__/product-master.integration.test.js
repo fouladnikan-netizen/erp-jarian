@@ -550,7 +550,7 @@ describe('Attribute Engine + Schema Inheritance', () => {
       assert.equal(res.status, 201, JSON.stringify(res.data));
       assert.match(res.data.product.sku, /^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)+$/);
       assert.match(res.data.product.sku, /-6-1000$/);
-      assert.ok(res.data.product.generatedName.includes('6'));
+      assert.ok(res.data.product.generatedName.includes('۶'));
       assert.ok(res.data.product.generatedName.includes('DIN'));
       assert.doesNotMatch(res.data.product.sku, /DIN/i);
       globalThis.__testProductA = res.data.product;
@@ -1567,7 +1567,7 @@ describe('DDL-52 — Product Type display-name rule', () => {
     });
     assert.equal(created.status, 201, JSON.stringify(created.data));
     productId = created.data.product.id;
-    assert.equal(created.data.product.generatedName, 'ورق استیل 304L ضخامت 2 میل 1500×3000');
+    assert.equal(created.data.product.generatedName, 'ورق استیل ۳۰۴L ضخامت ۲ میل ۱۵۰۰×۳۰۰۰');
     assert.notEqual(created.data.product.sku, created.data.product.generatedName);
   });
 
@@ -1578,7 +1578,7 @@ describe('DDL-52 — Product Type display-name rule', () => {
       attributeValues: { [gradeId]: '304L', [thkId]: 3 },
     });
     assert.equal(withoutDim.status, 201, JSON.stringify(withoutDim.data));
-    assert.equal(withoutDim.data.product.generatedName, 'ورق استیل 304L ضخامت 3 میل');
+    assert.equal(withoutDim.data.product.generatedName, 'ورق استیل ۳۰۴L ضخامت ۳ میل');
 
     const previousSku = (await json('GET', `/api/v1/products/${productId}`)).data.product.sku;
     const patched = await json('PATCH', `/api/v1/product-taxonomy/types/${typeId}`, {
@@ -1596,7 +1596,7 @@ describe('DDL-52 — Product Type display-name rule', () => {
 
     const fresh = await json('GET', `/api/v1/products/${productId}`);
     assert.equal(fresh.status, 200);
-    assert.equal(fresh.data.product.generatedName, 'ورق استیل · 2 میل');
+    assert.equal(fresh.data.product.generatedName, 'ورق استیل · ۲ میل');
     assert.equal(fresh.data.product.sku, previousSku);
 
     await json('DELETE', `/api/v1/products/${withoutDim.data.product.id}`);
@@ -1695,12 +1695,12 @@ describe('DDL-55 — binding default rewrites generated_name', () => {
         attributeValues: { [sizeId]: 8 },
       });
       assert.equal(created.status, 201, JSON.stringify(created.data));
-      assert.equal(created.data.product.generatedName, 'میلگرد ساده تست 8 12 متری');
+      assert.equal(created.data.product.generatedName, 'میلگرد ساده تست ۸ ۱۲ متری');
       const sku = created.data.product.sku;
       await pool.query('UPDATE products SET generated_name = $2 WHERE id = $1', [created.data.product.id, 'نام کهنه ۱۲ متری']);
       const staleGet = await json('GET', `/api/v1/products/${created.data.product.id}`);
       assert.equal(staleGet.status, 200);
-      assert.equal(staleGet.data.product.generatedName, 'میلگرد ساده تست 8 12 متری');
+      assert.equal(staleGet.data.product.generatedName, 'میلگرد ساده تست ۸ ۱۲ متری');
       const patched = await json('PATCH', `/api/v1/attribute-definitions/bindings/${lengthBind.data.binding.id}`, {
         overrideDefaultValue: '6',
       });
@@ -1709,10 +1709,10 @@ describe('DDL-55 — binding default rewrites generated_name', () => {
       const listed = await json('GET', `/api/v1/products?productTypeId=${encodeURIComponent(typeId)}`);
       assert.equal(listed.status, 200);
       const row = (listed.data.items || []).find((item) => item.id === created.data.product.id);
-      assert.equal(row?.generatedName, 'میلگرد ساده تست 8 6 متری');
+      assert.equal(row?.generatedName, 'میلگرد ساده تست ۸ ۶ متری');
       const fresh = await json('GET', `/api/v1/products/${created.data.product.id}`);
       assert.equal(fresh.status, 200);
-      assert.equal(fresh.data.product.generatedName, 'میلگرد ساده تست 8 6 متری');
+      assert.equal(fresh.data.product.generatedName, 'میلگرد ساده تست ۸ ۶ متری');
       assert.equal(fresh.data.product.sku, sku);
       assert.equal(
         (fresh.data.product.attributeValues || []).some((row) => row.attributeDefinitionId === lengthId),

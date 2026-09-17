@@ -38,6 +38,6 @@ describe('zedProfileCatalog', () => {
         len: { nameFa: 'طول', displayValue: '6', unitLabel: 'متری' },
       },
     });
-    assert.equal(name, 'پروفیل زد ارتفاع 160 ضخامت 2 میل شاخه 6 متری');
+    assert.equal(name, 'پروفیل زد ارتفاع ۱۶۰ ضخامت ۲ میل شاخه ۶ متری');
   });
 });

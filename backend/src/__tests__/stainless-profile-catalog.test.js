@@ -133,7 +133,7 @@ describe('stainlessProfileCatalog', () => {
         len: { nameFa: 'طول', displayValue: '6', unitLabel: 'متری' },
       },
     });
-    assert.equal(square, 'پروفیل استیل ۳۰۴ 20×20 ضخامت 1 میل شاخه 6 متری');
+    assert.equal(square, 'پروفیل استیل ۳۰۴ ۲۰×۲۰ ضخامت ۱ میل شاخه ۶ متری');
 
     const rect = buildDisplayNameFromRule(rule, {
       sources: { type: 'پروفیل استیل ۳۰۴' },
@@ -144,7 +144,7 @@ describe('stainlessProfileCatalog', () => {
         len: { nameFa: 'طول', displayValue: '6', unitLabel: 'متری' },
       },
     });
-    assert.equal(rect, 'پروفیل استیل ۳۰۴ 20×40 ضخامت 1.5 میل شاخه 6 متری');
+    assert.equal(rect, 'پروفیل استیل ۳۰۴ ۲۰×۴۰ ضخامت ۱.۵ میل شاخه ۶ متری');
     assert.equal(rect.includes('40×20'), false);
     assert.equal(rect.includes('گرید'), false);
     assert.equal(rect.includes('عرض پروفیل'), false);

@@ -1,14 +1,18 @@
 /**
  * Generated Product display name (product contract §"GENERATED PRODUCT NAME").
  * Product Type name + ordered filled attribute values, e.g.
- * "ورق سیاه | ضخامت: 6 | عرض: 1250". Empty optional attributes are omitted
+ * "ورق سیاه | ضخامت: ۶ | عرض: ۱۲۵۰". Empty optional attributes are omitted
  * (DDL-24p). Pure formatting — never used for identity/duplicate comparisons
  * (canonical_identity_key from required attributes is the source of truth).
  *
  * `plain` / `معمولی` (ناودانی معمولی) is stored as identity but omitted from the name.
  * `kind` / `ral` entries pass omitName so the label stands alone:
  * «سبک» not «نوع: سبک»؛ «سفید رال ۹۰۱۶» not «رال: سفید رال ۹۰۱۶».
+ *
+ * The joined string is Persian-digit-only (DDL-67). Identity/SKU stay ASCII.
  */
+
+import { formatProductDisplayText } from './normalize.js';
 
 const SILENT_ENUM_VALUES = new Set(['plain', 'معمولی']);
 
@@ -31,5 +35,5 @@ export function buildGeneratedName(productTypeName, displayAttributeEntries) {
       return e.unitLabel ? `${e.nameFa}: ${e.displayValue} ${e.unitLabel}` : `${e.nameFa}: ${e.displayValue}`;
     })
     .join(' | ');
-  return attrPart ? `${productTypeName} | ${attrPart}` : productTypeName;
+  return formatProductDisplayText(attrPart ? `${productTypeName} | ${attrPart}` : productTypeName);
 }

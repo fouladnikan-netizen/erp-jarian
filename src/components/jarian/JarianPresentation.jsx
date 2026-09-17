@@ -3,6 +3,7 @@ import {
   JARIAN_UI,
 } from '../../config/JarianUI.config';
 import TruncatedText from '../../modules/nabz/components/TruncatedText';
+import { formatProductDisplayText } from '../../domain/productMaster/productDisplayText';
 
 const SUPPLY_DOT_CLASS = {
   رسمی: 'is-official',
@@ -68,18 +69,18 @@ export function JarianSupplier({
   );
 }
 
-/** نام کالا — ۱۴px Bold Vazirmatn */
+/** نام کالا — ۱۴px Bold Vazirmatn. Numerals are Persian (DDL-67). */
 export function JarianProductName({ text, empty = '—' }) {
   return (
     <span className={JARIAN_UI.product.name.className}>
-      <TruncatedText text={text} empty={empty} />
+      <TruncatedText text={formatProductDisplayText(text)} empty={empty} />
     </span>
   );
 }
 
-/** توضیحات کالا — ۱۲px var(--text-muted) */
+/** توضیحات کالا — ۱۲px var(--text-muted). Numerals are Persian (DDL-67). */
 export function JarianProductDescription({ text, empty = '' }) {
-  const value = text?.trim();
+  const value = formatProductDisplayText(text).trim();
   if (!value) {
     return empty ? <span className={JARIAN_UI.product.description.className}>{empty}</span> : null;
   }

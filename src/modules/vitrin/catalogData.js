@@ -1,4 +1,5 @@
 import { formatProductCode } from './productCode';
+import { formatProductDisplayText } from '../../domain/productMaster/productDisplayText';
 
 /**
  * Frozen, static, synchronously-importable compatibility shim (DDL-24a).
@@ -156,6 +157,8 @@ const productSeed = [
 
 export const initialProducts = productSeed.map((p) => ({
   ...p,
+  title: formatProductDisplayText(p.title),
+  description: formatProductDisplayText(p.description),
   code: formatProductCode(p.groupId, p.subgroupId, p.serial),
 }));
 

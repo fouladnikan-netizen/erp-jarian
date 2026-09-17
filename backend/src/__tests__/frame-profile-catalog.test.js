@@ -49,8 +49,8 @@ describe('frameProfileCatalog', () => {
         len: { nameFa: 'طول', displayValue: '6', unitLabel: 'متری' },
       },
     });
-    assert.equal(roman, 'چهارچوب رومی ضخامت 2 میل شاخه 6.6 متری');
-    assert.equal(tee, 'سپری 507 ضخامت 1.5 میل شاخه 6 متری');
+    assert.equal(roman, 'چهارچوب رومی ضخامت ۲ میل شاخه ۶.۶ متری');
+    assert.equal(tee, 'سپری ۵۰۷ ضخامت ۱.۵ میل شاخه ۶ متری');
     assert.equal(roman.includes('پروفیل'), false);
     assert.equal(tee.includes('پروفیل'), false);
   });

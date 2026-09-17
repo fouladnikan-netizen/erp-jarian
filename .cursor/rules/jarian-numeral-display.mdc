@@ -14,14 +14,16 @@ alwaysApply: true
 |----------|--------|----------|
 | **Display money / amounts** | Persian (`۰–۹`) + thousand separators | `۱۲٬۰۰۰٬۰۰۰` via `formatJarianMoney` / `formatAmountRial` |
 | **Display dates (Jalali)** | Persian (`۰–۹`) | `۱۴۰۵/۰۴/۲۴` via `toJalaliDisplayDate` / `formatJalaliDate` |
-| **Technical identifiers & codes** | Latin (`0–9`) | nationalId, registrationNumber, economicCode, mobile, order code `JR…`, gazette number, postalCode |
+| **Product display name / description** | Persian (`۰–۹`) | `ورق استیل ۳۰۴L ضخامت ۲ میل` via `formatProductDisplayText` / display-name builder (DDL-67) |
+| **Technical identifiers & codes** | Latin (`0–9`) | nationalId, registrationNumber, economicCode, mobile, order code `JR…`, gazette number, postalCode, Product SKU |
 
 ## Absolute
 
 1. **Do not** show display money or Jalali calendar dates with Latin digits in user-facing UI.
 2. **Do not** convert national ID / registry / phone / order codes to Persian digits (copy/paste, Linka match, `dir="ltr"`).
 3. `font-yekan` / Meem / Vazirmatn change **typeface only** — they do **not** convert digit shapes. Always run formatters.
-4. Backend/API may store ASCII digits; **FE display layer** applies this law when rendering.
+4. Backend/API may store ASCII digits; **FE display layer** applies this law when rendering. **Exception:** Product commercial name/description is normalized at the catalog display-name builder (DDL-67), including API `generatedName`.
+5. **Do not** mix Latin and Persian digit scripts inside one product display name or description.
 
 ## Helpers (use these)
 
@@ -31,6 +33,7 @@ alwaysApply: true
 | Money (footer with ریال) | `formatJarianMoneyFooter(n)` |
 | Jalali date display | `toJalaliDisplayDate(value)` or `formatJalaliDate(y,m,d)` |
 | Force Persian digits | `toPersianDigits(value)` — only for money/date/count UI, not for IDs |
+| Product name / description | `formatProductDisplayText` (catalog domain) — not a one-off JSX replace |
 | Parse user input | `toAsciiDigits` / `parseMoneyInput` before persist |
 
 ## Allowed Latin digits
@@ -51,5 +54,6 @@ List row indices and KPI counts shown to users: **Persian digits** (`toLocaleStr
 ## Do not
 
 - Mix digit scripts inside one money or date string
+- Mix digit scripts inside a product display name or description
 - Invent a second money/date formatter that skips Persian digits
 - Persian-digit a nationalId “for beauty”

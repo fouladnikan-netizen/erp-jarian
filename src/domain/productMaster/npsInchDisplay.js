@@ -8,6 +8,8 @@
  * size_large / size_small (DDL-63).
  */
 
+import { toPersianDigits } from './productDisplayText';
+
 export const NPS_INCH_SIZE_TYPE_NAMES = Object.freeze([
   'لوله تست گاز',
   'لوله API',
@@ -65,6 +67,16 @@ export const NPS_INCH_SIZE_CODES = Object.freeze([
 ]);
 export const NPS_INCH_UNIT_FA = 'اینچ';
 
+export function usesNpsInchSize(typeName) {
+  return NPS_INCH_SIZE_TYPE_NAMES.includes(String(typeName || ''));
+}
+
+export function npsInchLatinLabel(size) {
+  const n = Number(size);
+  if (!Number.isFinite(n)) return '';
+  return LATIN_LABELS[n] || '';
+}
+
 const LATIN_LABELS = Object.freeze({
   0.5: '1/2',
   0.75: '3/4',
@@ -90,21 +102,7 @@ const LATIN_LABELS = Object.freeze({
   32: '32',
 });
 
-const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
-
-export function usesNpsInchSize(typeName) {
-  return NPS_INCH_SIZE_TYPE_NAMES.includes(String(typeName || ''));
-}
-
-export function npsInchLatinLabel(size) {
-  const n = Number(size);
-  if (!Number.isFinite(n)) return '';
-  return LATIN_LABELS[n] || '';
-}
-
-export function toPersianDigits(value) {
-  return String(value ?? '').replace(/[0-9]/g, (digit) => PERSIAN_DIGITS[Number(digit)]);
-}
+export { toPersianDigits };
 
 export function formatNpsInchDisplay(size) {
   const n = Number(size);

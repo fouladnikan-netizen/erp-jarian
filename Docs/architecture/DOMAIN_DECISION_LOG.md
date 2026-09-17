@@ -1277,6 +1277,17 @@ Priority vocabulary (aligned with current facade): `low` \| `normal` \| `high` \
 
 ---
 
+## DDL-67 — Product display name and description use Persian digits only
+
+| | |
+|--|--|
+| **Decision** | All numerals in Product **display name** (`generatedName`, `displayNameOverride`) and **product description** (ویترین «شرح کالا», create-form preview, frozen `catalogData` title/description, and `JarianProductCell` name/description) are Persian digits (`۰–۹`). No mixed Latin/Persian/Arabic-Indic digit scripts. **SSOT** is the display-name builder: `buildDisplayNameFromRule` / `buildGeneratedName` / `formatProductDisplayText` (`normalize.js` backend; `productDisplayText.js` FE preview mirror). Attribute values, SKU, and `canonical_identity_key` stay ASCII for identity (DDL-24c / DDL-51). GET/search still derive `generatedName` live (DDL-52); the stored `generated_name` cache and override are also written in Persian so search/sort match what the operator sees. |
+| **Current state** | Builder + live GET/search + override write/read. FE create-form preview uses the same helper. NPS inch overlay (DDL-58) already emitted Persian fractions; the final join step now converts remaining Latin numerals (thickness, mill size, grade `304L` → `۳۰۴L`). No SQL / no SKU rewrite. |
+| **Reason** | Commercial names concatenated raw DECIMAL/ENUM values (`ضخامت 2 میل`, `1500×3000`) next to Persian type labels. Operators read one digit script. |
+| **Future migration impact** | No SQL. Do not rewrite issued SKUs. Do not convert identity storage. Existing `generated_name` cache is rewritten on create/update/type-rule save; list/GET already live-derive. Text search `ILIKE` on a still-Latin cache row may miss Persian queries until that row is refreshed. |
+
+---
+
 ## Change control
 
 1. Propose a new `DDL-NN` when a persistence or aggregate choice would contradict or refine the above.  
@@ -1310,3 +1321,4 @@ Priority vocabulary (aligned with current facade): `low` \| `normal` \| `high` \
 29. **Fasteners** per **DDL-64** identity is Type shape + required PRODUCT `fastener_grade`. Metric `fastener_size` / `fastener_length` are TRANSACTION required; coating is Offer Variant. 28 Types; 179 grade-only Products. Do not rewrite SKUs. Do not mix fastener classes into mill `grade`.
 30. **Russian wood** per **DDL-65** identity is footboard thickness×width×stock length (10) and plywood thickness-only (44). Sheet 1220×2440 is TRANSACTION Offer Variant, never SKU. Do not put plywood `برگ` on `STEEL_TYPE_OFFER_UNITS`. Do not rewrite SKUs.
 31. **Shared Attribute Definition vocabulary** per **DDL-66**. CREATE `class` and `length_mm` (not `sheet_length`). DDL-64 fastener LENGTH and DDL-65 footboard metre length are superseded only as mapped. Do not delete Products. `frame_model`→`kind` is Type-split debt.
+32. **Product display name and description numerals** per **DDL-67** are Persian digits only. Do not concatenate Latin attribute values into commercial names, and do not convert SKU / identity storage.

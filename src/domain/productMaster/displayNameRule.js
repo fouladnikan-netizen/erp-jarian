@@ -1,12 +1,14 @@
 /**
- * Product Type display-name rule (DDL-52 / DDL-53 / DDL-54). FE mirror of
+ * Product Type display-name rule (DDL-52 / DDL-53 / DDL-54 / DDL-67). FE mirror of
  * backend/src/domain/productMaster/displayNameRule.js — Postgres is SoR.
  * Do not generate Product names in JSX; this module is preview + persist shape only.
+ * The joined commercial string is Persian-digit-only (DDL-67).
  */
 
 import { bindingDefaultValue, effectiveEnumOptions, isProductScope, liveAttributeValuesByCode, resolveBindingDefault } from './allowedAttributeValues';
 import { applyNpsInchSizeDisplay } from './npsInchDisplay';
 import { applySheetLengthDisplay, isSheetLengthApplicable, isSheetLengthAttribute } from './sheetMillLength';
+import { formatProductDisplayText } from './productDisplayText';
 
 export const DISPLAY_NAME_SOURCE_TYPES = Object.freeze(['group', 'category', 'type', 'attribute', 'literal']);
 
@@ -241,7 +243,7 @@ function joinResolved(resolved, separator) {
     }
     out += sep === ' ' ? ` ${cur.text}` : ` ${sep} ${cur.text}`;
   }
-  return out.replace(/[^\S\n]+/g, ' ').trim();
+  return formatProductDisplayText(out.replace(/[^\S\n]+/g, ' ').trim());
 }
 
 export function buildDisplayNameFromRule(rule, context = {}) {
@@ -349,15 +351,17 @@ export function previewCreatedProductName({
     });
   }
   if (hasDisplayNameRule(type.displayNameRule)) {
-    return buildDisplayNameFromRule(type.displayNameRule, {
-      sources: {
-        group: group?.name || '',
-        category: category?.name || '',
-        type: type.name || '',
-      },
-      attributes,
-      emptyAsPlaceholder,
-    }) || type.name || '';
+    return formatProductDisplayText(
+      buildDisplayNameFromRule(type.displayNameRule, {
+        sources: {
+          group: group?.name || '',
+          category: category?.name || '',
+          type: type.name || '',
+        },
+        attributes,
+        emptyAsPlaceholder,
+      }) || type.name || '',
+    );
   }
   const attrPart = [...legacyEntries]
     .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -369,7 +373,7 @@ export function previewCreatedProductName({
         : `${item.nameFa}: ${item.displayValue}`;
     })
     .join(' | ');
-  return attrPart ? `${type.name} | ${attrPart}` : (type.name || '');
+  return formatProductDisplayText(attrPart ? `${type.name} | ${attrPart}` : (type.name || ''));
 }
 
 export function previewDisplayName(rule, context = {}) {

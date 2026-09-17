@@ -22,7 +22,7 @@ const STAINLESS = {
 };
 
 describe('displayNameRule', () => {
-  it('builds ورق استیل 304L ضخامت 2 میل 1500×3000', () => {
+  it('builds ورق استیل ۳۰۴L ضخامت ۲ میل ۱۵۰۰×۳۰۰۰', () => {
     const name = buildDisplayNameFromRule(STAINLESS, {
       sources: { type: 'ورق استیل' },
       attributes: {
@@ -31,7 +31,9 @@ describe('displayNameRule', () => {
         attr_dim: { nameFa: 'ابعاد', displayValue: '1500×3000' },
       },
     });
-    assert.equal(name, 'ورق استیل 304L ضخامت 2 میل 1500×3000');
+    assert.equal(name, 'ورق استیل ۳۰۴L ضخامت ۲ میل ۱۵۰۰×۳۰۰۰');
+    assert.equal(/[0-9]/.test(name), false);
+    assert.equal(/[٠-٩]/.test(name), false);
   });
 
   it('omits empty optional attributes and leftover separators', () => {
@@ -51,7 +53,7 @@ describe('displayNameRule', () => {
         attr_brand: { nameFa: 'برند', displayValue: null },
       },
     });
-    assert.equal(name, 'ورق سیاه - 3 میل');
+    assert.equal(name, 'ورق سیاه - ۳ میل');
     assert.equal(name.includes('--'), false);
     assert.equal(name.includes('undefined'), false);
   });
@@ -117,8 +119,8 @@ describe('displayNameRule', () => {
       sources: { type: 'ورق سیاه' },
       attributes: { attr_thk: { nameFa: 'ضخامت', displayValue: '3', unitLabel: 'میل' } },
     });
-    assert.equal(off, 'ورق سیاه 3 میل');
-    assert.equal(on, 'نوع ورق سیاه ضخامت 3 میل');
+    assert.equal(off, 'ورق سیاه ۳ میل');
+    assert.equal(on, 'نوع ورق سیاه ضخامت ۳ میل');
   });
 
   it('omits the registry unit when includeUnit is off, independently of includeLabel', () => {
@@ -131,7 +133,7 @@ describe('displayNameRule', () => {
       sources: { type: 'ورق سیاه' },
       attributes: { attr_thk: { nameFa: 'ضخامت', displayValue: '3', unitLabel: 'میل' } },
     });
-    assert.equal(name, 'ورق سیاه ضخامت 3');
+    assert.equal(name, 'ورق سیاه ضخامت ۳');
   });
 
   it('does not persist unit labels inside the rule JSON', () => {
@@ -171,7 +173,7 @@ describe('displayNameRule', () => {
         h: { nameFa: 'ارتفاع', displayValue: '3000' },
       },
     });
-    assert.equal(name, '1500×3000');
+    assert.equal(name, '۱۵۰۰×۳۰۰۰');
   });
 
   it('puts prefix literals before the next value and drops them when that value is empty', () => {
@@ -195,7 +197,7 @@ describe('displayNameRule', () => {
       sources: { type: 'میلگرد آجدار' },
       attributes: { attr_len: { nameFa: 'طول', displayValue: '' } },
     });
-    assert.equal(filled, 'میلگرد آجدار شاخه 12 متر');
+    assert.equal(filled, 'میلگرد آجدار شاخه ۱۲ متر');
     assert.equal(empty, 'میلگرد آجدار');
   });
 
@@ -212,7 +214,7 @@ describe('displayNameRule', () => {
         h: { nameFa: 'ارتفاع', displayValue: '' },
       },
     });
-    assert.equal(name, '1500');
+    assert.equal(name, '۱۵۰۰');
     assert.equal(name.includes('×'), false);
   });
 

@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { appError, fromZodError, notFoundError, validationError } from '../../../lib/errors.js';
 import { withTransaction } from '../../../db/pool.js';
 import { newEntityId, writeAudit } from '../../../lib/ids.js';
-import { normalizeAttributeValue, tokenOverlapSimilarity, isNumericAttributeType } from '../domain/productMaster/normalize.js';
+import { normalizeAttributeValue, tokenOverlapSimilarity, isNumericAttributeType, formatProductDisplayText } from '../domain/productMaster/normalize.js';
 import { buildGeneratedName, resolveEnumDisplayValue } from '../domain/productMaster/nameGenerator.js';
 import {
   buildDisplayNameFromRule,
@@ -365,6 +365,13 @@ async function loadNameContext(productType) {
   return { type: productType, group, category, schema, uomById };
 }
 
+function formatDisplayNameOverride(value) {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  return formatProductDisplayText(text);
+}
+
 function generatedNameFromContext(ctx, liveByDefinitionId) {
   const liveByCode = liveAttributeValuesByCode(ctx.schema, liveByDefinitionId);
   const attributeEntries = ctx.schema.map(({ definition, binding }) => {
@@ -430,13 +437,16 @@ async function applyLiveGeneratedNames(products) {
     ctxByType.set(productTypeId, await loadNameContext(type));
   }
   return products.map((product) => {
+    const displayNameOverride = formatDisplayNameOverride(product.displayNameOverride);
     const ctx = ctxByType.get(product.productTypeId);
-    if (!ctx) return product;
+    if (!ctx) return { ...product, displayNameOverride };
     try {
       const generatedName = generatedNameFromContext(ctx, storedValueMap(product.attributeValues));
-      return generatedName ? { ...product, generatedName } : product;
+      return generatedName
+        ? { ...product, generatedName, displayNameOverride }
+        : { ...product, displayNameOverride };
     } catch {
-      return product;
+      return { ...product, displayNameOverride };
     }
   });
 }
@@ -530,7 +540,7 @@ export async function createProduct(body, actorUserId) {
       const id = newEntityId('prod');
       const row = await productRepo.create({
         id, sku, productTypeId: data.productTypeId, brandId: data.brandId || null,
-        generatedName, displayNameOverride: data.displayNameOverride || null, canonicalIdentityKey,
+        generatedName, displayNameOverride: formatDisplayNameOverride(data.displayNameOverride), canonicalIdentityKey,
         baseUomId: data.baseUomId || null, salesUomId: data.salesUomId || null, purchaseUomId: data.purchaseUomId || null,
         unitWeight: data.unitWeight, customLengthAllowed: data.customLengthAllowed,
         weightProfileType: data.weightProfileType, weightProfileCoefficients: data.weightProfileCoefficients,
@@ -687,6 +697,9 @@ export async function updateProduct(id, body, actorUserId) {
     const patch = {};
     for (const key of ['brandId', 'displayNameOverride', 'baseUomId', 'salesUomId', 'purchaseUomId', 'unitWeight', 'customLengthAllowed', 'weightProfileType', 'weightProfileCoefficients']) {
       if (Object.prototype.hasOwnProperty.call(data, key)) patch[key] = data[key];
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'displayNameOverride')) {
+      patch.displayNameOverride = formatDisplayNameOverride(patch.displayNameOverride);
     }
     const row = await productRepo.update(id, patch, actorUserId, client);
 

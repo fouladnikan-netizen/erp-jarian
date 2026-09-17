@@ -6,6 +6,8 @@
 
 const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
 const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+const LATIN_DIGIT = /[0-9]/;
+const ARABIC_INDIC_DIGIT = /[٠-٩]/;
 
 /** Persian/Arabic digits -> ASCII digits. Does not touch non-digit characters. */
 export function toAsciiDigits(value) {
@@ -15,6 +17,27 @@ export function toAsciiDigits(value) {
     const ar = AR_DIGITS.indexOf(ch);
     return ar >= 0 ? String(ar) : ch;
   });
+}
+
+/**
+ * Latin + Arabic-Indic digits → Persian digits (۰–۹). Idempotent for
+ * already-Persian input. Letters, separators, and units are left intact.
+ */
+export function toPersianDigits(value) {
+  return String(value ?? '').replace(/[0-9٠-٩]/g, (ch) => {
+    if (LATIN_DIGIT.test(ch)) return FA_DIGITS[Number(ch)];
+    if (ARABIC_INDIC_DIGIT.test(ch)) return FA_DIGITS[AR_DIGITS.indexOf(ch)] || ch;
+    return ch;
+  });
+}
+
+/**
+ * Commercial Product display name / description (DDL-67).
+ * Identity, SKU, and stored attribute values stay ASCII.
+ */
+export function formatProductDisplayText(value) {
+  if (value === undefined || value === null) return '';
+  return toPersianDigits(value);
 }
 
 /**

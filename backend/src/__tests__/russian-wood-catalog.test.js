@@ -123,7 +123,7 @@ describe('russianWoodCatalog', () => {
         attr_bl: { nameFa: 'طول', displayValue: '6', unitLabel: 'متر' },
       },
     });
-    assert.equal(boardName, 'تخته زیرپایی روسی 5 سانت×20 سانت×6 متر');
+    assert.equal(boardName, 'تخته زیرپایی روسی ۵ سانت×۲۰ سانت×۶ متر');
 
     const plyRule = plywoodDisplayNameRule({
       thicknessId: 'attr_pt',
@@ -138,6 +138,6 @@ describe('russianWoodCatalog', () => {
         attr_ph: { nameFa: 'ارتفاع ورق', displayValue: '2440', unitLabel: 'میل' },
       },
     });
-    assert.equal(plyName, 'تخته چندلایه معمولی ضخامت 12 میل ابعاد 1220 میل×2440 میل');
+    assert.equal(plyName, 'تخته چندلایه معمولی ضخامت ۱۲ میل ابعاد ۱۲۲۰ میل×۲۴۴۰ میل');
   });
 });

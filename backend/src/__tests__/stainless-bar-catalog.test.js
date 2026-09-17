@@ -74,7 +74,7 @@ describe('stainlessBarCatalog', () => {
         len: { nameFa: 'طول', displayValue: '6', unitLabel: 'متری' },
       },
     });
-    assert.equal(name, 'میلگرد استیل ۳۰۴ 12 میل شاخه 6 متری');
+    assert.equal(name, 'میلگرد استیل ۳۰۴ ۱۲ میل شاخه ۶ متری');
     assert.equal(name.includes('گرید'), false);
     assert.equal(name.includes('سایز'), false);
   });
