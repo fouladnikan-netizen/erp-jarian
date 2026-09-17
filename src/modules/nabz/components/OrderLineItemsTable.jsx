@@ -3,6 +3,7 @@ import TruncatedText from './TruncatedText';
 import ResizableColGroup from '../../../components/table/ResizableColGroup';
 import ResizableTh from '../../../components/table/ResizableTh';
 import { useResizableColumns } from '../../../hooks/useResizableColumns';
+import { formatProductDisplayText } from '../../../domain/productMaster/productDisplayText';
 
 const CREATE_LINE_COLUMNS = [
   { key: 'drag', defaultWidth: 36, resizable: false },
@@ -142,7 +143,7 @@ export default function OrderLineItemsTable({ items, onChange, onRemove }) {
               <td className="nabz-create-table__name jarian-td-product">
                 <div className="jarian-product-cell">
                   <span className="jarian-product-name">
-                    <TruncatedText text={item.name} empty="—" />
+                    <TruncatedText text={formatProductDisplayText(item.name)} empty="—" />
                   </span>
                   <input
                     type="text"

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { formatJarianMoney } from '../../../config/JarianUI.config';
 import { toPersianDigits, toPersianInvoiceText } from '../dateUtils';
+import { formatProductDisplayText } from '../../../domain/productMaster/productDisplayText';
 import {
   PROFORMA_BANK_ACCOUNTS,
   PROFORMA_TERMS_ITEMS,
@@ -88,7 +89,7 @@ function ProductDescription({ name, note }) {
           whiteSpace: 'nowrap',
         }}
       >
-        {name}
+        {formatProductDisplayText(name)}
       </span>
       {detail ? (
         <span
@@ -104,7 +105,7 @@ function ProductDescription({ name, note }) {
             marginInlineStart: '0.25rem',
           }}
         >
-          - {detail}
+          - {formatProductDisplayText(detail)}
         </span>
       ) : null}
     </div>

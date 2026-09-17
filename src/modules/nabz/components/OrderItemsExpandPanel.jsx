@@ -5,6 +5,7 @@ import {
 } from '../inquiryService';
 import InquiryDraftForm from './InquiryDraftForm';
 import InquirySavedCard from './InquirySavedCard';
+import { formatProductDisplayText } from '../../../domain/productMaster/productDisplayText';
 
 function draftSlotKey(orderId, itemIndex, slotId) {
   return `${orderId}-${itemIndex}-${slotId}`;
@@ -80,8 +81,8 @@ export default function OrderItemsExpandPanel({ order, onAddInquiry }) {
                 <Fragment key={`group-${itemIndex}`}>
                   <tr className="nabz-items-table__item-row">
                     <td>{(itemIndex + 1).toLocaleString('fa-IR')}</td>
-                    <td>{item.name}</td>
-                    <td>{item.description || '—'}</td>
+                    <td>{formatProductDisplayText(item.name)}</td>
+                    <td>{formatProductDisplayText(item.description) || '—'}</td>
                     <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
                     <td>{item.unit || '—'}</td>
                     <td />

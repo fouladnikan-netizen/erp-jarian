@@ -4,6 +4,7 @@ import {
   listSubcategoriesForMain,
   MAIN_PRODUCT_CATEGORIES,
 } from '../vitrinCategories';
+import { formatProductDisplayText } from '../../../domain/productMaster/productDisplayText';
 
 function buildSelectionList(pickOrder, picked) {
   return pickOrder
@@ -177,7 +178,7 @@ export default function ProductPickerModal({ onClose, onConfirm }) {
                           aria-label={`انتخاب ${product.title}`}
                         />
                       </td>
-                      <td className="nabz-picker-table__name font-meem">{product.title}</td>
+                      <td className="nabz-picker-table__name font-meem">{formatProductDisplayText(product.title)}</td>
                       <td className="nabz-picker-table__unit font-meem">{product.unit || '—'}</td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <input

@@ -4,6 +4,7 @@ import { UNPRICED_LABEL } from '../constants';
 import { buildStatusHistory } from '../orderHistory';
 import { getCustomerPreview } from '../customers';
 import { countOrderLineItems } from '../inquiryService';
+import { formatProductDisplayText } from '../../../domain/productMaster/productDisplayText';
 import { getOrderDisplayStatus, getOrderDisplayStatusKind } from '../orderStageService';
 import {
   ORDER_DETAIL_TABS,
@@ -96,7 +97,7 @@ export default function OrderDetailContent({
                   {order.items.map((item, i) => (
                     <tr key={i}>
                       <td>{(i + 1).toLocaleString('fa-IR')}</td>
-                      <td>{item.name}</td>
+                      <td>{formatProductDisplayText(item.name)}</td>
                       <td>{item.qty?.toLocaleString('fa-IR') ?? '—'}</td>
                       <td>{item.unit || '—'}</td>
                     </tr>

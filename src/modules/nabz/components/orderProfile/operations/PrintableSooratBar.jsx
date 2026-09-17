@@ -4,6 +4,7 @@ import { getShippingRecipient } from '../../../shippingService';
 import { getTodayJalali, getNowTimeFa } from '../../../dateUtils';
 import { toDisplayOrderCode } from '../../../orderCode';
 import { resolveSooratBarOrganization } from '../../../documentOrganization';
+import { formatProductDisplayText } from '../../../../../domain/productMaster/productDisplayText';
 import './PrintableSooratBar.css';
 
 function formatFa(value) {
@@ -174,7 +175,7 @@ export default function PrintableSooratBar({
                   <td>
                     <span className="font-yekan">{(index + 1).toLocaleString('fa-IR')}</span>
                   </td>
-                  <td className="font-meem">{line.name || '—'}</td>
+                  <td className="font-meem">{formatProductDisplayText(line.name) || '—'}</td>
                   <td className="printable-sooratbar__notes">
                     <span className="printable-sooratbar__notes-text">
                       {line.notes?.trim() ? line.notes : '—'}

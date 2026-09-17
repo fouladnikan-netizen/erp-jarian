@@ -1,4 +1,5 @@
 import { toPersianDigits, toPersianInvoiceText } from '../dateUtils';
+import { formatProductDisplayText } from '../../../domain/productMaster/productDisplayText';
 import { InvoiceDocBrandHeader, InvoiceDocFooter } from './InvoiceDocChrome';
 
 function InfoField({ label, children }) {
@@ -114,9 +115,9 @@ export default function ShippingDocument({ viewModel }) {
                   <td>{row.rowNumber.toLocaleString('fa-IR')}</td>
                   <td className="shipping-doc__product-cell">
                     <span className="shipping-doc__product-inline">
-                      <span className="shipping-doc__product-name">{row.name}</span>
+                      <span className="shipping-doc__product-name">{formatProductDisplayText(row.name)}</span>
                       {row.description && row.description !== '—' ? (
-                        <span className="shipping-doc__product-note">{row.description}</span>
+                        <span className="shipping-doc__product-note">{formatProductDisplayText(row.description)}</span>
                       ) : null}
                     </span>
                   </td>
