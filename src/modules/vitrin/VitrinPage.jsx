@@ -13,6 +13,7 @@ import VitrinTable from './components/VitrinTable';
 import ProductFormModal from './components/ProductFormModal';
 import ProductProfileDrawer from './components/ProductProfileDrawer';
 import BulkImportModal from './components/BulkImportModal';
+import { formatProductCatalogName } from '../../domain/productMaster/productDisplayText';
 import ListPageLayout from '../../components/module/ListPageLayout';
 import ListToolbar from '../../components/module/ListToolbar';
 import { useJarianNotice } from '../../context/JarianNoticeContext';
@@ -101,7 +102,7 @@ export default function VitrinPage() {
   };
 
   const handleDeleteProduct = async (product) => {
-    const label = product.displayNameOverride || product.generatedName || 'کالا';
+    const label = formatProductCatalogName(product) || 'کالا';
     const ok = await confirm({
       title: 'حذف',
       entity: label,

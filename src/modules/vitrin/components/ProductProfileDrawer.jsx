@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import OfferSettingsFields from '../../../components/productMaster/OfferSettingsFields';
 import { applyNpsInchSizeDisplay } from '../../../domain/productMaster/npsInchDisplay';
+import { formatProductCatalogName } from '../../../domain/productMaster/productDisplayText';
 
 const WEIGHT_PROFILE_LABELS = {
   FIXED: 'ثابت (وزن استاندارد هر واحد)',
@@ -112,12 +113,12 @@ export default function ProductProfileDrawer({
         className="vitrin-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label={`پروفایل ${product.generatedName}`}
+        aria-label={`پروفایل ${formatProductCatalogName(product)}`}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="vitrin-drawer__header">
           <div className="vitrin-drawer__identity">
-            <h2 className="vitrin-drawer__title">{product.displayNameOverride || product.generatedName}</h2>
+            <h2 className="vitrin-drawer__title">{formatProductCatalogName(product)}</h2>
             <p className="vitrin-drawer__subtitle">{taxonomyCrumb(product) || '—'}</p>
           </div>
           <div className="vitrin-drawer__header-actions">

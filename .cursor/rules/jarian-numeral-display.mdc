@@ -22,7 +22,7 @@ alwaysApply: true
 1. **Do not** show display money or Jalali calendar dates with Latin digits in user-facing UI.
 2. **Do not** convert national ID / registry / phone / order codes to Persian digits (copy/paste, Linka match, `dir="ltr"`).
 3. `font-yekan` / Meem / Vazirmatn change **typeface only** — they do **not** convert digit shapes. Always run formatters.
-4. Backend/API may store ASCII digits; **FE display layer** applies this law when rendering. **Exception:** Product commercial name/description is normalized at the catalog display-name builder (DDL-67), including API `generatedName`.
+4. Backend/API may store ASCII digits; **FE display layer** applies this law when rendering. Product commercial name/description is normalized at the catalog display-name builder (DDL-67) **and** again when presenting vitrine «شرح کالا» (`formatProductCatalogName`) so a stale local cache cannot mix digit scripts.
 5. **Do not** mix Latin and Persian digit scripts inside one product display name or description.
 
 ## Helpers (use these)
@@ -34,6 +34,7 @@ alwaysApply: true
 | Jalali date display | `toJalaliDisplayDate(value)` or `formatJalaliDate(y,m,d)` |
 | Force Persian digits | `toPersianDigits(value)` — only for money/date/count UI, not for IDs |
 | Product name / description | `formatProductDisplayText` (catalog domain) — not a one-off JSX replace |
+| Vitrine «شرح کالا» | `formatProductCatalogName(product)` — FE list/drawer even if API cache is mixed |
 | Parse user input | `toAsciiDigits` / `parseMoneyInput` before persist |
 
 ## Allowed Latin digits

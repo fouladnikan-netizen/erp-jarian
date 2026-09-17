@@ -20,4 +20,32 @@ export function formatProductDisplayText(value) {
   return toPersianDigits(value);
 }
 
-export default { toPersianDigits, formatProductDisplayText };
+/**
+ * Vitrine «شرح کالا» label. Persian digits even when the API cache still
+ * mixes NPS overlay (already Persian) with ASCII thickness/size.
+ */
+export function formatProductCatalogName(product) {
+  if (product == null) return '';
+  if (typeof product === 'string') return formatProductDisplayText(product);
+  return formatProductDisplayText(product.displayNameOverride || product.generatedName || '');
+}
+
+export function presentCatalogProduct(product) {
+  if (!product || typeof product !== 'object') return product;
+  const override = product.displayNameOverride;
+  return {
+    ...product,
+    generatedName: formatProductDisplayText(product.generatedName),
+    displayNameOverride:
+      override == null || String(override).trim() === ''
+        ? null
+        : formatProductDisplayText(override),
+  };
+}
+
+export default {
+  toPersianDigits,
+  formatProductDisplayText,
+  formatProductCatalogName,
+  presentCatalogProduct,
+};

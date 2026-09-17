@@ -26,8 +26,10 @@ describe('toPersianDigits / formatProductDisplayText (DDL-67)', () => {
   });
   it('formatProductDisplayText folds mixed digit scripts to Persian only', () => {
     assert.equal(formatProductDisplayText('ورق استیل 304L ضخامت ۲ میل 1500×3000'), 'ورق استیل ۳۰۴L ضخامت ۲ میل ۱۵۰۰×۳۰۰۰');
+    assert.equal(formatProductDisplayText('۱/۲ اینچ ضخامت 2 میل 1500×3000'), '۱/۲ اینچ ضخامت ۲ میل ۱۵۰۰×۳۰۰۰');
     assert.equal(formatProductDisplayText(null), '');
     assert.match(formatProductDisplayText('ضخامت 6 میل'), /^[^0-9]*$/);
+    assert.match(formatProductDisplayText('۱/۲ اینچ ضخامت 2 میل'), /^[^0-9]*$/);
   });
 });
 

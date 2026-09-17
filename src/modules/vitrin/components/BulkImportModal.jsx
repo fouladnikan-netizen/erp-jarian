@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { parseBulkImportText } from '../bulkImportParse.js';
+import { formatProductDisplayText } from '../../../domain/productMaster/productDisplayText';
 
 const TEMPLATE_XLSX = '/templates/jarian-product-import.xlsx';
 const TEMPLATE_CSV = '/templates/jarian-product-import.csv';
@@ -105,7 +106,7 @@ export default function BulkImportModal({ onClose, onRun }) {
                     <tr key={r.rowIndex}>
                       <td>{(r.rowIndex + 1).toLocaleString('fa-IR')}</td>
                       <td>{r.status}</td>
-                      <td>{r.message || (r.errors || []).map((e) => e.message).join('، ') || r.generatedName || '—'}</td>
+                      <td>{r.message || (r.errors || []).map((e) => e.message).join('، ') || formatProductDisplayText(r.generatedName) || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

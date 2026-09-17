@@ -1,5 +1,6 @@
 import { apiClient } from '../client';
 import { useMockApi } from '../useMockApi';
+import { presentCatalogProduct } from '../../domain/productMaster/productDisplayText';
 
 /**
  * Only FE path for the Vitrin-owned Product/SKU aggregate (DDL-24).
@@ -28,36 +29,36 @@ export const ProductRepository = {
       params.attributeFilters = JSON.stringify(filters.attributeFilters);
     }
     const { data } = await apiClient.get('/products', { params });
-    return data.items || [];
+    return (data.items || []).map(presentCatalogProduct);
   },
 
   async getProduct(id) {
     if (useMockApi()) return null;
     const { data } = await apiClient.get(`/products/${id}`);
-    return data.product;
+    return presentCatalogProduct(data.product);
   },
 
   async createProduct(payload) {
     if (useMockApi()) return null;
     const { data } = await apiClient.post('/products', payload);
-    return data.product;
+    return presentCatalogProduct(data.product);
   },
 
   async updateProduct(id, patch) {
     if (useMockApi()) return null;
     const { data } = await apiClient.patch(`/products/${id}`, patch);
-    return data.product;
+    return presentCatalogProduct(data.product);
   },
 
   async activateProduct(id) {
     if (useMockApi()) return null;
     const { data } = await apiClient.patch(`/products/${id}/activate`);
-    return data.product;
+    return presentCatalogProduct(data.product);
   },
   async deactivateProduct(id) {
     if (useMockApi()) return null;
     const { data } = await apiClient.patch(`/products/${id}/deactivate`);
-    return data.product;
+    return presentCatalogProduct(data.product);
   },
   async deleteProduct(id) {
     if (useMockApi()) return null;

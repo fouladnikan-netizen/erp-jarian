@@ -12,6 +12,7 @@ import { useColumnExcelFilters } from '../../../hooks/useColumnExcelFilters';
 import { useListShell } from '../../../hooks/list';
 import VitrinRowActions from './VitrinRowActions';
 import { formatProductSizeDisplay, getProductSizeNumber } from '../productSize';
+import { formatProductCatalogName } from '../../../domain/productMaster/productDisplayText';
 
 const COLUMN_LABELS = {
   check: 'انتخاب',
@@ -44,7 +45,7 @@ const FILTERABLE_KEYS = VITRIN_COLUMN_DEFS.filter((c) => c.filterable !== false)
 function getRawValue(product, key) {
   switch (key) {
     case 'name':
-      return product.displayNameOverride || product.generatedName || '';
+      return formatProductCatalogName(product);
     case 'size':
       return formatProductSizeDisplay(product);
     case 'group':
@@ -245,7 +246,7 @@ export default function VitrinTable({
                         <td key={col.key} className="vitrin-table__check-col">
                           <input
                             type="checkbox"
-                            aria-label={`انتخاب ${product.generatedName}`}
+                            aria-label={`انتخاب ${formatProductCatalogName(product)}`}
                             checked={selectedIds.has(product.id)}
                             onChange={() => toggleSelect(product.id)}
                           />
@@ -259,7 +260,7 @@ export default function VitrinTable({
                       return (
                         <td key={col.key}>
                           <button type="button" className="vitrin-table__title-link font-meem" onClick={() => onTitleClick(product)}>
-                            {product.displayNameOverride || product.generatedName}
+                            {formatProductCatalogName(product)}
                           </button>
                         </td>
                       );

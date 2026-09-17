@@ -3,6 +3,7 @@ import { JarianDrawer } from '../../../components/ui';
 import { useAttributeDefinitionsStore } from '../../../stores/useAttributeDefinitionsStore';
 import { effectiveEnumOptions, isProductScope, productAttributeDefaults } from '../../../domain/productMaster/allowedAttributeValues';
 import { previewCreatedProductName } from '../../../domain/productMaster/displayNameRule';
+import { formatProductDisplayText } from '../../../domain/productMaster/productDisplayText';
 import { seedOfferSettingsFromType } from '../../../domain/productMaster/offerSettings';
 import OfferSettingsFields from '../../../components/productMaster/OfferSettingsFields';
 
@@ -326,7 +327,7 @@ export default function ProductFormModal({
           {probable && (
             <div className="vitrin-form__warning">
               کالاهای مشابهی در همین نوع کالا یافت شد:{' '}
-              {probable.map((p) => p.generatedName).join('، ')}.
+              {probable.map((p) => formatProductDisplayText(p.generatedName)).join('، ')}.
               {' '}
               <button type="button" className="btn btn--outline" onClick={() => submit(true)} disabled={busy}>
                 با این حال، کالای متمایزی است — ثبت شود

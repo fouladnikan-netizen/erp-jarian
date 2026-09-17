@@ -372,6 +372,14 @@ function formatDisplayNameOverride(value) {
   return formatProductDisplayText(text);
 }
 
+function presentProductDisplayNames(product, generatedName) {
+  return {
+    ...product,
+    generatedName: formatProductDisplayText(generatedName || product.generatedName || ''),
+    displayNameOverride: formatDisplayNameOverride(product.displayNameOverride),
+  };
+}
+
 function generatedNameFromContext(ctx, liveByDefinitionId) {
   const liveByCode = liveAttributeValuesByCode(ctx.schema, liveByDefinitionId);
   const attributeEntries = ctx.schema.map(({ definition, binding }) => {
@@ -437,16 +445,13 @@ async function applyLiveGeneratedNames(products) {
     ctxByType.set(productTypeId, await loadNameContext(type));
   }
   return products.map((product) => {
-    const displayNameOverride = formatDisplayNameOverride(product.displayNameOverride);
     const ctx = ctxByType.get(product.productTypeId);
-    if (!ctx) return { ...product, displayNameOverride };
+    if (!ctx) return presentProductDisplayNames(product);
     try {
       const generatedName = generatedNameFromContext(ctx, storedValueMap(product.attributeValues));
-      return generatedName
-        ? { ...product, generatedName, displayNameOverride }
-        : { ...product, displayNameOverride };
+      return presentProductDisplayNames(product, generatedName);
     } catch {
-      return { ...product, displayNameOverride };
+      return presentProductDisplayNames(product);
     }
   });
 }
@@ -523,7 +528,11 @@ export async function createProduct(body, actorUserId) {
   }
   if (probable.length && !data.confirmDuplicate) {
     throw appError('PRODUCT_PROBABLE_DUPLICATE', 'محصولات مشابهی در همین نوع کالا یافت شد — در صورت تایید تمایز واقعی، دوباره با confirmDuplicate=true ارسال کنید.', 409, {
-      probable: probable.slice(0, 5).map((r) => ({ id: r.product.id, generatedName: r.product.generatedName, score: r.score })),
+      probable: probable.slice(0, 5).map((r) => ({
+        id: r.product.id,
+        generatedName: formatProductDisplayText(r.product.generatedName),
+        score: r.score,
+      })),
     });
   }
 
@@ -679,7 +688,11 @@ export async function updateProduct(id, body, actorUserId) {
       const probable = await checkProbableDuplicate(existing.productTypeId, generatedName, id);
       if (probable.length && !data.confirmDuplicate) {
         throw appError('PRODUCT_PROBABLE_DUPLICATE', 'این تغییر محصول را مشابه محصول دیگری می‌کند — برای تایید صریح confirmDuplicate=true ارسال کنید.', 409, {
-          probable: probable.slice(0, 5).map((r) => ({ id: r.product.id, generatedName: r.product.generatedName, score: r.score })),
+          probable: probable.slice(0, 5).map((r) => ({
+            id: r.product.id,
+            generatedName: formatProductDisplayText(r.product.generatedName),
+            score: r.score,
+          })),
         });
       }
     }
