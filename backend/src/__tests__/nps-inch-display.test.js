@@ -29,6 +29,22 @@ describe('npsInchDisplay', () => {
     assert.equal(formatNpsInchDisplay(36), '۳۶ اینچ');
   });
 
+  it('does not treat a blank size as ۰ اینچ (create-form preview slots)', () => {
+    assert.equal(formatNpsInchDisplay(''), '');
+    assert.equal(formatNpsInchDisplay('   '), '');
+    assert.equal(formatNpsInchDisplay(null), '');
+    assert.equal(formatNpsInchDisplay(undefined), '');
+    assert.deepEqual(
+      applyNpsInchSizeDisplay({
+        typeName: 'لوله مانیسمان',
+        code: 'size_pipe',
+        displayValue: '',
+        unitLabel: 'اینچ',
+      }),
+      { displayValue: '', unitLabel: 'اینچ' },
+    );
+  });
+
   it('replaces میل on size for pipe Types, including size_pipe', () => {
     assert.deepEqual(
       applyNpsInchSizeDisplay({

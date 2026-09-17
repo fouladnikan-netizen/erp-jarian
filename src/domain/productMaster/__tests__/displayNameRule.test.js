@@ -338,4 +338,30 @@ describe('displayNameRule preview', () => {
     expect(name).not.toMatch(/[0-9]/);
     expect(name).not.toMatch(/[٠-٩]/);
   });
+
+  it('keeps empty NPS size as a {سایز} slot in create preview, not ۰ اینچ', () => {
+    const name = previewCreatedProductName({
+      type: {
+        name: 'لوله مانیسمان',
+        displayNameRule: {
+          tokens: [
+            { sourceType: 'type' },
+            { sourceType: 'attribute', attributeId: 'sz' },
+            { sourceType: 'attribute', attributeId: 'th' },
+          ],
+        },
+      },
+      schema: [
+        { definition: { id: 'sz', code: 'size_pipe', nameFa: 'سایز', dataType: 'DECIMAL' }, binding: {} },
+        { definition: { id: 'th', code: 'thickness', nameFa: 'ضخامت', dataType: 'DECIMAL', uomId: 'u1' }, binding: {} },
+      ],
+      attributeValues: {},
+      uoms: [{ id: 'u1', nameFa: 'میل' }],
+      emptyAsPlaceholder: true,
+    });
+    expect(name).toContain('{سایز}');
+    expect(name).toContain('{ضخامت}');
+    expect(name).not.toMatch(/۰ اینچ/);
+    expect(name).toBe('لوله مانیسمان {سایز} {ضخامت} میل');
+  });
 });

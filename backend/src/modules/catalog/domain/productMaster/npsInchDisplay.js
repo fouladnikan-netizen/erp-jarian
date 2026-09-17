@@ -98,7 +98,13 @@ const LATIN_LABELS = Object.freeze({
   32: '32',
 });
 
+function isBlankNpsSize(size) {
+  if (size === undefined || size === null) return true;
+  return String(size).trim() === '';
+}
+
 export function npsInchLatinLabel(size) {
+  if (isBlankNpsSize(size)) return '';
   const n = Number(size);
   if (!Number.isFinite(n)) return '';
   return LATIN_LABELS[n] || '';
@@ -107,6 +113,7 @@ export function npsInchLatinLabel(size) {
 export { toPersianDigits };
 
 export function formatNpsInchDisplay(size) {
+  if (isBlankNpsSize(size)) return '';
   const n = Number(size);
   if (!Number.isFinite(n)) return '';
   const latin = npsInchLatinLabel(size);

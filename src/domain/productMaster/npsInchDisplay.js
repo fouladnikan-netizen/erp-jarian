@@ -71,7 +71,13 @@ export function usesNpsInchSize(typeName) {
   return NPS_INCH_SIZE_TYPE_NAMES.includes(String(typeName || ''));
 }
 
+function isBlankNpsSize(size) {
+  if (size === undefined || size === null) return true;
+  return String(size).trim() === '';
+}
+
 export function npsInchLatinLabel(size) {
+  if (isBlankNpsSize(size)) return '';
   const n = Number(size);
   if (!Number.isFinite(n)) return '';
   return LATIN_LABELS[n] || '';
@@ -105,6 +111,7 @@ const LATIN_LABELS = Object.freeze({
 export { toPersianDigits };
 
 export function formatNpsInchDisplay(size) {
+  if (isBlankNpsSize(size)) return '';
   const n = Number(size);
   if (!Number.isFinite(n)) return '';
   const latin = npsInchLatinLabel(size);
