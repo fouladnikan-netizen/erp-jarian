@@ -263,47 +263,6 @@
   opacity: 0.55;
 }
 
-.vitrin-table__actions-col {
-  width: 88px;
-  text-align: center !important;
-}
-
-.vitrin-row-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.1rem;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
-.vitrin-table__row:hover .vitrin-row-actions,
-.vitrin-row-actions:focus-within {
-  opacity: 1;
-}
-
-.vitrin-row-actions__btn {
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast);
-}
-
-.vitrin-row-actions__btn:hover {
-  color: var(--color-accent-dark);
-  background: var(--color-accent-muted);
-}
-
-.vitrin-row-actions__btn--danger:hover {
-  color: var(--danger);
-  background: var(--danger-muted);
-}
-
 /* Modals — unified backdrop from overlays.css */
 .vitrin-modal-overlay {
   z-index: var(--z-modal-backdrop);

@@ -10,7 +10,6 @@ import {
 import StatusTag from '../../../components/module/StatusTag';
 import { useColumnExcelFilters } from '../../../hooks/useColumnExcelFilters';
 import { useListShell } from '../../../hooks/list';
-import VitrinRowActions from './VitrinRowActions';
 import { formatProductSizeDisplay, getProductSizeNumber } from '../productSize';
 import { formatProductCatalogName } from '../../../domain/productMaster/productDisplayText';
 
@@ -24,20 +23,18 @@ const COLUMN_LABELS = {
   productType: 'نوع کالا',
   brand: 'برند',
   status: 'وضعیت',
-  actions: 'عملیات',
 };
 
 const VITRIN_COLUMN_DEFS = [
   { key: 'check', title: COLUMN_LABELS.check, defaultWidth: 52, resizable: false, locked: true, sortable: false, filterable: false },
   { key: 'row', title: COLUMN_LABELS.row, defaultWidth: 56, resizable: false, locked: true, sortable: false, filterable: false },
-  { key: 'name', title: COLUMN_LABELS.name, defaultWidth: 280, locked: true, filterable: true },
+  { key: 'name', title: COLUMN_LABELS.name, defaultWidth: 360, locked: true, filterable: true },
   { key: 'size', title: COLUMN_LABELS.size, defaultWidth: 88, filterable: true, numeric: true },
   { key: 'group', title: COLUMN_LABELS.group, defaultWidth: 110, filterable: true },
   { key: 'category', title: COLUMN_LABELS.category, defaultWidth: 110, filterable: true },
   { key: 'productType', title: COLUMN_LABELS.productType, defaultWidth: 120, filterable: true },
   { key: 'brand', title: COLUMN_LABELS.brand, defaultWidth: 120, filterable: true },
   { key: 'status', title: COLUMN_LABELS.status, defaultWidth: 100, filterable: true },
-  { key: 'actions', title: COLUMN_LABELS.actions, defaultWidth: 110, resizable: false, locked: true, sortable: false, filterable: false },
 ];
 
 const FILTERABLE_KEYS = VITRIN_COLUMN_DEFS.filter((c) => c.filterable !== false).map((c) => c.key);
@@ -70,8 +67,6 @@ export default function VitrinTable({
   selectedIds,
   onSelectionChange,
   onTitleClick,
-  onToggleActive,
-  onDelete,
 }) {
   const {
     columnFilters,
@@ -194,7 +189,7 @@ export default function VitrinTable({
                   onResizeStart={shell.startResize}
                   className={`vitrin-table__sticky-th font-meem${
                     col.key === 'check' ? ' vitrin-table__check-col' : ''
-                  }${col.key === 'actions' ? ' vitrin-table__actions-col' : ''}`}
+                  }`}
                 >
                   {col.key === 'check' ? (
                     <input
@@ -203,7 +198,7 @@ export default function VitrinTable({
                       checked={pageAllSelected}
                       onChange={toggleSelectAll}
                     />
-                  ) : col.key === 'row' || col.key === 'actions' ? (
+                  ) : col.key === 'row' ? (
                     col.title
                   ) : (
                     <ListColumnHeader
@@ -276,13 +271,6 @@ export default function VitrinTable({
                       return (
                         <td key={col.key}>
                           <StatusTag value={product.lifecycleStatus !== 'INACTIVE' ? 'tag:active:فعال' : 'tag:danger:غیرفعال'} />
-                        </td>
-                      );
-                    }
-                    if (col.key === 'actions') {
-                      return (
-                        <td key={col.key} className="vitrin-table__actions-col">
-                          <VitrinRowActions product={product} onToggleActive={onToggleActive} onDelete={onDelete} />
                         </td>
                       );
                     }

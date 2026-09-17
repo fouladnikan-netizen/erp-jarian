@@ -208,8 +208,6 @@ export default function VitrinPage() {
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         onTitleClick={setProfileProduct}
-        onToggleActive={canLifecycle ? handleToggleActive : undefined}
-        onDelete={canWrite ? handleDeleteProduct : undefined}
       />
 
       <ProductFormModal
